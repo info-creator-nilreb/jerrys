@@ -22,3 +22,62 @@ model AdminUser {
 
   @@map("admin_users")
 }
+
+model Manufacturer {
+  id        String    @id @default(cuid())
+  name      String
+  sortOrder Int       @default(0) @map("sort_order")
+  products  Product[]
+
+  @@map("manufacturers")
+}
+
+model Product {
+  id          String         @id @default(cuid())
+  slug        String         @unique
+  title       String
+  subtitle    String?
+  /// Rich-Text-HTML (nach Speichern serverseitig bereinigt).
+  description String?
+  manufacturerId String?     @map("manufacturer_id")
+  manufacturer   Manufacturer? @relation(fields: [manufacturerId], references: [id], onDelete: SetNull)
+  productNumber  String?     @map("product_number")
+
+  priceGrossCents Int        @map("price_gross_cents")
+  priceNetCents   Int        @map("price_net_cents")
+  taxRatePercent  Int        @default(19) @map("tax_rate_percent")
+  listPriceGrossCents Int?   @map("list_price_gross_cents")
+  listPriceNetCents   Int?   @map("list_price_net_cents")
+  lowestPrice30dGrossCents Int? @map("lowest_price_30d_gross_cents")
+  lowestPrice30dNetCents   Int? @map("lowest_price_30d_net_cents")
+
+  currency    String         @default("EUR")
+  stockQuantity    Int       @default(0) @map("stock_quantity")
+  deliveryTimeKey  String?   @map("delivery_time_key")
+  restockDays      Int?      @map("restock_days")
+  freeShipping     Boolean   @default(false) @map("free_shipping")
+  minOrderQty      Int       @default(1) @map("min_order_qty")
+  purchaseStep     Int       @default(1) @map("purchase_step")
+  maxOrderQty      Int?      @map("max_order_qty")
+
+  isActive    Boolean        @default(true) @map("is_active")
+  sortOrder   Int            @default(0) @map("sort_order")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  images      ProductImage[]
+
+  @@map("products")
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String   @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String
+  sortOrder Int      @default(0) @map("sort_order")
+  isCover   Boolean  @default(false) @map("is_cover")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("product_images")
+}

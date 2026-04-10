@@ -10,7 +10,14 @@ export function SiteHeader() {
   return (
     <header className="fixed top-0 right-0 left-0 z-50 border-b border-(--surface-muted) bg-white">
       <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-3 md:py-3.5">
-        <div aria-hidden className="min-w-0" />
+        <nav className="min-w-0 justify-self-start" aria-label="Hauptnavigation">
+          <Link
+            href="/produkte"
+            className="text-sm font-medium text-(--foreground-heading) underline-offset-4 hover:text-primary hover:underline"
+          >
+            Produkte
+          </Link>
+        </nav>
         <Link href="/" className="justify-self-center">
           {/* unoptimized: direkt /public, um veraltete /_next/image?url=…png Caches zu umgehen */}
           <Image

@@ -1,6 +1,9 @@
 import Image from "next/image";
+import Link from "next/link";
 import { HeroScrollHint } from "@/components/storefront/hero-scroll-hint";
+import { ProductCard } from "@/components/storefront/product-card";
 import { UspIcon } from "@/components/storefront/usp-icons";
+import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
 
 const usps = [
   {
@@ -20,28 +23,10 @@ const usps = [
   },
 ];
 
-const products = [
-  {
-    id: "katzenhoehle",
-    href: "#produkte",
-    title: "Design Katzenhöhle",
-    subtitle: "Katzenhöhle mit Stil – für Auge und Gaumen",
-    price: "79,00 €",
-    image: "/media/katzenhoehle.jpg",
-    alt: "Design Katzenhöhle von jerry's in Edelweiß",
-  },
-  {
-    id: "futternapf",
-    href: "#produkte",
-    title: "Design Futternapf",
-    subtitle: "Futternapf mit dem gewissen Etwas",
-    price: "24,00 €",
-    image: "/media/futternapf.jpg",
-    alt: "Design Futternapf von jerry's",
-  },
-];
+export const dynamic = "force-dynamic";
 
-export default function StorefrontHomePage() {
+export default async function StorefrontHomePage() {
+  const products = await listActiveProductsForStorefront();
   return (
     <div>
       {/* Eine Viewporthöhe; Text links (freier Bildbereich), kein Karten-Overlay über dem Produkt */}
@@ -105,38 +90,23 @@ export default function StorefrontHomePage() {
             Produkte
           </h2>
           <p className="mt-2 max-w-2xl text-(--foreground-muted)">
-            Katalog und Warenkorb werden im nächsten Schritt angebunden – die Darstellung orientiert
-            sich an jerry-s.com.
+            Ausgewählte Artikel aus unserem Katalog. Alle Produkte findet ihr auf der{" "}
+            <Link href="/produkte" className="text-primary underline-offset-4 hover:underline">
+              Produktübersicht
+            </Link>
+            .
           </p>
-          <div className="mt-10 grid gap-10 md:grid-cols-2">
-            {products.map((p) => (
-              <article
-                key={p.id}
-                className="overflow-hidden rounded-xl border border-(--surface-muted) bg-white shadow-sm"
-              >
-                <div className="relative aspect-square bg-(--surface-muted)">
-                  <Image
-                    src={p.image}
-                    alt={p.alt}
-                    fill
-                    className="object-cover"
-                    sizes="(min-width:768px) 50vw, 100vw"
-                  />
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold text-(--foreground-heading)">{p.title}</h3>
-                  <p className="mt-1 text-sm text-(--foreground-muted)">{p.subtitle}</p>
-                  <p className="mt-4 text-lg font-semibold text-primary">{p.price}*</p>
-                  <a
-                    href={p.href}
-                    className="mt-4 inline-block text-sm font-medium text-primary underline-offset-4 hover:underline"
-                  >
-                    Details folgen
-                  </a>
-                </div>
-              </article>
-            ))}
-          </div>
+          {products.length === 0 ? (
+            <p className="mt-10 text-(--foreground-muted)">
+              Demnächst findet ihr hier unsere Katzenmöbel. Schaut bald wieder vorbei.
+            </p>
+          ) : (
+            <div className="mt-10 grid gap-10 md:grid-cols-2">
+              {products.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </div>

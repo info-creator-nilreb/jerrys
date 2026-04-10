@@ -1,15 +1,55 @@
 "use client";
 
+import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useId, useState } from "react";
+
+function EyeIcon({ open }: { open: boolean }) {
+  if (open) {
+    return (
+      <svg className="size-5" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path
+          d="M3 12s3.5-5 9-5 9 5 9 5-3.5 5-9 5-9-5-9-5Z"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M9 12a3 3 0 1 0 6 0 3 3 0 0 0-6 0Z"
+          stroke="currentColor"
+          strokeWidth="1.75"
+        />
+        <path d="M4 4l16 16" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg className="size-5" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M3 12s3.5-5 9-5 9 5 9 5-3.5 5-9 5-9-5-9-5Z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9 12a3 3 0 1 0 6 0 3 3 0 0 0-6 0Z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+      />
+    </svg>
+  );
+}
 
 export function AdminLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/admin";
+  const formId = useId();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -38,45 +78,96 @@ export function AdminLoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex max-w-sm flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <label htmlFor="email" className="text-sm font-medium">
-          E-Mail
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          value={email}
-          onChange={(ev) => setEmail(ev.target.value)}
-          className="rounded border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900"
+    <div className="flex w-full max-w-md flex-col">
+      <div className="mb-10 flex justify-center lg:mb-12">
+        <Image
+          src="/branding/jerrys-wordmark.jpg"
+          alt="jerry&apos;s"
+          width={220}
+          height={110}
+          className="h-10 w-auto"
+          priority
+          unoptimized
         />
       </div>
-      <div className="flex flex-col gap-1">
-        <label htmlFor="password" className="text-sm font-medium">
-          Passwort
+
+      <h1 className="text-2xl font-semibold tracking-tight text-[#2d2e32] lg:text-[1.65rem] lg:leading-snug">
+        Melde dich im Admin-Bereich an
+      </h1>
+
+      <form id={formId} onSubmit={onSubmit} className="mt-10 flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <label htmlFor={`${formId}-email`} className="text-sm text-[#5c5f66]">
+            E-Mail <span className="text-primary">*</span>
+          </label>
+          <input
+            id={`${formId}-email`}
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            placeholder="Gib deine E-Mail ein …"
+            value={email}
+            onChange={(ev) => setEmail(ev.target.value)}
+            className="w-full rounded-md border border-[#e3e4e8] bg-white px-4 py-3.5 text-[0.9375rem] text-[#2d2e32] shadow-[0_1px_2px_rgba(0,0,0,0.04)] placeholder:text-[#9ca3af] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label htmlFor={`${formId}-password`} className="text-sm text-[#5c5f66]">
+            Passwort <span className="text-primary">*</span>
+          </label>
+          <div className="relative">
+            <input
+              id={`${formId}-password`}
+              name="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              required
+              placeholder="Gib dein Passwort ein …"
+              value={password}
+              onChange={(ev) => setPassword(ev.target.value)}
+              className="w-full rounded-md border border-[#e3e4e8] bg-white py-3.5 pr-12 pl-4 text-[0.9375rem] text-[#2d2e32] shadow-[0_1px_2px_rgba(0,0,0,0.04)] placeholder:text-[#9ca3af] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute top-1/2 right-3 -translate-y-1/2 rounded p-1 text-[#8b8f98] transition-colors hover:bg-[#f4f5f7] hover:text-[#5c5f66]"
+              aria-label={showPassword ? "Passwort verbergen" : "Passwort anzeigen"}
+              aria-pressed={showPassword}
+            >
+              <EyeIcon open={showPassword} />
+            </button>
+          </div>
+        </div>
+
+        <label className="flex cursor-pointer items-center gap-2.5 text-sm text-[#2d2e32] select-none">
+          <input
+            type="checkbox"
+            name="remember"
+            className="size-4 shrink-0 rounded border-[#cfd2d8] text-primary focus:ring-primary/30"
+          />
+          Angemeldet bleiben
         </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          value={password}
-          onChange={(ev) => setPassword(ev.target.value)}
-          className="rounded border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900"
-        />
-      </div>
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-(--primary-hover) disabled:opacity-50"
-      >
-        {pending ? "Wird angemeldet…" : "Anmelden"}
-      </button>
-    </form>
+
+        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+
+        <div className="flex flex-col items-end gap-4 pt-1">
+          <span
+            className="cursor-default text-sm text-primary"
+            title="Passwort-Reset ist noch nicht eingerichtet."
+          >
+            Hast du dein Passwort vergessen?
+          </span>
+          <button
+            type="submit"
+            disabled={pending}
+            className="min-w-[9.5rem] rounded-md bg-primary px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-(--primary-hover) disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-primary"
+          >
+            {pending ? "Wird angemeldet…" : "Anmelden"}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }

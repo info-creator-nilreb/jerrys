@@ -1,10 +1,18 @@
 import { PrismaClient } from "@/app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
+import {
+  createPgPoolConfig,
+  PG_POOL_CONFIG_VERSION,
+  pgUsesRelaxedSsl,
+} from "@/lib/db/pg-pool-config";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
   pgPool: pg.Pool | undefined;
+  /** Merkt sich, mit welcher SSL-Policy der Pool erzeugt wurde (Dev-Cache). */
+  pgPoolSslRelaxed: boolean | undefined;
+  pgPoolConfigVersion: number | undefined;
 };
 
 /**
@@ -12,18 +20,45 @@ const globalForPrisma = globalThis as unknown as {
  * The first DB access must happen at runtime with DATABASE_URL set.
  */
 export function getPrisma(): PrismaClient {
-  if (globalForPrisma.prisma) {
-    return globalForPrisma.prisma;
-  }
-
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error("DATABASE_URL is not set");
   }
 
-  const pool = globalForPrisma.pgPool ?? new pg.Pool({ connectionString });
+  const sslRelaxed = pgUsesRelaxedSsl();
+  if (
+    globalForPrisma.pgPool != null &&
+    (globalForPrisma.pgPoolSslRelaxed !== sslRelaxed ||
+      globalForPrisma.pgPoolConfigVersion !== PG_POOL_CONFIG_VERSION)
+  ) {
+    const stalePrisma: unknown = globalForPrisma.prisma;
+    if (stalePrisma instanceof PrismaClient) {
+      void stalePrisma.$disconnect();
+    }
+    globalForPrisma.prisma = undefined;
+    void globalForPrisma.pgPool.end();
+    globalForPrisma.pgPool = undefined;
+    globalForPrisma.pgPoolSslRelaxed = undefined;
+    globalForPrisma.pgPoolConfigVersion = undefined;
+  }
+
+  const raw: unknown = globalForPrisma.prisma;
+  if (raw != null) {
+    // Nach `prisma generate` oder HMR zeigt `globalThis` oft noch eine alte Instanz
+    // (ohne neue Model-Delegates wie `product` → `undefined.findMany`).
+    if (raw instanceof PrismaClient) {
+      return raw;
+    }
+    void (raw as PrismaClient).$disconnect();
+    globalForPrisma.prisma = undefined;
+  }
+
+  const pool =
+    globalForPrisma.pgPool ?? new pg.Pool(createPgPoolConfig(connectionString));
   if (process.env.NODE_ENV !== "production") {
     globalForPrisma.pgPool = pool;
+    globalForPrisma.pgPoolSslRelaxed = sslRelaxed;
+    globalForPrisma.pgPoolConfigVersion = PG_POOL_CONFIG_VERSION;
   }
 
   const client = new PrismaClient({

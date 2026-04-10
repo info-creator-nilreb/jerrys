@@ -4,3 +4,8 @@ test("Startseite lädt", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Katzenhöhle mit Stil" })).toBeVisible();
 });
+
+test("Produktübersicht lädt", async ({ page }) => {
+  await page.goto("/produkte");
+  await expect(page.getByRole("heading", { name: "Produkte" })).toBeVisible();
+});

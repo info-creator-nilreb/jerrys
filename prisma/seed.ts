@@ -1,5 +1,6 @@
 import { hash } from "bcryptjs";
 import "dotenv/config";
+import { netCentsFromGross } from "../lib/catalog/pricing";
 import { getPrisma } from "../lib/db/prisma";
 
 async function main() {
@@ -21,6 +22,96 @@ async function main() {
       update: {
         passwordHash,
         isActive: true,
+      },
+    });
+
+    await prisma.manufacturer.upsert({
+      where: { id: "seed_mfr_jerrys" },
+      create: { id: "seed_mfr_jerrys", name: "jerry's", sortOrder: 0 },
+      update: { name: "jerry's", sortOrder: 0 },
+    });
+
+    const tax = 19;
+    const grossHoehle = 7900;
+    const grossNapf = 2400;
+
+    await prisma.product.upsert({
+      where: { slug: "design-katzenhoehle" },
+      create: {
+        slug: "design-katzenhoehle",
+        title: "Design Katzenhöhle",
+        subtitle: "Katzenhöhle mit Stil – für Auge und Gaumen",
+        description:
+          "Robuste Katzenhöhle mit zeitlosem Look – made in Germany. Ideal für Rückzug und Kuscheln.",
+        manufacturerId: "seed_mfr_jerrys",
+        taxRatePercent: tax,
+        priceGrossCents: grossHoehle,
+        priceNetCents: netCentsFromGross(grossHoehle, tax),
+        isActive: true,
+        sortOrder: 0,
+        stockQuantity: 0,
+        deliveryTimeKey: "2-4-werktage",
+        images: {
+          create: [
+            {
+              url: "/media/katzenhoehle.jpg",
+              alt: "Design Katzenhöhle von jerry's in Edelweiß",
+              sortOrder: 0,
+              isCover: true,
+            },
+          ],
+        },
+      },
+      update: {
+        title: "Design Katzenhöhle",
+        subtitle: "Katzenhöhle mit Stil – für Auge und Gaumen",
+        description:
+          "Robuste Katzenhöhle mit zeitlosem Look – made in Germany. Ideal für Rückzug und Kuscheln.",
+        manufacturerId: "seed_mfr_jerrys",
+        taxRatePercent: tax,
+        priceGrossCents: grossHoehle,
+        priceNetCents: netCentsFromGross(grossHoehle, tax),
+        isActive: true,
+        sortOrder: 0,
+      },
+    });
+
+    await prisma.product.upsert({
+      where: { slug: "design-futternapf" },
+      create: {
+        slug: "design-futternapf",
+        title: "Design Futternapf",
+        subtitle: "Futternapf mit dem gewissen Etwas",
+        description: "Hochwertiger Futternapf – formschön und alltagstauglich.",
+        manufacturerId: "seed_mfr_jerrys",
+        taxRatePercent: tax,
+        priceGrossCents: grossNapf,
+        priceNetCents: netCentsFromGross(grossNapf, tax),
+        isActive: true,
+        sortOrder: 1,
+        stockQuantity: 0,
+        deliveryTimeKey: "2-4-werktage",
+        images: {
+          create: [
+            {
+              url: "/media/futternapf.jpg",
+              alt: "Design Futternapf von jerry's",
+              sortOrder: 0,
+              isCover: true,
+            },
+          ],
+        },
+      },
+      update: {
+        title: "Design Futternapf",
+        subtitle: "Futternapf mit dem gewissen Etwas",
+        description: "Hochwertiger Futternapf – formschön und alltagstauglich.",
+        manufacturerId: "seed_mfr_jerrys",
+        taxRatePercent: tax,
+        priceGrossCents: grossNapf,
+        priceNetCents: netCentsFromGross(grossNapf, tax),
+        isActive: true,
+        sortOrder: 1,
       },
     });
   } finally {
