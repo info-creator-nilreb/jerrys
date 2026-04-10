@@ -4,6 +4,11 @@ export function netCentsFromGross(grossCents: number, taxPercent: number): numbe
   return Math.round(grossCents / factor);
 }
 
+/** Enthaltene Umsatzsteuer in Cent (Brutto − Netto). */
+export function vatCentsFromGross(grossCents: number, taxPercent: number): number {
+  return grossCents - netCentsFromGross(grossCents, taxPercent);
+}
+
 /** Brutto aus Netto (Cent). */
 export function grossCentsFromNet(netCents: number, taxPercent: number): number {
   const factor = 1 + taxPercent / 100;

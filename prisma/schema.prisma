@@ -65,8 +65,79 @@ model Product {
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
   images      ProductImage[]
+  cartLines   CartLine[]
+  orderItems  OrderItem[]
 
   @@map("products")
+}
+
+/// Gäste-Warenkorb; Zuordnung über httpOnly-Cookie `jerrys_cart_id`.
+model Cart {
+  id           String     @id @default(cuid())
+  customerNote String?    @map("customer_note")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  lines        CartLine[]
+
+  @@map("carts")
+}
+
+model Order {
+  id                  String      @id @default(cuid())
+  orderNumber         String      @unique @map("order_number")
+  email               String
+  phone               String?     @map("phone")
+  paymentMethod       String      @map("payment_method")
+  status              String      @default("bestaetigt") @map("status")
+  shippingFirstName   String      @map("shipping_first_name")
+  shippingLastName    String      @map("shipping_last_name")
+  shippingCompany     String?     @map("shipping_company")
+  shippingLine1       String      @map("shipping_line1")
+  shippingLine2       String?     @map("shipping_line2")
+  shippingZip         String      @map("shipping_zip")
+  shippingCity        String      @map("shipping_city")
+  shippingCountry     String      @default("DE") @map("shipping_country")
+  customerNote        String?     @map("customer_note")
+  subtotalGrossCents  Int         @map("subtotal_gross_cents")
+  shippingCents       Int         @default(0) @map("shipping_cents")
+  taxAmountCents      Int         @map("tax_amount_cents")
+  totalGrossCents     Int         @map("total_gross_cents")
+  currency            String      @default("EUR")
+  idempotencyKey      String?     @unique @map("idempotency_key")
+  createdAt           DateTime    @default(now()) @map("created_at")
+  items               OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id                     String  @id @default(cuid())
+  orderId                String  @map("order_id")
+  order                  Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId              String  @map("product_id")
+  product                Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productTitleSnapshot   String  @map("product_title_snapshot")
+  unitPriceGrossCents    Int     @map("unit_price_gross_cents")
+  taxRatePercentSnapshot Int     @map("tax_rate_percent_snapshot")
+  quantity               Int
+  lineTotalGrossCents    Int     @map("line_total_gross_cents")
+  currency               String  @default("EUR")
+
+  @@map("order_items")
+}
+
+model CartLine {
+  id        String   @id @default(cuid())
+  cartId    String   @map("cart_id")
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String   @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([cartId, productId])
+  @@map("cart_lines")
 }
 
 model ProductImage {

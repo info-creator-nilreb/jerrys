@@ -70,12 +70,16 @@ export function EditProductForm({
   const [savedFlash, setSavedFlash] = useState(false);
 
   useEffect(() => {
-    if (state?.ok) {
+    if (!state?.ok) return;
+    const show = window.setTimeout(() => {
       setSavedFlash(true);
       router.refresh();
-      const t = window.setTimeout(() => setSavedFlash(false), 4000);
-      return () => window.clearTimeout(t);
-    }
+    }, 0);
+    const hide = window.setTimeout(() => setSavedFlash(false), 4000);
+    return () => {
+      window.clearTimeout(show);
+      window.clearTimeout(hide);
+    };
   }, [state?.ok, router]);
 
   const descHtml = plainDescriptionToHtml(product.description);

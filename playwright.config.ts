@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const devPort = process.env.PORT ?? "3001";
+const devOrigin = `http://127.0.0.1:${devPort}`;
+
 export default defineConfig({
   testDir: "tests/e2e",
   fullyParallel: true,
@@ -8,13 +11,13 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: "html",
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: devOrigin,
     trace: "on-first-retry",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
     command: "npm run dev",
-    url: "http://127.0.0.1:3000",
+    url: devOrigin,
     reuseExistingServer: !process.env.CI,
   },
 });

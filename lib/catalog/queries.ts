@@ -12,7 +12,7 @@ const storefrontProductCardSelect = {
     take: 1,
     select: { url: true, alt: true },
   },
-} as const;
+};
 
 export async function listActiveProductsForStorefront() {
   return getPrisma().product.findMany({

@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { formatPrice } from "@/lib/catalog/format";
 import { getActiveProductBySlug } from "@/lib/catalog/queries";
 import { sanitizeProductDescriptionHtml } from "@/lib/catalog/sanitize-html";
+import { defaultAddQuantity } from "@/lib/cart/quantity";
+import { AddToCartForm } from "@/components/storefront/add-to-cart-form";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +42,14 @@ export default async function ProduktDetailPage({
   if (!product) notFound();
 
   const safeDescription = sanitizeProductDescriptionHtml(product.description);
+
+  const qtyRules = {
+    stockQuantity: product.stockQuantity,
+    minOrderQty: product.minOrderQty,
+    purchaseStep: product.purchaseStep,
+    maxOrderQty: product.maxOrderQty,
+  };
+  const canAddToCart = defaultAddQuantity(qtyRules) !== null;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-24 md:py-28">
@@ -84,6 +94,7 @@ export default async function ProduktDetailPage({
           <p className="mt-6 text-2xl font-semibold text-primary">
             {formatPrice(product.priceGrossCents, product.currency)}*
           </p>
+          <AddToCartForm productId={product.id} canAdd={canAddToCart} />
           {safeDescription ? (
             <div
               className="mt-8 max-w-none text-(--foreground-muted) [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-(--surface-muted) [&_blockquote]:pl-4 [&_h2]:mt-6 [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:mt-4 [&_h3]:text-base [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-2 [&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-(--surface-muted) [&_td]:p-2 [&_th]:border [&_th]:border-(--surface-muted) [&_th]:p-2 [&_th]:text-left [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5"

@@ -1,12 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getStorefrontCartBadgeCount } from "@/lib/cart/badge";
 import { CartIcon } from "@/components/storefront/cart-icon";
 
 /** Natürliche Logo-Größe (JPEG, Seitenverhältnis 2:1) */
 const LOGO_W = 256;
 const LOGO_H = 128;
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const cartCount = await getStorefrontCartBadgeCount();
+
   return (
     <header className="fixed top-0 right-0 left-0 z-50 border-b border-(--surface-muted) bg-white">
       <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-3 md:py-3.5">
@@ -34,10 +37,15 @@ export function SiteHeader() {
         <div className="flex min-w-0 items-center justify-end">
           <Link
             href="/warenkorb"
-            className="text-(--foreground-heading) hover:text-primary rounded-md p-2 transition-colors"
-            aria-label="Warenkorb"
+            className="relative rounded-md p-2 text-(--foreground-heading) transition-colors hover:text-primary"
+            aria-label={`Warenkorb${cartCount > 0 ? `, ${cartCount} Artikel` : ""}`}
           >
             <CartIcon className="size-7" />
+            {cartCount > 0 ? (
+              <span className="absolute top-0.5 right-0.5 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white">
+                {cartCount > 99 ? "99+" : cartCount}
+              </span>
+            ) : null}
           </Link>
         </div>
       </div>

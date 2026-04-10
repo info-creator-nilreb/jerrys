@@ -4,7 +4,7 @@ import type { PoolConfig } from "pg";
  * Bei Änderungen an URL- oder SSL-Handling erhöhen, damit der Dev-Pool-Cache in
  * `getPrisma()` verworfen wird (sonst bleibt z. B. eine alte URL mit `sslmode` aktiv).
  */
-export const PG_POOL_CONFIG_VERSION = 2;
+export const PG_POOL_CONFIG_VERSION = 3;
 
 const SSL_QUERY_KEYS = [
   "sslmode",
@@ -79,12 +79,18 @@ function connectionUsesTlsForRelaxPath(connectionString: string): boolean {
  * Behebt typische Fehler wie „self-signed certificate in certificate chain“ bei gehosteten DBs.
  */
 export function createPgPoolConfig(connectionString: string): PoolConfig {
-  if (pgUsesRelaxedSsl() && connectionUsesTlsForRelaxPath(connectionString)) {
-    return {
-      connectionString: stripSslParamsFromDatabaseUrl(connectionString),
-      ssl: { rejectUnauthorized: false },
-    };
-  }
+  const base: PoolConfig =
+    pgUsesRelaxedSsl() && connectionUsesTlsForRelaxPath(connectionString)
+      ? {
+          connectionString: stripSslParamsFromDatabaseUrl(connectionString),
+          ssl: { rejectUnauthorized: false },
+        }
+      : { connectionString };
 
-  return { connectionString };
+  /** Langsamere Netze / DNS; vermeidet „ewiges Hängen“ ohne klaren Prisma-Fehler. */
+  return {
+    ...base,
+    connectionTimeoutMillis: 20_000,
+    keepAlive: true,
+  };
 }
