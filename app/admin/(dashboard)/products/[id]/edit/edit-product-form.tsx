@@ -50,6 +50,9 @@ type Product = {
   purchaseStep: number;
   maxOrderQty: number | null;
   isActive: boolean;
+  amazonRatingAverage: number | null;
+  amazonRatingCount: number | null;
+  amazonReviewUrl: string | null;
   images: { id: string; url: string; alt: string; sortOrder: number; isCover: boolean }[];
 };
 
@@ -99,6 +102,13 @@ export function EditProductForm({
             descriptionHtml: descHtml,
             manufacturerId: product.manufacturerId,
             productNumber: product.productNumber,
+            amazonRatingAverage:
+              product.amazonRatingAverage != null
+                ? String(product.amazonRatingAverage).replace(".", ",")
+                : "",
+            amazonRatingCount:
+              product.amazonRatingCount != null ? String(product.amazonRatingCount) : "",
+            amazonReviewUrl: product.amazonReviewUrl ?? "",
           }}
         />
 

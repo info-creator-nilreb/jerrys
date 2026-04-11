@@ -27,6 +27,9 @@ export function ProductFormFields({ state, manufacturers }: Props) {
           descriptionHtml: "",
           manufacturerId: null,
           productNumber: null,
+          amazonRatingAverage: "",
+          amazonRatingCount: "",
+          amazonReviewUrl: "",
         }}
       />
 

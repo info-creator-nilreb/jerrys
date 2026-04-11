@@ -51,6 +51,10 @@ async function main() {
         sortOrder: 0,
         stockQuantity: 0,
         deliveryTimeKey: "2-4-werktage",
+        amazonRatingAverage: 4.8,
+        amazonRatingCount: 29,
+        amazonReviewUrl:
+          "https://www.amazon.de/Jerrys-Design-Katzenh%C3%B6hle-inklusive-Kuschelkissen/dp/B00SYGOLIO",
         images: {
           create: [
             {
@@ -73,6 +77,10 @@ async function main() {
         priceNetCents: netCentsFromGross(grossHoehle, tax),
         isActive: true,
         sortOrder: 0,
+        amazonRatingAverage: 4.8,
+        amazonRatingCount: 29,
+        amazonReviewUrl:
+          "https://www.amazon.de/Jerrys-Design-Katzenh%C3%B6hle-inklusive-Kuschelkissen/dp/B00SYGOLIO",
       },
     });
 

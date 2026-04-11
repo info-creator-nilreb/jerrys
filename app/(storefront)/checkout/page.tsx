@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { redirect } from "next/navigation";
 import { CheckoutForm } from "@/components/storefront/checkout-form";
+import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import type { CheckoutSummaryLine } from "@/components/storefront/checkout-summary-aside";
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { getCartWithLines } from "@/lib/cart/cart-queries";
@@ -40,13 +41,22 @@ export default async function CheckoutPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-24 md:py-28">
-      <CheckoutForm
-        idempotencyKey={idempotencyKey}
-        lines={summaryLines}
-        subtotalCents={subtotalCents}
-        shippingCents={0}
-        currency={currency}
+      <StorefrontBreadcrumbs
+        items={[
+          { href: "/", label: "Start" },
+          { href: "/warenkorb", label: "Warenkorb" },
+          { label: "Checkout" },
+        ]}
       />
+      <div className="mt-4">
+        <CheckoutForm
+          idempotencyKey={idempotencyKey}
+          lines={summaryLines}
+          subtotalCents={subtotalCents}
+          shippingCents={0}
+          currency={currency}
+        />
+      </div>
     </div>
   );
 }

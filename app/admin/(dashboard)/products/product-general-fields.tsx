@@ -29,6 +29,9 @@ type Props = {
     descriptionHtml: string;
     manufacturerId: string | null;
     productNumber: string | null;
+    amazonRatingAverage: string;
+    amazonRatingCount: string;
+    amazonReviewUrl: string;
   };
 };
 
@@ -128,6 +131,62 @@ export function ProductGeneralFields({ state, manufacturers, defaults }: Props) 
             defaultHtml={defaults.descriptionHtml}
             error={fe.descriptionHtml}
           />
+        </div>
+
+        <div className="rounded-lg border border-dashed border-[#e5e7eb] bg-[#fafafa] p-4">
+          <p className="text-xs font-medium text-[#374151]">Amazon-Bewertung (optional)</p>
+          <p className="mt-1 text-xs text-[#6b7280]">
+            Sterne und Anzahl gemeinsam eintragen oder beide leer lassen. Werte werden nicht automatisch von Amazon
+            geladen.
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="amazonRatingAverage" className="text-xs font-medium text-[#6b7280]">
+                Durchschnitt (0–5)
+              </label>
+              <input
+                id="amazonRatingAverage"
+                name="amazonRatingAverage"
+                type="text"
+                inputMode="decimal"
+                placeholder="z. B. 4,8"
+                defaultValue={defaults.amazonRatingAverage}
+                className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
+              />
+              {fe.amazonRatingAverage ? (
+                <p className="text-sm text-red-600">{fe.amazonRatingAverage}</p>
+              ) : null}
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="amazonRatingCount" className="text-xs font-medium text-[#6b7280]">
+                Anzahl Bewertungen
+              </label>
+              <input
+                id="amazonRatingCount"
+                name="amazonRatingCount"
+                type="text"
+                inputMode="numeric"
+                placeholder="z. B. 29"
+                defaultValue={defaults.amazonRatingCount}
+                className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
+              />
+              {fe.amazonRatingCount ? <p className="text-sm text-red-600">{fe.amazonRatingCount}</p> : null}
+            </div>
+          </div>
+          <div className="mt-4 flex flex-col gap-1">
+            <label htmlFor="amazonReviewUrl" className="text-xs font-medium text-[#6b7280]">
+              Link zur Amazon-Produktseite (optional)
+            </label>
+            <input
+              id="amazonReviewUrl"
+              name="amazonReviewUrl"
+              type="url"
+              placeholder="https://www.amazon.de/…/dp/…"
+              defaultValue={defaults.amazonReviewUrl}
+              className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
+            />
+            {fe.amazonReviewUrl ? <p className="text-sm text-red-600">{fe.amazonReviewUrl}</p> : null}
+          </div>
         </div>
       </div>
     </section>

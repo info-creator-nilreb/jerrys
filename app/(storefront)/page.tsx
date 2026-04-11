@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 import { HeroScrollHint } from "@/components/storefront/hero-scroll-hint";
 import { ProductCard } from "@/components/storefront/product-card";
 import { UspIcon } from "@/components/storefront/usp-icons";
@@ -62,7 +61,7 @@ export default async function StorefrontHomePage() {
         <h2 className="text-center text-2xl font-semibold text-(--foreground-heading) md:text-3xl">
           Funktion trifft Design
         </h2>
-        <p className="mx-auto mt-4 max-w-3xl text-center text-(--foreground-muted)">
+        <p className="mx-auto mt-4 max-w-3xl text-center text-base text-(--foreground-muted) md:text-lg">
           Katzenmöbel, die sich nahtlos in deine vier Wände einfügen – von jerry&apos;s, made in
           Germany.
         </p>
@@ -77,33 +76,51 @@ export default async function StorefrontHomePage() {
                 <h3 className="mt-4 text-lg font-semibold text-(--foreground-heading)">
                   {u.title}
                 </h3>
-                <p className="mt-2 text-sm leading-relaxed text-(--foreground-muted)">{u.body}</p>
+                <p className="mt-2 text-base leading-relaxed text-(--foreground-muted)">{u.body}</p>
               </div>
             </article>
           ))}
         </div>
       </section>
 
+      <section aria-labelledby="made-in-germany-heading" className="border-y border-(--surface-muted) bg-white px-4 py-12 md:py-16">
+        <div className="mx-auto max-w-5xl">
+          <h2 id="made-in-germany-heading" className="text-center text-xl font-semibold text-(--foreground-heading) md:text-2xl">
+            Made in Germany
+          </h2>
+          <p className="mx-auto mt-3 max-w-2xl text-center text-base text-(--foreground-muted) md:text-lg">
+            Designed und gefertigt in Deutschland – mit Liebe zum Detail und zuverlässiger Qualität für eure
+            Stubentiger.
+          </p>
+          <div className="mt-8 overflow-hidden rounded-xl border border-(--surface-muted) bg-(--surface-soft) shadow-sm">
+            <Image
+              src="/media/made-in-germany-banner.png"
+              alt="Grafik: bunte Katzen-Silhouetten, in der Mitte der Schriftzug Made in Germany"
+              width={1024}
+              height={542}
+              className="h-auto w-full"
+              sizes="(max-width: 1024px) 100vw, 896px"
+              unoptimized
+            />
+          </div>
+        </div>
+      </section>
+
       <section id="produkte" className="scroll-mt-20 bg-(--surface-soft) px-4 py-16 md:py-20">
         <div className="mx-auto max-w-6xl">
-          <h2 className="text-2xl font-semibold text-(--foreground-heading) md:text-3xl">
+          <h2 className="text-center text-2xl font-semibold text-(--foreground-heading) md:text-3xl">
             Produkte
           </h2>
-          <p className="mt-2 max-w-2xl text-(--foreground-muted)">
-            Ausgewählte Artikel aus unserem Katalog. Alle Produkte findet ihr auf der{" "}
-            <Link href="/produkte" className="text-primary underline-offset-4 hover:underline">
-              Produktübersicht
-            </Link>
-            .
-          </p>
           {products.length === 0 ? (
-            <p className="mt-10 text-(--foreground-muted)">
+            <p className="mt-10 text-center text-base text-(--foreground-muted) md:text-lg">
               Demnächst findet ihr hier unsere Katzenmöbel. Schaut bald wieder vorbei.
             </p>
           ) : (
-            <div className="mt-10 grid gap-10 md:grid-cols-2">
+            <div className="mt-10 grid w-full items-stretch justify-items-center gap-10 md:grid-cols-2">
               {products.map((p) => (
-                <ProductCard key={p.id} product={p} />
+                <div key={p.id} className="flex h-full min-h-0 w-full max-w-lg flex-1 flex-col self-stretch">
+                  <ProductCard product={p} />
+                </div>
               ))}
             </div>
           )}

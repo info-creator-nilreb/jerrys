@@ -1,50 +1,74 @@
-import Image from "next/image";
 import Link from "next/link";
 import { formatPrice } from "@/lib/catalog/format";
+import { AddToCartForm } from "@/components/storefront/add-to-cart-form";
+import { AmazonRatingDisplay } from "@/components/storefront/amazon-rating-display";
+import { ProductCardImageSlider } from "@/components/storefront/product-card-image-slider";
+import { defaultAddQuantity, type ProductQuantityRules } from "@/lib/cart/quantity";
 
 export type StorefrontProductCard = {
+  id: string;
   slug: string;
   title: string;
   subtitle: string | null;
   priceGrossCents: number;
   currency: string;
+  stockQuantity: number;
+  minOrderQty: number;
+  purchaseStep: number;
+  maxOrderQty: number | null;
+  amazonRatingAverage: number | null;
+  amazonRatingCount: number | null;
+  amazonReviewUrl: string | null;
   images: { url: string; alt: string }[];
 };
 
-export function ProductCard({ product, linkLabel = "Details" }: { product: StorefrontProductCard; linkLabel?: string }) {
-  const img = product.images[0];
+export function ProductCard({ product }: { product: StorefrontProductCard }) {
+  const quantityRules: ProductQuantityRules = {
+    stockQuantity: product.stockQuantity,
+    minOrderQty: product.minOrderQty,
+    purchaseStep: product.purchaseStep,
+    maxOrderQty: product.maxOrderQty,
+  };
+  const canAdd = defaultAddQuantity(quantityRules) !== null;
 
   return (
-    <article className="overflow-hidden rounded-xl border border-(--surface-muted) bg-white shadow-sm">
-      <div className="relative aspect-square bg-(--surface-muted)">
-        {img ? (
-          <Image
-            src={img.url}
-            alt={img.alt}
-            fill
-            className="object-cover"
-            sizes="(min-width:768px) 50vw, 100vw"
-          />
-        ) : (
-          <div className="flex size-full items-center justify-center text-sm text-(--foreground-muted)">
-            Kein Bild
-          </div>
-        )}
-      </div>
-      <div className="p-6">
-        <h3 className="text-xl font-semibold text-(--foreground-heading)">{product.title}</h3>
-        {product.subtitle ? (
-          <p className="mt-1 text-sm text-(--foreground-muted)">{product.subtitle}</p>
-        ) : null}
-        <p className="mt-4 text-lg font-semibold text-primary">
-          {formatPrice(product.priceGrossCents, product.currency)}*
-        </p>
+    <article className="group relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl border border-(--surface-muted) bg-white shadow-sm transition-shadow hover:shadow-md">
+      <div className="relative flex min-h-0 flex-1 flex-col">
         <Link
           href={`/produkte/${product.slug}`}
-          className="mt-4 inline-block text-sm font-medium text-primary underline-offset-4 hover:underline"
-        >
-          {linkLabel}
-        </Link>
+          className="absolute inset-0 z-0 rounded-t-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          aria-label={`${product.title} – zur Produktseite`}
+        />
+        <div className="relative z-10 shrink-0 pointer-events-auto">
+          <ProductCardImageSlider images={product.images} productTitle={product.title} />
+        </div>
+        <div className="relative z-10 flex min-h-0 flex-1 flex-col pointer-events-none p-6 md:p-7">
+          <div className="min-h-0 flex-1">
+            <h3 className="text-xl font-semibold text-(--foreground-heading) md:text-2xl">{product.title}</h3>
+            {product.subtitle ? (
+              <p className="mt-2 text-base leading-snug text-(--foreground-muted) md:text-[1.05rem]">
+                {product.subtitle}
+              </p>
+            ) : null}
+            <div className="mt-3 shrink-0 md:min-h-[3.75rem]">
+              {product.amazonRatingAverage != null && product.amazonRatingCount != null ? (
+                <AmazonRatingDisplay
+                  compact
+                  className="mt-0"
+                  average={product.amazonRatingAverage}
+                  count={product.amazonRatingCount}
+                  reviewUrl={product.amazonReviewUrl}
+                />
+              ) : null}
+            </div>
+            <p className="mt-4 text-lg font-semibold text-primary md:text-xl">
+              {formatPrice(product.priceGrossCents, product.currency)}*
+            </p>
+          </div>
+        </div>
+      </div>
+      <div className="relative z-10 flex shrink-0 flex-col justify-start border-t border-(--surface-muted) bg-white px-6 pt-4 pb-6 md:min-h-[8.5rem] md:px-7 md:pb-7">
+        <AddToCartForm productId={product.id} canAdd={canAdd} quantityRules={quantityRules} compact />
       </div>
     </article>
   );

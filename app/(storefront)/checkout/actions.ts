@@ -6,6 +6,7 @@ import { getCartWithLines } from "@/lib/cart/cart-queries";
 import { checkoutFormSchema } from "@/lib/checkout/schemas";
 import { generateOrderNumber } from "@/lib/checkout/order-number";
 import { vatCentsFromGross } from "@/lib/catalog/pricing";
+import { sendOrderConfirmationIfNeeded } from "@/lib/email/order-confirmation";
 import { getPrisma } from "@/lib/db/prisma";
 import { z } from "zod";
 
@@ -37,6 +38,15 @@ export async function submitCheckout(
     shippingZip: formData.get("shippingZip"),
     shippingCity: formData.get("shippingCity"),
     shippingCountry: formData.get("shippingCountry") ?? "DE",
+    billingUseShipping: formData.get("billingUseShipping"),
+    billingFirstName: formData.get("billingFirstName"),
+    billingLastName: formData.get("billingLastName"),
+    billingCompany: formData.get("billingCompany"),
+    billingLine1: formData.get("billingLine1"),
+    billingLine2: formData.get("billingLine2"),
+    billingZip: formData.get("billingZip"),
+    billingCity: formData.get("billingCity"),
+    billingCountry: formData.get("billingCountry"),
     phone: formData.get("phone"),
     paymentMethod: formData.get("paymentMethod"),
     idempotencyKey: formData.get("idempotencyKey"),
@@ -51,9 +61,10 @@ export async function submitCheckout(
 
   const existing = await getPrisma().order.findUnique({
     where: { idempotencyKey: d.idempotencyKey },
-    select: { orderNumber: true },
+    select: { orderNumber: true, id: true },
   });
   if (existing) {
+    await sendOrderConfirmationIfNeeded(existing.id);
     return { ok: true, orderNumber: existing.orderNumber };
   }
 
@@ -92,9 +103,11 @@ export async function submitCheckout(
 
   const orderNumber = generateOrderNumber();
 
+  let newOrderId = "";
+
   try {
     await getPrisma().$transaction(async (tx) => {
-      await tx.order.create({
+      const created = await tx.order.create({
         data: {
           orderNumber,
           email: d.email,
@@ -109,6 +122,14 @@ export async function submitCheckout(
           shippingZip: d.shippingZip,
           shippingCity: d.shippingCity,
           shippingCountry: d.shippingCountry,
+          billingFirstName: d.billingFirstName,
+          billingLastName: d.billingLastName,
+          billingCompany: d.billingCompany,
+          billingLine1: d.billingLine1,
+          billingLine2: d.billingLine2,
+          billingZip: d.billingZip,
+          billingCity: d.billingCity,
+          billingCountry: d.billingCountry,
           customerNote: cart.customerNote,
           subtotalGrossCents: subtotal,
           shippingCents,
@@ -127,6 +148,7 @@ export async function submitCheckout(
           },
         },
       });
+      newOrderId = created.id;
 
       for (const line of activeLines) {
         await tx.product.update({
@@ -146,6 +168,9 @@ export async function submitCheckout(
   revalidatePath("/checkout");
   revalidatePath("/", "layout");
   revalidatePath("/produkte");
+  revalidatePath("/admin/orders");
+
+  await sendOrderConfirmationIfNeeded(newOrderId);
 
   return { ok: true, orderNumber };
 }

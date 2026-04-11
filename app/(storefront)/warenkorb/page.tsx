@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CartExpressPlaceholder } from "@/components/storefront/cart-express-placeholder";
+import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import { CartLineTableRow } from "@/components/storefront/cart-line-table-row";
 import { PriceEUR } from "@/components/storefront/price-eur";
 import { updateCartCustomerNote } from "@/lib/cart/actions";
@@ -27,17 +28,10 @@ export default async function WarenkorbPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-24 md:py-28">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight text-[#1f2937] sm:text-3xl">
-          Dein Warenkorb
-        </h1>
-        <Link
-          href="/produkte"
-          className="text-sm text-[#1f2937] underline decoration-[#9ca3af] underline-offset-4 hover:text-primary"
-        >
-          Zurück zum Shop
-        </Link>
-      </div>
+      <StorefrontBreadcrumbs items={[{ href: "/", label: "Start" }, { label: "Warenkorb" }]} />
+      <h1 className="mt-6 text-2xl font-semibold tracking-tight text-[#1f2937] sm:text-3xl">
+        Dein Warenkorb
+      </h1>
 
       {lines.length === 0 ? (
         <p className="mt-10 text-(--foreground-muted)">

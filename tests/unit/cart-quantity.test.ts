@@ -3,6 +3,7 @@ import {
   clampToValidQuantity,
   defaultAddQuantity,
   isValidCartQuantity,
+  maxSelectableQuantity,
   nextQuantityStep,
 } from "@/lib/cart/quantity";
 
@@ -37,5 +38,12 @@ describe("cart quantity rules", () => {
   it("clamp respects max order", () => {
     const p = { stockQuantity: 100, minOrderQty: 1, purchaseStep: 1, maxOrderQty: 7 };
     expect(clampToValidQuantity(p, 99)).toBe(7);
+  });
+
+  it("max selectable uses stock and max order", () => {
+    const p = { stockQuantity: 50, minOrderQty: 2, purchaseStep: 1, maxOrderQty: 10 };
+    expect(maxSelectableQuantity(p)).toBe(10);
+    const p2 = { stockQuantity: 8, minOrderQty: 1, purchaseStep: 1, maxOrderQty: null as number | null };
+    expect(maxSelectableQuantity(p2)).toBe(8);
   });
 });

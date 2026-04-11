@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import Link from "next/link";
+import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { submitCheckout, type CheckoutActionState } from "@/app/(storefront)/checkout/actions";
 import type { CheckoutSummaryLine } from "@/components/storefront/checkout-summary-aside";
@@ -27,6 +28,7 @@ export function CheckoutForm({
 }) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(submitCheckout, initial);
+  const [billingDifferent, setBillingDifferent] = useState(false);
 
   useEffect(() => {
     if (state?.ok) {
@@ -44,11 +46,11 @@ export function CheckoutForm({
         <h1 className="text-xl font-semibold text-[#1f2937] sm:text-2xl">Checkout</h1>
 
         <section className="mt-10">
-          <p className="text-xs font-medium tracking-wide text-[#6b7280] uppercase">Express Checkout</p>
+          <p className="text-sm font-medium tracking-wide text-[#6b7280] uppercase">Express Checkout</p>
           <div className="mt-3">
             <CartExpressPlaceholder />
           </div>
-          <div className="relative my-8 text-center text-xs text-[#9ca3af]">
+          <div className="relative my-8 text-center text-sm text-[#9ca3af]">
             <span className="relative z-10 bg-white px-3">ODER</span>
             <div className="absolute inset-x-0 top-1/2 border-t border-[#e5e7eb]" aria-hidden />
           </div>
@@ -57,7 +59,7 @@ export function CheckoutForm({
         <section className="mt-2">
           <div className="flex items-baseline justify-between gap-4">
             <h2 className="text-lg font-semibold text-[#1f2937]">Kontakt</h2>
-            <span className="text-xs text-[#9ca3af]">Anmelden</span>
+            <span className="text-sm text-[#9ca3af]">Anmelden</span>
           </div>
           <div className="mt-4">
             <label htmlFor="email" className="sr-only">
@@ -91,7 +93,7 @@ export function CheckoutForm({
 
           <div className="mt-8 space-y-4">
             <div>
-              <label htmlFor="shippingCountry" className="mb-1 block text-xs text-[#6b7280]">
+              <label htmlFor="shippingCountry" className="mb-1 block text-sm text-[#6b7280]">
                 Land / Region
               </label>
               <select id="shippingCountry" name="shippingCountry" className={inputClass} defaultValue="DE">
@@ -100,7 +102,7 @@ export function CheckoutForm({
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label htmlFor="shippingFirstName" className="mb-1 block text-xs text-[#6b7280]">
+                <label htmlFor="shippingFirstName" className="mb-1 block text-sm text-[#6b7280]">
                   Vorname
                 </label>
                 <input id="shippingFirstName" name="shippingFirstName" required className={inputClass} />
@@ -109,7 +111,7 @@ export function CheckoutForm({
                 ) : null}
               </div>
               <div>
-                <label htmlFor="shippingLastName" className="mb-1 block text-xs text-[#6b7280]">
+                <label htmlFor="shippingLastName" className="mb-1 block text-sm text-[#6b7280]">
                   Nachname
                 </label>
                 <input id="shippingLastName" name="shippingLastName" required className={inputClass} />
@@ -119,27 +121,27 @@ export function CheckoutForm({
               </div>
             </div>
             <div>
-              <label htmlFor="shippingCompany" className="mb-1 block text-xs text-[#6b7280]">
+              <label htmlFor="shippingCompany" className="mb-1 block text-sm text-[#6b7280]">
                 Firma (optional)
               </label>
               <input id="shippingCompany" name="shippingCompany" className={inputClass} />
             </div>
             <div>
-              <label htmlFor="shippingLine1" className="mb-1 block text-xs text-[#6b7280]">
+              <label htmlFor="shippingLine1" className="mb-1 block text-sm text-[#6b7280]">
                 Adresse
               </label>
               <input id="shippingLine1" name="shippingLine1" required className={inputClass} />
               {fe?.shippingLine1 ? <p className="mt-1 text-sm text-red-600">{fe.shippingLine1}</p> : null}
             </div>
             <div>
-              <label htmlFor="shippingLine2" className="mb-1 block text-xs text-[#6b7280]">
+              <label htmlFor="shippingLine2" className="mb-1 block text-sm text-[#6b7280]">
                 Wohnung, Zimmer, usw. (optional)
               </label>
               <input id="shippingLine2" name="shippingLine2" className={inputClass} />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label htmlFor="shippingZip" className="mb-1 block text-xs text-[#6b7280]">
+                <label htmlFor="shippingZip" className="mb-1 block text-sm text-[#6b7280]">
                   Postleitzahl
                 </label>
                 <input
@@ -153,7 +155,7 @@ export function CheckoutForm({
                 {fe?.shippingZip ? <p className="mt-1 text-sm text-red-600">{fe.shippingZip}</p> : null}
               </div>
               <div>
-                <label htmlFor="shippingCity" className="mb-1 block text-xs text-[#6b7280]">
+                <label htmlFor="shippingCity" className="mb-1 block text-sm text-[#6b7280]">
                   Stadt
                 </label>
                 <input id="shippingCity" name="shippingCity" required className={inputClass} />
@@ -161,7 +163,7 @@ export function CheckoutForm({
               </div>
             </div>
             <div>
-              <label htmlFor="phone" className="mb-1 flex items-center gap-1 text-xs text-[#6b7280]">
+              <label htmlFor="phone" className="mb-1 flex items-center gap-1 text-sm text-[#6b7280]">
                 Telefon (optional)
                 <span className="text-[#9ca3af]" title="Für Rückfragen zur Lieferung">
                   ?
@@ -173,8 +175,101 @@ export function CheckoutForm({
         </section>
 
         <section className="mt-12">
+          <h2 className="text-lg font-semibold text-[#1f2937]">Rechnung</h2>
+          <div className="mt-4">
+            <label className="flex cursor-pointer items-start gap-3 text-sm text-[#374151]">
+              <input
+                type="checkbox"
+                className="mt-0.5 size-4 rounded border-[#d2d5d9] text-primary"
+                checked={billingDifferent}
+                onChange={(e) => setBillingDifferent(e.target.checked)}
+              />
+              <span>Abweichende Rechnungsadresse</span>
+            </label>
+            {!billingDifferent ? (
+              <input type="hidden" name="billingUseShipping" value="yes" />
+            ) : (
+              <input type="hidden" name="billingUseShipping" value="no" />
+            )}
+          </div>
+          {billingDifferent ? (
+            <div className="mt-6 space-y-4">
+              <div>
+                <label htmlFor="billingCountry" className="mb-1 block text-sm text-[#6b7280]">
+                  Land / Region (Rechnung)
+                </label>
+                <select id="billingCountry" name="billingCountry" className={inputClass} defaultValue="DE">
+                  <option value="DE">Deutschland</option>
+                </select>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="billingFirstName" className="mb-1 block text-sm text-[#6b7280]">
+                    Vorname
+                  </label>
+                  <input id="billingFirstName" name="billingFirstName" className={inputClass} />
+                  {fe?.billingFirstName ? (
+                    <p className="mt-1 text-sm text-red-600">{fe.billingFirstName}</p>
+                  ) : null}
+                </div>
+                <div>
+                  <label htmlFor="billingLastName" className="mb-1 block text-sm text-[#6b7280]">
+                    Nachname
+                  </label>
+                  <input id="billingLastName" name="billingLastName" className={inputClass} />
+                  {fe?.billingLastName ? (
+                    <p className="mt-1 text-sm text-red-600">{fe.billingLastName}</p>
+                  ) : null}
+                </div>
+              </div>
+              <div>
+                <label htmlFor="billingCompany" className="mb-1 block text-sm text-[#6b7280]">
+                  Firma (optional)
+                </label>
+                <input id="billingCompany" name="billingCompany" className={inputClass} />
+              </div>
+              <div>
+                <label htmlFor="billingLine1" className="mb-1 block text-sm text-[#6b7280]">
+                  Adresse
+                </label>
+                <input id="billingLine1" name="billingLine1" className={inputClass} />
+                {fe?.billingLine1 ? <p className="mt-1 text-sm text-red-600">{fe.billingLine1}</p> : null}
+              </div>
+              <div>
+                <label htmlFor="billingLine2" className="mb-1 block text-sm text-[#6b7280]">
+                  Adresszusatz (optional)
+                </label>
+                <input id="billingLine2" name="billingLine2" className={inputClass} />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="billingZip" className="mb-1 block text-sm text-[#6b7280]">
+                    Postleitzahl
+                  </label>
+                  <input
+                    id="billingZip"
+                    name="billingZip"
+                    inputMode="numeric"
+                    pattern="\d{5}"
+                    className={inputClass}
+                  />
+                  {fe?.billingZip ? <p className="mt-1 text-sm text-red-600">{fe.billingZip}</p> : null}
+                </div>
+                <div>
+                  <label htmlFor="billingCity" className="mb-1 block text-sm text-[#6b7280]">
+                    Stadt
+                  </label>
+                  <input id="billingCity" name="billingCity" className={inputClass} />
+                  {fe?.billingCity ? <p className="mt-1 text-sm text-red-600">{fe.billingCity}</p> : null}
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </section>
+
+        <section className="mt-12">
           <h2 className="text-lg font-semibold text-[#1f2937]">Zahlung</h2>
-          <p className="mt-1 text-xs text-[#6b7280]">
+          <p className="mt-1 text-sm text-[#6b7280]">
             Alle Transaktionen sind sicher und verschlüsselt (Demo ohne echte Zahlung).
           </p>
           <fieldset className="mt-6 space-y-3">
@@ -188,14 +283,14 @@ export function CheckoutForm({
                 <input type="radio" name="paymentMethod" value="paypal" className="size-4 text-primary" />
                 <span className="text-sm font-medium text-[#1f2937]">PayPal</span>
               </span>
-              <span className="text-xs font-semibold text-[#003087]">PayPal</span>
+              <span className="text-sm font-semibold text-[#003087]">PayPal</span>
             </label>
             <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-[#e5e7eb] p-4 has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary">
               <span className="flex items-center gap-3">
                 <input type="radio" name="paymentMethod" value="klarna" className="size-4 text-primary" />
                 <span className="text-sm font-medium text-[#1f2937]">Klarna</span>
               </span>
-              <span className="text-xs font-semibold text-[#ffb3c7]">Klarna</span>
+              <span className="text-sm font-semibold text-[#ffb3c7]">Klarna</span>
             </label>
           </fieldset>
           {fe?.paymentMethod ? <p className="mt-1 text-sm text-red-600">{fe.paymentMethod}</p> : null}
@@ -211,12 +306,22 @@ export function CheckoutForm({
           {pending ? "Wird gesendet…" : "Jetzt bestellen"}
         </button>
 
-        <nav className="mt-10 flex flex-wrap gap-x-4 gap-y-2 text-xs text-[#6b7280] underline-offset-2">
-          <span className="cursor-not-allowed no-underline opacity-50">Widerrufsrecht</span>
-          <span className="cursor-not-allowed no-underline opacity-50">Versand</span>
-          <span className="cursor-not-allowed no-underline opacity-50">Datenschutz</span>
-          <span className="cursor-not-allowed no-underline opacity-50">AGB</span>
-          <span className="cursor-not-allowed no-underline opacity-50">Impressum</span>
+        <nav className="mt-10 flex flex-wrap gap-x-4 gap-y-2 text-sm text-[#6b7280] underline-offset-2">
+          <Link href="/widerruf" className="text-primary hover:text-(--primary-hover) hover:underline">
+            Widerrufsrecht
+          </Link>
+          <Link href="/versand" className="text-primary hover:text-(--primary-hover) hover:underline">
+            Versand
+          </Link>
+          <Link href="/datenschutz" className="text-primary hover:text-(--primary-hover) hover:underline">
+            Datenschutz
+          </Link>
+          <Link href="/agb" className="text-primary hover:text-(--primary-hover) hover:underline">
+            AGB
+          </Link>
+          <Link href="/impressum" className="text-primary hover:text-(--primary-hover) hover:underline">
+            Impressum
+          </Link>
         </nav>
       </div>
 

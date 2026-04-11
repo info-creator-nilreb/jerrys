@@ -32,7 +32,7 @@ type NavItem = {
 const mainNav: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: IconDashboard },
   { href: "/admin/products", label: "Katalog", icon: IconCatalog },
-  { label: "Bestellungen", icon: IconOrders, disabled: true },
+  { href: "/admin/orders", label: "Bestellungen", icon: IconOrders },
   { label: "Kunden", icon: IconCustomers, disabled: true },
   { label: "Inhalte", icon: IconContent, disabled: true },
   { label: "Marketing", icon: IconMarketing, disabled: true },

@@ -71,6 +71,10 @@ const sharedProductFields = {
   purchaseStep: z.coerce.number().int().min(1),
   maxOrderQty: z.preprocess(optionalPositiveIntMin1Nullable, z.number().int().min(1).nullable()),
   isActive: z.boolean(),
+  /** Rohwerte aus Formular; Validierung in refineAmazonFields */
+  amazonRatingAverage: z.string(),
+  amazonRatingCount: z.string(),
+  amazonReviewUrl: z.string(),
 };
 
 function refinePricePairs(
@@ -136,7 +140,69 @@ function refinePricePairs(
   }
 }
 
-export const productCoreSchema = z.object(sharedProductFields).superRefine(refinePricePairs);
+function refineAmazonFields(
+  data: {
+    amazonRatingAverage: string;
+    amazonRatingCount: string;
+    amazonReviewUrl: string;
+  },
+  ctx: z.RefinementCtx,
+) {
+  const avgS = data.amazonRatingAverage.trim().replace(",", ".");
+  const cntS = data.amazonRatingCount.trim();
+  const url = data.amazonReviewUrl.trim();
+
+  const hasAvg = avgS !== "";
+  const hasCnt = cntS !== "";
+  if (hasAvg !== hasCnt) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["amazonRatingAverage"],
+      message: "Durchschnittssterne und Anzahl gemeinsam angeben oder beide leer lassen.",
+    });
+    return;
+  }
+  if (hasAvg) {
+    const n = Number(avgS);
+    if (!Number.isFinite(n) || n < 0 || n > 5) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["amazonRatingAverage"],
+        message: "Sterne-Durchschnitt zwischen 0 und 5 (z. B. 4,8).",
+      });
+    }
+    const c = parseInt(cntS, 10);
+    if (!Number.isInteger(c) || c < 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["amazonRatingCount"],
+        message: "Anzahl Bewertungen als ganze Zahl ≥ 0.",
+      });
+    }
+  }
+  if (url !== "") {
+    try {
+      const u = new URL(url);
+      if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error();
+      if (!/amazon\./i.test(u.hostname)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["amazonReviewUrl"],
+          message: "Nur URLs von amazon.de / amazon.com (o. ä.).",
+        });
+      }
+    } catch {
+      ctx.addIssue({ code: "custom", path: ["amazonReviewUrl"], message: "Ungültige URL." });
+    }
+  }
+}
+
+export const productCoreSchema = z
+  .object(sharedProductFields)
+  .superRefine((data, ctx) => {
+    refinePricePairs(data, ctx);
+    refineAmazonFields(data, ctx);
+  });
 
 export const productImageSchema = z.object({
   url: nonEmptyString,
@@ -149,4 +215,7 @@ export const createProductFormSchema = z
     imageUrl: nonEmptyString,
     imageAlt: nonEmptyString,
   })
-  .superRefine(refinePricePairs);
+  .superRefine((data, ctx) => {
+    refinePricePairs(data, ctx);
+    refineAmazonFields(data, ctx);
+  });

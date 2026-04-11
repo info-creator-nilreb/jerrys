@@ -62,6 +62,10 @@ model Product {
 
   isActive    Boolean        @default(true) @map("is_active")
   sortOrder   Int            @default(0) @map("sort_order")
+  /// Manuell gepflegte Amazon-Sterne (0–5) und Anzahl; URL zur Produktseite. Kein automatischer Abruf.
+  amazonRatingAverage Float?   @map("amazon_rating_average")
+  amazonRatingCount   Int?     @map("amazon_rating_count")
+  amazonReviewUrl       String?  @map("amazon_review_url")
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
   images      ProductImage[]
@@ -97,6 +101,14 @@ model Order {
   shippingZip         String      @map("shipping_zip")
   shippingCity        String      @map("shipping_city")
   shippingCountry     String      @default("DE") @map("shipping_country")
+  billingFirstName    String      @map("billing_first_name")
+  billingLastName     String      @map("billing_last_name")
+  billingCompany      String?     @map("billing_company")
+  billingLine1        String      @map("billing_line1")
+  billingLine2        String?     @map("billing_line2")
+  billingZip          String      @map("billing_zip")
+  billingCity         String      @map("billing_city")
+  billingCountry      String      @default("DE") @map("billing_country")
   customerNote        String?     @map("customer_note")
   subtotalGrossCents  Int         @map("subtotal_gross_cents")
   shippingCents       Int         @default(0) @map("shipping_cents")
@@ -106,8 +118,24 @@ model Order {
   idempotencyKey      String?     @unique @map("idempotency_key")
   createdAt           DateTime    @default(now()) @map("created_at")
   items               OrderItem[]
+  emailLogs           EmailLog[]
 
   @@map("orders")
+}
+
+model EmailLog {
+  id           String   @id @default(cuid())
+  orderId      String   @map("order_id")
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  emailType    String   @map("email_type")
+  toEmail      String   @map("to_email")
+  status       String
+  providerId   String?  @map("provider_id")
+  errorMessage String?  @map("error_message")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@unique([orderId, emailType])
+  @@map("email_logs")
 }
 
 model OrderItem {

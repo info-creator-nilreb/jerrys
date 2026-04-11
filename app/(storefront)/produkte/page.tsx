@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { ProductCard } from "@/components/storefront/product-card";
+import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
 
 export const dynamic = "force-dynamic";
@@ -14,10 +14,11 @@ export default async function ProduktePage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-24 md:py-28">
-      <h1 className="text-2xl font-semibold text-(--foreground-heading) md:text-3xl">
+      <StorefrontBreadcrumbs items={[{ href: "/", label: "Start" }, { label: "Produkte" }]} />
+      <h1 className="mt-6 text-2xl font-semibold text-(--foreground-heading) md:text-3xl">
         Produkte
       </h1>
-      <p className="mt-2 max-w-2xl text-(--foreground-muted)">
+      <p className="mt-2 max-w-2xl text-base text-(--foreground-muted) md:text-lg">
         Hochwertige Katzenmöbel – designed und gefertigt in Deutschland.
       </p>
 
@@ -26,18 +27,14 @@ export default async function ProduktePage() {
           Aktuell sind keine Produkte im Shop sichtbar. Bitte später erneut vorbeischauen.
         </p>
       ) : (
-        <div className="mt-10 grid gap-10 md:grid-cols-2">
+        <div className="mt-10 grid items-stretch gap-10 md:grid-cols-2">
           {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
+            <div key={p.id} className="flex h-full min-h-0 w-full flex-1 flex-col self-stretch">
+              <ProductCard product={p} />
+            </div>
           ))}
         </div>
       )}
-
-      <p className="mt-12 text-center text-sm text-(--foreground-muted)">
-        <Link href="/" className="text-primary underline-offset-4 hover:underline">
-          Zur Startseite
-        </Link>
-      </p>
     </div>
   );
 }

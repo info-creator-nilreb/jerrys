@@ -58,8 +58,21 @@ export async function addToCart(
     },
   });
 
+  const rawQtyField = formData.get("quantity");
+  const rawQtyTrimmed = rawQtyField !== null ? String(rawQtyField).trim() : "";
+  const hasExplicitQuantity = rawQtyTrimmed !== "";
+
   let nextQty: number | null;
-  if (existing) {
+  if (hasExplicitQuantity) {
+    const n = Number(rawQtyTrimmed);
+    if (!Number.isFinite(n) || !Number.isInteger(n)) {
+      return { error: "Bitte eine gültige Menge eingeben." };
+    }
+    nextQty = clampToValidQuantity(rules, n);
+    if (nextQty === null || !isValidCartQuantity(rules, nextQty)) {
+      return { error: "Diese Menge ist nicht möglich (Mindestabnahme, Staffelung, Lager)." };
+    }
+  } else if (existing) {
     nextQty = nextQuantityStep(rules, existing.quantity);
   } else {
     nextQty = defaultAddQuantity(rules);
@@ -84,6 +97,7 @@ export async function addToCart(
   revalidatePath("/checkout");
   revalidatePath("/produkte");
   revalidatePath(`/produkte/${product.slug}`);
+  revalidatePath("/");
   revalidatePath("/", "layout");
   return { ok: true };
 }

@@ -47,6 +47,29 @@ function fieldErrorsFromZod(err: z.ZodError): Record<string, string> {
   return out;
 }
 
+/** Aus validierten Formular-Rohwerten für Prisma (Sterne optional, Link optional). */
+function amazonFieldsForPrisma(d: {
+  amazonRatingAverage: string;
+  amazonRatingCount: string;
+  amazonReviewUrl: string;
+}) {
+  const avgS = d.amazonRatingAverage.trim().replace(",", ".");
+  const cntS = d.amazonRatingCount.trim();
+  const url = d.amazonReviewUrl.trim() === "" ? null : d.amazonReviewUrl.trim();
+  if (avgS === "") {
+    return {
+      amazonRatingAverage: null as number | null,
+      amazonRatingCount: null as number | null,
+      amazonReviewUrl: url,
+    };
+  }
+  return {
+    amazonRatingAverage: Math.round(Number(avgS) * 100) / 100,
+    amazonRatingCount: parseInt(cntS, 10),
+    amazonReviewUrl: url,
+  };
+}
+
 async function requireAdminSession(): Promise<void> {
   const session = await auth();
   if (!session?.user) {
@@ -106,6 +129,9 @@ export async function createProduct(
     minOrderQty: formData.get("minOrderQty"),
     purchaseStep: formData.get("purchaseStep"),
     maxOrderQty: formData.get("maxOrderQty"),
+    amazonRatingAverage: formData.get("amazonRatingAverage") ?? "",
+    amazonRatingCount: formData.get("amazonRatingCount") ?? "",
+    amazonReviewUrl: formData.get("amazonReviewUrl") ?? "",
     imageUrl: formData.get("imageUrl"),
     imageAlt: formData.get("imageAlt"),
     isActive: parseIsActiveFromFormData(formData),
@@ -124,6 +150,7 @@ export async function createProduct(
   const lowGross = d.lowest30GrossEuro.trim() === "" ? null : parseEuroInputToCents(d.lowest30GrossEuro);
   const lowNet = d.lowest30NetEuro.trim() === "" ? null : parseEuroInputToCents(d.lowest30NetEuro);
   const description = sanitizeProductDescriptionHtml(d.descriptionHtml);
+  const amazon = amazonFieldsForPrisma(d);
 
   try {
     await getPrisma().product.create({
@@ -149,6 +176,7 @@ export async function createProduct(
         purchaseStep: d.purchaseStep,
         maxOrderQty: d.maxOrderQty,
         isActive: d.isActive,
+        ...amazon,
         images: {
           create: [
             {
@@ -204,6 +232,9 @@ export async function updateProduct(
     minOrderQty: formData.get("minOrderQty"),
     purchaseStep: formData.get("purchaseStep"),
     maxOrderQty: formData.get("maxOrderQty"),
+    amazonRatingAverage: formData.get("amazonRatingAverage") ?? "",
+    amazonRatingCount: formData.get("amazonRatingCount") ?? "",
+    amazonReviewUrl: formData.get("amazonReviewUrl") ?? "",
     isActive: parseIsActiveFromFormData(formData),
   };
 
@@ -220,6 +251,7 @@ export async function updateProduct(
   const lowGross = d.lowest30GrossEuro.trim() === "" ? null : parseEuroInputToCents(d.lowest30GrossEuro);
   const lowNet = d.lowest30NetEuro.trim() === "" ? null : parseEuroInputToCents(d.lowest30NetEuro);
   const description = sanitizeProductDescriptionHtml(d.descriptionHtml);
+  const amazon = amazonFieldsForPrisma(d);
 
   const existing = await getPrisma().product.findUnique({
     where: { id: d.id },
@@ -256,6 +288,7 @@ export async function updateProduct(
         purchaseStep: d.purchaseStep,
         maxOrderQty: d.maxOrderQty,
         isActive: d.isActive,
+        ...amazon,
       },
     });
   } catch (e) {

@@ -61,7 +61,7 @@ export function CheckoutSummaryAside({
       </ul>
 
       <div className="mt-6 border-t border-(--surface-muted) pt-6">
-        <label className="text-xs font-medium text-(--foreground-muted)">Rabattcode oder Gutschein</label>
+        <label className="text-sm font-medium text-(--foreground-muted)">Rabattcode oder Gutschein</label>
         <div className="mt-2 flex gap-2">
           <input
             type="text"
@@ -104,7 +104,7 @@ export function CheckoutSummaryAside({
           </dd>
         </div>
       </dl>
-      <p className="mt-2 text-xs text-(--foreground-muted)">inkl. {formatPrice(taxSum, currency)} MwSt.</p>
+      <p className="mt-2 text-sm text-(--foreground-muted)">inkl. {formatPrice(taxSum, currency)} MwSt.</p>
     </aside>
   );
 }

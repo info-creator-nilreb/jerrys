@@ -12,16 +12,8 @@ export async function SiteHeader() {
 
   return (
     <header className="fixed top-0 right-0 left-0 z-50 border-b border-(--surface-muted) bg-white">
-      <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-3 md:py-3.5">
-        <nav className="min-w-0 justify-self-start" aria-label="Hauptnavigation">
-          <Link
-            href="/produkte"
-            className="text-sm font-medium text-(--foreground-heading) underline-offset-4 hover:text-primary hover:underline"
-          >
-            Produkte
-          </Link>
-        </nav>
-        <Link href="/" className="justify-self-center">
+      <div className="relative mx-auto flex max-w-6xl items-center justify-center px-4 py-3 md:py-3.5">
+        <Link href="/">
           {/* unoptimized: direkt /public, um veraltete /_next/image?url=…png Caches zu umgehen */}
           <Image
             src="/branding/jerrys-wordmark.jpg"
@@ -34,20 +26,18 @@ export async function SiteHeader() {
             unoptimized
           />
         </Link>
-        <div className="flex min-w-0 items-center justify-end">
-          <Link
-            href="/warenkorb"
-            className="relative rounded-md p-2 text-(--foreground-heading) transition-colors hover:text-primary"
-            aria-label={`Warenkorb${cartCount > 0 ? `, ${cartCount} Artikel` : ""}`}
-          >
-            <CartIcon className="size-7" />
-            {cartCount > 0 ? (
-              <span className="absolute top-0.5 right-0.5 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white">
-                {cartCount > 99 ? "99+" : cartCount}
-              </span>
-            ) : null}
-          </Link>
-        </div>
+        <Link
+          href="/warenkorb"
+          className="absolute top-1/2 right-4 -translate-y-1/2 rounded-md p-2 text-(--foreground-heading) transition-colors hover:text-primary md:right-6"
+          aria-label={`Warenkorb${cartCount > 0 ? `, ${cartCount} Artikel` : ""}`}
+        >
+          <CartIcon className="size-7" />
+          {cartCount > 0 ? (
+            <span className="absolute top-0.5 right-0.5 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white">
+              {cartCount > 99 ? "99+" : cartCount}
+            </span>
+          ) : null}
+        </Link>
       </div>
     </header>
   );

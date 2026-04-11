@@ -7,9 +7,15 @@ const storefrontProductCardSelect = {
   subtitle: true,
   priceGrossCents: true,
   currency: true,
+  stockQuantity: true,
+  minOrderQty: true,
+  purchaseStep: true,
+  maxOrderQty: true,
+  amazonRatingAverage: true,
+  amazonRatingCount: true,
+  amazonReviewUrl: true,
   images: {
     orderBy: [{ isCover: "desc" as const }, { sortOrder: "asc" as const }],
-    take: 1,
     select: { url: true, alt: true },
   },
 };

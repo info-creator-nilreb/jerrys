@@ -72,7 +72,7 @@ export function CartLineTableRow({ line }: { line: Line }) {
             {img ? (
               <Image src={img.url} alt={img.alt} fill className="object-cover" sizes="80px" />
             ) : (
-              <div className="flex size-full items-center justify-center text-xs text-(--foreground-muted)">
+              <div className="flex size-full items-center justify-center text-sm text-(--foreground-muted)">
                 —
               </div>
             )}

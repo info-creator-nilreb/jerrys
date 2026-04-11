@@ -40,6 +40,16 @@ export function clampToValidQuantity(product: ProductQuantityRules, desired: num
   return isValidCartQuantity(product, q) ? q : null;
 }
 
+/** Obergrenze für Mengenauswahl (Lager und ggf. Maximalabnahme). */
+export function maxSelectableQuantity(product: ProductQuantityRules): number {
+  if (product.stockQuantity < product.minOrderQty) return product.minOrderQty;
+  const cap =
+    product.maxOrderQty != null
+      ? Math.min(product.stockQuantity, product.maxOrderQty)
+      : product.stockQuantity;
+  return Math.max(product.minOrderQty, cap);
+}
+
 /** Menge für ersten Klick „In den Warenkorb“. */
 export function defaultAddQuantity(product: ProductQuantityRules): number | null {
   return clampToValidQuantity(product, product.minOrderQty);
