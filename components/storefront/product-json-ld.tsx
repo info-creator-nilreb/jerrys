@@ -38,7 +38,6 @@ export function ProductJsonLd({ name, description, slug, priceGrossCents, curren
   return (
     <script
       type="application/ld+json"
-      // eslint-disable-next-line react/no-danger -- statisches JSON-LD aus Serverdaten
       dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />
   );

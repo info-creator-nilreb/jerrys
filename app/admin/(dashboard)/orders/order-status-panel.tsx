@@ -23,10 +23,16 @@ export function OrderStatusPanel({
 
   useEffect(() => {
     if (!state?.ok) return;
-    setFlash(true);
-    router.refresh();
-    const t = window.setTimeout(() => setFlash(false), 3000);
-    return () => window.clearTimeout(t);
+    let offTimer: ReturnType<typeof window.setTimeout> | undefined;
+    const onTimer = window.setTimeout(() => {
+      setFlash(true);
+      router.refresh();
+      offTimer = window.setTimeout(() => setFlash(false), 3000);
+    }, 0);
+    return () => {
+      window.clearTimeout(onTimer);
+      if (offTimer !== undefined) window.clearTimeout(offTimer);
+    };
   }, [state?.ok, router]);
 
   if (allowedNext.length === 0) {

@@ -1,15 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { OPEN_COOKIE_SETTINGS_EVENT } from "@/lib/consent/constants";
 import { buildConsentRecord, hasValidConsentRecord, readConsentFromWindow, writeConsentToWindow } from "@/lib/consent/storage";
 
 type View = "choice" | "granular";
 
+function useClientMounted(): boolean {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+}
+
 export function CookieConsentBanner() {
   const titleId = useId();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useClientMounted();
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<View>("choice");
   const [statistics, setStatistics] = useState(false);
@@ -25,12 +33,10 @@ export function CookieConsentBanner() {
   }, []);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
     if (!mounted) return;
-    syncOpenFromStorage();
+    queueMicrotask(() => {
+      syncOpenFromStorage();
+    });
   }, [mounted, syncOpenFromStorage]);
 
   useEffect(() => {
