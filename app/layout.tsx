@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Source_Sans_3 } from "next/font/google";
+import { canonicalSiteOrigin } from "@/lib/site/canonical-origin";
 import "./globals.css";
 
 const sourceSans = Source_Sans_3({
@@ -8,7 +9,10 @@ const sourceSans = Source_Sans_3({
   display: "swap",
 });
 
+const siteOrigin = canonicalSiteOrigin();
+
 export const metadata: Metadata = {
+  ...(siteOrigin ? { metadataBase: new URL(siteOrigin) } : {}),
   title: {
     default: "jerry's – Katzenmöbel Made in Germany",
     template: "%s | jerry's",

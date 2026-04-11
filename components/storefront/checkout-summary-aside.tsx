@@ -32,18 +32,23 @@ export function CheckoutSummaryAside({
   const total = subtotalCents + shippingCents;
 
   return (
-    <aside className="border-t border-(--surface-muted) bg-(--surface-soft) p-6 lg:border-t-0 lg:border-l lg:pl-8">
+    <aside className="border-t border-(--surface-muted) bg-(--surface-soft) p-6 lg:sticky lg:top-[5.5rem] lg:max-h-[calc(100dvh-5.75rem)] lg:overflow-y-auto lg:self-start lg:border-t-0 lg:border-l lg:pl-8">
       <h2 className="text-sm font-semibold text-(--foreground-heading)">Bestellübersicht</h2>
       <ul className="mt-6 space-y-4">
         {lines.map((line) => {
           const img = line.product.images[0];
           return (
             <li key={line.id} className="flex gap-3">
-              <div className="relative size-16 shrink-0 overflow-hidden rounded-md border border-(--surface-muted) bg-white">
-                {img ? (
-                  <Image src={img.url} alt={img.alt} fill className="object-cover" sizes="64px" />
-                ) : null}
-                <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-[#1f1f1f] text-[10px] font-bold text-white">
+              <div className="relative h-16 w-16 shrink-0">
+                <div className="relative h-full w-full overflow-hidden rounded-md border border-(--surface-muted) bg-white">
+                  {img ? (
+                    <Image src={img.url} alt={img.alt} fill className="object-cover" sizes="64px" />
+                  ) : null}
+                </div>
+                <span
+                  className="absolute -right-1 -top-1 z-10 flex size-5 items-center justify-center rounded-full bg-[#1f1f1f] text-[10px] font-bold text-white ring-2 ring-(--surface-soft)"
+                  aria-label={`Menge: ${line.quantity}`}
+                >
                   {line.quantity}
                 </span>
               </div>

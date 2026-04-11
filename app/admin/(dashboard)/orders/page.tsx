@@ -31,13 +31,25 @@ export default async function AdminOrdersPage() {
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-[#e8eaed] bg-[#f7f8fa] text-[#374151]">
               <tr>
-                <th className="px-4 py-3 font-medium">Bestellnr.</th>
-                <th className="px-4 py-3 font-medium">Datum</th>
-                <th className="px-4 py-3 font-medium">E-Mail</th>
-                <th className="px-4 py-3 font-medium">Positionen</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Summe</th>
-                <th className="px-4 py-3 font-medium" />
+                <th scope="col" className="px-4 py-3 font-medium">
+                  Bestellnr.
+                </th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  Datum
+                </th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  E-Mail
+                </th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  Positionen
+                </th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  Status
+                </th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  Summe
+                </th>
+                <th scope="col" className="px-4 py-3 font-medium" />
               </tr>
             </thead>
             <tbody className="divide-y divide-[#e8eaed]">

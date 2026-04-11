@@ -86,6 +86,15 @@ model Cart {
   @@map("carts")
 }
 
+enum OrderPaymentStatus {
+  pending
+  processing
+  succeeded
+  failed
+  canceled
+  refunded
+}
+
 model Order {
   id                  String      @id @default(cuid())
   orderNumber         String      @unique @map("order_number")
@@ -119,8 +128,52 @@ model Order {
   createdAt           DateTime    @default(now()) @map("created_at")
   items               OrderItem[]
   emailLogs           EmailLog[]
+  statusHistory       OrderStatusHistory[]
+  events              OrderEvent[]
+  payments            OrderPayment[]
 
   @@map("orders")
+}
+
+model OrderPayment {
+  id               String             @id @default(cuid())
+  orderId          String             @map("order_id")
+  order            Order              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider         String             @map("provider")
+  providerRef      String             @map("provider_ref")
+  status           OrderPaymentStatus @map("status")
+  amountGrossCents Int                @map("amount_gross_cents")
+  currency         String             @default("EUR")
+  metadata         Json?              @map("metadata")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+
+  @@index([orderId, createdAt])
+  @@map("order_payments")
+}
+
+model OrderEvent {
+  id        String   @id @default(cuid())
+  orderId   String   @map("order_id")
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  eventType String   @map("event_type")
+  metadata  Json?    @map("metadata")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([orderId, createdAt])
+  @@map("order_events")
+}
+
+model OrderStatusHistory {
+  id         String   @id @default(cuid())
+  orderId    String   @map("order_id")
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStatus String?  @map("from_status")
+  toStatus   String   @map("to_status")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([orderId, createdAt])
+  @@map("order_status_history")
 }
 
 model EmailLog {

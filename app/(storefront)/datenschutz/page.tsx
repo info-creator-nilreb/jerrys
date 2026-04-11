@@ -35,14 +35,26 @@ export default function DatenschutzPage() {
         </p>
       </section>
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-(--foreground-heading)">4. Speicherdauer</h2>
+        <h2 className="text-lg font-semibold text-(--foreground-heading)">4. Cookies und Einwilligung</h2>
+        <p>
+          Wir setzen Cookies bzw. vergleichbare lokale Speicherung ein, soweit für den Betrieb des Shops erforderlich.
+          Für optionale Zwecke (Statistik, Marketing) holen wir eine Einwilligung über den Cookie-Hinweis beim ersten
+          Besuch ein. Ihr könnt die Auswahl jederzeit über „Cookie-Einstellungen“ im Fußbereich anpassen.
+        </p>
+        <p className="text-sm text-(--foreground-muted)">
+          [Betreiber: Abschnitt mit eurer Rechtsberatung zu Rechtsgrundlagen, Speicherdauer der Consent-Information und
+          ggf. eingesetzten Drittanbietern konkretisieren.]
+        </p>
+      </section>
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-(--foreground-heading)">5. Speicherdauer</h2>
         <p>
           [Aufbewahrungsfristen und Löschkonzept – bitte konkretisieren, z. B. handels- und steuerrechtliche
           Aufbewahrungspflichten.]
         </p>
       </section>
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-(--foreground-heading)">5. Rechte der betroffenen Personen</h2>
+        <h2 className="text-lg font-semibold text-(--foreground-heading)">6. Rechte der betroffenen Personen</h2>
         <p>
           Ihr habt das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit
           sowie Widerspruch gegen die Verarbeitung, soweit die gesetzlichen Voraussetzungen erfüllt sind. Zudem besteht

@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import { createLogger, errorMeta } from "@/lib/logging/logger";
+
+const log = createLogger("storefront.error");
 
 function isDatabaseUnreachable(message: string): boolean {
   return (
@@ -20,7 +23,10 @@ export default function StorefrontError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    log.error("route_error_boundary", {
+      digest: error.digest,
+      ...errorMeta(error),
+    });
   }, [error]);
 
   const db = isDatabaseUnreachable(error.message ?? "");

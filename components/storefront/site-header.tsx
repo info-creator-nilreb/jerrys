@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import { HeaderCartFlyout } from "@/components/storefront/header-cart-flyout";
 import { getStorefrontCartBadgeCount } from "@/lib/cart/badge";
-import { CartIcon } from "@/components/storefront/cart-icon";
 
 /** Natürliche Logo-Größe (JPEG, Seitenverhältnis 2:1) */
 const LOGO_W = 256;
@@ -26,18 +26,7 @@ export async function SiteHeader() {
             unoptimized
           />
         </Link>
-        <Link
-          href="/warenkorb"
-          className="absolute top-1/2 right-4 -translate-y-1/2 rounded-md p-2 text-(--foreground-heading) transition-colors hover:text-primary md:right-6"
-          aria-label={`Warenkorb${cartCount > 0 ? `, ${cartCount} Artikel` : ""}`}
-        >
-          <CartIcon className="size-7" />
-          {cartCount > 0 ? (
-            <span className="absolute top-0.5 right-0.5 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white">
-              {cartCount > 99 ? "99+" : cartCount}
-            </span>
-          ) : null}
-        </Link>
+        <HeaderCartFlyout cartBadgeCount={cartCount} />
       </div>
     </header>
   );

@@ -29,9 +29,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const admin = await getPrisma().adminUser.findUnique({
             where: { email: parsed.data.email },
           });
-          if (!admin?.isActive) return null;
+          if (!admin?.isActive) {
+            log.warn("admin_login_rejected", { email: parsed.data.email });
+            return null;
+          }
           const valid = await compare(parsed.data.password, admin.passwordHash);
-          if (!valid) return null;
+          if (!valid) {
+            log.warn("admin_login_rejected", { email: parsed.data.email });
+            return null;
+          }
           await getPrisma().adminUser.update({
             where: { id: admin.id },
             data: { lastLoginAt: new Date() },

@@ -1,5 +1,13 @@
 type LogLevel = "debug" | "info" | "warn" | "error";
 
+/** Kompakte Fehler-Metadaten für JSON-Logs (kein vollständiger Stack). */
+export function errorMeta(e: unknown): Record<string, unknown> {
+  if (e instanceof Error) {
+    return { errName: e.name, errMessage: e.message };
+  }
+  return { errMessage: String(e) };
+}
+
 function write(level: LogLevel, scope: string, message: string, meta?: Record<string, unknown>) {
   const payload = {
     level,

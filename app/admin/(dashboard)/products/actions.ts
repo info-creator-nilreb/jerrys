@@ -16,7 +16,10 @@ import {
 } from "@/lib/catalog/schemas";
 import { sanitizeProductDescriptionHtml } from "@/lib/catalog/sanitize-html";
 import { getPrisma } from "@/lib/db/prisma";
+import { createLogger, errorMeta } from "@/lib/logging/logger";
 import { nonEmptyString } from "@/lib/validation/form";
+
+const log = createLogger("admin.products");
 
 function isUniqueConstraintError(e: unknown): boolean {
   return (
@@ -505,7 +508,7 @@ export async function uploadProductImages(
       isFirst = false;
     }
   } catch (e) {
-    console.error(e);
+    log.error("product_image_upload_failed", { productId, ...errorMeta(e) });
     return { error: "Upload fehlgeschlagen." };
   }
 

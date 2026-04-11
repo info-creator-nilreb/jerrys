@@ -52,16 +52,25 @@ export default async function WarenkorbPage() {
               </colgroup>
               <thead>
                 <tr className="border-b border-[#e5e7eb]">
-                  <th className="pb-3 pr-4 text-[11px] font-medium tracking-wide text-[#9ca3af] uppercase">
+                  <th scope="col" className="pb-3 pr-4 text-[11px] font-medium tracking-wide text-[#9ca3af] uppercase">
                     Produkt
                   </th>
-                  <th className="min-w-[10rem] px-3 pb-3 text-right text-[11px] font-medium tracking-wide text-[#9ca3af] uppercase">
+                  <th
+                    scope="col"
+                    className="min-w-[10rem] px-3 pb-3 text-right text-[11px] font-medium tracking-wide text-[#9ca3af] uppercase"
+                  >
                     Preis
                   </th>
-                  <th className="min-w-[11.5rem] px-3 pb-3 text-center text-[11px] font-medium tracking-wide text-[#9ca3af] uppercase">
+                  <th
+                    scope="col"
+                    className="min-w-[11.5rem] px-3 pb-3 text-center text-[11px] font-medium tracking-wide text-[#9ca3af] uppercase"
+                  >
                     Menge
                   </th>
-                  <th className="min-w-[10rem] px-3 pb-3 pr-0 text-right text-[11px] font-medium tracking-wide text-[#9ca3af] uppercase">
+                  <th
+                    scope="col"
+                    className="min-w-[10rem] px-3 pb-3 pr-0 text-right text-[11px] font-medium tracking-wide text-[#9ca3af] uppercase"
+                  >
                     Total
                   </th>
                 </tr>

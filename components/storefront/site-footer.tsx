@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CookieSettingsButton } from "@/components/storefront/cookie-consent/cookie-settings-button";
 
 const legalLinks = [
   { href: "/impressum", label: "Impressum" },
@@ -29,6 +30,7 @@ export function SiteFooter() {
               {label}
             </Link>
           ))}
+          <CookieSettingsButton className="font-medium text-primary underline-offset-4 transition-colors hover:text-(--primary-hover) hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#182d4d]" />
         </nav>
         <p className="mt-6 text-sm text-white/60 sm:text-base">© {new Date().getFullYear()} jerry&apos;s</p>
       </div>

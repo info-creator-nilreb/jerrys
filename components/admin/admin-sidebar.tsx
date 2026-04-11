@@ -9,13 +9,9 @@ import {
   IconCatalog,
   IconChevronLeft,
   IconChevronUp,
-  IconContent,
   IconCustomers,
   IconDashboard,
-  IconExtensions,
-  IconMarketing,
   IconOrders,
-  IconSettings,
 } from "@/components/admin/admin-nav-icons";
 
 const STORAGE_KEY = "jerrys-admin-sidebar-collapsed";
@@ -23,21 +19,16 @@ const STORAGE_KEY = "jerrys-admin-sidebar-collapsed";
 const NAVY = "#182d4d";
 
 type NavItem = {
-  href?: string;
+  href: string;
   label: string;
   icon: ComponentType<{ className?: string }>;
-  disabled?: boolean;
 };
 
 const mainNav: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: IconDashboard },
   { href: "/admin/products", label: "Katalog", icon: IconCatalog },
   { href: "/admin/orders", label: "Bestellungen", icon: IconOrders },
-  { label: "Kunden", icon: IconCustomers, disabled: true },
-  { label: "Inhalte", icon: IconContent, disabled: true },
-  { label: "Marketing", icon: IconMarketing, disabled: true },
-  { label: "Erweiterungen", icon: IconExtensions, disabled: true },
-  { label: "Einstellungen", icon: IconSettings, disabled: true },
+  { href: "/admin/customers", label: "Kunden", icon: IconCustomers },
 ];
 
 function userInitials(name: string, email: string): string {
@@ -143,18 +134,6 @@ export function AdminSidebar({
       <nav className="flex flex-1 flex-col overflow-y-auto py-3" aria-label="Hauptnavigation">
         {mainNav.map((item) => {
           const Icon = item.icon;
-          if (item.disabled || !item.href) {
-            return (
-              <span
-                key={item.label}
-                title={`${item.label} — bald verfügbar`}
-                className={`flex w-full items-center gap-3 py-2.5 text-sm text-white/35 ${collapsed ? "justify-center px-0" : "px-3"}`}
-              >
-                <Icon className="size-[1.35rem] shrink-0" />
-                {!collapsed ? <span className="truncate">{item.label}</span> : null}
-              </span>
-            );
-          }
           const active = isActive(item.href);
           return (
             <Link

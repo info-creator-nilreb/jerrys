@@ -6,7 +6,9 @@ import { sanitizeProductDescriptionHtml } from "@/lib/catalog/sanitize-html";
 import { defaultAddQuantity } from "@/lib/cart/quantity";
 import { AddToCartForm } from "@/components/storefront/add-to-cart-form";
 import { AmazonRatingDisplay } from "@/components/storefront/amazon-rating-display";
+import { ProductJsonLd } from "@/components/storefront/product-json-ld";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
+import { absoluteUrl } from "@/lib/site/canonical-origin";
 
 export const dynamic = "force-dynamic";
 
@@ -27,9 +29,26 @@ export async function generateMetadata({
   if (!product) {
     return { title: "Produkt" };
   }
+  const desc = product.subtitle ?? textPreviewFromHtml(product.description);
+  const cover = product.images[0];
+  const ogImage = cover ? [{ url: absoluteUrl(cover.url), alt: cover.alt }] : undefined;
   return {
     title: product.title,
-    description: product.subtitle ?? textPreviewFromHtml(product.description),
+    description: desc,
+    alternates: { canonical: `/produkte/${product.slug}` },
+    openGraph: {
+      title: product.title,
+      description: desc,
+      type: "website",
+      url: absoluteUrl(`/produkte/${product.slug}`),
+      images: ogImage,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: product.title,
+      description: desc,
+      images: cover ? [absoluteUrl(cover.url)] : undefined,
+    },
   };
 }
 
@@ -57,6 +76,15 @@ export default async function ProduktDetailPage({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-24 md:py-28">
+      <ProductJsonLd
+        name={product.title}
+        description={product.subtitle ?? textPreviewFromHtml(product.description)}
+        slug={product.slug}
+        priceGrossCents={product.priceGrossCents}
+        currency={product.currency}
+        stockQuantity={product.stockQuantity}
+        images={product.images.map((i) => ({ url: i.url, alt: i.alt }))}
+      />
       <StorefrontBreadcrumbs
         items={[
           { href: "/", label: "Start" },

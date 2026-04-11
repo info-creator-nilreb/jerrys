@@ -1,15 +1,13 @@
 import { formatPrice } from "@/lib/catalog/format";
 import { getPrisma } from "@/lib/db/prisma";
 import { EMAIL_ORDER_CONFIRMATION } from "@/lib/email/email-types";
+import {
+  findOrderEmailLog,
+  isOrderEmailAlreadySentSuccessfully,
+  upsertOrderEmailDeliveryLog,
+} from "@/lib/email/order-email-log";
 import { sendTransactionalEmail } from "@/lib/email/provider";
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+import { escapeHtmlForEmail, publicSiteBaseUrl } from "@/lib/email/template-utils";
 
 function paymentLabel(method: string): string {
   switch (method) {
@@ -22,15 +20,6 @@ function paymentLabel(method: string): string {
     default:
       return method;
   }
-}
-
-function publicSiteBase(): string {
-  const a = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
-  if (a) return a;
-  const b = process.env.AUTH_URL?.trim().replace(/\/$/, "");
-  if (b) return b;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return "";
 }
 
 type OrderForEmail = {
@@ -50,7 +39,7 @@ type OrderForEmail = {
 };
 
 function buildBodies(order: OrderForEmail): { subject: string; text: string; html: string } {
-  const base = publicSiteBase();
+  const base = publicSiteBaseUrl();
   const successPath = `/checkout/erfolg?nr=${encodeURIComponent(order.orderNumber)}`;
   const successUrl = base ? `${base}${successPath}` : successPath;
 
@@ -82,14 +71,14 @@ function buildBodies(order: OrderForEmail): { subject: string; text: string; htm
   ].join("\n");
 
   const html = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;line-height:1.5;color:#111">
-<p>Hallo ${escapeHtml(order.shippingFirstName)},</p>
+<p>Hallo ${escapeHtmlForEmail(order.shippingFirstName)},</p>
 <p>vielen Dank für deine Bestellung bei jerry's.</p>
-<p><strong>Bestellnummer:</strong> ${escapeHtml(order.orderNumber)}<br/>
-<strong>Gesamtbetrag:</strong> ${escapeHtml(formatPrice(order.totalGrossCents, order.currency))} inkl. MwSt.<br/>
-<strong>Zahlungsart:</strong> ${escapeHtml(paymentLabel(order.paymentMethod))}</p>
+<p><strong>Bestellnummer:</strong> ${escapeHtmlForEmail(order.orderNumber)}<br/>
+<strong>Gesamtbetrag:</strong> ${escapeHtmlForEmail(formatPrice(order.totalGrossCents, order.currency))} inkl. MwSt.<br/>
+<strong>Zahlungsart:</strong> ${escapeHtmlForEmail(paymentLabel(order.paymentMethod))}</p>
 <h3 style="font-size:14px;margin:1.25rem 0 0.5rem">Positionen</h3>
-<pre style="white-space:pre-wrap;font-family:inherit;margin:0">${escapeHtml(lines)}</pre>
-<p style="margin-top:1.25rem"><a href="${escapeHtml(successUrl)}">Zur Bestellbestätigung</a></p>
+<pre style="white-space:pre-wrap;font-family:inherit;margin:0">${escapeHtmlForEmail(lines)}</pre>
+<p style="margin-top:1.25rem"><a href="${escapeHtmlForEmail(successUrl)}">Zur Bestellbestätigung</a></p>
 <p>Liebe Grüße<br/>jerry's</p>
 </body></html>`;
 
@@ -97,23 +86,20 @@ function buildBodies(order: OrderForEmail): { subject: string; text: string; htm
 }
 
 /**
- * Sendet die Bestellbestätigung höchstens einmal pro Bestellung (Dedupe über `email_logs`).
+ * Sendet die Bestellbestätigung höchstens einmal erfolgreich pro Bestellung (Dedupe über `email_logs`).
  */
 export async function sendOrderConfirmationIfNeeded(orderId: string): Promise<void> {
   const prisma = getPrisma();
 
-  const existing = await prisma.emailLog.findUnique({
-    where: {
-      orderId_emailType: { orderId, emailType: EMAIL_ORDER_CONFIRMATION },
-    },
-  });
-  if (existing?.status === "sent") return;
+  const existing = await findOrderEmailLog(prisma, orderId, EMAIL_ORDER_CONFIRMATION);
+  if (isOrderEmailAlreadySentSuccessfully(existing)) return;
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: { items: { orderBy: { id: "asc" } } },
   });
   if (!order || !order.items.length) return;
+  if (order.status === "pending_payment") return;
 
   const { subject, text, html } = buildBodies(order);
 
@@ -127,23 +113,10 @@ export async function sendOrderConfirmationIfNeeded(orderId: string): Promise<vo
     };
   }
 
-  await prisma.emailLog.upsert({
-    where: {
-      orderId_emailType: { orderId, emailType: EMAIL_ORDER_CONFIRMATION },
-    },
-    create: {
-      orderId,
-      emailType: EMAIL_ORDER_CONFIRMATION,
-      toEmail: order.email,
-      status: result.status,
-      providerId: result.providerId ?? null,
-      errorMessage: result.errorMessage ?? null,
-    },
-    update: {
-      status: result.status,
-      toEmail: order.email,
-      providerId: result.providerId ?? null,
-      errorMessage: result.errorMessage ?? null,
-    },
+  await upsertOrderEmailDeliveryLog(prisma, {
+    orderId,
+    emailType: EMAIL_ORDER_CONFIRMATION,
+    toEmail: order.email,
+    result,
   });
 }

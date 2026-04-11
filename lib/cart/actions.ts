@@ -10,6 +10,7 @@ import {
   nextQuantityStep,
   previousQuantityStep,
 } from "@/lib/cart/quantity";
+import { getCartWithLines } from "@/lib/cart/cart-queries";
 import { getPrisma } from "@/lib/db/prisma";
 import { nonEmptyString } from "@/lib/validation/form";
 
@@ -235,6 +236,57 @@ export async function incrementCartLineQuantity(formData: FormData) {
   revalidatePath("/warenkorb");
   revalidatePath("/checkout");
   revalidatePath("/", "layout");
+}
+
+export type CartFlyoutPreview = {
+  lines: Array<{
+    lineId: string;
+    productSlug: string;
+    title: string;
+    quantity: number;
+    imageUrl: string | null;
+    imageAlt: string | null;
+    unitPriceGrossCents: number;
+    lineTotalGrossCents: number;
+    currency: string;
+  }>;
+  subtotalGrossCents: number;
+  currency: string;
+};
+
+/** Für den Header-Warenkorb (Flyout); liest den aktuellen Cookie-Warenkorb. */
+export async function getCartFlyoutPreview(): Promise<CartFlyoutPreview> {
+  const cartId = await getCartIdFromCookie();
+  if (!cartId) {
+    return { lines: [], subtotalGrossCents: 0, currency: "EUR" };
+  }
+  const cart = await getCartWithLines(cartId);
+  if (!cart?.lines.length) {
+    return { lines: [], subtotalGrossCents: 0, currency: "EUR" };
+  }
+
+  const active = cart.lines.filter((l) => l.product.isActive);
+  let subtotal = 0;
+  const currency = active[0]?.product.currency ?? "EUR";
+
+  const lines = active.map((l) => {
+    const gross = l.quantity * l.product.priceGrossCents;
+    subtotal += gross;
+    const img = l.product.images[0];
+    return {
+      lineId: l.id,
+      productSlug: l.product.slug,
+      title: l.product.title,
+      quantity: l.quantity,
+      imageUrl: img?.url ?? null,
+      imageAlt: img?.alt ?? null,
+      unitPriceGrossCents: l.product.priceGrossCents,
+      lineTotalGrossCents: gross,
+      currency: l.product.currency,
+    };
+  });
+
+  return { lines, subtotalGrossCents: subtotal, currency };
 }
 
 export async function decrementCartLineQuantity(formData: FormData) {

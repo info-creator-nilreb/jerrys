@@ -1,3 +1,4 @@
+import { CookieConsentBanner } from "@/components/storefront/cookie-consent/cookie-consent-banner";
 import { SiteFooter } from "@/components/storefront/site-footer";
 import { SiteHeader } from "@/components/storefront/site-header";
 
@@ -7,6 +8,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
       <SiteHeader />
       <main className="flex-1">{children}</main>
       <SiteFooter />
+      <CookieConsentBanner />
     </>
   );
 }

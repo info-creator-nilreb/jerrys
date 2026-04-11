@@ -7,11 +7,18 @@ import { checkoutFormSchema } from "@/lib/checkout/schemas";
 import { generateOrderNumber } from "@/lib/checkout/order-number";
 import { vatCentsFromGross } from "@/lib/catalog/pricing";
 import { sendOrderConfirmationIfNeeded } from "@/lib/email/order-confirmation";
+import { ORDER_EVENT_PLACED } from "@/lib/orders/order-events";
 import { getPrisma } from "@/lib/db/prisma";
+import { createLogger, errorMeta } from "@/lib/logging/logger";
+import { createStripeCheckoutSession } from "@/lib/payments/stripe-checkout-session";
+import { getStripe } from "@/lib/payments/stripe-client";
+import { usesStripeHostedCheckout } from "@/lib/payments/online-payment-method";
 import { z } from "zod";
 
+const log = createLogger("checkout");
+
 export type CheckoutActionState =
-  | { ok: true; orderNumber: string }
+  | { ok: true; orderNumber: string; stripeCheckoutUrl?: string }
   | { ok: false; error: string; fieldErrors?: Record<string, string> }
   | null;
 
@@ -58,12 +65,74 @@ export async function submitCheckout(
   }
 
   const d = parsed.data;
+  const useStripeCheckout = usesStripeHostedCheckout(d.paymentMethod) && getStripe() !== null;
 
   const existing = await getPrisma().order.findUnique({
     where: { idempotencyKey: d.idempotencyKey },
-    select: { orderNumber: true, id: true },
+    select: {
+      id: true,
+      orderNumber: true,
+      status: true,
+      email: true,
+      totalGrossCents: true,
+      currency: true,
+      items: {
+        orderBy: { id: "asc" },
+        select: {
+          productTitleSnapshot: true,
+          quantity: true,
+          unitPriceGrossCents: true,
+        },
+      },
+    },
   });
+
   if (existing) {
+    if (existing.status === "pending_payment" && useStripeCheckout) {
+      const stripe = getStripe();
+      if (!stripe) {
+        return { ok: true, orderNumber: existing.orderNumber };
+      }
+      try {
+        const session = await createStripeCheckoutSession(stripe, {
+          orderId: existing.id,
+          orderNumber: existing.orderNumber,
+          email: existing.email,
+          currency: existing.currency,
+          lines: existing.items.map((i) => ({
+            title: i.productTitleSnapshot,
+            quantity: i.quantity,
+            unitAmountGrossCents: i.unitPriceGrossCents,
+          })),
+        });
+        await getPrisma().orderPayment.create({
+          data: {
+            orderId: existing.id,
+            provider: "stripe",
+            providerRef: session.id,
+            status: "pending",
+            amountGrossCents: existing.totalGrossCents,
+            currency: existing.currency,
+          },
+        });
+        const url = session.url;
+        if (!url) {
+          throw new Error("Stripe-Checkout ohne redirect-URL.");
+        }
+        return { ok: true, orderNumber: existing.orderNumber, stripeCheckoutUrl: url };
+      } catch (e) {
+        log.error("stripe_checkout_resume_failed", {
+          orderId: existing.id,
+          ...errorMeta(e),
+        });
+        return { ok: false, error: "Zahlungsstart fehlgeschlagen. Bitte erneut versuchen." };
+      }
+    }
+
+    log.info("submit_idempotent_hit", {
+      orderId: existing.id,
+      orderNumber: existing.orderNumber,
+    });
     await sendOrderConfirmationIfNeeded(existing.id);
     return { ok: true, orderNumber: existing.orderNumber };
   }
@@ -100,10 +169,13 @@ export async function submitCheckout(
 
   const shippingCents = 0;
   const totalGross = subtotal + shippingCents;
+  const orderCurrency = activeLines[0]!.product.currency;
 
   const orderNumber = generateOrderNumber();
 
   let newOrderId = "";
+
+  const orderStatus = useStripeCheckout ? "pending_payment" : "bestaetigt";
 
   try {
     await getPrisma().$transaction(async (tx) => {
@@ -113,7 +185,8 @@ export async function submitCheckout(
           email: d.email,
           phone: d.phone,
           paymentMethod: d.paymentMethod,
-          status: "bestaetigt",
+          status: orderStatus,
+          currency: orderCurrency,
           shippingFirstName: d.shippingFirstName,
           shippingLastName: d.shippingLastName,
           shippingCompany: d.shippingCompany,
@@ -146,22 +219,98 @@ export async function submitCheckout(
               lineTotalGrossCents: line.quantity * line.product.priceGrossCents,
             })),
           },
+          statusHistory: {
+            create: [{ fromStatus: null, toStatus: orderStatus }],
+          },
+          events: {
+            create: [
+              {
+                eventType: ORDER_EVENT_PLACED,
+                metadata: { orderNumber, channel: "checkout" },
+              },
+            ],
+          },
         },
       });
       newOrderId = created.id;
 
-      for (const line of activeLines) {
-        await tx.product.update({
-          where: { id: line.product.id },
-          data: { stockQuantity: { decrement: line.quantity } },
-        });
+      if (!useStripeCheckout) {
+        for (const line of activeLines) {
+          await tx.product.update({
+            where: { id: line.product.id },
+            data: { stockQuantity: { decrement: line.quantity } },
+          });
+        }
       }
 
       await tx.cartLine.deleteMany({ where: { cartId } });
     });
   } catch (e) {
-    console.error(e);
+    log.error("order_create_failed", {
+      orderNumber,
+      idempotencyKey: d.idempotencyKey,
+      ...errorMeta(e),
+    });
     return { ok: false, error: "Bestellung konnte nicht gespeichert werden. Bitte erneut versuchen." };
+  }
+
+  log.info("order_created", {
+    orderId: newOrderId,
+    orderNumber,
+    lineCount: activeLines.length,
+    paymentFlow: useStripeCheckout ? "stripe_hosted" : "immediate",
+  });
+
+  let stripeCheckoutUrl: string | undefined;
+  if (useStripeCheckout) {
+    const stripe = getStripe();
+    if (!stripe) {
+      log.error("stripe_missing_after_order", { orderId: newOrderId });
+      return {
+        ok: false,
+        error:
+          "Online-Zahlung ist gerade nicht verfügbar. Bitte den Support mit deiner Bestellnummer kontaktieren oder Vorkasse wählen.",
+      };
+    }
+    try {
+      const session = await createStripeCheckoutSession(stripe, {
+        orderId: newOrderId,
+        orderNumber,
+        email: d.email,
+        currency: orderCurrency,
+        lines: activeLines.map((line) => ({
+          title: line.product.title,
+          quantity: line.quantity,
+          unitAmountGrossCents: line.product.priceGrossCents,
+        })),
+      });
+      await getPrisma().orderPayment.create({
+        data: {
+          orderId: newOrderId,
+          provider: "stripe",
+          providerRef: session.id,
+          status: "pending",
+          amountGrossCents: totalGross,
+          currency: orderCurrency,
+        },
+      });
+      const url = session.url;
+      if (!url) {
+        throw new Error("Stripe-Checkout ohne redirect-URL.");
+      }
+      stripeCheckoutUrl = url;
+    } catch (e) {
+      log.error("stripe_checkout_session_failed", {
+        orderId: newOrderId,
+        orderNumber,
+        ...errorMeta(e),
+      });
+      return {
+        ok: false,
+        error:
+          "Die Bestellung wurde angelegt, der Zahlungsstart ist fehlgeschlagen. Bitte mit derselben Bestellung erneut auf „Jetzt bestellen“ klicken oder den Support kontaktieren.",
+      };
+    }
   }
 
   revalidatePath("/warenkorb");
@@ -172,5 +321,9 @@ export async function submitCheckout(
 
   await sendOrderConfirmationIfNeeded(newOrderId);
 
-  return { ok: true, orderNumber };
+  return {
+    ok: true,
+    orderNumber,
+    ...(stripeCheckoutUrl ? { stripeCheckoutUrl } : {}),
+  };
 }

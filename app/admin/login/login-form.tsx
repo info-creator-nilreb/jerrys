@@ -82,7 +82,7 @@ export function AdminLoginForm() {
       <div className="mb-10 flex justify-center lg:mb-12">
         <Image
           src="/branding/jerrys-wordmark.jpg"
-          alt="jerry&apos;s"
+          alt="jerry's"
           width={220}
           height={110}
           className="h-10 w-auto"

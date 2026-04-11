@@ -1,12 +1,31 @@
+import nodemailer from "nodemailer";
+
+import { createLogger } from "@/lib/logging/logger";
+
+const log = createLogger("email.provider");
+
+function recipientDomain(to: string): string {
+  const at = to.lastIndexOf("@");
+  return at > 0 ? to.slice(at + 1) : "unknown";
+}
+
 export type SendTransactionalResult = {
   status: "sent" | "failed" | "skipped_no_provider";
   providerId?: string;
   errorMessage?: string | null;
 };
 
+function smtpConfigured(): boolean {
+  const host = process.env.SMTP_HOST?.trim();
+  const user = process.env.SMTP_USER?.trim();
+  const pass = process.env.SMTP_PASS?.trim();
+  const from = process.env.MAIL_FROM?.trim();
+  return Boolean(host && user && pass && from);
+}
+
 /**
- * Versand über Resend (REST, kein SDK). Ohne `RESEND_API_KEY` wird nicht gesendet,
- * der Aufrufer protokolliert `skipped_no_provider`.
+ * Transaktionale E-Mails: zuerst SMTP (z. B. Gmail, Port 587 + STARTTLS), sonst Resend (REST).
+ * Ohne vollständige SMTP- oder Resend-Konfiguration wird nicht gesendet (`skipped_no_provider`).
  */
 export async function sendTransactionalEmail(params: {
   to: string;
@@ -14,14 +33,61 @@ export async function sendTransactionalEmail(params: {
   text: string;
   html: string;
 }): Promise<SendTransactionalResult> {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
   const from = process.env.MAIL_FROM?.trim();
+
+  if (smtpConfigured()) {
+    const host = process.env.SMTP_HOST!.trim();
+    const port = Number(process.env.SMTP_PORT?.trim() || "587");
+    const user = process.env.SMTP_USER!.trim();
+    const pass = process.env.SMTP_PASS!.trim();
+    const secure = process.env.SMTP_SECURE === "true";
+
+    try {
+      const transporter = nodemailer.createTransport({
+        host,
+        port,
+        secure,
+        auth: { user, pass },
+        requireTLS: !secure,
+      });
+      const info = await transporter.sendMail({
+        from: from!,
+        to: params.to,
+        subject: params.subject,
+        text: params.text,
+        html: params.html,
+      });
+      return {
+        status: "sent",
+        providerId: info.messageId || undefined,
+        errorMessage: null,
+      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.error("transactional_smtp_failed", {
+        subject: params.subject,
+        recipientDomain: recipientDomain(params.to),
+        providerMessage: msg.slice(0, 500),
+      });
+      return { status: "failed", errorMessage: msg.slice(0, 4000) };
+    }
+  }
+
+  const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) {
-    console.info("[email] skipped (RESEND_API_KEY unset)", { to: params.to, subject: params.subject });
+    log.info("transactional_skipped", {
+      reason: "no_email_provider",
+      subject: params.subject,
+      recipientDomain: recipientDomain(params.to),
+    });
     return { status: "skipped_no_provider", errorMessage: null };
   }
   if (!from) {
-    console.warn("[email] skipped (MAIL_FROM unset)");
+    log.warn("transactional_skipped", {
+      reason: "mail_from_unset",
+      subject: params.subject,
+      recipientDomain: recipientDomain(params.to),
+    });
     return { status: "skipped_no_provider", errorMessage: "MAIL_FROM unset" };
   }
 
@@ -46,6 +112,12 @@ export async function sendTransactionalEmail(params: {
       json && typeof json === "object" && "message" in json
         ? String((json as { message: unknown }).message)
         : `${res.status} ${res.statusText}`;
+    log.error("transactional_send_failed", {
+      httpStatus: res.status,
+      subject: params.subject,
+      recipientDomain: recipientDomain(params.to),
+      providerMessage: msg.slice(0, 500),
+    });
     return { status: "failed", errorMessage: msg.slice(0, 4000) };
   }
 

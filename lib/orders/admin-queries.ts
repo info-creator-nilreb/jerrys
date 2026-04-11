@@ -27,6 +27,9 @@ export async function getOrderDetailForAdmin(id: string) {
         },
       },
       emailLogs: { orderBy: { createdAt: "desc" } },
+      statusHistory: { orderBy: { createdAt: "asc" } },
+      events: { orderBy: { createdAt: "asc" } },
+      payments: { orderBy: { createdAt: "desc" } },
     },
   });
 }
