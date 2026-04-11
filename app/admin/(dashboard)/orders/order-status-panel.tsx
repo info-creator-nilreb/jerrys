@@ -23,7 +23,7 @@ export function OrderStatusPanel({
 
   useEffect(() => {
     if (!state?.ok) return;
-    let offTimer: ReturnType<typeof window.setTimeout> | undefined;
+    let offTimer: number | undefined;
     const onTimer = window.setTimeout(() => {
       setFlash(true);
       router.refresh();
