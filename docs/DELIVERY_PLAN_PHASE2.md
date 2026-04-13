@@ -24,7 +24,7 @@ Fortführung von [DELIVERY_PLAN.md](./DELIVERY_PLAN.md) (Epics 1–6). Gleiche P
 
 | Story | Kurz | Status |
 |-------|------|--------|
-| 1 | Consent-Konzept & Texte | [CONSENT_CONCEPT.md](./CONSENT_CONCEPT.md) vorhanden; Datenschutzseite um Cookie-Abschnitt ergänzen falls noch offen. |
+| 1 | Consent-Konzept & Texte | [CONSENT_CONCEPT.md](./CONSENT_CONCEPT.md) vorhanden; Datenschutz-HTML um Abschnitt „Hinweis zum Cookie-Banner“ (Banner, `localStorage`, Kategorien, Footer-Link) ergänzt. |
 | 2–4 | State, Banner, Footer | `CookieConsentBanner` im Storefront-Layout, `localStorage` + Versionierung (`lib/consent/`), Cookie-Einstellungen in der Fußzeile. |
 | 5 | Drittanbieter-Skripte | Vorbereitet (`consentAllowsStatistics` / Marketing); GTM/Matomo erst bei echter Einbindung. |
 | 6 | Tests | Vitest `consent-storage`; Playwright `tests/e2e/cookie-consent.spec.ts`. |
@@ -75,7 +75,7 @@ Fortführung von [DELIVERY_PLAN.md](./DELIVERY_PLAN.md) (Epics 1–6). Gleiche P
 | Story | Kurz | Status |
 |-------|------|--------|
 | 2 | Prisma `OrderPayment` | Modell + Migration `order_payments`. |
-| 3–4 | Checkout & Rückkehr | Zahlungsart PayPal mit `PAYPAL_CLIENT_ID` + `PAYPAL_CLIENT_SECRET` → `pending_payment`, Redirect zu PayPal; `GET /checkout/paypal-rueckkehr` mit Capture; Finalisierung `paid` + Lager + Bestätigungsmail. Vorkasse unverändert. Optional: PayPal-Webhooks ergänzen. |
+| 3–4 | Checkout & Rückkehr | Zahlungsart PayPal mit `PAYPAL_CLIENT_ID` + `PAYPAL_CLIENT_SECRET` → `pending_payment`, Redirect zu PayPal; `GET /checkout/paypal-rueckkehr` mit Capture; Finalisierung `paid` + **Verfügbarer Bestand** (`available_quantity`) + Bestätigungsmail; physisches Lager (`stock_quantity`) bei Status **shipped**. Vorkasse unverändert. Optional: PayPal-Webhooks ergänzen. |
 | 5 | Admin & E-Mail | Admin-Bestellungen inkl. Zahlungszeilen; E-Mail erst nach `paid` bei Online-Zahlung. |
 | 6 | Sicherheit & Tests | Integrationstest PayPal-Rückkehr-Route; erweiterte E2E optional. |
 
