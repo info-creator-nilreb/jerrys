@@ -58,9 +58,6 @@ model Product {
   availableQuantity Int      @default(0) @map("available_quantity")
   deliveryTimeKey  String?   @map("delivery_time_key")
   restockDays      Int?      @map("restock_days")
-  freeShipping     Boolean   @default(false) @map("free_shipping")
-  /// ISO-3166-1-alpha-2 (z. B. DE, AT). Schnittmenge über alle Warenkorbzeilen = Checkout-Länderauswahl.
-  shippingCountryCodes String[] @default(["DE"]) @map("shipping_country_codes")
   minOrderQty      Int       @default(1) @map("min_order_qty")
   purchaseStep     Int       @default(1) @map("purchase_step")
   maxOrderQty      Int?      @map("max_order_qty")
@@ -89,6 +86,20 @@ model Product {
   orderItems  OrderItem[]
 
   @@map("products")
+}
+
+/// Globale Versandkonfiguration (genau eine Zeile, id = default).
+model ShopShippingSettings {
+  id     String @id
+  /// Aktive Lieferländer (ISO-3166-1-alpha-2), Checkout-Auswahl.
+  shippingCountryCodes String[] @default(["DE"]) @map("shipping_country_codes")
+  /// Brutto-Versandkosten in Cent pro Land, z. B. {"DE":499,"AT":899}
+  shippingRatesCentsByCountry Json @default("{}") @map("shipping_rates_cents_by_country")
+  /// Ab diesem Warenkorb-Brutto (Cent) entfällt der Versand (optional).
+  freeShippingFromSubtotalGrossCents Int? @map("free_shipping_from_subtotal_gross_cents")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("shop_shipping_settings")
 }
 
 /// Gäste-Warenkorb; Zuordnung über httpOnly-Cookie `jerrys_cart_id`.

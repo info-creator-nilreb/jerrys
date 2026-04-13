@@ -47,7 +47,6 @@ type Product = {
   availableQuantity: number;
   deliveryTimeKey: string | null;
   restockDays: number | null;
-  freeShipping: boolean;
   minOrderQty: number;
   purchaseStep: number;
   maxOrderQty: number | null;
@@ -62,7 +61,6 @@ type Product = {
   weightText: string | null;
   materialText: string | null;
   featureBullets: string[];
-  shippingCountryCodes: string[];
   images: { id: string; url: string; alt: string; sortOrder: number; isCover: boolean }[];
 };
 
@@ -153,11 +151,9 @@ export function EditProductForm({
             availableQuantity: product.availableQuantity,
             deliveryTimeKey: product.deliveryTimeKey,
             restockDays: product.restockDays,
-            freeShipping: product.freeShipping,
             minOrderQty: product.minOrderQty,
             purchaseStep: product.purchaseStep,
             maxOrderQty: product.maxOrderQty,
-            shippingCountryCodes: product.shippingCountryCodes,
           }}
         />
 

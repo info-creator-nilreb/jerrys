@@ -65,11 +65,9 @@ export function ProductFormFields({ state, manufacturers }: Props) {
           availableQuantity: 0,
           deliveryTimeKey: "2-4-werktage",
           restockDays: null,
-          freeShipping: false,
           minOrderQty: 1,
           purchaseStep: 1,
           maxOrderQty: null,
-          shippingCountryCodes: ["DE"],
         }}
       />
 

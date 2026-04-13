@@ -27,21 +27,3 @@ export function labelForShippingCountryCode(code: string): string {
   const c = code.trim().toUpperCase();
   return SHOP_SHIPPING_COUNTRY_OPTIONS.find((o) => o.code === c)?.label ?? c;
 }
-
-/**
- * Schnittmenge der Versandländer aller aktiven Warenkorbpositionen (jeweils normalisiert, sortiert).
- */
-export function intersectShippingCountryCodes(
-  perProduct: readonly (readonly string[])[],
-): string[] {
-  if (perProduct.length === 0) return ["DE"];
-  const normalize = (arr: readonly string[]) =>
-    [...new Set(arr.map((c) => c.trim().toUpperCase()).filter((c) => c.length === 2 && ALLOWED_CODES.has(c)))];
-  let acc = normalize(perProduct[0]!);
-  for (let i = 1; i < perProduct.length; i++) {
-    const next = new Set(normalize(perProduct[i]!));
-    acc = acc.filter((c) => next.has(c));
-  }
-  if (acc.length === 0) return ["DE"];
-  return acc.sort((a, b) => a.localeCompare(b));
-}

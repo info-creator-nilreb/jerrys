@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { parseEuroInputToCents } from "@/lib/catalog/format";
 import { centsPairMatchesTax } from "@/lib/catalog/pricing";
-import { isShopShippingCountryCode } from "@/lib/catalog/shipping-countries-catalog";
 import { nonEmptyString } from "@/lib/validation/form";
 
 export const productSlugSchema = z
@@ -60,30 +59,6 @@ const featureBulletsField = z.string().transform((raw) =>
     .map((l) => (l.length > 200 ? l.slice(0, 200) : l)),
 );
 
-function refineShippingCountryCodes(
-  data: { shippingCountryCodes: string[] },
-  ctx: z.RefinementCtx,
-) {
-  if (data.shippingCountryCodes.length === 0) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["shippingCountryCodes"],
-      message: "Mindestens ein Versandland auswählen.",
-    });
-    return;
-  }
-  for (const c of data.shippingCountryCodes) {
-    if (!isShopShippingCountryCode(c)) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["shippingCountryCodes"],
-        message: `Ungültiges oder nicht unterstütztes Versandland: ${c}`,
-      });
-      return;
-    }
-  }
-}
-
 function refineStorefrontTextLengths(
   data: {
     categoryTag: string | null;
@@ -131,13 +106,9 @@ const sharedProductFields = {
   availableQuantity: z.coerce.number().int().min(0),
   deliveryTimeKey: optionalText,
   restockDays: z.preprocess(optionalPositiveIntNullable, z.number().int().min(0).nullable()),
-  freeShipping: z.boolean(),
   minOrderQty: z.coerce.number().int().min(1),
   purchaseStep: z.coerce.number().int().min(1),
   maxOrderQty: z.preprocess(optionalPositiveIntMin1Nullable, z.number().int().min(1).nullable()),
-  shippingCountryCodes: z
-    .array(z.string().trim())
-    .transform((arr) => [...new Set(arr.map((s) => s.toUpperCase()).filter((s) => s.length === 2))]),
   isActive: z.boolean(),
   isBestseller: z.boolean(),
   categoryTag: optionalText,
@@ -278,7 +249,6 @@ export const productCoreSchema = z
     refinePricePairs(data, ctx);
     refineAmazonFields(data, ctx);
     refineStorefrontTextLengths(data, ctx);
-    refineShippingCountryCodes(data, ctx);
   });
 
 export const productImageSchema = z.object({
@@ -296,5 +266,4 @@ export const createProductFormSchema = z
     refinePricePairs(data, ctx);
     refineAmazonFields(data, ctx);
     refineStorefrontTextLengths(data, ctx);
-    refineShippingCountryCodes(data, ctx);
   });

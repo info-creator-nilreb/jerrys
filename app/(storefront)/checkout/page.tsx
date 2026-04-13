@@ -5,10 +5,8 @@ import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadc
 import type { CheckoutSummaryLine } from "@/components/storefront/checkout-summary-aside";
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { getCartWithLines } from "@/lib/cart/cart-queries";
-import {
-  intersectShippingCountryCodes,
-  labelForShippingCountryCode,
-} from "@/lib/catalog/shipping-countries-catalog";
+import { labelForShippingCountryCode } from "@/lib/catalog/shipping-countries-catalog";
+import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 
 export const dynamic = "force-dynamic";
@@ -67,13 +65,15 @@ export default async function CheckoutPage({
     },
   }));
 
-  const allowedCodes = intersectShippingCountryCodes(
-    activeLines.map((l) => l.product.shippingCountryCodes),
-  );
-  const allowedShippingCountries = allowedCodes.map((code) => ({
+  const shopShip = await getShopShippingSettings();
+  const allowedShippingCountries = shopShip.shippingCountryCodes.map((code) => ({
     code,
     label: labelForShippingCountryCode(code),
   }));
+  if (!allowedShippingCountries.length) {
+    redirect("/warenkorb?grund=versand_nicht_konfiguriert");
+  }
+  const initialShippingCountry = allowedShippingCountries[0]!.code;
 
   const prefillPaypal = sp.payment === "paypal";
 
@@ -99,7 +99,9 @@ export default async function CheckoutPage({
           idempotencyKey={idempotencyKey}
           lines={summaryLines}
           subtotalCents={subtotalCents}
-          shippingCents={0}
+          shippingRatesByCountry={shopShip.shippingRatesCentsByCountry}
+          freeShippingFromSubtotalGrossCents={shopShip.freeShippingFromSubtotalGrossCents}
+          initialShippingCountry={initialShippingCountry}
           currency={currency}
           allowedShippingCountries={allowedShippingCountries}
           payPalConfigured={isPayPalConfigured()}

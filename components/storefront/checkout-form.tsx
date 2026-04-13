@@ -5,6 +5,7 @@ import {
   startTransition,
   useActionState,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type FocusEvent,
@@ -20,6 +21,7 @@ import {
 import { PayPalCardFieldsCheckout } from "@/components/storefront/paypal-card-fields-checkout";
 import { addressLine1HouseNumberMessage } from "@/lib/checkout/address-line-validation";
 import { postalCodeErrorMessage } from "@/lib/checkout/postal-code-validation";
+import { shippingGrossCentsForCountry } from "@/lib/shop/shipping-compute";
 import { z } from "zod";
 
 const initial: CheckoutActionState = null;
@@ -111,7 +113,9 @@ export function CheckoutForm({
   idempotencyKey,
   lines,
   subtotalCents,
-  shippingCents,
+  shippingRatesByCountry,
+  freeShippingFromSubtotalGrossCents,
+  initialShippingCountry,
   currency,
   allowedShippingCountries,
   payPalConfigured,
@@ -121,7 +125,9 @@ export function CheckoutForm({
   idempotencyKey: string;
   lines: CheckoutSummaryLine[];
   subtotalCents: number;
-  shippingCents: number;
+  shippingRatesByCountry: Record<string, number>;
+  freeShippingFromSubtotalGrossCents: number | null;
+  initialShippingCountry: string;
   currency: string;
   allowedShippingCountries: { code: string; label: string }[];
   payPalConfigured: boolean;
@@ -136,8 +142,18 @@ export function CheckoutForm({
   const [payPalCardFieldsPrimary, setPayPalCardFieldsPrimary] = useState(false);
   /** Nur bei „Debit- oder Kreditkarte“ werden die Hosted Card Fields gemountet. */
   const [payPalSurface, setPayPalSurface] = useState<CheckoutPayPalMethodId>("paypal");
+  const [shippingCountry, setShippingCountry] = useState(initialShippingCountry);
 
-  const defaultCountry = allowedShippingCountries[0]?.code ?? "DE";
+  const displayShippingCents = useMemo(
+    () =>
+      shippingGrossCentsForCountry({
+        subtotalGrossCents: subtotalCents,
+        shippingCountryCode: shippingCountry,
+        shippingRatesCentsByCountry: shippingRatesByCountry,
+        freeShippingFromSubtotalGrossCents,
+      }),
+    [subtotalCents, shippingCountry, shippingRatesByCountry, freeShippingFromSubtotalGrossCents],
+  );
 
   const onPayPalSurfaceChange = (id: CheckoutPayPalMethodId) => {
     setPayPalSurface(id);
@@ -231,7 +247,7 @@ export function CheckoutForm({
 
   const readCountry = (form: HTMLFormElement | null | undefined, name: "shippingCountry" | "billingCountry") => {
     const el = form?.elements.namedItem(name) as HTMLSelectElement | undefined;
-    return (el?.value ?? defaultCountry).trim().toUpperCase();
+    return (el?.value ?? initialShippingCountry).trim().toUpperCase();
   };
 
   const onShippingZipBlur = (e: FocusEvent<HTMLInputElement>) => {
@@ -374,8 +390,11 @@ export function CheckoutForm({
                 name="shippingCountry"
                 autoComplete="shipping country"
                 className={selectClass}
-                defaultValue={defaultCountry}
-                onChange={onShippingCountryChange}
+                value={shippingCountry}
+                onChange={(e) => {
+                  setShippingCountry(e.target.value);
+                  onShippingCountryChange();
+                }}
                 {...ariaFieldErr(fe?.shippingCountry, checkoutErrId.shippingCountry)}
               >
                 {allowedShippingCountries.map((c) => (
@@ -578,7 +597,7 @@ export function CheckoutForm({
                   name="billingCountry"
                   autoComplete="billing country"
                   className={selectClass}
-                  defaultValue={defaultCountry}
+                  defaultValue={initialShippingCountry}
                   onChange={onBillingCountryChange}
                   {...ariaFieldErr(fe?.billingCountry, checkoutErrId.billingCountry)}
                 >
@@ -816,7 +835,7 @@ export function CheckoutForm({
       <CheckoutSummaryAside
         lines={lines}
         subtotalCents={subtotalCents}
-        shippingCents={shippingCents}
+        shippingCents={displayShippingCents}
         currency={currency}
       />
     </form>

@@ -11,7 +11,11 @@ import { createLogger, errorMeta } from "@/lib/logging/logger";
 import { createPayPalCheckoutOrder } from "@/lib/payments/paypal-orders";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 import { usesPaypalHostedCheckout } from "@/lib/payments/online-payment-method";
-import { intersectShippingCountryCodes } from "@/lib/catalog/shipping-countries-catalog";
+import {
+  shippingGrossCentsForCountry,
+  shippingVatCentsFromGross,
+} from "@/lib/shop/shipping-compute";
+import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
 import { z } from "zod";
 
 const log = createLogger("checkout.paypal_create");
@@ -204,16 +208,14 @@ async function createPendingPayPalOrderFromParsedRaw(
     return { ok: false, error: "Keine bestellbaren Artikel im Warenkorb." };
   }
 
-  const allowedCountries = intersectShippingCountryCodes(
-    activeLines.map((l) => l.product.shippingCountryCodes),
-  );
+  const shopShip = await getShopShippingSettings();
+  const allowedCountries = shopShip.shippingCountryCodes;
   if (!allowedCountries.includes(d.shippingCountry)) {
     return {
       ok: false,
       error: "Bitte Eingaben prüfen.",
       fieldErrors: {
-        shippingCountry:
-          "Lieferung in dieses Land ist für die gewählten Artikel nicht verfügbar. Bitte anderes Land wählen oder Warenkorb anpassen.",
+        shippingCountry: "Lieferung in dieses Land ist derzeit nicht verfügbar. Bitte anderes Land wählen.",
       },
     };
   }
@@ -222,8 +224,7 @@ async function createPendingPayPalOrderFromParsedRaw(
       ok: false,
       error: "Bitte Eingaben prüfen.",
       fieldErrors: {
-        billingCountry:
-          "Rechnungsadresse: dieses Land ist für die gewählten Artikel nicht verfügbar.",
+        billingCountry: "Rechnungsadresse: dieses Land ist derzeit nicht verfügbar.",
       },
     };
   }
@@ -246,7 +247,13 @@ async function createPendingPayPalOrderFromParsedRaw(
     taxTotal += vatCentsFromGross(gross, line.product.taxRatePercent);
   }
 
-  const shippingCents = 0;
+  const shippingCents = shippingGrossCentsForCountry({
+    subtotalGrossCents: subtotal,
+    shippingCountryCode: d.shippingCountry,
+    shippingRatesCentsByCountry: shopShip.shippingRatesCentsByCountry,
+    freeShippingFromSubtotalGrossCents: shopShip.freeShippingFromSubtotalGrossCents,
+  });
+  taxTotal += shippingVatCentsFromGross(shippingCents);
   const totalGross = subtotal + shippingCents;
   const orderCurrency = activeLines[0]!.product.currency;
 

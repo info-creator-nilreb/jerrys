@@ -2,6 +2,7 @@ import Image from "next/image";
 import { formatPrice } from "@/lib/catalog/format";
 import { PriceEUR } from "@/components/storefront/price-eur";
 import { vatCentsFromGross } from "@/lib/catalog/pricing";
+import { shippingVatCentsFromGross } from "@/lib/shop/shipping-compute";
 
 export type CheckoutSummaryLine = {
   id: string;
@@ -29,6 +30,8 @@ export function CheckoutSummaryAside({
     (s, l) => s + vatCentsFromGross(l.quantity * l.product.priceGrossCents, l.product.taxRatePercent),
     0,
   );
+  const shippingVat = shippingVatCentsFromGross(shippingCents);
+  const totalVatIncluded = taxSum + shippingVat;
   const total = subtotalCents + shippingCents;
 
   return (
@@ -99,7 +102,7 @@ export function CheckoutSummaryAside({
             </span>
           </dt>
           <dd className="text-right text-(--foreground-muted)">
-            {shippingCents === 0 ? "Lieferadresse eingeben" : formatPrice(shippingCents, currency)}
+            {shippingCents === 0 ? "kostenlos" : formatPrice(shippingCents, currency)}
           </dd>
         </div>
         <div className="flex justify-between gap-4 border-t border-(--surface-muted) pt-3 text-base font-semibold">
@@ -109,7 +112,7 @@ export function CheckoutSummaryAside({
           </dd>
         </div>
       </dl>
-      <p className="mt-2 text-sm text-(--foreground-muted)">inkl. {formatPrice(taxSum, currency)} MwSt.</p>
+      <p className="mt-2 text-sm text-(--foreground-muted)">inkl. {formatPrice(totalVatIncluded, currency)} MwSt.</p>
     </aside>
   );
 }

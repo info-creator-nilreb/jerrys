@@ -7,6 +7,7 @@ import {
   Search,
   ShoppingBag,
   Store,
+  Truck,
   Users,
 } from "lucide-react";
 
@@ -18,6 +19,10 @@ export function IconDashboard({ className }: { className?: string }) {
 
 export function IconCatalog({ className }: { className?: string }) {
   return <LayoutGrid className={className} aria-hidden strokeWidth={stroke} />;
+}
+
+export function IconShipping({ className }: { className?: string }) {
+  return <Truck className={className} aria-hidden strokeWidth={stroke} />;
 }
 
 export function IconOrders({ className }: { className?: string }) {

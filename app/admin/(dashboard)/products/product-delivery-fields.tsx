@@ -1,7 +1,7 @@
 "use client";
 
+import Link from "next/link";
 import { DELIVERY_TIME_OPTIONS } from "@/lib/catalog/delivery-options";
-import { SHOP_SHIPPING_COUNTRY_OPTIONS } from "@/lib/catalog/shipping-countries-catalog";
 import type { ProductFormState } from "@/app/admin/(dashboard)/products/actions";
 
 type Props = {
@@ -11,11 +11,9 @@ type Props = {
     availableQuantity: number;
     deliveryTimeKey: string | null;
     restockDays: number | null;
-    freeShipping: boolean;
     minOrderQty: number;
     purchaseStep: number;
     maxOrderQty: number | null;
-    shippingCountryCodes: string[];
   };
 };
 
@@ -25,31 +23,14 @@ export function ProductDeliveryFields({ state, defaults }: Props) {
   return (
     <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
       <h2 className="text-base font-semibold text-[#1f2937]">Lieferbarkeit</h2>
+      <p className="mt-2 text-xs text-[#6b7280]">
+        Versandländer und Versandkosten werden unter{" "}
+        <Link href="/admin/versand" className="font-medium text-primary hover:underline">
+          Versand
+        </Link>{" "}
+        shopweit gepflegt.
+      </p>
       <div className="mt-6 h-px bg-[#e8eaed]" />
-      <fieldset className="mt-6">
-        <legend className="text-xs font-medium text-[#6b7280]">Versandländer (Mehrfachauswahl)</legend>
-        <p className="mt-1 text-xs text-[#9ca3af]">
-          Im Checkout stehen Kundinnen und Kunden nur Länder zur Auswahl, die für alle Artikel im Warenkorb gemeinsam
-          gelten (Schnittmenge).
-        </p>
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
-          {SHOP_SHIPPING_COUNTRY_OPTIONS.map((o) => (
-            <label key={o.code} className="flex cursor-pointer items-center gap-2 text-sm text-[#374151]">
-              <input
-                type="checkbox"
-                name="shippingCountryCodes"
-                value={o.code}
-                defaultChecked={defaults.shippingCountryCodes.includes(o.code)}
-                className="size-4 rounded border-[#d1d5db] text-primary focus:ring-primary"
-              />
-              {o.label}
-            </label>
-          ))}
-        </div>
-        {fe.shippingCountryCodes ? (
-          <p className="mt-2 text-sm text-red-600">{fe.shippingCountryCodes}</p>
-        ) : null}
-      </fieldset>
       <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <div className="flex flex-col gap-1">
           <label htmlFor="stockQuantity" className="text-xs font-medium text-[#6b7280]">
@@ -122,21 +103,6 @@ export function ProductDeliveryFields({ state, defaults }: Props) {
             placeholder="z. B. 21"
             className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
           />
-        </div>
-
-        <div className="flex flex-col justify-end gap-2 sm:col-span-2 lg:col-span-1">
-          <div className="flex items-center gap-2">
-            <input
-              id="freeShipping"
-              name="freeShipping"
-              type="checkbox"
-              defaultChecked={defaults.freeShipping}
-              className="size-4 rounded border-[#d1d5db] text-primary focus:ring-primary"
-            />
-            <label htmlFor="freeShipping" className="text-sm font-medium text-[#374151]">
-              Versandkostenfrei
-            </label>
-          </div>
         </div>
 
         <div className="flex flex-col gap-1">
