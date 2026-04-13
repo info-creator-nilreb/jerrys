@@ -96,7 +96,7 @@ function footerSocialRow(): string {
 }
 
 function footerUspRow(): string {
-  const { primary, footerDivider, footerText, footerTextMuted } = TRANSACTIONAL_EMAIL_DESIGN;
+  const { primary, footerDivider, footerText } = TRANSACTIONAL_EMAIL_DESIGN;
   const g = `stroke="${primary}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"`;
   const lock = `<svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle" aria-hidden="true"><g ${g}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></g></svg>`;
   const truck = `<svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle" aria-hidden="true"><g ${g}><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></g></svg>`;

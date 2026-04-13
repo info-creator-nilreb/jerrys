@@ -7,7 +7,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type ChangeEvent,
   type FocusEvent,
   type FormEvent,
 } from "react";
@@ -140,11 +139,10 @@ export function CheckoutForm({
 
   const defaultCountry = allowedShippingCountries[0]?.code ?? "DE";
 
-  useEffect(() => {
-    if (payPalSurface !== "card") {
-      setPayPalCardFieldsPrimary(false);
-    }
-  }, [payPalSurface]);
+  const onPayPalSurfaceChange = (id: CheckoutPayPalMethodId) => {
+    setPayPalSurface(id);
+    if (id !== "card") setPayPalCardFieldsPrimary(false);
+  };
 
   useEffect(() => {
     if (!prefillPaypal) return;
@@ -262,12 +260,12 @@ export function CheckoutForm({
     setLiveErrors((p) => ({ ...p, billingLine1: msg ?? "" }));
   };
 
-  const onShippingCountryChange = (_e: ChangeEvent<HTMLSelectElement>) => {
+  const onShippingCountryChange = () => {
     clearLive("shippingZip");
     clearLive("shippingLine1");
   };
 
-  const onBillingCountryChange = (_e: ChangeEvent<HTMLSelectElement>) => {
+  const onBillingCountryChange = () => {
     clearLive("billingZip");
     clearLive("billingLine1");
   };
@@ -735,7 +733,7 @@ export function CheckoutForm({
           <h2 className="text-lg font-semibold text-[#1f2937]">Zahlung</h2>
           {payPalConfigured ? (
             <>
-              <CheckoutPaymentMethods value={payPalSurface} onChange={setPayPalSurface} />
+              <CheckoutPaymentMethods value={payPalSurface} onChange={onPayPalSurfaceChange} />
               {payPalSurface === "card" ? (
                 <PayPalCardFieldsCheckout
                   formId={STOREFRONT_CHECKOUT_FORM_ID}

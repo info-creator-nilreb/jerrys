@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useId } from "react";
 
 /**
@@ -24,13 +25,12 @@ function MethodBrand({ brand }: { brand: (typeof CHECKOUT_PAYPAL_METHOD_ROWS)[nu
   if (brand === "paypal") {
     return (
       <span className={`${BRAND_SLOT} border-[#e5e7eb] bg-white`}>
-        <img
+        <Image
           src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_111x69.jpg"
           alt=""
           width={74}
           height={46}
           className="max-h-5 w-full max-w-[4.5rem] object-contain object-center"
-          decoding="async"
         />
       </span>
     );

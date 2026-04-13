@@ -50,7 +50,7 @@ export async function sendTransactionalEmail(params: {
   if (smtpConfigured()) {
     const host = process.env.SMTP_HOST!.trim();
     const port = Number(process.env.SMTP_PORT?.trim() || "587");
-    let user = normalizeSmtpSecret(process.env.SMTP_USER!);
+    const user = normalizeSmtpSecret(process.env.SMTP_USER!);
     let pass = normalizeSmtpSecret(process.env.SMTP_PASS!);
     if (host.toLowerCase().includes("gmail")) {
       pass = pass.replace(/\s+/g, "");
