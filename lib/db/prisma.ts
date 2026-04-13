@@ -15,6 +15,11 @@ const globalForPrisma = globalThis as unknown as {
   pgPoolConfigVersion: number | undefined;
 };
 
+function prismaDelegateShopShippingReady(client: PrismaClient): boolean {
+  const d = (client as unknown as { shopShippingSettings?: { findUnique?: unknown } }).shopShippingSettings;
+  return d != null && typeof d.findUnique === "function";
+}
+
 /**
  * Lazy Prisma client so `next build` can run without a live database.
  * The first DB access must happen at runtime with DATABASE_URL set.
@@ -45,12 +50,17 @@ export function getPrisma(): PrismaClient {
   const raw: unknown = globalForPrisma.prisma;
   if (raw != null) {
     // Nach `prisma generate` oder HMR zeigt `globalThis` oft noch eine alte Instanz
-    // (ohne neue Model-Delegates wie `product` → `undefined.findMany`).
+    // (ohne neue Model-Delegates → undefined.findMany / 500er).
     if (raw instanceof PrismaClient) {
-      return raw;
+      if (prismaDelegateShopShippingReady(raw)) {
+        return raw;
+      }
+      void raw.$disconnect();
+      globalForPrisma.prisma = undefined;
+    } else {
+      void (raw as PrismaClient).$disconnect();
+      globalForPrisma.prisma = undefined;
     }
-    void (raw as PrismaClient).$disconnect();
-    globalForPrisma.prisma = undefined;
   }
 
   const pool =

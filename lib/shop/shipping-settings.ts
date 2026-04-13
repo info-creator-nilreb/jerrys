@@ -22,18 +22,37 @@ export function parseShippingRatesFromJson(raw: Prisma.JsonValue): Record<string
   return out;
 }
 
+function isPrismaUniqueViolation(e: unknown): boolean {
+  return typeof e === "object" && e !== null && "code" in e && (e as { code: string }).code === "P2002";
+}
+
 export async function getShopShippingSettings(): Promise<ShopShippingSettingsDTO> {
   const prisma = getPrisma();
   let row = await prisma.shopShippingSettings.findUnique({ where: { id: DEFAULT_ID } });
   if (!row) {
-    row = await prisma.shopShippingSettings.create({
-      data: {
-        id: DEFAULT_ID,
-        shippingCountryCodes: ["DE"],
-        shippingRatesCentsByCountry: {},
-        freeShippingFromSubtotalGrossCents: null,
-      },
-    });
+    try {
+      row = await prisma.shopShippingSettings.create({
+        data: {
+          id: DEFAULT_ID,
+          shippingCountryCodes: ["DE"],
+          shippingRatesCentsByCountry: {},
+          freeShippingFromSubtotalGrossCents: null,
+        },
+      });
+    } catch (e) {
+      if (isPrismaUniqueViolation(e)) {
+        row = await prisma.shopShippingSettings.findUnique({ where: { id: DEFAULT_ID } });
+      } else {
+        throw e;
+      }
+    }
+  }
+  if (!row) {
+    return {
+      shippingCountryCodes: ["DE"],
+      shippingRatesCentsByCountry: {},
+      freeShippingFromSubtotalGrossCents: null,
+    };
   }
   const codes = (row.shippingCountryCodes ?? [])
     .map((c) => c.trim().toUpperCase())
