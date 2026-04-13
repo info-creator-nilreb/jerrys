@@ -32,7 +32,7 @@ export function CheckoutSummaryAside({
   const total = subtotalCents + shippingCents;
 
   return (
-    <aside className="border-t border-(--surface-muted) bg-(--surface-soft) p-6 lg:sticky lg:top-[5.5rem] lg:max-h-[calc(100dvh-5.75rem)] lg:overflow-y-auto lg:self-start lg:border-t-0 lg:border-l lg:pl-8">
+    <aside className="order-1 min-w-0 border-b border-(--surface-muted) bg-(--surface-soft) p-6 lg:order-2 lg:sticky lg:top-[5.5rem] lg:max-h-[calc(100dvh-5.75rem)] lg:overflow-y-auto lg:self-start lg:border-b-0 lg:border-l lg:pl-8">
       <h2 className="text-sm font-semibold text-(--foreground-heading)">Bestellübersicht</h2>
       <ul className="mt-6 space-y-4">
         {lines.map((line) => {

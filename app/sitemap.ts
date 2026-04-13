@@ -9,6 +9,7 @@ const STATIC_PATHS = [
   "/datenschutz",
   "/agb",
   "/widerruf",
+  "/rueckgabe",
   "/versand",
 ] as const;
 

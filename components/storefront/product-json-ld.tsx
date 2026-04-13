@@ -8,18 +8,38 @@ type Props = {
   slug: string;
   priceGrossCents: number;
   currency: string;
-  stockQuantity: number;
+  availableQuantity: number;
   images: Image[];
+  /** Optional: manuell gepflegte Amazon-Sterne für schema.org AggregateRating. */
+  aggregateRatingAverage?: number | null;
+  aggregateRatingCount?: number | null;
 };
 
-export function ProductJsonLd({ name, description, slug, priceGrossCents, currency, stockQuantity, images }: Props) {
+export function ProductJsonLd({
+  name,
+  description,
+  slug,
+  priceGrossCents,
+  currency,
+  availableQuantity,
+  images,
+  aggregateRatingAverage,
+  aggregateRatingCount,
+}: Props) {
   const productUrl = absoluteUrl(`/produkte/${slug}`);
   const imageUrls = images.map((i) => absoluteUrl(i.url)).filter(Boolean);
   const price = (priceGrossCents / 100).toFixed(2);
   const availability =
-    stockQuantity > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock";
+    availableQuantity > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock";
 
-  const jsonLd = {
+  const hasAggregate =
+    aggregateRatingAverage != null &&
+    aggregateRatingCount != null &&
+    aggregateRatingCount > 0 &&
+    aggregateRatingAverage >= 0 &&
+    aggregateRatingAverage <= 5;
+
+  const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
     name,
@@ -34,6 +54,14 @@ export function ProductJsonLd({ name, description, slug, priceGrossCents, curren
       itemCondition: "https://schema.org/NewCondition",
     },
   };
+
+  if (hasAggregate) {
+    jsonLd.aggregateRating = {
+      "@type": "AggregateRating",
+      ratingValue: aggregateRatingAverage,
+      reviewCount: aggregateRatingCount,
+    };
+  }
 
   return (
     <script

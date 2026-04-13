@@ -1,8 +1,14 @@
 import Image from "next/image";
 import { HeroScrollHint } from "@/components/storefront/hero-scroll-hint";
+import { HomepageReviewsCarousel } from "@/components/storefront/homepage-reviews-carousel";
+import { HomepageSocialCarousel } from "@/components/storefront/homepage-social-carousel";
 import { ProductCard } from "@/components/storefront/product-card";
 import { UspIcon } from "@/components/storefront/usp-icons";
 import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
+import {
+  listActiveHomepageAmazonReviews,
+  listActiveHomepageSocialImages,
+} from "@/lib/homepage/marketing-queries";
 
 const usps = [
   {
@@ -25,7 +31,11 @@ const usps = [
 export const dynamic = "force-dynamic";
 
 export default async function StorefrontHomePage() {
-  const products = await listActiveProductsForStorefront();
+  const [products, homepageReviews, homepageSocial] = await Promise.all([
+    listActiveProductsForStorefront(),
+    listActiveHomepageAmazonReviews(),
+    listActiveHomepageSocialImages(),
+  ]);
   return (
     <div>
       {/* Eine Viewporthöhe; Text links (freier Bildbereich), kein Karten-Overlay über dem Produkt */}
@@ -106,6 +116,24 @@ export default async function StorefrontHomePage() {
         </div>
       </section>
 
+      {homepageReviews.length > 0 ? (
+        <section
+          id="kundenstimmen"
+          className="scroll-mt-20 border-y border-(--surface-muted) bg-(--surface-soft) px-4 py-16 md:py-20"
+          aria-labelledby="kundenstimmen-heading"
+        >
+          <div className="mx-auto max-w-6xl">
+            <h2
+              id="kundenstimmen-heading"
+              className="text-center text-2xl font-semibold text-(--foreground-heading) md:text-3xl"
+            >
+              Das sagen Kund:innen
+            </h2>
+            <HomepageReviewsCarousel reviews={homepageReviews} />
+          </div>
+        </section>
+      ) : null}
+
       <section id="produkte" className="scroll-mt-20 bg-(--surface-soft) px-4 py-16 md:py-20">
         <div className="mx-auto max-w-6xl">
           <h2 className="text-center text-2xl font-semibold text-(--foreground-heading) md:text-3xl">
@@ -126,6 +154,27 @@ export default async function StorefrontHomePage() {
           )}
         </div>
       </section>
+
+      {homepageSocial.length > 0 ? (
+        <section
+          id="momente-instagram"
+          className="scroll-mt-20 bg-white px-4 py-16 md:py-20"
+          aria-labelledby="momente-instagram-heading"
+        >
+          <div className="mx-auto max-w-6xl">
+            <h2
+              id="momente-instagram-heading"
+              className="text-center text-2xl font-semibold text-(--foreground-heading) md:text-3xl"
+            >
+              Momente von Instagram
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-(--foreground-muted) md:text-base">
+              Einblicke in Stubentiger und jerry&apos;s – folgt uns gerne auf Instagram.
+            </p>
+            <HomepageSocialCarousel items={homepageSocial} />
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

@@ -11,7 +11,7 @@ export async function SiteHeader() {
   const cartCount = await getStorefrontCartBadgeCount();
 
   return (
-    <header className="fixed top-0 right-0 left-0 z-50 border-b border-(--surface-muted) bg-white">
+    <header className="fixed top-0 right-0 left-0 z-[500000] border-b border-(--surface-muted) bg-white">
       <div className="relative mx-auto flex max-w-6xl items-center justify-center px-4 py-3 md:py-3.5">
         <Link href="/">
           {/* unoptimized: direkt /public, um veraltete /_next/image?url=…png Caches zu umgehen */}

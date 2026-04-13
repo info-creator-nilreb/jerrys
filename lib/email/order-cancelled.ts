@@ -11,11 +11,14 @@ import { escapeHtmlForEmail, publicSiteBaseUrl } from "@/lib/email/template-util
 /**
  * Storno-Mail: nach erfolgreichem Versand höchstens einmal erneut senden (Dedupe).
  */
-export async function sendOrderCancelledIfNeeded(orderId: string): Promise<void> {
+export async function sendOrderCancelledIfNeeded(
+  orderId: string,
+  options?: { force?: boolean },
+): Promise<void> {
   const prisma = getPrisma();
 
   const existing = await findOrderEmailLog(prisma, orderId, EMAIL_ORDER_CANCELLED);
-  if (isOrderEmailAlreadySentSuccessfully(existing)) return;
+  if (!options?.force && isOrderEmailAlreadySentSuccessfully(existing)) return;
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },

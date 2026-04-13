@@ -1,5 +1,7 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
+
 export function HeroScrollHint() {
   return (
     <a
@@ -8,19 +10,7 @@ export function HeroScrollHint() {
       aria-label="Weiter nach unten scrollen"
     >
       <span className="hero-scroll-nudge rounded-full border border-(--foreground-heading)/25 bg-white/70 p-2 shadow-sm backdrop-blur-sm">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="size-6"
-          aria-hidden
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
+        <ChevronDown className="size-6" aria-hidden strokeWidth={2} />
       </span>
     </a>
   );

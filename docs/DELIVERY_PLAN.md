@@ -80,7 +80,7 @@ Stories:
 
 ## Phase 2 (Epics 7–11)
 
-Nach Abschluss der V1-Epics 1–6: [DELIVERY_PLAN_PHASE2.md](./DELIVERY_PLAN_PHASE2.md) (Consent/Cookies, SEO/KI, Zahlungen, Security, Performance).
+Nach Abschluss der V1-Epics 1–6: [DELIVERY_PLAN_PHASE2.md](./DELIVERY_PLAN_PHASE2.md) (Consent/Cookies, SEO/KI, Zahlungen, Security, Performance). Dort auch **Umsetzungsstand** zu Epics 7–9 und der Startseiten-Marketing-Erweiterung (Amazon-/Social-Slider, Admin).
 
 ## Recommended Story Execution Format
 For each story, produce:

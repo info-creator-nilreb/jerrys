@@ -6,6 +6,7 @@
     "postinstall": "prisma generate",
     "dev": "next dev --webpack -p ${PORT:-3001}",
     "dev:turbo": "next dev --turbopack -p ${PORT:-3001}",
+    "fix:next-cache": "rm -rf .next",
     "dev:fresh": "rm -rf .next && next dev --webpack -p ${PORT:-3001}",
     "build": "next build",
     "start": "next start",
@@ -17,6 +18,8 @@
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:e2e": "playwright test",
+    "lighthouse:local": "echo 'Dev-Server starten, dann: npx lighthouse http://127.0.0.1:${PORT:-3001} --only-categories=performance,accessibility,best-practices,seo --view'",
+    "lighthouse:ci": "npx --yes @lhci/cli@0.14.0 autorun",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed"
   },
@@ -33,14 +36,15 @@
     "@tiptap/react": "^3.22.3",
     "@tiptap/starter-kit": "^3.22.3",
     "bcryptjs": "^3.0.3",
+    "embla-carousel-react": "^8.6.0",
     "isomorphic-dompurify": "^3.8.0",
+    "lucide-react": "^0.544.0",
     "next": "16.2.3",
     "next-auth": "^5.0.0-beta.30",
     "nodemailer": "^7.0.13",
     "pg": "^8.20.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "stripe": "^18.5.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

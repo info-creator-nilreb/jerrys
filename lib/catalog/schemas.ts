@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { parseEuroInputToCents } from "@/lib/catalog/format";
 import { centsPairMatchesTax } from "@/lib/catalog/pricing";
+import { isShopShippingCountryCode } from "@/lib/catalog/shipping-countries-catalog";
 import { nonEmptyString } from "@/lib/validation/form";
 
 export const productSlugSchema = z
@@ -49,6 +50,69 @@ function optionalPositiveIntMin1Nullable(val: unknown): number | null {
   return n;
 }
 
+/** Eine Zeile pro Stichpunkt; max. 20 Zeilen, je 200 Zeichen (nach Trim). */
+const featureBulletsField = z.string().transform((raw) =>
+  String(raw ?? "")
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .slice(0, 20)
+    .map((l) => (l.length > 200 ? l.slice(0, 200) : l)),
+);
+
+function refineShippingCountryCodes(
+  data: { shippingCountryCodes: string[] },
+  ctx: z.RefinementCtx,
+) {
+  if (data.shippingCountryCodes.length === 0) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["shippingCountryCodes"],
+      message: "Mindestens ein Versandland auswählen.",
+    });
+    return;
+  }
+  for (const c of data.shippingCountryCodes) {
+    if (!isShopShippingCountryCode(c)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["shippingCountryCodes"],
+        message: `Ungültiges oder nicht unterstütztes Versandland: ${c}`,
+      });
+      return;
+    }
+  }
+}
+
+function refineStorefrontTextLengths(
+  data: {
+    categoryTag: string | null;
+    leadText: string | null;
+    dimensionsText: string | null;
+    weightText: string | null;
+    materialText: string | null;
+  },
+  ctx: z.RefinementCtx,
+) {
+  const checks: [keyof typeof data, number][] = [
+    ["categoryTag", 120],
+    ["leadText", 500],
+    ["dimensionsText", 500],
+    ["weightText", 500],
+    ["materialText", 500],
+  ];
+  for (const [key, max] of checks) {
+    const v = data[key];
+    if (typeof v === "string" && v.length > max) {
+      ctx.addIssue({
+        code: "custom",
+        path: [key],
+        message: `Max. ${max} Zeichen.`,
+      });
+    }
+  }
+}
+
 const sharedProductFields = {
   title: nonEmptyString,
   slug: productSlugSchema,
@@ -64,13 +128,24 @@ const sharedProductFields = {
   lowest30GrossEuro: z.string().trim(),
   lowest30NetEuro: z.string().trim(),
   stockQuantity: z.coerce.number().int().min(0),
+  availableQuantity: z.coerce.number().int().min(0),
   deliveryTimeKey: optionalText,
   restockDays: z.preprocess(optionalPositiveIntNullable, z.number().int().min(0).nullable()),
   freeShipping: z.boolean(),
   minOrderQty: z.coerce.number().int().min(1),
   purchaseStep: z.coerce.number().int().min(1),
   maxOrderQty: z.preprocess(optionalPositiveIntMin1Nullable, z.number().int().min(1).nullable()),
+  shippingCountryCodes: z
+    .array(z.string().trim())
+    .transform((arr) => [...new Set(arr.map((s) => s.toUpperCase()).filter((s) => s.length === 2))]),
   isActive: z.boolean(),
+  isBestseller: z.boolean(),
+  categoryTag: optionalText,
+  leadText: optionalText,
+  dimensionsText: optionalText,
+  weightText: optionalText,
+  materialText: optionalText,
+  featureBullets: featureBulletsField,
   /** Rohwerte aus Formular; Validierung in refineAmazonFields */
   amazonRatingAverage: z.string(),
   amazonRatingCount: z.string(),
@@ -202,6 +277,8 @@ export const productCoreSchema = z
   .superRefine((data, ctx) => {
     refinePricePairs(data, ctx);
     refineAmazonFields(data, ctx);
+    refineStorefrontTextLengths(data, ctx);
+    refineShippingCountryCodes(data, ctx);
   });
 
 export const productImageSchema = z.object({
@@ -218,4 +295,6 @@ export const createProductFormSchema = z
   .superRefine((data, ctx) => {
     refinePricePairs(data, ctx);
     refineAmazonFields(data, ctx);
+    refineStorefrontTextLengths(data, ctx);
+    refineShippingCountryCodes(data, ctx);
   });

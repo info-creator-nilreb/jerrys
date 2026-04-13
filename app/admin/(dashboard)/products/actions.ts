@@ -17,6 +17,7 @@ import {
 import { sanitizeProductDescriptionHtml } from "@/lib/catalog/sanitize-html";
 import { getPrisma } from "@/lib/db/prisma";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
+import { ALLOWED_IMAGE_TYPES, extFromMime, MAX_UPLOAD_BYTES } from "@/lib/admin/upload-image";
 import { nonEmptyString } from "@/lib/validation/form";
 
 const log = createLogger("admin.products");
@@ -92,16 +93,6 @@ const updateProductFormSchema = productCoreSchema.and(
   }),
 );
 
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
-
-function extFromMime(mime: string): string | null {
-  if (mime === "image/jpeg") return "jpg";
-  if (mime === "image/png") return "png";
-  if (mime === "image/webp") return "webp";
-  return null;
-}
-
 export async function createProduct(
   _prev: ProductFormState,
   formData: FormData,
@@ -126,15 +117,24 @@ export async function createProduct(
     lowest30GrossEuro: formData.get("lowest30GrossEuro") ?? "",
     lowest30NetEuro: formData.get("lowest30NetEuro") ?? "",
     stockQuantity: formData.get("stockQuantity"),
+    availableQuantity: formData.get("availableQuantity"),
     deliveryTimeKey: formData.get("deliveryTimeKey"),
     restockDays: formData.get("restockDays"),
     freeShipping: formData.get("freeShipping") === "on",
     minOrderQty: formData.get("minOrderQty"),
     purchaseStep: formData.get("purchaseStep"),
     maxOrderQty: formData.get("maxOrderQty"),
+    shippingCountryCodes: formData.getAll("shippingCountryCodes"),
     amazonRatingAverage: formData.get("amazonRatingAverage") ?? "",
     amazonRatingCount: formData.get("amazonRatingCount") ?? "",
     amazonReviewUrl: formData.get("amazonReviewUrl") ?? "",
+    categoryTag: String(formData.get("categoryTag") ?? ""),
+    leadText: String(formData.get("leadText") ?? ""),
+    dimensionsText: String(formData.get("dimensionsText") ?? ""),
+    weightText: String(formData.get("weightText") ?? ""),
+    materialText: String(formData.get("materialText") ?? ""),
+    featureBullets: String(formData.get("featureBullets") ?? ""),
+    isBestseller: formData.get("isBestseller") === "on",
     imageUrl: formData.get("imageUrl"),
     imageAlt: formData.get("imageAlt"),
     isActive: parseIsActiveFromFormData(formData),
@@ -172,13 +172,22 @@ export async function createProduct(
         lowestPrice30dGrossCents: lowGross,
         lowestPrice30dNetCents: lowNet,
         stockQuantity: d.stockQuantity,
+        availableQuantity: d.availableQuantity,
         deliveryTimeKey: d.deliveryTimeKey,
         restockDays: d.restockDays,
         freeShipping: d.freeShipping,
         minOrderQty: d.minOrderQty,
         purchaseStep: d.purchaseStep,
         maxOrderQty: d.maxOrderQty,
+        shippingCountryCodes: d.shippingCountryCodes,
         isActive: d.isActive,
+        isBestseller: d.isBestseller,
+        categoryTag: d.categoryTag,
+        leadText: d.leadText,
+        dimensionsText: d.dimensionsText,
+        weightText: d.weightText,
+        materialText: d.materialText,
+        featureBullets: d.featureBullets,
         ...amazon,
         images: {
           create: [
@@ -229,15 +238,24 @@ export async function updateProduct(
     lowest30GrossEuro: formData.get("lowest30GrossEuro") ?? "",
     lowest30NetEuro: formData.get("lowest30NetEuro") ?? "",
     stockQuantity: formData.get("stockQuantity"),
+    availableQuantity: formData.get("availableQuantity"),
     deliveryTimeKey: formData.get("deliveryTimeKey"),
     restockDays: formData.get("restockDays"),
     freeShipping: formData.get("freeShipping") === "on",
     minOrderQty: formData.get("minOrderQty"),
     purchaseStep: formData.get("purchaseStep"),
     maxOrderQty: formData.get("maxOrderQty"),
+    shippingCountryCodes: formData.getAll("shippingCountryCodes"),
     amazonRatingAverage: formData.get("amazonRatingAverage") ?? "",
     amazonRatingCount: formData.get("amazonRatingCount") ?? "",
     amazonReviewUrl: formData.get("amazonReviewUrl") ?? "",
+    categoryTag: String(formData.get("categoryTag") ?? ""),
+    leadText: String(formData.get("leadText") ?? ""),
+    dimensionsText: String(formData.get("dimensionsText") ?? ""),
+    weightText: String(formData.get("weightText") ?? ""),
+    materialText: String(formData.get("materialText") ?? ""),
+    featureBullets: String(formData.get("featureBullets") ?? ""),
+    isBestseller: formData.get("isBestseller") === "on",
     isActive: parseIsActiveFromFormData(formData),
   };
 
@@ -284,13 +302,22 @@ export async function updateProduct(
         lowestPrice30dGrossCents: lowGross,
         lowestPrice30dNetCents: lowNet,
         stockQuantity: d.stockQuantity,
+        availableQuantity: d.availableQuantity,
         deliveryTimeKey: d.deliveryTimeKey,
         restockDays: d.restockDays,
         freeShipping: d.freeShipping,
         minOrderQty: d.minOrderQty,
         purchaseStep: d.purchaseStep,
         maxOrderQty: d.maxOrderQty,
+        shippingCountryCodes: d.shippingCountryCodes,
         isActive: d.isActive,
+        isBestseller: d.isBestseller,
+        categoryTag: d.categoryTag,
+        leadText: d.leadText,
+        dimensionsText: d.dimensionsText,
+        weightText: d.weightText,
+        materialText: d.materialText,
+        featureBullets: d.featureBullets,
         ...amazon,
       },
     });

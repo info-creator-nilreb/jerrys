@@ -4,13 +4,20 @@ import { sendOrderRefundedIfNeeded } from "@/lib/email/order-refunded";
 import { sendOrderShippedIfNeeded } from "@/lib/email/order-shipped";
 import { createOrderEvent, ORDER_EVENT_STATUS_CHANGED } from "@/lib/orders/order-events";
 import { isAllowedOrderStatusTransition } from "@/lib/orders/order-status-machine";
+import {
+  decrementWarehouseForShippedOrder,
+  restoreStockOnOrderCancelled,
+} from "@/lib/orders/order-stock-on-status";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 
 const log = createLogger("orders.transition");
 
 export type TransitionResult =
   | { ok: true }
-  | { ok: false; error: "not_found" | "invalid_transition" | "terminal" };
+  | {
+      ok: false;
+      error: "not_found" | "invalid_transition" | "terminal" | "insufficient_warehouse";
+    };
 
 /**
  * Atomarer Statuswechsel inkl. Historie (Aufrufer muss Admin-Rechte geprüft haben).
@@ -23,7 +30,7 @@ export async function applyOrderStatusTransition(
   const result = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({
       where: { id: orderId },
-      select: { id: true, status: true },
+      include: { items: true },
     });
     if (!order) {
       return { ok: false, error: "not_found" } as const;
@@ -36,6 +43,16 @@ export async function applyOrderStatusTransition(
 
     if (!isAllowedOrderStatusTransition(from, toStatus)) {
       return { ok: false, error: "invalid_transition" } as const;
+    }
+
+    if (toStatus === "shipped") {
+      const w = await decrementWarehouseForShippedOrder(tx, order.items);
+      if (!w.ok) return { ok: false, error: "insufficient_warehouse" } as const;
+    }
+
+    if (toStatus === "cancelled") {
+      const r = await restoreStockOnOrderCancelled(tx, from, order.items);
+      if (!r.ok) return { ok: false, error: "insufficient_warehouse" } as const;
     }
 
     await tx.order.update({

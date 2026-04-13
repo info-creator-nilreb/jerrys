@@ -3,10 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { resendOrderEmailFromAdmin } from "@/lib/email/resend-order-email-from-admin";
 import { applyOrderStatusTransition } from "@/lib/orders/apply-order-status-transition";
 import { getPrisma } from "@/lib/db/prisma";
 
 export type OrderStatusActionState = { error?: string; ok?: boolean } | null;
+
+export type ResendOrderEmailState = { error?: string; ok?: boolean; message?: string } | null;
 
 export async function updateOrderStatus(
   _prev: OrderStatusActionState,
@@ -32,10 +35,49 @@ export async function updateOrderStatus(
     if (result.error === "not_found") {
       return { error: "Bestellung nicht gefunden." };
     }
+    if (result.error === "insufficient_warehouse") {
+      return {
+        error:
+          "Lagerbestand reicht für mindestens eine Position nicht — bitte Produktbestände prüfen oder Mengen anpassen.",
+      };
+    }
     return { error: "Statuswechsel ist nicht erlaubt." };
   }
 
   revalidatePath("/admin/orders");
   revalidatePath(`/admin/orders/${orderId.trim()}`);
   return { ok: true };
+}
+
+export async function resendOrderEmail(
+  _prev: ResendOrderEmailState,
+  formData: FormData,
+): Promise<ResendOrderEmailState> {
+  const session = await auth();
+  if (!session?.user) {
+    redirect("/admin/login");
+  }
+
+  const orderId = formData.get("orderId");
+  const emailType = formData.get("emailType");
+  if (typeof orderId !== "string" || !orderId.trim()) {
+    return { error: "Ungültige Bestellung." };
+  }
+  if (typeof emailType !== "string" || !emailType.trim()) {
+    return { error: "Ungültiger E-Mail-Typ." };
+  }
+
+  try {
+    const result = await resendOrderEmailFromAdmin(orderId.trim(), emailType.trim());
+    if (!result.ok) {
+      return { error: result.error };
+    }
+
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${orderId.trim()}`);
+    return { ok: true, message: result.message };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { error: msg || "Unerwarteter Fehler beim erneuten Senden." };
+  }
 }

@@ -1,33 +1,18 @@
 "use client";
 
+import { CircleQuestionMark, Lock } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { centsToPriceInputString, parseEuroInputToCents } from "@/lib/catalog/format";
 import { grossCentsFromNet, netCentsFromGross } from "@/lib/catalog/pricing";
 
 function LockIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      aria-hidden
-    >
-      <rect x="5" y="11" width="14" height="10" rx="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  );
+  return <Lock className={className} width={16} height={16} aria-hidden strokeWidth={2} />;
 }
 
 function HelpIcon({ title }: { title: string }) {
   return (
     <span title={title} className="inline-flex text-primary" aria-label={title}>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" />
-      </svg>
+      <CircleQuestionMark width={16} height={16} aria-hidden strokeWidth={2} />
     </span>
   );
 }

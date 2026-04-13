@@ -4,6 +4,18 @@ import { createLogger } from "@/lib/logging/logger";
 
 const log = createLogger("email.provider");
 
+/**
+ * Trim + eine umschließende ASCII-`"`-Ebene entfernen (falls `.env`-Parser oder Editor Reste lassen).
+ * Keine Änderung an `MAIL_FROM` — dort sind Anführungszeichen im Anzeigenamen absichtlich möglich.
+ */
+function normalizeSmtpSecret(raw: string): string {
+  let v = raw.trim();
+  if (v.length >= 2 && v.startsWith('"') && v.endsWith('"')) {
+    v = v.slice(1, -1).trim();
+  }
+  return v;
+}
+
 function recipientDomain(to: string): string {
   const at = to.lastIndexOf("@");
   return at > 0 ? to.slice(at + 1) : "unknown";
@@ -17,8 +29,8 @@ export type SendTransactionalResult = {
 
 function smtpConfigured(): boolean {
   const host = process.env.SMTP_HOST?.trim();
-  const user = process.env.SMTP_USER?.trim();
-  const pass = process.env.SMTP_PASS?.trim();
+  const user = process.env.SMTP_USER ? normalizeSmtpSecret(process.env.SMTP_USER) : "";
+  const pass = process.env.SMTP_PASS ? normalizeSmtpSecret(process.env.SMTP_PASS) : "";
   const from = process.env.MAIL_FROM?.trim();
   return Boolean(host && user && pass && from);
 }
@@ -38,8 +50,11 @@ export async function sendTransactionalEmail(params: {
   if (smtpConfigured()) {
     const host = process.env.SMTP_HOST!.trim();
     const port = Number(process.env.SMTP_PORT?.trim() || "587");
-    const user = process.env.SMTP_USER!.trim();
-    const pass = process.env.SMTP_PASS!.trim();
+    let user = normalizeSmtpSecret(process.env.SMTP_USER!);
+    let pass = normalizeSmtpSecret(process.env.SMTP_PASS!);
+    if (host.toLowerCase().includes("gmail")) {
+      pass = pass.replace(/\s+/g, "");
+    }
     const secure = process.env.SMTP_SECURE === "true";
 
     try {

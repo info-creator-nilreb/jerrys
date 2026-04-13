@@ -12,6 +12,7 @@ import {
   IconCustomers,
   IconDashboard,
   IconOrders,
+  IconStorefront,
 } from "@/components/admin/admin-nav-icons";
 
 const STORAGE_KEY = "jerrys-admin-sidebar-collapsed";
@@ -26,6 +27,7 @@ type NavItem = {
 
 const mainNav: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: IconDashboard },
+  { href: "/admin/startseite", label: "Startseite", icon: IconStorefront },
   { href: "/admin/products", label: "Katalog", icon: IconCatalog },
   { href: "/admin/orders", label: "Bestellungen", icon: IconOrders },
   { href: "/admin/customers", label: "Kunden", icon: IconCustomers },

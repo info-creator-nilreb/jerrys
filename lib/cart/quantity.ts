@@ -1,25 +1,26 @@
 export type ProductQuantityRules = {
-  stockQuantity: number;
+  /** Verkaufbarer Bestand (Shop); physisches Lager siehe `stock_quantity` im Admin. */
+  availableQuantity: number;
   minOrderQty: number;
   purchaseStep: number;
   maxOrderQty: number | null;
 };
 
-/** Prüft, ob `quantity` den Staffel-/Mindest-/Max-Regeln entspricht (und Lager, falls begrenzt). */
+/** Prüft, ob `quantity` den Staffel-/Mindest-/Max-Regeln entspricht (und verfügbarer Bestand). */
 export function isValidCartQuantity(product: ProductQuantityRules, quantity: number): boolean {
   if (!Number.isInteger(quantity) || quantity < 1) return false;
   if (quantity < product.minOrderQty) return false;
   if ((quantity - product.minOrderQty) % product.purchaseStep !== 0) return false;
   if (product.maxOrderQty != null && quantity > product.maxOrderQty) return false;
-  if (product.stockQuantity < quantity) return false;
+  if (product.availableQuantity < quantity) return false;
   return true;
 }
 
 /**
- * Nächste gültige Menge ab `desired` (aufwärts), oder `null` wenn unmöglich (z. B. kein Lager).
+ * Nächste gültige Menge ab `desired` (aufwärts), oder `null` wenn unmöglich (z. B. nicht verfügbar).
  */
 export function clampToValidQuantity(product: ProductQuantityRules, desired: number): number | null {
-  if (product.stockQuantity < product.minOrderQty) return null;
+  if (product.availableQuantity < product.minOrderQty) return null;
   let q = Math.max(desired, product.minOrderQty);
   const rem = (q - product.minOrderQty) % product.purchaseStep;
   if (rem !== 0) q += product.purchaseStep - rem;
@@ -28,8 +29,8 @@ export function clampToValidQuantity(product: ProductQuantityRules, desired: num
     if (!isValidCartQuantity(product, max)) return null;
     q = max;
   }
-  if (q > product.stockQuantity) {
-    const cap = product.stockQuantity;
+  if (q > product.availableQuantity) {
+    const cap = product.availableQuantity;
     if (cap < product.minOrderQty) return null;
     let q2 = Math.min(q, cap);
     const r2 = (q2 - product.minOrderQty) % product.purchaseStep;
@@ -40,13 +41,13 @@ export function clampToValidQuantity(product: ProductQuantityRules, desired: num
   return isValidCartQuantity(product, q) ? q : null;
 }
 
-/** Obergrenze für Mengenauswahl (Lager und ggf. Maximalabnahme). */
+/** Obergrenze für Mengenauswahl (verfügbar und ggf. Maximalabnahme). */
 export function maxSelectableQuantity(product: ProductQuantityRules): number {
-  if (product.stockQuantity < product.minOrderQty) return product.minOrderQty;
+  if (product.availableQuantity < product.minOrderQty) return product.minOrderQty;
   const cap =
     product.maxOrderQty != null
-      ? Math.min(product.stockQuantity, product.maxOrderQty)
-      : product.stockQuantity;
+      ? Math.min(product.availableQuantity, product.maxOrderQty)
+      : product.availableQuantity;
   return Math.max(product.minOrderQty, cap);
 }
 

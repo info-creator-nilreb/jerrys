@@ -10,9 +10,10 @@ export type StorefrontProductCard = {
   slug: string;
   title: string;
   subtitle: string | null;
+  isBestseller: boolean;
   priceGrossCents: number;
   currency: string;
-  stockQuantity: number;
+  availableQuantity: number;
   minOrderQty: number;
   purchaseStep: number;
   maxOrderQty: number | null;
@@ -24,7 +25,7 @@ export type StorefrontProductCard = {
 
 export function ProductCard({ product }: { product: StorefrontProductCard }) {
   const quantityRules: ProductQuantityRules = {
-    stockQuantity: product.stockQuantity,
+    availableQuantity: product.availableQuantity,
     minOrderQty: product.minOrderQty,
     purchaseStep: product.purchaseStep,
     maxOrderQty: product.maxOrderQty,
@@ -40,6 +41,11 @@ export function ProductCard({ product }: { product: StorefrontProductCard }) {
           aria-label={`${product.title} – zur Produktseite`}
         />
         <div className="relative z-10 shrink-0 pointer-events-auto">
+          {product.isBestseller ? (
+            <span className="absolute left-3 top-3 z-30 inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-white shadow-sm">
+              Bestseller
+            </span>
+          ) : null}
           <ProductCardImageSlider images={product.images} productTitle={product.title} />
         </div>
         <div className="relative z-10 flex min-h-0 flex-1 flex-col pointer-events-none p-6 md:p-7">

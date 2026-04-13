@@ -1,17 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import {
+  startTransition,
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FocusEvent,
+  type FormEvent,
+} from "react";
 import { submitCheckout, type CheckoutActionState } from "@/app/(storefront)/checkout/actions";
 import type { CheckoutSummaryLine } from "@/components/storefront/checkout-summary-aside";
 import { CheckoutSummaryAside } from "@/components/storefront/checkout-summary-aside";
-import { CartExpressPlaceholder } from "@/components/storefront/cart-express-placeholder";
+import {
+  CheckoutPaymentMethods,
+  type CheckoutPayPalMethodId,
+} from "@/components/storefront/checkout-payment-methods";
+import { PayPalCardFieldsCheckout } from "@/components/storefront/paypal-card-fields-checkout";
+import { addressLine1HouseNumberMessage } from "@/lib/checkout/address-line-validation";
+import { postalCodeErrorMessage } from "@/lib/checkout/postal-code-validation";
+import { z } from "zod";
 
 const initial: CheckoutActionState = null;
 
-const inputClass =
-  "w-full rounded-md border border-[#d2d5d9] bg-white px-3 py-2.5 text-sm text-[#1f2937] outline-none ring-primary placeholder:text-[#9ca3af] focus:border-primary focus:ring-1";
+/** Formular-ID für Tests / Erweiterungen. */
+export const STOREFRONT_CHECKOUT_FORM_ID = "storefront-checkout-form";
+
+/** Einheitliche Höhe: native `<select>` ignoriert oft vertikales Padding – feste Mindesthöhe + gleiches Padding wie Inputs. */
+const formControlBase =
+  "box-border min-h-[44px] w-full rounded-md border border-[#d2d5d9] bg-white px-3 text-sm leading-normal text-[#1f2937] outline-none ring-primary placeholder:text-[#9ca3af] focus:border-primary focus:ring-1";
+
+const inputClass = `${formControlBase} py-[10px]`;
+
+const selectClass = `${formControlBase} py-[10px] appearance-none`;
 
 /** Stabile IDs für `aria-describedby` / Fehlermeldungen (eine Checkout-Seite pro Dokument). */
 const checkoutErrId = {
@@ -21,14 +44,64 @@ const checkoutErrId = {
   shippingLine1: "checkout-err-shippingLine1",
   shippingZip: "checkout-err-shippingZip",
   shippingCity: "checkout-err-shippingCity",
+  shippingCountry: "checkout-err-shippingCountry",
   billingFirstName: "checkout-err-billingFirstName",
   billingLastName: "checkout-err-billingLastName",
   billingLine1: "checkout-err-billingLine1",
   billingZip: "checkout-err-billingZip",
   billingCity: "checkout-err-billingCity",
-  paymentMethod: "checkout-err-paymentMethod",
+  billingCountry: "checkout-err-billingCountry",
+  rechtlicheKenntnis: "checkout-err-rechtlicheKenntnis",
   form: "checkout-err-form",
 } as const;
+
+/** Deutsche Kurzbezeichnung + Ziel für Sprungmarke (Browser-Autofill / Fehlerliste). */
+const CHECKOUT_FIELD_META: Record<string, { label: string; scrollId: string | null }> = {
+  _form: { label: "Allgemein", scrollId: null },
+  email: { label: "E-Mail", scrollId: "email" },
+  shippingCountry: { label: "Land / Region (Lieferung)", scrollId: "shippingCountry" },
+  shippingFirstName: { label: "Vorname (Lieferung)", scrollId: "shippingFirstName" },
+  shippingLastName: { label: "Nachname (Lieferung)", scrollId: "shippingLastName" },
+  shippingCompany: { label: "Firma (Lieferung)", scrollId: "shippingCompany" },
+  shippingLine1: { label: "Straße und Hausnummer (Lieferung)", scrollId: "shippingLine1" },
+  shippingLine2: { label: "Adresszusatz (Lieferung)", scrollId: "shippingLine2" },
+  shippingZip: { label: "Postleitzahl (Lieferung)", scrollId: "shippingZip" },
+  shippingCity: { label: "Stadt (Lieferung)", scrollId: "shippingCity" },
+  billingCountry: { label: "Land / Region (Rechnung)", scrollId: "billingCountry" },
+  billingFirstName: { label: "Vorname (Rechnung)", scrollId: "billingFirstName" },
+  billingLastName: { label: "Nachname (Rechnung)", scrollId: "billingLastName" },
+  billingCompany: { label: "Firma (Rechnung)", scrollId: "billingCompany" },
+  billingLine1: { label: "Straße und Hausnummer (Rechnung)", scrollId: "billingLine1" },
+  billingLine2: { label: "Adresszusatz (Rechnung)", scrollId: "billingLine2" },
+  billingZip: { label: "Postleitzahl (Rechnung)", scrollId: "billingZip" },
+  billingCity: { label: "Stadt (Rechnung)", scrollId: "billingCity" },
+  phone: { label: "Telefon", scrollId: "phone" },
+  paymentMethod: { label: "Zahlungsart", scrollId: null },
+  rechtlicheKenntnis: { label: "AGB / Widerruf", scrollId: "rechtlicheKenntnis" },
+  idempotencyKey: { label: "Sitzung", scrollId: null },
+};
+
+const CHECKOUT_ERROR_SCROLL_ORDER: string[] = [
+  "email",
+  "shippingCountry",
+  "shippingFirstName",
+  "shippingLastName",
+  "shippingCompany",
+  "shippingLine1",
+  "shippingLine2",
+  "shippingZip",
+  "shippingCity",
+  "phone",
+  "billingCountry",
+  "billingFirstName",
+  "billingLastName",
+  "billingCompany",
+  "billingLine1",
+  "billingLine2",
+  "billingZip",
+  "billingCity",
+  "rechtlicheKenntnis",
+];
 
 function ariaFieldErr(err: string | undefined, describeId: string) {
   if (!err) return {};
@@ -41,50 +114,211 @@ export function CheckoutForm({
   subtotalCents,
   shippingCents,
   currency,
+  allowedShippingCountries,
+  payPalConfigured,
+  payPalClientId,
+  prefillPaypal,
 }: {
   idempotencyKey: string;
   lines: CheckoutSummaryLine[];
   subtotalCents: number;
   shippingCents: number;
   currency: string;
+  allowedShippingCountries: { code: string; label: string }[];
+  payPalConfigured: boolean;
+  payPalClientId: string;
+  prefillPaypal?: boolean;
 }) {
-  const router = useRouter();
   const [state, formAction, pending] = useActionState(submitCheckout, initial);
+  const lastServerErrorSigRef = useRef<string | null>(null);
   const [billingDifferent, setBillingDifferent] = useState(false);
+  const [liveErrors, setLiveErrors] = useState<Record<string, string>>({});
+  /** Wenn PayPal Advanced Card Fields aktiv sind, ersetzen sie den klassischen Form-Submit. */
+  const [payPalCardFieldsPrimary, setPayPalCardFieldsPrimary] = useState(false);
+  /** Nur bei „Debit- oder Kreditkarte“ werden die Hosted Card Fields gemountet. */
+  const [payPalSurface, setPayPalSurface] = useState<CheckoutPayPalMethodId>("paypal");
+
+  const defaultCountry = allowedShippingCountries[0]?.code ?? "DE";
 
   useEffect(() => {
-    if (!state?.ok) return;
-    if ("stripeCheckoutUrl" in state && state.stripeCheckoutUrl) {
-      window.location.assign(state.stripeCheckoutUrl);
-      return;
+    if (payPalSurface !== "card") {
+      setPayPalCardFieldsPrimary(false);
     }
-    router.push(`/checkout/erfolg?nr=${encodeURIComponent(state.orderNumber)}`);
-  }, [state, router]);
+  }, [payPalSurface]);
+
+  useEffect(() => {
+    if (!prefillPaypal) return;
+    const t = window.setTimeout(() => {
+      document.getElementById("checkout-section-zahlung")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+    return () => window.clearTimeout(t);
+  }, [prefillPaypal]);
 
   const fe = state && "fieldErrors" in state ? state.fieldErrors : undefined;
 
+  useEffect(() => {
+    if (!state || state.ok || !("fieldErrors" in state) || !state.fieldErrors) {
+      if (state?.ok) lastServerErrorSigRef.current = null;
+      return;
+    }
+    const sig = JSON.stringify({ err: state.error, fe: state.fieldErrors });
+    if (sig === lastServerErrorSigRef.current) return;
+    lastServerErrorSigRef.current = sig;
+
+    const errs = state.fieldErrors;
+    let focused = false;
+    for (const key of CHECKOUT_ERROR_SCROLL_ORDER) {
+      if (!errs[key]) continue;
+      const scrollId = CHECKOUT_FIELD_META[key]?.scrollId ?? key;
+      const el = scrollId ? document.getElementById(scrollId) : null;
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        try {
+          (el as HTMLElement).focus({ preventScroll: true });
+        } catch {
+          (el as HTMLElement).focus();
+        }
+        focused = true;
+        break;
+      }
+    }
+    if (!focused) {
+      for (const key of Object.keys(errs)) {
+        const el = document.getElementById(key);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          try {
+            (el as HTMLElement).focus({ preventScroll: true });
+          } catch {
+            (el as HTMLElement).focus();
+          }
+          break;
+        }
+      }
+    }
+  }, [state]);
+
+  /**
+   * Ohne `preventDefault` setzt React 19 nach jeder abgeschlossenen Server Action das Formular zurück
+   * (auch bei `{ ok: false }`) — unkontrollierte Felder wie die E-Mail werden geleert.
+   */
+  const onFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    startTransition(() => {
+      formAction(new FormData(e.currentTarget));
+    });
+  };
+
+  const clearLive = (key: string) => {
+    setLiveErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  const onEmailBlur = (e: FocusEvent<HTMLInputElement>) => {
+    const v = e.target.value.trim();
+    if (!v) {
+      setLiveErrors((p) => ({ ...p, email: "" }));
+      return;
+    }
+    const r = z.string().email().safeParse(v);
+    setLiveErrors((p) => ({
+      ...p,
+      email: r.success ? "" : "Bitte gültige E-Mail-Adresse eingeben.",
+    }));
+  };
+
+  const readCountry = (form: HTMLFormElement | null | undefined, name: "shippingCountry" | "billingCountry") => {
+    const el = form?.elements.namedItem(name) as HTMLSelectElement | undefined;
+    return (el?.value ?? defaultCountry).trim().toUpperCase();
+  };
+
+  const onShippingZipBlur = (e: FocusEvent<HTMLInputElement>) => {
+    const country = readCountry(e.target.form, "shippingCountry");
+    const msg = postalCodeErrorMessage(country, e.target.value);
+    setLiveErrors((p) => ({ ...p, shippingZip: msg ?? "" }));
+  };
+
+  const onShippingLine1Blur = (e: FocusEvent<HTMLInputElement>) => {
+    const country = readCountry(e.target.form, "shippingCountry");
+    const msg = addressLine1HouseNumberMessage(country, e.target.value);
+    setLiveErrors((p) => ({ ...p, shippingLine1: msg ?? "" }));
+  };
+
+  const onBillingZipBlur = (e: FocusEvent<HTMLInputElement>) => {
+    if (!billingDifferent) return;
+    const country = readCountry(e.target.form, "billingCountry");
+    const msg = postalCodeErrorMessage(country, e.target.value);
+    setLiveErrors((p) => ({ ...p, billingZip: msg ?? "" }));
+  };
+
+  const onBillingLine1Blur = (e: FocusEvent<HTMLInputElement>) => {
+    if (!billingDifferent) return;
+    const country = readCountry(e.target.form, "billingCountry");
+    const msg = addressLine1HouseNumberMessage(country, e.target.value);
+    setLiveErrors((p) => ({ ...p, billingLine1: msg ?? "" }));
+  };
+
+  const onShippingCountryChange = (_e: ChangeEvent<HTMLSelectElement>) => {
+    clearLive("shippingZip");
+    clearLive("shippingLine1");
+  };
+
+  const onBillingCountryChange = (_e: ChangeEvent<HTMLSelectElement>) => {
+    clearLive("billingZip");
+    clearLive("billingLine1");
+  };
+
   return (
     <form
-      action={formAction}
-      className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] lg:items-start lg:gap-0"
+      id={STOREFRONT_CHECKOUT_FORM_ID}
+      onSubmit={onFormSubmit}
+      className="grid grid-cols-1 gap-0 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] lg:items-start"
     >
-      <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
-
-      <div className="border-b border-(--surface-muted) bg-white px-4 py-10 sm:px-8 lg:border-b-0 lg:pr-12 lg:pl-0">
+      <div className="order-2 min-w-0 border-b border-(--surface-muted) bg-white px-4 py-10 sm:px-8 lg:order-1 lg:border-b-0 lg:pr-12 lg:pl-0">
+        <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
+        <input type="hidden" name="paymentMethod" value="paypal" />
         <h1 className="text-xl font-semibold text-[#1f2937] sm:text-2xl">Checkout</h1>
 
-        <section className="mt-10">
-          <p className="text-sm font-medium tracking-wide text-[#6b7280] uppercase">Express Checkout</p>
-          <div className="mt-3">
-            <CartExpressPlaceholder />
+        {state && !state.ok ? (
+          <div
+            id="checkout-validation-summary"
+            className="mt-4 max-w-lg rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
+            role="alert"
+          >
+            <p className="font-medium">{state.error}</p>
+            {fe && Object.keys(fe).length > 0 ? (
+              <div className="mt-3 border-t border-red-200/80 pt-3">
+                <p className="text-xs font-medium text-red-950">Bitte prüfen:</p>
+                <ul className="mt-2 list-inside list-disc space-y-1.5 text-sm text-red-900">
+                  {Object.entries(fe).map(([key, message]) => {
+                    const meta = CHECKOUT_FIELD_META[key];
+                    const label = meta?.label ?? key;
+                    const href = meta?.scrollId ? `#${meta.scrollId}` : undefined;
+                    return (
+                      <li key={key}>
+                        {href ? (
+                          <a href={href} className="font-medium text-primary underline-offset-2 hover:underline">
+                            {label}
+                          </a>
+                        ) : (
+                          <span className="font-medium">{label}</span>
+                        )}
+                        {": "}
+                        <span className="text-red-800">{message}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ) : null}
           </div>
-          <div className="relative my-8 text-center text-sm text-[#9ca3af]">
-            <span className="relative z-10 bg-white px-3">ODER</span>
-            <div className="absolute inset-x-0 top-1/2 border-t border-[#e5e7eb]" aria-hidden />
-          </div>
-        </section>
+        ) : null}
 
-        <section className="mt-2">
+        <section id="checkout-section-contact" className="mt-10 scroll-mt-24">
           <div className="flex items-baseline justify-between gap-4">
             <h2 className="text-lg font-semibold text-[#1f2937]">Kontakt</h2>
             <span className="text-sm text-[#9ca3af]">Anmelden</span>
@@ -101,16 +335,24 @@ export function CheckoutForm({
               autoComplete="email"
               placeholder="E-Mail-Adresse oder Mobiltelefonnummer"
               className={inputClass}
-              {...ariaFieldErr(fe?.email, checkoutErrId.email)}
+              onBlur={onEmailBlur}
+              onChange={() => clearLive("email")}
+              {...ariaFieldErr(fe?.email ?? (liveErrors.email || undefined), checkoutErrId.email)}
             />
-            {fe?.email ? (
+            {(fe?.email || liveErrors.email) && (
               <p id={checkoutErrId.email} className="mt-1 text-sm text-red-600" role="alert">
-                {fe.email}
+                {fe?.email ?? liveErrors.email}
               </p>
-            ) : null}
+            )}
           </div>
           <label className="mt-4 flex items-center gap-2 text-sm text-[#374151]">
-            <input type="checkbox" name="newsletter" className="size-4 rounded border-[#d2d5d9]" disabled />
+            <input
+              type="checkbox"
+              name="newsletter"
+              autoComplete="off"
+              className="size-4 rounded border-[#d2d5d9]"
+              disabled
+            />
             Neuigkeiten und Angebote via E-Mail erhalten
           </label>
         </section>
@@ -129,9 +371,26 @@ export function CheckoutForm({
               <label htmlFor="shippingCountry" className="mb-1 block text-sm text-[#6b7280]">
                 Land / Region
               </label>
-              <select id="shippingCountry" name="shippingCountry" className={inputClass} defaultValue="DE">
-                <option value="DE">Deutschland</option>
+              <select
+                id="shippingCountry"
+                name="shippingCountry"
+                autoComplete="shipping country"
+                className={selectClass}
+                defaultValue={defaultCountry}
+                onChange={onShippingCountryChange}
+                {...ariaFieldErr(fe?.shippingCountry, checkoutErrId.shippingCountry)}
+              >
+                {allowedShippingCountries.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.label}
+                  </option>
+                ))}
               </select>
+              {fe?.shippingCountry ? (
+                <p id={checkoutErrId.shippingCountry} className="mt-1 text-sm text-red-600" role="alert">
+                  {fe.shippingCountry}
+                </p>
+              ) : null}
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
@@ -142,7 +401,7 @@ export function CheckoutForm({
                   id="shippingFirstName"
                   name="shippingFirstName"
                   required
-                  autoComplete="given-name"
+                  autoComplete="shipping given-name"
                   className={inputClass}
                   {...ariaFieldErr(fe?.shippingFirstName, checkoutErrId.shippingFirstName)}
                 />
@@ -164,7 +423,7 @@ export function CheckoutForm({
                   id="shippingLastName"
                   name="shippingLastName"
                   required
-                  autoComplete="family-name"
+                  autoComplete="shipping family-name"
                   className={inputClass}
                   {...ariaFieldErr(fe?.shippingLastName, checkoutErrId.shippingLastName)}
                 />
@@ -183,31 +442,47 @@ export function CheckoutForm({
               <label htmlFor="shippingCompany" className="mb-1 block text-sm text-[#6b7280]">
                 Firma (optional)
               </label>
-              <input id="shippingCompany" name="shippingCompany" className={inputClass} />
+              <input
+                id="shippingCompany"
+                name="shippingCompany"
+                autoComplete="shipping organization"
+                className={inputClass}
+              />
             </div>
             <div>
               <label htmlFor="shippingLine1" className="mb-1 block text-sm text-[#6b7280]">
-                Adresse
+                Straße und Hausnummer
               </label>
               <input
                 id="shippingLine1"
                 name="shippingLine1"
                 required
-                autoComplete="address-line1"
+                autoComplete="shipping address-line1"
+                placeholder="z. B. Musterstraße 12"
                 className={inputClass}
-                {...ariaFieldErr(fe?.shippingLine1, checkoutErrId.shippingLine1)}
+                onBlur={onShippingLine1Blur}
+                onChange={() => clearLive("shippingLine1")}
+                {...ariaFieldErr(
+                  fe?.shippingLine1 ?? (liveErrors.shippingLine1 || undefined),
+                  checkoutErrId.shippingLine1,
+                )}
               />
-              {fe?.shippingLine1 ? (
+              {(fe?.shippingLine1 || liveErrors.shippingLine1) && (
                 <p id={checkoutErrId.shippingLine1} className="mt-1 text-sm text-red-600" role="alert">
-                  {fe.shippingLine1}
+                  {fe?.shippingLine1 ?? liveErrors.shippingLine1}
                 </p>
-              ) : null}
+              )}
             </div>
             <div>
               <label htmlFor="shippingLine2" className="mb-1 block text-sm text-[#6b7280]">
                 Wohnung, Zimmer, usw. (optional)
               </label>
-              <input id="shippingLine2" name="shippingLine2" className={inputClass} />
+              <input
+                id="shippingLine2"
+                name="shippingLine2"
+                autoComplete="shipping address-line2"
+                className={inputClass}
+              />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
@@ -218,17 +493,21 @@ export function CheckoutForm({
                   id="shippingZip"
                   name="shippingZip"
                   required
-                  inputMode="numeric"
-                  pattern="\d{5}"
-                  autoComplete="postal-code"
+                  inputMode="text"
+                  autoComplete="shipping postal-code"
                   className={inputClass}
-                  {...ariaFieldErr(fe?.shippingZip, checkoutErrId.shippingZip)}
+                  onBlur={onShippingZipBlur}
+                  onChange={() => clearLive("shippingZip")}
+                  {...ariaFieldErr(
+                    fe?.shippingZip ?? (liveErrors.shippingZip || undefined),
+                    checkoutErrId.shippingZip,
+                  )}
                 />
-                {fe?.shippingZip ? (
+                {(fe?.shippingZip || liveErrors.shippingZip) && (
                   <p id={checkoutErrId.shippingZip} className="mt-1 text-sm text-red-600" role="alert">
-                    {fe.shippingZip}
+                    {fe?.shippingZip ?? liveErrors.shippingZip}
                   </p>
-                ) : null}
+                )}
               </div>
               <div>
                 <label htmlFor="shippingCity" className="mb-1 block text-sm text-[#6b7280]">
@@ -238,7 +517,7 @@ export function CheckoutForm({
                   id="shippingCity"
                   name="shippingCity"
                   required
-                  autoComplete="address-level2"
+                  autoComplete="shipping address-level2"
                   className={inputClass}
                   {...ariaFieldErr(fe?.shippingCity, checkoutErrId.shippingCity)}
                 />
@@ -250,11 +529,12 @@ export function CheckoutForm({
               </div>
             </div>
             <div>
-              <label htmlFor="phone" className="mb-1 flex items-center gap-1 text-sm text-[#6b7280]">
+              <label
+                htmlFor="phone"
+                className="mb-1 block text-sm text-[#6b7280]"
+                title="Optional. Für Rückfragen zur Lieferung."
+              >
                 Telefon (optional)
-                <span className="text-[#9ca3af]" aria-hidden>
-                  ?
-                </span>
               </label>
               <p id="checkout-phone-hint" className="sr-only">
                 Optional. Für Rückfragen zur Lieferung.
@@ -263,7 +543,7 @@ export function CheckoutForm({
                 id="phone"
                 name="phone"
                 type="tel"
-                autoComplete="tel"
+                autoComplete="shipping tel"
                 className={inputClass}
                 aria-describedby="checkout-phone-hint"
               />
@@ -295,9 +575,26 @@ export function CheckoutForm({
                 <label htmlFor="billingCountry" className="mb-1 block text-sm text-[#6b7280]">
                   Land / Region (Rechnung)
                 </label>
-                <select id="billingCountry" name="billingCountry" className={inputClass} defaultValue="DE">
-                  <option value="DE">Deutschland</option>
+                <select
+                  id="billingCountry"
+                  name="billingCountry"
+                  autoComplete="billing country"
+                  className={selectClass}
+                  defaultValue={defaultCountry}
+                  onChange={onBillingCountryChange}
+                  {...ariaFieldErr(fe?.billingCountry, checkoutErrId.billingCountry)}
+                >
+                  {allowedShippingCountries.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.label}
+                    </option>
+                  ))}
                 </select>
+                {fe?.billingCountry ? (
+                  <p id={checkoutErrId.billingCountry} className="mt-1 text-sm text-red-600" role="alert">
+                    {fe.billingCountry}
+                  </p>
+                ) : null}
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
@@ -347,30 +644,46 @@ export function CheckoutForm({
                 <label htmlFor="billingCompany" className="mb-1 block text-sm text-[#6b7280]">
                   Firma (optional)
                 </label>
-                <input id="billingCompany" name="billingCompany" className={inputClass} />
+                <input
+                  id="billingCompany"
+                  name="billingCompany"
+                  autoComplete="billing organization"
+                  className={inputClass}
+                />
               </div>
               <div>
                 <label htmlFor="billingLine1" className="mb-1 block text-sm text-[#6b7280]">
-                  Adresse
+                  Straße und Hausnummer
                 </label>
                 <input
                   id="billingLine1"
                   name="billingLine1"
                   autoComplete="billing address-line1"
+                  placeholder="z. B. Musterstraße 12"
                   className={inputClass}
-                  {...ariaFieldErr(fe?.billingLine1, checkoutErrId.billingLine1)}
+                  onBlur={onBillingLine1Blur}
+                  onChange={() => clearLive("billingLine1")}
+                  {...ariaFieldErr(
+                    fe?.billingLine1 ?? (liveErrors.billingLine1 || undefined),
+                    checkoutErrId.billingLine1,
+                  )}
                 />
-                {fe?.billingLine1 ? (
+                {(fe?.billingLine1 || liveErrors.billingLine1) && (
                   <p id={checkoutErrId.billingLine1} className="mt-1 text-sm text-red-600" role="alert">
-                    {fe.billingLine1}
+                    {fe?.billingLine1 ?? liveErrors.billingLine1}
                   </p>
-                ) : null}
+                )}
               </div>
               <div>
                 <label htmlFor="billingLine2" className="mb-1 block text-sm text-[#6b7280]">
                   Adresszusatz (optional)
                 </label>
-                <input id="billingLine2" name="billingLine2" className={inputClass} />
+                <input
+                  id="billingLine2"
+                  name="billingLine2"
+                  autoComplete="billing address-line2"
+                  className={inputClass}
+                />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
@@ -380,17 +693,21 @@ export function CheckoutForm({
                   <input
                     id="billingZip"
                     name="billingZip"
-                    inputMode="numeric"
-                    pattern="\d{5}"
+                    inputMode="text"
                     autoComplete="billing postal-code"
                     className={inputClass}
-                    {...ariaFieldErr(fe?.billingZip, checkoutErrId.billingZip)}
+                    onBlur={onBillingZipBlur}
+                    onChange={() => clearLive("billingZip")}
+                    {...ariaFieldErr(
+                      fe?.billingZip ?? (liveErrors.billingZip || undefined),
+                      checkoutErrId.billingZip,
+                    )}
                   />
-                  {fe?.billingZip ? (
+                  {(fe?.billingZip || liveErrors.billingZip) && (
                     <p id={checkoutErrId.billingZip} className="mt-1 text-sm text-red-600" role="alert">
-                      {fe.billingZip}
+                      {fe?.billingZip ?? liveErrors.billingZip}
                     </p>
-                  ) : null}
+                  )}
                 </div>
                 <div>
                   <label htmlFor="billingCity" className="mb-1 block text-sm text-[#6b7280]">
@@ -414,62 +731,74 @@ export function CheckoutForm({
           ) : null}
         </section>
 
-        <section className="mt-12">
+        <section id="checkout-section-zahlung" className="mt-12 scroll-mt-24">
           <h2 className="text-lg font-semibold text-[#1f2937]">Zahlung</h2>
-          <p className="mt-1 text-sm text-[#6b7280]">
-            Alle Transaktionen sind sicher und verschlüsselt (Demo ohne echte Zahlung).
-          </p>
-          <fieldset
-            className="mt-6 space-y-3"
-            {...(fe?.paymentMethod
-              ? { "aria-describedby": checkoutErrId.paymentMethod, "aria-invalid": true as const }
-              : {})}
-          >
-            <legend className="sr-only">Zahlungsart</legend>
-            <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-[#e5e7eb] p-4 has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary">
-              <input type="radio" name="paymentMethod" value="vorkasse" defaultChecked className="size-4 text-primary" />
-              <span className="text-sm font-medium text-[#1f2937]">Vorkasse</span>
-            </label>
-            <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-[#e5e7eb] p-4 has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary">
-              <span className="flex items-center gap-3">
-                <input type="radio" name="paymentMethod" value="paypal" className="size-4 text-primary" />
-                <span className="text-sm font-medium text-[#1f2937]">PayPal</span>
-              </span>
-              <span className="text-sm font-semibold text-[#003087]">PayPal</span>
-            </label>
-            <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-[#e5e7eb] p-4 has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary">
-              <span className="flex items-center gap-3">
-                <input type="radio" name="paymentMethod" value="klarna" className="size-4 text-primary" />
-                <span className="text-sm font-medium text-[#1f2937]">Klarna</span>
-              </span>
-              <span className="text-sm font-semibold text-[#ffb3c7]">Klarna</span>
-            </label>
-          </fieldset>
-          {fe?.paymentMethod ? (
-            <p id={checkoutErrId.paymentMethod} className="mt-1 text-sm text-red-600" role="alert">
-              {fe.paymentMethod}
-            </p>
+          {payPalConfigured ? (
+            <>
+              <CheckoutPaymentMethods value={payPalSurface} onChange={setPayPalSurface} />
+              {payPalSurface === "card" ? (
+                <PayPalCardFieldsCheckout
+                  formId={STOREFRONT_CHECKOUT_FORM_ID}
+                  paypalClientId={payPalClientId}
+                  currency={currency}
+                  onEligibleChange={setPayPalCardFieldsPrimary}
+                />
+              ) : null}
+            </>
           ) : null}
         </section>
 
-        {state && !state.ok ? (
-          <p id={checkoutErrId.form} className="mt-8 text-sm text-red-600" role="alert">
-            {state.error}
-          </p>
-        ) : null}
+        {(!payPalConfigured || payPalSurface !== "card" || !payPalCardFieldsPrimary) && (
+          <button
+            type="submit"
+            disabled={pending}
+            aria-busy={pending}
+            className="mt-8 w-full rounded-md bg-primary py-3.5 text-sm font-semibold uppercase tracking-wide text-white shadow-sm transition-colors hover:bg-(--primary-hover) disabled:opacity-50 lg:max-w-md"
+          >
+            {pending ? "Wird gesendet…" : "Jetzt kostenpflichtig bestellen"}
+          </button>
+        )}
 
-        <button
-          type="submit"
-          disabled={pending}
-          aria-busy={pending}
-          className="mt-10 w-full rounded-md bg-primary py-3.5 text-sm font-semibold uppercase tracking-wide text-white shadow-sm transition-colors hover:bg-(--primary-hover) disabled:opacity-50 lg:max-w-md"
-        >
-          {pending ? "Wird gesendet…" : "Jetzt bestellen"}
-        </button>
+        <div className="mt-8 max-w-md">
+          <label
+            htmlFor="rechtlicheKenntnis"
+            className="flex cursor-pointer items-start gap-2 text-left text-xs leading-snug text-[#6b7280]"
+          >
+            <input
+              id="rechtlicheKenntnis"
+              type="checkbox"
+              name="rechtlicheKenntnis"
+              value="on"
+              required
+              autoComplete="off"
+              className="mt-0.5 size-3.5 shrink-0 rounded border-[#d2d5d9] text-primary"
+              {...ariaFieldErr(fe?.rechtlicheKenntnis, checkoutErrId.rechtlicheKenntnis)}
+            />
+            <span>
+              Ich habe die{" "}
+              <Link href="/agb" className="text-primary underline-offset-2 hover:underline">
+                AGB
+              </Link>{" "}
+              und die{" "}
+              <Link href="/widerruf" className="text-primary underline-offset-2 hover:underline">
+                Widerrufsbelehrung
+              </Link>{" "}
+              zur Kenntnis genommen.
+            </span>
+          </label>
+          {fe?.rechtlicheKenntnis ? (
+            <p id={checkoutErrId.rechtlicheKenntnis} className="mt-1.5 text-xs text-red-600" role="alert">
+              {fe.rechtlicheKenntnis}
+            </p>
+          ) : null}
+        </div>
 
         <nav className="mt-10 flex flex-wrap gap-x-4 gap-y-2 text-sm text-[#6b7280] underline-offset-2">
           <Link href="/widerruf" className="text-primary hover:text-(--primary-hover) hover:underline">
             Widerrufsrecht
+          </Link>
+          <Link href="/rueckgabe" className="text-primary hover:text-(--primary-hover) hover:underline">
+            Rückgabe
           </Link>
           <Link href="/versand" className="text-primary hover:text-(--primary-hover) hover:underline">
             Versand

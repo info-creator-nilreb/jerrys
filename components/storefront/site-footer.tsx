@@ -6,6 +6,7 @@ const legalLinks = [
   { href: "/datenschutz", label: "Datenschutz" },
   { href: "/agb", label: "AGB" },
   { href: "/widerruf", label: "Widerruf" },
+  { href: "/rueckgabe", label: "Rückgabe" },
   { href: "/versand", label: "Versand" },
 ] as const;
 

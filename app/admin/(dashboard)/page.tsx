@@ -1,5 +1,10 @@
 import Link from "next/link";
 import { auth } from "@/auth";
+import { formatPrice } from "@/lib/catalog/format";
+import { getAdminDashboardOrdersSnapshot } from "@/lib/orders/admin-queries";
+import { orderStatusLabel } from "@/lib/orders/order-status-label";
+
+export const dynamic = "force-dynamic";
 
 function timeGreeting(): string {
   const h = new Date().getHours();
@@ -19,11 +24,19 @@ function firstNameFromSession(name: string, email: string): string {
   return segment.charAt(0).toUpperCase() + segment.slice(1);
 }
 
+const dateFmt = new Intl.DateTimeFormat("de-DE", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+
 export default async function AdminHomePage() {
   const session = await auth();
   const email = session?.user?.email ?? "";
   const name = session?.user?.name ?? "";
   const first = firstNameFromSession(name, email);
+
+  const { totalCount, pendingPaymentCount, revenueEurCents, recent } =
+    await getAdminDashboardOrdersSnapshot();
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
@@ -39,9 +52,7 @@ export default async function AdminHomePage() {
 
       <div className="grid gap-5 md:grid-cols-2">
         <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
-          <h2 className="text-base font-semibold text-[#1f2937]">
-            Mach dich bereit, deine Produkte zu verkaufen.
-          </h2>
+          <h2 className="text-base font-semibold text-[#1f2937]">Kurz zu deinem Shop</h2>
           <ul className="mt-4 space-y-2 text-sm">
             <li>
               <Link href="/admin/products" className="font-medium text-primary hover:underline">
@@ -49,10 +60,14 @@ export default async function AdminHomePage() {
               </Link>
             </li>
             <li>
-              <span className="text-[#9ca3af]">Zahlungen &amp; Versand (Epic 3–4)</span>
+              <Link href="/admin/orders" className="font-medium text-primary hover:underline">
+                Bestellungen und Zahlungsstatus
+              </Link>
             </li>
             <li>
-              <span className="text-[#9ca3af]">Bestellungen verfolgen (Epic 4)</span>
+              <Link href="/admin/customers" className="font-medium text-primary hover:underline">
+                Kundenübersicht
+              </Link>
             </li>
           </ul>
         </section>
@@ -70,12 +85,105 @@ export default async function AdminHomePage() {
       <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#f0f1f3] pb-4">
           <h2 className="text-base font-semibold text-[#1f2937]">Bestellungen</h2>
-          <span className="text-xs font-medium text-[#9ca3af]">Noch keine Live-Daten</span>
+          <Link
+            href="/admin/orders"
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            Alle anzeigen
+          </Link>
         </div>
-        <p className="pt-5 text-sm text-[#6b7280]">
-          Sobald Checkout und Bestellungen (Epic 3–4) live sind, erscheinen hier Kennzahlen und
-          letzte Vorgänge – ähnlich wie im Shopware-Dashboard.
-        </p>
+
+        <div className="mt-5 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-lg border border-[#e8eaed] bg-[#f7f8fa] px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-[#6b7280]">
+              Bestellungen gesamt
+            </p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-[#1f2937]">{totalCount}</p>
+          </div>
+          <div className="rounded-lg border border-[#e8eaed] bg-[#f7f8fa] px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-[#6b7280]">
+              Umsatz brutto (EUR)
+            </p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-[#1f2937]">
+              {formatPrice(revenueEurCents, "EUR")}
+            </p>
+          </div>
+          <div className="rounded-lg border border-[#e8eaed] bg-[#f7f8fa] px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-[#6b7280]">
+              Zahlung ausstehend
+            </p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-[#1f2937]">
+              {pendingPaymentCount}
+            </p>
+          </div>
+        </div>
+
+        {recent.length === 0 ? (
+          <p className="pt-6 text-sm text-[#6b7280]">
+            Noch keine Bestellungen. Sobald Kundinnen und Kunden im Checkout bestellen, erscheinen
+            sie hier und unter{" "}
+            <Link href="/admin/orders" className="font-medium text-primary hover:underline">
+              Bestellungen
+            </Link>
+            .
+          </p>
+        ) : (
+          <div className="mt-6 overflow-x-auto rounded-lg border border-[#e8eaed]">
+            <table className="min-w-full text-left text-sm">
+              <thead className="border-b border-[#e8eaed] bg-[#f7f8fa] text-[#374151]">
+                <tr>
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    Bestellnr.
+                  </th>
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    Datum
+                  </th>
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    E-Mail
+                  </th>
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    Positionen
+                  </th>
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    Status
+                  </th>
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    Summe
+                  </th>
+                  <th scope="col" className="px-4 py-3 font-medium" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#e8eaed]">
+                {recent.map((o) => (
+                  <tr key={o.id} className="bg-white">
+                    <td className="px-4 py-3 font-mono text-xs text-[#374151]">{o.orderNumber}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-[#6b7280]">
+                      {dateFmt.format(o.createdAt)}
+                    </td>
+                    <td className="max-w-[14rem] truncate px-4 py-3 text-[#374151]">{o.email}</td>
+                    <td className="px-4 py-3 text-[#6b7280]">{o._count.items}</td>
+                    <td className="px-4 py-3">
+                      <span className="rounded-full bg-[#ecfdf5] px-2.5 py-0.5 text-xs font-medium text-emerald-800">
+                        {orderStatusLabel(o.status)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-medium">
+                      {formatPrice(o.totalGrossCents, o.currency)}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link
+                        href={`/admin/orders/${o.id}`}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        Details
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
   );

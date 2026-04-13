@@ -14,7 +14,7 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | `GET /llms.txt` | Öffentlich | KI-/Agenten-Hinweis (nur statischer Text, keine personenbezogenen Daten) |
 | `GET /sitemap.xml` | Öffentlich | SEO-Sitemap (Produkt-URLs u. a.) |
 | `GET /robots.txt` | Öffentlich | Crawler-Regeln inkl. Sitemap-Verweis |
-| `POST /api/webhooks/stripe` | Öffentlich (POST von Stripe) | Webhook-Stub → **501** bis Signatur + Verarbeitung implementiert ([PAYMENT_PROVIDER_STRATEGY](./PAYMENT_PROVIDER_STRATEGY.md)) |
+| `GET /checkout/paypal-rueckkehr` | Öffentlich (Redirect von PayPal) | Nach erfolgreichem Capture: Bestellung `paid`, Lager, E-Mail ([PAYMENT_PROVIDER_STRATEGY](./PAYMENT_PROVIDER_STRATEGY.md)) |
 | Tabelle `order_payments` | — | PSP-Versuche pro Bestellung (Prisma-Modell `OrderPayment`) |
 | Seiten unter `/admin/*` (außer Login) | Middleware + Layout `auth()` | Admin-UI |
 

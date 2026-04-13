@@ -9,6 +9,8 @@ const lineProductSelect = {
   taxRatePercent: true,
   isActive: true,
   stockQuantity: true,
+  availableQuantity: true,
+  shippingCountryCodes: true,
   minOrderQty: true,
   purchaseStep: true,
   maxOrderQty: true,

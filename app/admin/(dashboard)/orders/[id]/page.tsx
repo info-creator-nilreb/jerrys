@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { OrderEmailLogResendButton } from "@/app/admin/(dashboard)/orders/order-email-log-resend-button";
 import { OrderStatusPanel } from "@/app/admin/(dashboard)/orders/order-status-panel";
 import { formatPrice } from "@/lib/catalog/format";
 import { getOrderDetailForAdmin } from "@/lib/orders/admin-queries";
@@ -190,7 +191,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
       <section className="border-t border-[#e8eaed] pt-6">
         <h2 className="text-sm font-semibold text-[#374151]">PSP-Zahlungsversuche</h2>
         <p className="mt-1 text-xs text-[#6b7280]">
-          Einträge aus dem Payment Service Provider (z. B. Stripe), sobald Epic 9 die Anbindung schreibt.
+          Einträge aus dem Payment Service Provider (z. B. PayPal), sobald eine Zahlung ausgelöst oder abgeschlossen wurde.
         </p>
         {order.payments.length === 0 ? (
           <p className="mt-2 text-sm text-[#6b7280]">Noch keine PSP-Einträge.</p>
@@ -324,6 +325,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                     {log.errorMessage}
                   </p>
                 ) : null}
+                <OrderEmailLogResendButton orderId={order.id} emailType={log.emailType} />
               </li>
             ))}
           </ul>

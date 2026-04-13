@@ -5,6 +5,11 @@ import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadc
 import type { CheckoutSummaryLine } from "@/components/storefront/checkout-summary-aside";
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { getCartWithLines } from "@/lib/cart/cart-queries";
+import {
+  intersectShippingCountryCodes,
+  labelForShippingCountryCode,
+} from "@/lib/catalog/shipping-countries-catalog";
+import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +17,30 @@ export const metadata = {
   title: "Checkout",
 };
 
-export default async function CheckoutPage() {
+const paypalReturnErrors: Record<string, string> = {
+  fehlt: "Die PayPal-Rückkehr enthielt keine Zahlungsinformationen. Bitte erneut bestellen oder den Support kontaktieren.",
+  capture: "PayPal konnte die Zahlung nicht abschließen. Bitte erneut versuchen.",
+  bestellung: "Die Bestellung wurde nicht gefunden. Bitte den Support mit deiner Bestellnummer kontaktieren.",
+  betrag: "Der gezahlte Betrag passt nicht zur Bestellung. Bitte den Support kontaktieren.",
+  finalisierung: "Die Bestellung konnte nach der Zahlung nicht abgeschlossen werden. Bitte den Support kontaktieren.",
+};
+
+export default async function CheckoutPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ paypal?: string; payment?: string }>;
+}) {
+  const sp = await searchParams;
+  const paypalCode = sp.paypal;
+  const paypalError =
+    typeof paypalCode === "string" && paypalCode.length > 0
+      ? (paypalReturnErrors[paypalCode] ?? "Die PayPal-Zahlung ist fehlgeschlagen. Bitte erneut versuchen.")
+      : null;
+
+  if (!isPayPalConfigured()) {
+    redirect("/warenkorb?grund=paypal_nicht_konfiguriert");
+  }
+
   const cartId = await getCartIdFromCookie();
   const cart = cartId ? await getCartWithLines(cartId) : null;
   const activeLines = cart?.lines.filter((l) => l.product.isActive) ?? [];
@@ -39,6 +67,16 @@ export default async function CheckoutPage() {
     },
   }));
 
+  const allowedCodes = intersectShippingCountryCodes(
+    activeLines.map((l) => l.product.shippingCountryCodes),
+  );
+  const allowedShippingCountries = allowedCodes.map((code) => ({
+    code,
+    label: labelForShippingCountryCode(code),
+  }));
+
+  const prefillPaypal = sp.payment === "paypal";
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-24 md:py-28">
       <StorefrontBreadcrumbs
@@ -48,6 +86,14 @@ export default async function CheckoutPage() {
           { label: "Checkout" },
         ]}
       />
+      {paypalError ? (
+        <div
+          className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
+          role="alert"
+        >
+          {paypalError}
+        </div>
+      ) : null}
       <div className="mt-4">
         <CheckoutForm
           idempotencyKey={idempotencyKey}
@@ -55,6 +101,10 @@ export default async function CheckoutPage() {
           subtotalCents={subtotalCents}
           shippingCents={0}
           currency={currency}
+          allowedShippingCountries={allowedShippingCountries}
+          payPalConfigured={isPayPalConfigured()}
+          payPalClientId={process.env.PAYPAL_CLIENT_ID?.trim() ?? ""}
+          prefillPaypal={prefillPaypal}
         />
       </div>
     </div>

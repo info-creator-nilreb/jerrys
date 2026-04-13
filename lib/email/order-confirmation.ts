@@ -7,20 +7,19 @@ import {
   upsertOrderEmailDeliveryLog,
 } from "@/lib/email/order-email-log";
 import { sendTransactionalEmail } from "@/lib/email/provider";
+import {
+  orderItemsIncludeForTransactionalEmail,
+  orderItemsToEmailLineItems,
+} from "@/lib/email/order-email-line-items";
+import {
+  buildOrderItemsTableHtml,
+  grayInfoCard,
+  transactionalPaymentLabel,
+  TRANSACTIONAL_EMAIL_DESIGN,
+  type OrderLineItemForEmail,
+  wrapTransactionalEmailHtml,
+} from "@/lib/email/transactional-email-layout";
 import { escapeHtmlForEmail, publicSiteBaseUrl } from "@/lib/email/template-utils";
-
-function paymentLabel(method: string): string {
-  switch (method) {
-    case "vorkasse":
-      return "Vorkasse";
-    case "paypal":
-      return "PayPal";
-    case "klarna":
-      return "Klarna";
-    default:
-      return method;
-  }
-}
 
 type OrderForEmail = {
   orderNumber: string;
@@ -28,14 +27,10 @@ type OrderForEmail = {
   email: string;
   paymentMethod: string;
   totalGrossCents: number;
+  subtotalGrossCents: number;
+  shippingCents: number;
   currency: string;
-  items: {
-    productTitleSnapshot: string;
-    quantity: number;
-    lineTotalGrossCents: number;
-    currency: string;
-    taxRatePercentSnapshot: number;
-  }[];
+  items: Array<OrderLineItemForEmail & { taxRatePercentSnapshot: number }>;
 };
 
 function buildBodies(order: OrderForEmail): { subject: string; text: string; html: string } {
@@ -55,32 +50,47 @@ function buildBodies(order: OrderForEmail): { subject: string; text: string; htm
   const text = [
     `Hallo ${order.shippingFirstName},`,
     "",
-    `vielen Dank für deine Bestellung bei jerry's.`,
+    "vielen Dank für deine Bestellung bei jerry's.",
     "",
     `Bestellnummer: ${order.orderNumber}`,
-    `Gesamtbetrag: ${formatPrice(order.totalGrossCents, order.currency)} inkl. MwSt.`,
-    `Zahlungsart: ${paymentLabel(order.paymentMethod)}`,
+    `Zwischensumme: ${formatPrice(order.subtotalGrossCents, order.currency)}`,
+    `Versand: ${formatPrice(order.shippingCents, order.currency)}`,
+    `Gesamt: ${formatPrice(order.totalGrossCents, order.currency)} inkl. MwSt.`,
+    `Zahlungsart: ${transactionalPaymentLabel(order.paymentMethod)}`,
     "",
     "Positionen:",
     lines,
     "",
-    `Bestellstatus ansehen: ${successUrl}`,
+    `Bestellung ansehen: ${successUrl}`,
     "",
     "Liebe Grüße",
     "jerry's",
   ].join("\n");
 
-  const html = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;line-height:1.5;color:#111">
-<p>Hallo ${escapeHtmlForEmail(order.shippingFirstName)},</p>
-<p>vielen Dank für deine Bestellung bei jerry's.</p>
-<p><strong>Bestellnummer:</strong> ${escapeHtmlForEmail(order.orderNumber)}<br/>
-<strong>Gesamtbetrag:</strong> ${escapeHtmlForEmail(formatPrice(order.totalGrossCents, order.currency))} inkl. MwSt.<br/>
-<strong>Zahlungsart:</strong> ${escapeHtmlForEmail(paymentLabel(order.paymentMethod))}</p>
-<h3 style="font-size:14px;margin:1.25rem 0 0.5rem">Positionen</h3>
-<pre style="white-space:pre-wrap;font-family:inherit;margin:0">${escapeHtmlForEmail(lines)}</pre>
-<p style="margin-top:1.25rem"><a href="${escapeHtmlForEmail(successUrl)}">Zur Bestellbestätigung</a></p>
-<p>Liebe Grüße<br/>jerry's</p>
-</body></html>`;
+  const sub = escapeHtmlForEmail(formatPrice(order.subtotalGrossCents, order.currency));
+  const ship = escapeHtmlForEmail(formatPrice(order.shippingCents, order.currency));
+  const tot = escapeHtmlForEmail(formatPrice(order.totalGrossCents, order.currency));
+  const pm = escapeHtmlForEmail(transactionalPaymentLabel(order.paymentMethod));
+
+  const { textMuted, divider } = TRANSACTIONAL_EMAIL_DESIGN;
+  const orderNumCard = grayInfoCard(
+    `<strong style="font-size:13px;letter-spacing:0.02em;color:${textMuted}">Bestellnummer</strong><br/><span style="font-size:17px;font-weight:700;color:#1f2937">#${escapeHtmlForEmail(order.orderNumber)}</span>`,
+  );
+
+  const itemsHtml = buildOrderItemsTableHtml(order.items, formatPrice);
+
+  const totalsHtml = `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333"><tr><td style="padding:6px 0;border-top:2px solid ${divider}">Zwischensumme</td><td style="padding:6px 0;border-top:2px solid ${divider};text-align:right;font-weight:600;color:#1f2937">${sub}</td></tr><tr><td style="padding:6px 0;border-bottom:1px solid ${divider}">Versand</td><td style="padding:6px 0;border-bottom:1px solid ${divider};text-align:right;font-weight:600;color:#1f2937">${ship}</td></tr><tr><td style="padding:10px 0 6px;font-weight:700;font-size:15px;color:#1f2937">Gesamt</td><td style="padding:10px 0 6px;text-align:right;font-weight:700;font-size:16px;color:#1f2937">${tot}</td></tr><tr><td colspan="2" style="padding:4px 0 0;font-size:13px;color:${textMuted}">inkl. MwSt. · Zahlungsart: ${pm}</td></tr></table>`;
+
+  const bodyHtml = `${orderNumCard}${itemsHtml}${totalsHtml}`;
+
+  const html = wrapTransactionalEmailHtml({
+    variant: "order",
+    documentTitle: subject,
+    heading: "Vielen Dank für deine Bestellung!",
+    intro: "Wir haben deine Bestellung erhalten und bereiten sie mit Sorgfalt vor.",
+    bodyHtml,
+    cta: { href: successUrl, label: "Bestellung ansehen" },
+  });
 
   return { subject, text, html };
 }
@@ -88,20 +98,39 @@ function buildBodies(order: OrderForEmail): { subject: string; text: string; htm
 /**
  * Sendet die Bestellbestätigung höchstens einmal erfolgreich pro Bestellung (Dedupe über `email_logs`).
  */
-export async function sendOrderConfirmationIfNeeded(orderId: string): Promise<void> {
+export async function sendOrderConfirmationIfNeeded(
+  orderId: string,
+  options?: { force?: boolean },
+): Promise<void> {
   const prisma = getPrisma();
 
   const existing = await findOrderEmailLog(prisma, orderId, EMAIL_ORDER_CONFIRMATION);
-  if (isOrderEmailAlreadySentSuccessfully(existing)) return;
+  if (!options?.force && isOrderEmailAlreadySentSuccessfully(existing)) return;
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    include: { items: { orderBy: { id: "asc" } } },
+    include: { items: orderItemsIncludeForTransactionalEmail },
   });
   if (!order || !order.items.length) return;
   if (order.status === "pending_payment") return;
 
-  const { subject, text, html } = buildBodies(order);
+  const tableLines = orderItemsToEmailLineItems(order.items);
+  const itemsForBodies = order.items.map((line, idx) => ({
+    ...tableLines[idx]!,
+    taxRatePercentSnapshot: line.taxRatePercentSnapshot,
+  }));
+
+  const { subject, text, html } = buildBodies({
+    orderNumber: order.orderNumber,
+    shippingFirstName: order.shippingFirstName,
+    email: order.email,
+    paymentMethod: order.paymentMethod,
+    totalGrossCents: order.totalGrossCents,
+    subtotalGrossCents: order.subtotalGrossCents,
+    shippingCents: order.shippingCents,
+    currency: order.currency,
+    items: itemsForBodies,
+  });
 
   let result: Awaited<ReturnType<typeof sendTransactionalEmail>>;
   try {

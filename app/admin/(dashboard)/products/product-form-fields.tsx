@@ -4,6 +4,7 @@ import type { ProductFormState } from "@/app/admin/(dashboard)/products/actions"
 import { ProductDeliveryFields } from "@/app/admin/(dashboard)/products/product-delivery-fields";
 import { ProductGeneralFields } from "@/app/admin/(dashboard)/products/product-general-fields";
 import { ProductPricesSection } from "@/app/admin/(dashboard)/products/product-prices-section";
+import { ProductStorefrontDetailFields } from "@/app/admin/(dashboard)/products/product-storefront-detail-fields";
 
 type Mfr = { id: string; name: string };
 
@@ -33,6 +34,19 @@ export function ProductFormFields({ state, manufacturers }: Props) {
         }}
       />
 
+      <ProductStorefrontDetailFields
+        state={state}
+        defaults={{
+          categoryTag: "",
+          isBestseller: false,
+          leadText: "",
+          dimensionsText: "",
+          weightText: "",
+          materialText: "",
+          featureBullets: "",
+        }}
+      />
+
       <ProductPricesSection
         defaultTaxPercent={19}
         mainGrossCents={0}
@@ -48,12 +62,14 @@ export function ProductFormFields({ state, manufacturers }: Props) {
         state={state}
         defaults={{
           stockQuantity: 0,
+          availableQuantity: 0,
           deliveryTimeKey: "2-4-werktage",
           restockDays: null,
           freeShipping: false,
           minOrderQty: 1,
           purchaseStep: 1,
           maxOrderQty: null,
+          shippingCountryCodes: ["DE"],
         }}
       />
 

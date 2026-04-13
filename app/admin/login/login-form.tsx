@@ -2,43 +2,13 @@
 
 import Image from "next/image";
 import { signIn } from "next-auth/react";
+import { Eye, EyeOff } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useId, useState } from "react";
 
 function EyeIcon({ open }: { open: boolean }) {
-  if (open) {
-    return (
-      <svg className="size-5" viewBox="0 0 24 24" fill="none" aria-hidden>
-        <path
-          d="M3 12s3.5-5 9-5 9 5 9 5-3.5 5-9 5-9-5-9-5Z"
-          stroke="currentColor"
-          strokeWidth="1.75"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M9 12a3 3 0 1 0 6 0 3 3 0 0 0-6 0Z"
-          stroke="currentColor"
-          strokeWidth="1.75"
-        />
-        <path d="M4 4l16 16" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-      </svg>
-    );
-  }
-  return (
-    <svg className="size-5" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M3 12s3.5-5 9-5 9 5 9 5-3.5 5-9 5-9-5-9-5Z"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M9 12a3 3 0 1 0 6 0 3 3 0 0 0-6 0Z"
-        stroke="currentColor"
-        strokeWidth="1.75"
-      />
-    </svg>
-  );
+  const Cmp = open ? EyeOff : Eye;
+  return <Cmp className="size-5" aria-hidden strokeWidth={1.75} />;
 }
 
 export function AdminLoginForm() {

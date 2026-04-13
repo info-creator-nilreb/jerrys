@@ -10,6 +10,7 @@ import { ProductDeliveryFields } from "@/app/admin/(dashboard)/products/product-
 import { ProductGeneralFields } from "@/app/admin/(dashboard)/products/product-general-fields";
 import { ProductPricesSection } from "@/app/admin/(dashboard)/products/product-prices-section";
 import { ProductMediaSection } from "@/app/admin/(dashboard)/products/product-media-section";
+import { ProductStorefrontDetailFields } from "@/app/admin/(dashboard)/products/product-storefront-detail-fields";
 import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
 
 function plainDescriptionToHtml(description: string | null): string {
@@ -43,6 +44,7 @@ type Product = {
   lowestPrice30dGrossCents: number | null;
   lowestPrice30dNetCents: number | null;
   stockQuantity: number;
+  availableQuantity: number;
   deliveryTimeKey: string | null;
   restockDays: number | null;
   freeShipping: boolean;
@@ -53,6 +55,14 @@ type Product = {
   amazonRatingAverage: number | null;
   amazonRatingCount: number | null;
   amazonReviewUrl: string | null;
+  categoryTag: string | null;
+  isBestseller: boolean;
+  leadText: string | null;
+  dimensionsText: string | null;
+  weightText: string | null;
+  materialText: string | null;
+  featureBullets: string[];
+  shippingCountryCodes: string[];
   images: { id: string; url: string; alt: string; sortOrder: number; isCover: boolean }[];
 };
 
@@ -112,6 +122,19 @@ export function EditProductForm({
           }}
         />
 
+        <ProductStorefrontDetailFields
+          state={state}
+          defaults={{
+            categoryTag: product.categoryTag ?? "",
+            isBestseller: product.isBestseller,
+            leadText: product.leadText ?? "",
+            dimensionsText: product.dimensionsText ?? "",
+            weightText: product.weightText ?? "",
+            materialText: product.materialText ?? "",
+            featureBullets: product.featureBullets.join("\n"),
+          }}
+        />
+
         <ProductPricesSection
           defaultTaxPercent={product.taxRatePercent}
           mainGrossCents={product.priceGrossCents}
@@ -127,12 +150,14 @@ export function EditProductForm({
           state={state}
           defaults={{
             stockQuantity: product.stockQuantity,
+            availableQuantity: product.availableQuantity,
             deliveryTimeKey: product.deliveryTimeKey,
             restockDays: product.restockDays,
             freeShipping: product.freeShipping,
             minOrderQty: product.minOrderQty,
             purchaseStep: product.purchaseStep,
             maxOrderQty: product.maxOrderQty,
+            shippingCountryCodes: product.shippingCountryCodes,
           }}
         />
 

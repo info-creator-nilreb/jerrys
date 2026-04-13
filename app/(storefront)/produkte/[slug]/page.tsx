@@ -1,12 +1,17 @@
-import Image from "next/image";
+import { CheckCircle2 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { formatPrice } from "@/lib/catalog/format";
 import { getActiveProductBySlug } from "@/lib/catalog/queries";
-import { sanitizeProductDescriptionHtml } from "@/lib/catalog/sanitize-html";
+import { pdpStockDeliveryLine } from "@/lib/catalog/pdp-stock-delivery";
+import { resolvePdpLeadText, resolvePdpSpecs } from "@/lib/catalog/pdp-resolve-display";
 import { defaultAddQuantity } from "@/lib/cart/quantity";
 import { AddToCartForm } from "@/components/storefront/add-to-cart-form";
 import { AmazonRatingDisplay } from "@/components/storefront/amazon-rating-display";
+import { ProductDetailGallery } from "@/components/storefront/product-detail-gallery";
+import { ProductExpressCheckout } from "@/components/storefront/product-express-checkout";
 import { ProductJsonLd } from "@/components/storefront/product-json-ld";
+import { ProductPdpSpecsPanel } from "@/components/storefront/product-pdp-specs-panel";
+import { ProductPdpTrustFooterBar, ProductPdpUspRow } from "@/components/storefront/product-pdp-trust-blocks";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import { absoluteUrl } from "@/lib/site/canonical-origin";
 
@@ -29,7 +34,8 @@ export async function generateMetadata({
   if (!product) {
     return { title: "Produkt" };
   }
-  const desc = product.subtitle ?? textPreviewFromHtml(product.description);
+  const desc =
+    resolvePdpLeadText(product) || product.subtitle || textPreviewFromHtml(product.description);
   const cover = product.images[0];
   const ogImage = cover ? [{ url: absoluteUrl(cover.url), alt: cover.alt }] : undefined;
   return {
@@ -61,10 +67,11 @@ export default async function ProduktDetailPage({
   const product = await getActiveProductBySlug(slug);
   if (!product) notFound();
 
-  const safeDescription = sanitizeProductDescriptionHtml(product.description);
+  const specs = resolvePdpSpecs(product);
+  const leadDisplay = resolvePdpLeadText(product);
 
   const qtyRules = {
-    stockQuantity: product.stockQuantity,
+    availableQuantity: product.availableQuantity,
     minOrderQty: product.minOrderQty,
     purchaseStep: product.purchaseStep,
     maxOrderQty: product.maxOrderQty,
@@ -74,79 +81,165 @@ export default async function ProduktDetailPage({
   const titleCrumb =
     product.title.length > 52 ? `${product.title.slice(0, 51).trimEnd()}…` : product.title;
 
+  const jsonLdDescription =
+    leadDisplay || product.subtitle || textPreviewFromHtml(product.description);
+
+  const hasStrikePrice =
+    product.listPriceGrossCents != null && product.listPriceGrossCents > product.priceGrossCents;
+
+  const hasSpecsPanel =
+    Boolean(specs.dimensionsText?.trim()) ||
+    Boolean(specs.weightText?.trim()) ||
+    Boolean(specs.materialText?.trim()) ||
+    specs.featureBullets.length > 0;
+
+  const stockLine = pdpStockDeliveryLine({
+    availableQuantity: product.availableQuantity,
+    deliveryTimeKey: product.deliveryTimeKey,
+  });
+  const inStock = product.availableQuantity > 0;
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-24 md:py-28">
-      <ProductJsonLd
-        name={product.title}
-        description={product.subtitle ?? textPreviewFromHtml(product.description)}
-        slug={product.slug}
-        priceGrossCents={product.priceGrossCents}
-        currency={product.currency}
-        stockQuantity={product.stockQuantity}
-        images={product.images.map((i) => ({ url: i.url, alt: i.alt }))}
-      />
-      <StorefrontBreadcrumbs
-        items={[
-          { href: "/", label: "Start" },
-          { href: "/produkte", label: "Produkte" },
-          { label: titleCrumb },
-        ]}
-      />
+    <>
+      <div className="mx-auto max-w-6xl px-4 pb-14 pt-20 md:pb-16 md:pt-24">
+        <ProductJsonLd
+          name={product.title}
+          description={jsonLdDescription}
+          slug={product.slug}
+          priceGrossCents={product.priceGrossCents}
+          currency={product.currency}
+          availableQuantity={product.availableQuantity}
+          images={product.images.map((i) => ({ url: i.url, alt: i.alt }))}
+          aggregateRatingAverage={product.amazonRatingAverage}
+          aggregateRatingCount={product.amazonRatingCount}
+        />
+        <StorefrontBreadcrumbs
+          items={[
+            { href: "/", label: "Start" },
+            { href: "/produkte", label: "Produkte" },
+            { label: titleCrumb },
+          ]}
+        />
 
-      <div className="mt-6 grid gap-10 md:grid-cols-2 md:gap-12">
-        <div className="space-y-4">
-          {product.images.length === 0 ? (
-            <div className="flex aspect-square items-center justify-center rounded-xl border border-(--surface-muted) bg-(--surface-soft) text-(--foreground-muted)">
-              Kein Bild
-            </div>
-          ) : (
-            product.images.map((img, index) => (
-              <div
-                key={img.id}
-                className="relative aspect-square overflow-hidden rounded-xl border border-(--surface-muted) bg-(--surface-muted)"
-              >
-                <Image
-                  src={img.url}
-                  alt={img.alt}
-                  fill
-                  className="object-cover"
-                  sizes="(min-width:768px) 50vw, 100vw"
-                  priority={index === 0}
-                />
+        <div className="mt-5 grid gap-8 lg:grid-cols-2 lg:gap-10 lg:items-start">
+          <div className="min-w-0 lg:row-span-1">
+            {product.images.length === 0 ? (
+              <div className="flex aspect-square items-center justify-center rounded-xl border border-(--surface-muted) bg-(--surface-soft) text-(--foreground-muted)">
+                Kein Bild
               </div>
-            ))
-          )}
-        </div>
+            ) : (
+              <ProductDetailGallery
+                images={product.images}
+                isBestseller={product.isBestseller}
+                productTitle={product.title}
+              />
+            )}
+          </div>
 
-        <div>
-          <h1 className="text-2xl font-semibold text-(--foreground-heading) md:text-3xl">
-            {product.title}
-          </h1>
-          {product.subtitle ? (
-            <p className="mt-2 text-lg text-(--foreground-muted)">{product.subtitle}</p>
-          ) : null}
-          {product.amazonRatingAverage != null && product.amazonRatingCount != null ? (
-            <AmazonRatingDisplay
-              average={product.amazonRatingAverage}
-              count={product.amazonRatingCount}
-              reviewUrl={product.amazonReviewUrl}
-            />
-          ) : null}
-          <p className="mt-6 text-2xl font-semibold text-primary">
-            {formatPrice(product.priceGrossCents, product.currency)}*
-          </p>
-          <AddToCartForm productId={product.id} canAdd={canAddToCart} quantityRules={qtyRules} />
-          {safeDescription ? (
-            <div
-              className="mt-8 max-w-none text-(--foreground-muted) [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-(--surface-muted) [&_blockquote]:pl-4 [&_h2]:mt-6 [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:mt-4 [&_h3]:text-base [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-2 [&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-(--surface-muted) [&_td]:p-2 [&_th]:border [&_th]:border-(--surface-muted) [&_th]:p-2 [&_th]:text-left [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5"
-              dangerouslySetInnerHTML={{ __html: safeDescription }}
-            />
-          ) : null}
-          <p className="mt-10 text-sm text-(--foreground-muted)">
-            * inkl. MwSt., zzgl. Versand – Checkout folgt im nächsten Schritt.
-          </p>
+          <div className="min-w-0 lg:row-span-1">
+            <article className="rounded-xl border border-(--surface-muted) bg-white p-6 shadow-md md:p-7 lg:p-8">
+              {product.categoryTag?.trim() ? (
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-primary">
+                  {product.categoryTag.trim()}
+                </p>
+              ) : null}
+              <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-(--foreground-heading) md:text-[1.65rem] lg:text-3xl">
+                {product.title}
+              </h1>
+              {product.subtitle ? (
+                <p className="mt-2 text-base italic leading-snug text-(--foreground-muted) md:text-lg">
+                  {product.subtitle}
+                </p>
+              ) : null}
+
+              {product.amazonRatingAverage != null && product.amazonRatingCount != null ? (
+                <AmazonRatingDisplay
+                  average={product.amazonRatingAverage}
+                  count={product.amazonRatingCount}
+                  reviewUrl={product.amazonReviewUrl}
+                  linkTreatment="default"
+                />
+              ) : null}
+
+              {leadDisplay ? (
+                <p className="mt-4 text-sm leading-relaxed text-(--foreground-muted) md:text-[0.9375rem]">
+                  {leadDisplay}
+                </p>
+              ) : null}
+
+              {hasSpecsPanel ? (
+                <ProductPdpSpecsPanel
+                  dimensionsText={specs.dimensionsText}
+                  weightText={specs.weightText}
+                  materialText={specs.materialText}
+                  featureBullets={specs.featureBullets}
+                />
+              ) : null}
+
+              <ProductPdpUspRow />
+
+              <div className="mt-6 space-y-5 border-t border-(--surface-muted) pt-6">
+                <div>
+                  {hasStrikePrice ? (
+                    <p className="text-sm text-(--foreground-muted)">
+                      <span className="mr-2 line-through">
+                        {formatPrice(product.listPriceGrossCents!, product.currency)}
+                      </span>
+                      <span className="text-[0.65rem] font-medium uppercase tracking-wide text-(--foreground-muted)">
+                        UVP
+                      </span>
+                    </p>
+                  ) : null}
+                  <p className="text-2xl font-semibold tracking-tight text-primary md:text-[1.7rem]">
+                    {formatPrice(product.priceGrossCents, product.currency)}
+                    <span className="text-base font-normal text-(--foreground-muted)">*</span>
+                  </p>
+                  <p className="mt-1 text-sm text-(--foreground-muted)">inkl. MwSt., zzgl. Versand</p>
+                </div>
+
+                <ul className="space-y-2.5 text-sm text-(--foreground-muted)">
+                  <li className="flex gap-2.5">
+                    <span
+                      className={`mt-1.5 size-2 shrink-0 rounded-full ${inStock ? "bg-primary" : "bg-(--foreground-muted)"}`}
+                      aria-hidden
+                    />
+                    <span className="leading-snug">{stockLine}</span>
+                  </li>
+                  <li className="flex gap-2.5">
+                    <CheckCircle2
+                      className="mt-0.5 size-5 shrink-0 text-primary"
+                      aria-hidden
+                      strokeWidth={1.5}
+                    />
+                    <span className="leading-snug">30 Tage Rückgaberecht</span>
+                  </li>
+                </ul>
+
+                <AddToCartForm
+                  productId={product.id}
+                  canAdd={canAddToCart}
+                  quantityRules={qtyRules}
+                  showCartIcon
+                  layout="pdp"
+                />
+
+                {canAddToCart ? <ProductExpressCheckout enabled /> : <ProductExpressCheckout enabled={false} />}
+
+                <p className="text-center text-[0.7rem] leading-snug text-(--foreground-muted)">
+                  Im Checkout:{" "}
+                  <span className="text-(--foreground-heading)">Vorkasse, PayPal, Klarna</span> (Demo).
+                </p>
+
+                <p className="border-t border-(--surface-muted) pt-4 text-[0.68rem] leading-relaxed text-(--foreground-muted)">
+                  * inkl. MwSt., zzgl. Versand. Nach dem Warenkorb folgen Warenkorb und Checkout.
+                </p>
+              </div>
+            </article>
+          </div>
         </div>
       </div>
-    </div>
+
+      <ProductPdpTrustFooterBar />
+    </>
   );
 }

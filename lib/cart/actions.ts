@@ -45,7 +45,7 @@ export async function addToCart(
   }
 
   const rules = {
-    stockQuantity: product.stockQuantity,
+    availableQuantity: product.availableQuantity,
     minOrderQty: product.minOrderQty,
     purchaseStep: product.purchaseStep,
     maxOrderQty: product.maxOrderQty,
@@ -130,7 +130,7 @@ export async function updateCartLineQuantity(
 
   const p = line.product;
   const rules = {
-    stockQuantity: p.stockQuantity,
+    availableQuantity: p.availableQuantity,
     minOrderQty: p.minOrderQty,
     purchaseStep: p.purchaseStep,
     maxOrderQty: p.maxOrderQty,
@@ -219,7 +219,7 @@ export async function incrementCartLineQuantity(formData: FormData) {
 
   const p = line.product;
   const rules = {
-    stockQuantity: p.stockQuantity,
+    availableQuantity: p.availableQuantity,
     minOrderQty: p.minOrderQty,
     purchaseStep: p.purchaseStep,
     maxOrderQty: p.maxOrderQty,
@@ -304,7 +304,7 @@ export async function decrementCartLineQuantity(formData: FormData) {
 
   const p = line.product;
   const rules = {
-    stockQuantity: p.stockQuantity,
+    availableQuantity: p.availableQuantity,
     minOrderQty: p.minOrderQty,
     purchaseStep: p.purchaseStep,
     maxOrderQty: p.maxOrderQty,

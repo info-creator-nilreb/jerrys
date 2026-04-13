@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Trash2 } from "lucide-react";
 import {
   decrementCartLineQuantity,
   incrementCartLineQuantity,
@@ -19,7 +20,7 @@ type Line = {
     priceGrossCents: number;
     currency: string;
     isActive: boolean;
-    stockQuantity: number;
+    availableQuantity: number;
     minOrderQty: number;
     purchaseStep: number;
     maxOrderQty: number | null;
@@ -32,7 +33,7 @@ export function CartLineTableRow({ line }: { line: Line }) {
   const img = p.images[0];
   const lineTotal = line.quantity * p.priceGrossCents;
   const rules = {
-    stockQuantity: p.stockQuantity,
+    availableQuantity: p.availableQuantity,
     minOrderQty: p.minOrderQty,
     purchaseStep: p.purchaseStep,
     maxOrderQty: p.maxOrderQty,
@@ -133,19 +134,11 @@ export function CartLineTableRow({ line }: { line: Line }) {
               className="rounded border border-(--surface-muted) p-1.5 text-(--foreground-muted) hover:border-red-200 hover:bg-red-50 hover:text-red-700"
               aria-label="Position entfernen"
             >
-              <TrashIcon />
+              <Trash2 width={18} height={18} aria-hidden strokeWidth={1.5} />
             </button>
           </form>
         </div>
       </td>
     </tr>
-  );
-}
-
-function TrashIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-      <path d="M3 6h18M8 6V4h8v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6" strokeLinecap="round" />
-    </svg>
   );
 }

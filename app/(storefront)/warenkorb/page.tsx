@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { CartExpressPlaceholder } from "@/components/storefront/cart-express-placeholder";
+import { CheckoutExpressPayPalOnly } from "@/components/storefront/checkout-express-paypal";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import { CartLineTableRow } from "@/components/storefront/cart-line-table-row";
 import { PriceEUR } from "@/components/storefront/price-eur";
 import { updateCartCustomerNote } from "@/lib/cart/actions";
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { getCartWithLines } from "@/lib/cart/cart-queries";
+import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,14 @@ export const metadata = {
   title: "Dein Warenkorb",
 };
 
-export default async function WarenkorbPage() {
+export default async function WarenkorbPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ grund?: string }>;
+}) {
+  const { grund } = await searchParams;
+  const paypalHinweis = grund === "paypal_nicht_konfiguriert";
+
   const cartId = await getCartIdFromCookie();
   const cart = cartId ? await getCartWithLines(cartId) : null;
 
@@ -32,6 +40,16 @@ export default async function WarenkorbPage() {
       <h1 className="mt-6 text-2xl font-semibold tracking-tight text-[#1f2937] sm:text-3xl">
         Dein Warenkorb
       </h1>
+
+      {paypalHinweis ? (
+        <div
+          className="mt-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+          role="status"
+        >
+          Online-Zahlung (PayPal) ist derzeit nicht eingerichtet. Bitte wenden Sie sich an den Shop-Betreiber oder
+          versuchen Sie es später erneut.
+        </div>
+      ) : null}
 
       {lines.length === 0 ? (
         <p className="mt-10 text-(--foreground-muted)">
@@ -129,7 +147,7 @@ export default async function WarenkorbPage() {
               <div className="lg:col-start-2 lg:row-start-3 lg:text-right">
                 <p className="text-center text-xs text-[#9ca3af] lg:text-right">Express Checkout</p>
                 <div className="mt-3 flex flex-col gap-2 sm:items-end lg:items-end">
-                  <CartExpressPlaceholder />
+                  <CheckoutExpressPayPalOnly payPalConfigured={isPayPalConfigured()} variant="cart" />
                 </div>
               </div>
             </div>

@@ -65,7 +65,7 @@ export function CookieConsentBanner() {
   if (!mounted || !open) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-end justify-center p-4 sm:items-center" role="presentation">
+    <div className="fixed inset-0 z-[700000] flex items-end justify-center p-4 sm:items-center" role="presentation">
       <button
         type="button"
         className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"
@@ -88,7 +88,7 @@ export function CookieConsentBanner() {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-[201] w-full max-w-lg rounded-xl border border-(--surface-muted) bg-white p-5 shadow-2xl sm:p-6"
+        className="relative z-[700001] w-full max-w-lg rounded-xl border border-(--surface-muted) bg-white p-5 shadow-2xl sm:p-6"
       >
         <h2 id={titleId} className="text-lg font-semibold text-(--foreground-heading)">
           {view === "choice" ? "Cookies und Einwilligung" : "Cookie-Einstellungen"}

@@ -52,3 +52,4 @@ next-env.d.ts
 
 # Hochgeladene Produktmedien (lokal)
 /public/media/product-uploads/
+/public/media/homepage-social/

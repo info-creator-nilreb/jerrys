@@ -2,6 +2,8 @@
 
 Fortführung von [DELIVERY_PLAN.md](./DELIVERY_PLAN.md) (Epics 1–6). Gleiche Philosophie: kleine, vertikal nutzbare Inkremente.
 
+**Stand (Kurzüberblick, Stand Repo):** Epics 7–9 sind teils bereits im Code umgesetzt; Details und offene Feinarbeit siehe unter jedem Epic. Zusätzlich umgesetzt: **Startseite Marketing** (Amazon-Zitat-Slider + Social-Bilder, Admin `/admin/startseite`, Migration `20260412120000_homepage_marketing_content`).
+
 ---
 
 ## Epic 7: Privacy, Consent & Cookie-Banner
@@ -18,6 +20,15 @@ Fortführung von [DELIVERY_PLAN.md](./DELIVERY_PLAN.md) (Epics 1–6). Gleiche P
 
 **Konzept:** Siehe [CONSENT_CONCEPT.md](./CONSENT_CONCEPT.md).
 
+**Umsetzungsstand (Repo):**
+
+| Story | Kurz | Status |
+|-------|------|--------|
+| 1 | Consent-Konzept & Texte | [CONSENT_CONCEPT.md](./CONSENT_CONCEPT.md) vorhanden; Datenschutzseite um Cookie-Abschnitt ergänzen falls noch offen. |
+| 2–4 | State, Banner, Footer | `CookieConsentBanner` im Storefront-Layout, `localStorage` + Versionierung (`lib/consent/`), Cookie-Einstellungen in der Fußzeile. |
+| 5 | Drittanbieter-Skripte | Vorbereitet (`consentAllowsStatistics` / Marketing); GTM/Matomo erst bei echter Einbindung. |
+| 6 | Tests | Vitest `consent-storage`; Playwright `tests/e2e/cookie-consent.spec.ts`. |
+
 ---
 
 ## Epic 8: SEO, strukturierte Daten & KI-/Agenten-Discoverability
@@ -32,13 +43,24 @@ Fortführung von [DELIVERY_PLAN.md](./DELIVERY_PLAN.md) (Epics 1–6). Gleiche P
 5. Crawler-Richtlinien (GPTBot, Google-Extended, …).
 6. Messung / CI-Regression (Lighthouse, Smoke).
 
+**Umsetzungsstand (Repo):**
+
+| Story | Kurz | Status |
+|-------|------|--------|
+| 1 | Sitemap, robots, Canonicals | `app/sitemap.ts`, `app/robots.ts`, [canonical-origin.ts](../lib/site/canonical-origin.ts). |
+| 2 | JSON-LD | Produkt: `ProductJsonLd` auf der PDP. |
+| 3 | OG / Social | `openGraph` u. a. in Root-`app/layout.tsx` und Produktdetail. |
+| 4 | Agenten-Hinweise | `app/llms.txt/route.ts`. |
+| 5 | Crawler-Richtlinien | `app/robots.ts`: `*` plus explizite Regeln u. a. für GPTBot, ChatGPT-User, OAI-SearchBot, Google-Extended, ClaudeBot, PerplexityBot, CCBot, Bytespider; Vitest `tests/unit/robots-crawler-policy.test.ts`. |
+| 6 | CI / Lighthouse | GitHub Actions Job `lighthouse` in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml): Postgres-Service, `prisma migrate deploy`, `next build`, `next start`, dann `npx @lhci/cli` mit [lighthouserc.json](../lighthouserc.json). Lighthouse-Schritt `continue-on-error: true` + lockere Warn-Schwellen gegen Runner-Flakes. Lokal: `npm run lighthouse:ci` (Server vorher auf Port 3000). |
+
 ---
 
 ## Epic 9: Zahlungsanbieter & Zahlungsfluss
 
 **Goal:** Echte Zahlungen inkl. Webhooks, idempotenter Zuordnung, Admin-Sicht.
 
-**Strategie:** [PAYMENT_PROVIDER_STRATEGY.md](./PAYMENT_PROVIDER_STRATEGY.md) (Stripe als PSP, Variablen, nächste Schritte).
+**Strategie:** [PAYMENT_PROVIDER_STRATEGY.md](./PAYMENT_PROVIDER_STRATEGY.md) (PayPal Orders v2, Variablen, nächste Schritte).
 
 **Stories:**
 1. Provider-Strategie & Vertrag.
@@ -47,6 +69,17 @@ Fortführung von [DELIVERY_PLAN.md](./DELIVERY_PLAN.md) (Epics 1–6). Gleiche P
 4. Webhooks & Order-Status.
 5. Admin & E-Mail-Flows abstimmen.
 6. Sicherheit & Tests.
+
+**Umsetzungsstand (Repo):**
+
+| Story | Kurz | Status |
+|-------|------|--------|
+| 2 | Prisma `OrderPayment` | Modell + Migration `order_payments`. |
+| 3–4 | Checkout & Rückkehr | Zahlungsart PayPal mit `PAYPAL_CLIENT_ID` + `PAYPAL_CLIENT_SECRET` → `pending_payment`, Redirect zu PayPal; `GET /checkout/paypal-rueckkehr` mit Capture; Finalisierung `paid` + Lager + Bestätigungsmail. Vorkasse unverändert. Optional: PayPal-Webhooks ergänzen. |
+| 5 | Admin & E-Mail | Admin-Bestellungen inkl. Zahlungszeilen; E-Mail erst nach `paid` bei Online-Zahlung. |
+| 6 | Sicherheit & Tests | Integrationstest PayPal-Rückkehr-Route; erweiterte E2E optional. |
+
+**Env:** `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, optional `PAYPAL_ENV`; siehe [.env.example](../.env.example). **Migrate:** Pooler-P1002 → `DIRECT_DATABASE_URL` / `PRISMA_MIGRATE_DATABASE_URL` oder SQL im Supabase-Editor, siehe Projekt-Doku/Chats.
 
 ---
 

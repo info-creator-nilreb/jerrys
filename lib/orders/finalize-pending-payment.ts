@@ -1,18 +1,24 @@
 import type { PrismaClient } from "@/app/generated/prisma/client";
 import { createOrderEvent, ORDER_EVENT_STATUS_CHANGED } from "@/lib/orders/order-events";
 
-export type FinalizeStripePaymentResult =
+export type FinalizePendingPaymentResult =
   | { ok: true }
   | { ok: false; error: "not_found" | "invalid_status" | "insufficient_stock" | "transaction_failed" };
 
 /**
- * Nach erfolgreicher Stripe-Checkout-Zahlung: Lager abbuchen, Bestellung auf `paid`, Historie, Zahlungszeile.
- * Idempotent: bei bereits `paid` ohne erneute Lagerbuchung.
+ * Nach erfolgreicher Online-Zahlung (PayPal Capture o. Ä.): **verfügbaren** Bestand abbuchen,
+ * Bestellung auf `paid`, Historie, Zahlungszeile. Physisches Lager (`stock_quantity`) erst bei „versandt“.
+ * Idempotent: bei bereits `paid` ohne erneute Bestandsbuchung.
  */
-export async function finalizeOrderAfterStripePayment(
+export async function finalizeOrderAfterPendingPaymentCapture(
   prisma: PrismaClient,
-  params: { orderId: string; stripeSessionId: string },
-): Promise<FinalizeStripePaymentResult> {
+  params: {
+    orderId: string;
+    provider: string;
+    providerRef: string;
+    eventSource: string;
+  },
+): Promise<FinalizePendingPaymentResult> {
   try {
     return await prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
@@ -29,9 +35,9 @@ export async function finalizeOrderAfterStripePayment(
       for (const line of order.items) {
         const p = await tx.product.findUnique({
           where: { id: line.productId },
-          select: { stockQuantity: true },
+          select: { availableQuantity: true },
         });
-        if (!p || p.stockQuantity < line.quantity) {
+        if (!p || p.availableQuantity < line.quantity) {
           return { ok: false, error: "insufficient_stock" };
         }
       }
@@ -39,7 +45,7 @@ export async function finalizeOrderAfterStripePayment(
       for (const line of order.items) {
         await tx.product.update({
           where: { id: line.productId },
-          data: { stockQuantity: { decrement: line.quantity } },
+          data: { availableQuantity: { decrement: line.quantity } },
         });
       }
 
@@ -57,13 +63,13 @@ export async function finalizeOrderAfterStripePayment(
       await createOrderEvent(tx, params.orderId, ORDER_EVENT_STATUS_CHANGED, {
         fromStatus: "pending_payment",
         toStatus: "paid",
-        source: "stripe_webhook",
+        source: params.eventSource,
       });
       await tx.orderPayment.updateMany({
         where: {
           orderId: params.orderId,
-          provider: "stripe",
-          providerRef: params.stripeSessionId,
+          provider: params.provider,
+          providerRef: params.providerRef,
         },
         data: { status: "succeeded" },
       });

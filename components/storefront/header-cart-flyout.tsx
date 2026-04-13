@@ -62,7 +62,7 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
 
   const overlay =
     open && mounted ? (
-      <div className="fixed inset-0 z-[100] flex justify-end">
+      <div className="fixed inset-0 z-[600000] flex justify-end">
         <button
           type="button"
           className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"
@@ -74,7 +74,7 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
           role="dialog"
           aria-modal="true"
           aria-labelledby={`${panelId}-title`}
-          className="relative z-[101] flex h-full w-full max-w-md flex-col border-l border-(--surface-muted) bg-white shadow-2xl"
+          className="relative z-[600001] flex h-full w-full max-w-md flex-col border-l border-(--surface-muted) bg-white shadow-2xl"
         >
           <div className="flex items-center justify-between border-b border-(--surface-muted) px-4 py-4">
             <h2 id={`${panelId}-title`} className="text-lg font-semibold text-(--foreground-heading)">

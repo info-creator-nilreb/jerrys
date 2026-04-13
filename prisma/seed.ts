@@ -49,8 +49,21 @@ async function main() {
         priceNetCents: netCentsFromGross(grossHoehle, tax),
         isActive: true,
         sortOrder: 0,
-        stockQuantity: 0,
+        stockQuantity: 25,
+        availableQuantity: 25,
         deliveryTimeKey: "2-4-werktage",
+        categoryTag: "Für Auge & Gaumen",
+        leadText:
+          "Robuste Katzenhöhle mit zeitlosem Look – made in Germany. Ideal für Rückzug, Entspannung und süße Träume.",
+        dimensionsText: "ca. 50 × 40 × 35 cm (B × T × H)",
+        weightText: "ca. 2,1 kg",
+        materialText: "Hochwertiger Kunststoff, kratzfest & pflegeleicht",
+        featureBullets: [
+          "Stabil & langlebig",
+          "Pflegeleicht abwischbar",
+          "Angenehm geschlossene Form",
+          "Rutschfest durch Gummifüße",
+        ],
         amazonRatingAverage: 4.8,
         amazonRatingCount: 29,
         amazonReviewUrl:
@@ -77,6 +90,21 @@ async function main() {
         priceNetCents: netCentsFromGross(grossHoehle, tax),
         isActive: true,
         sortOrder: 0,
+        stockQuantity: 25,
+        availableQuantity: 25,
+        deliveryTimeKey: "2-4-werktage",
+        categoryTag: "Für Auge & Gaumen",
+        leadText:
+          "Robuste Katzenhöhle mit zeitlosem Look – made in Germany. Ideal für Rückzug, Entspannung und süße Träume.",
+        dimensionsText: "ca. 50 × 40 × 35 cm (B × T × H)",
+        weightText: "ca. 2,1 kg",
+        materialText: "Hochwertiger Kunststoff, kratzfest & pflegeleicht",
+        featureBullets: [
+          "Stabil & langlebig",
+          "Pflegeleicht abwischbar",
+          "Angenehm geschlossene Form",
+          "Rutschfest durch Gummifüße",
+        ],
         amazonRatingAverage: 4.8,
         amazonRatingCount: 29,
         amazonReviewUrl:
@@ -98,6 +126,7 @@ async function main() {
         isActive: true,
         sortOrder: 1,
         stockQuantity: 0,
+        availableQuantity: 0,
         deliveryTimeKey: "2-4-werktage",
         images: {
           create: [
@@ -120,6 +149,70 @@ async function main() {
         priceNetCents: netCentsFromGross(grossNapf, tax),
         isActive: true,
         sortOrder: 1,
+      },
+    });
+
+    await prisma.homepageAmazonReview.upsert({
+      where: { id: "seed_homepage_review_1" },
+      create: {
+        id: "seed_homepage_review_1",
+        quote:
+          "Sehr schöne Katzenhöhle, stabil und gut verarbeitet. Unsere beiden Stubentiger teilen sich den Platz gern.",
+        rating: 5,
+        headline: "Top für den Alltag",
+        author: "Beispiel aus Amazon",
+        sourceUrl:
+          "https://www.amazon.de/Jerrys-Design-Katzenh%C3%B6hle-inklusive-Kuschelkissen/dp/B00SYGOLIO",
+        sortOrder: 0,
+        isActive: true,
+      },
+      update: {
+        quote:
+          "Sehr schöne Katzenhöhle, stabil und gut verarbeitet. Unsere beiden Stubentiger teilen sich den Platz gern.",
+        rating: 5,
+        headline: "Top für den Alltag",
+        author: "Beispiel aus Amazon",
+        sourceUrl:
+          "https://www.amazon.de/Jerrys-Design-Katzenh%C3%B6hle-inklusive-Kuschelkissen/dp/B00SYGOLIO",
+        sortOrder: 0,
+        isActive: true,
+      },
+    });
+
+    await prisma.homepageAmazonReview.upsert({
+      where: { id: "seed_homepage_review_2" },
+      create: {
+        id: "seed_homepage_review_2",
+        quote: "Würde ich wieder kaufen – passt optisch super ins Wohnzimmer.",
+        rating: 5,
+        author: "Beispiel aus Amazon",
+        sortOrder: 10,
+        isActive: true,
+      },
+      update: {
+        quote: "Würde ich wieder kaufen – passt optisch super ins Wohnzimmer.",
+        rating: 5,
+        author: "Beispiel aus Amazon",
+        sortOrder: 10,
+        isActive: true,
+      },
+    });
+
+    await prisma.homepageSocialImage.upsert({
+      where: { id: "seed_homepage_social_1" },
+      create: {
+        id: "seed_homepage_social_1",
+        url: "/media/katzenhoehle.jpg",
+        alt: "Design Katzenhöhle von jerry's (Beispiel für Startseiten-Slider)",
+        href: null,
+        sortOrder: 0,
+        isActive: true,
+      },
+      update: {
+        url: "/media/katzenhoehle.jpg",
+        alt: "Design Katzenhöhle von jerry's (Beispiel für Startseiten-Slider)",
+        sortOrder: 0,
+        isActive: true,
       },
     });
   } finally {

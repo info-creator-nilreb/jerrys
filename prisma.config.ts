@@ -14,6 +14,12 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // Supabase Session Pooler: `migrate deploy` kann mit P1002 (Advisory Lock) hängen.
+    // Optional DIRECT_DATABASE_URL = direkter Host db.*.supabase.co:5432 (gleiche DB), oder einmalig:
+    // PRISMA_MIGRATE_DATABASE_URL="postgresql://…" npx prisma migrate deploy
+    url:
+      process.env["PRISMA_MIGRATE_DATABASE_URL"] ??
+      process.env["DIRECT_DATABASE_URL"] ??
+      process.env["DATABASE_URL"],
   },
 });

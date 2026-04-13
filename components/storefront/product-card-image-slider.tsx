@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useRef, useState } from "react";
 
@@ -86,17 +87,17 @@ export function ProductCardImageSlider({
               type="button"
               onClick={() => go(-1)}
               aria-label="Vorheriges Bild"
-              className="pointer-events-auto flex size-9 items-center justify-center rounded-full border border-white/30 bg-black/35 text-lg font-semibold text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-black/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+              className="pointer-events-auto flex size-9 items-center justify-center rounded-full border border-white/30 bg-black/35 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-black/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
             >
-              ‹
+              <ChevronLeft className="size-5" aria-hidden strokeWidth={2.25} />
             </button>
             <button
               type="button"
               onClick={() => go(1)}
               aria-label="Nächstes Bild"
-              className="pointer-events-auto flex size-9 items-center justify-center rounded-full border border-white/30 bg-black/35 text-lg font-semibold text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-black/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+              className="pointer-events-auto flex size-9 items-center justify-center rounded-full border border-white/30 bg-black/35 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-black/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
             >
-              ›
+              <ChevronRight className="size-5" aria-hidden strokeWidth={2.25} />
             </button>
           </div>
           <nav
