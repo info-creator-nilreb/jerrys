@@ -5,10 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { parseEuroInputToCents } from "@/lib/catalog/format";
-import {
-  isShopShippingCountryCode,
-  SHOP_SHIPPING_COUNTRY_OPTIONS,
-} from "@/lib/catalog/shipping-countries-catalog";
+import { isShopShippingCountryCode } from "@/lib/catalog/shipping-countries-catalog";
 import { getPrisma } from "@/lib/db/prisma";
 import { parseShippingRatesFromJson } from "@/lib/shop/shipping-settings";
 
@@ -177,8 +174,4 @@ export async function getShopShippingSettingsForAdminForm(): Promise<ShopShippin
     shippingRatesCentsByCountry: parseShippingRatesFromJson(row.shippingRatesCentsByCountry),
     freeShippingFromSubtotalGrossCents: row.freeShippingFromSubtotalGrossCents,
   };
-}
-
-export function shippingCountryOptionsForAdmin() {
-  return SHOP_SHIPPING_COUNTRY_OPTIONS;
 }

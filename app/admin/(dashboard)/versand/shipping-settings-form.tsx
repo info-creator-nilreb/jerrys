@@ -3,12 +3,12 @@
 import { useActionState } from "react";
 import {
   saveShopShippingSettings,
-  shippingCountryOptionsForAdmin,
   type ShippingSettingsFormState,
   type ShopShippingSettingsForAdminForm,
 } from "@/app/admin/(dashboard)/versand/actions";
 import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
 import { centsToPriceInputString } from "@/lib/catalog/format";
+import { SHOP_SHIPPING_COUNTRY_OPTIONS } from "@/lib/catalog/shipping-countries-catalog";
 
 const initial: ShippingSettingsFormState = null;
 
@@ -39,7 +39,7 @@ export function ShippingSettingsForm({ defaults }: Props) {
         <fieldset className="mt-4">
           <legend className="sr-only">Aktive Versandländer</legend>
           <div className="flex flex-wrap gap-x-4 gap-y-2">
-            {shippingCountryOptionsForAdmin().map((o) => (
+            {SHOP_SHIPPING_COUNTRY_OPTIONS.map((o) => (
               <label key={o.code} className="flex cursor-pointer items-center gap-2 text-sm text-[#374151]">
                 <input
                   type="checkbox"
@@ -66,7 +66,7 @@ export function ShippingSettingsForm({ defaults }: Props) {
           Pro Land ein Pauschalbetrag (z. B. „4,99“). Länder ohne aktivierte Checkbox werden ignoriert.
         </p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          {shippingCountryOptionsForAdmin().map((o) => {
+          {SHOP_SHIPPING_COUNTRY_OPTIONS.map((o) => {
             const key = `rateEuro__${o.code}`;
             const cents = rates[o.code] ?? 0;
             return (
