@@ -40,8 +40,8 @@ export default function StorefrontError({
         <div className="mt-4 space-y-3 text-sm leading-relaxed text-(--foreground-body)">
           <p>
             Der Shop konnte keine Verbindung zum Datenbank-Server herstellen (z. B.{" "}
-            <code className="rounded bg-(--surface-muted) px-1 py-0.5 text-xs">pooler.supabase.com</code>
-            ).
+            <code className="rounded bg-(--surface-muted) px-1 py-0.5 text-xs">db.*.supabase.co</code> oder
+            Session-Pooler).
           </p>
           <ul className="list-inside list-disc space-y-1 text-(--foreground-body)">
             <li>Internetverbindung und VPN prüfen</li>

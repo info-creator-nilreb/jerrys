@@ -1,25 +1,44 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { ChevronDown } from "lucide-react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  adminTripleAxisLabel,
+  adminTripleOptionLabel,
+  adminTripleOptions,
+  adminTripleSelectSurfaceClass,
+  deriveTripleFromOrder,
+  isTripleOptionEnabled,
+  pickNextStatusForDimension,
+  type AdminTripleDimension,
+  type OrderForTriple,
+} from "@/lib/orders/order-admin-triple";
 import {
   updateOrderStatus,
   type OrderStatusActionState,
 } from "@/app/admin/(dashboard)/orders/actions";
-import { orderStatusLabel } from "@/lib/orders/order-status-label";
+import { allowedNextOrderStatuses } from "@/lib/orders/order-status-machine";
 
 const initial: OrderStatusActionState = null;
 
+const DIMENSIONS: AdminTripleDimension[] = ["payment", "shipping", "order"];
+
 export function OrderStatusPanel({
   orderId,
-  allowedNext,
+  order,
 }: {
   orderId: string;
-  allowedNext: string[];
+  order: OrderForTriple;
 }) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(updateOrderStatus, initial);
   const [flash, setFlash] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const toInputRef = useRef<HTMLInputElement>(null);
+
+  const triple = deriveTripleFromOrder(order);
+  const canTransition = allowedNextOrderStatuses(order.status).length > 0;
 
   useEffect(() => {
     if (!state?.ok) return;
@@ -35,13 +54,18 @@ export function OrderStatusPanel({
     };
   }, [state?.ok, router]);
 
-  if (allowedNext.length === 0) {
-    return (
-      <p className="mt-2 text-sm text-[#6b7280]">
-        Für den aktuellen Status sind keine weiteren Wechsel vorgesehen.
-      </p>
-    );
-  }
+  const submitTo = (toStatus: string) => {
+    if (!toInputRef.current || !formRef.current) return;
+    toInputRef.current.value = toStatus;
+    formRef.current.requestSubmit();
+  };
+
+  const handleDimensionChange = (dim: AdminTripleDimension, target: string) => {
+    if (triple[dim] === target) return;
+    const next = pickNextStatusForDimension(order, dim, target);
+    if (!next) return;
+    submitTo(next);
+  };
 
   return (
     <div className="mt-3 space-y-3">
@@ -57,21 +81,55 @@ export function OrderStatusPanel({
           </p>
         ) : null}
       </div>
-      <div className="flex flex-wrap gap-2" aria-busy={pending}>
-        {allowedNext.map((to) => (
-          <form key={to} action={formAction} className="inline">
-            <input type="hidden" name="orderId" value={orderId} />
-            <input type="hidden" name="toStatus" value={to} />
-            <button
-              type="submit"
-              disabled={pending}
-              className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm font-medium text-[#374151] shadow-sm transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
-            >
-              → {orderStatusLabel(to)}
-            </button>
-          </form>
-        ))}
-      </div>
+
+      <form ref={formRef} action={formAction} className="space-y-4">
+        <input type="hidden" name="orderId" value={orderId} />
+        <input ref={toInputRef} type="hidden" name="toStatus" defaultValue="" />
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {DIMENSIONS.map((dim) => (
+            <div key={dim} className="min-w-0">
+              <label
+                htmlFor={`order-status-${orderId}-${dim}`}
+                className="mb-1.5 block text-sm text-[#4b5563]"
+              >
+                {adminTripleAxisLabel(dim)}
+              </label>
+              <div
+                className={`relative flex rounded-full shadow-sm ${adminTripleSelectSurfaceClass(dim, triple[dim])}`}
+              >
+                <select
+                  id={`order-status-${orderId}-${dim}`}
+                  value={triple[dim]}
+                  disabled={pending || !canTransition}
+                  aria-busy={pending}
+                  onChange={(e) => handleDimensionChange(dim, e.target.value)}
+                  className="h-11 w-full min-w-0 flex-1 cursor-pointer appearance-none rounded-full border-0 bg-transparent pl-4 pr-10 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {adminTripleOptions(dim).map((opt) => {
+                    const enabled = isTripleOptionEnabled(order, dim, opt);
+                    return (
+                      <option key={opt} value={opt} disabled={!enabled && triple[dim] !== opt}>
+                        {adminTripleOptionLabel(dim, opt)}
+                      </option>
+                    );
+                  })}
+                </select>
+                <ChevronDown
+                  className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 opacity-70"
+                  aria-hidden
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </form>
+
+      {!canTransition ? (
+        <p className="text-sm text-[#6b7280]">
+          Für den aktuellen Status sind keine weiteren Wechsel vorgesehen.
+        </p>
+      ) : null}
     </div>
   );
 }

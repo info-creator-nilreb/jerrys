@@ -25,9 +25,14 @@ describe("order-status-machine", () => {
     expect(isAllowedOrderStatusTransition("bestaetigt", "bestaetigt")).toBe(false);
   });
 
-  it("terminal completed → nur refunded", () => {
+  it("terminal completed → refunded oder retoure", () => {
     expect(isTerminalOrderStatus("completed")).toBe(true);
-    expect(allowedNextOrderStatuses("completed")).toEqual(["refunded"]);
+    expect(allowedNextOrderStatuses("completed")).toEqual(["refunded", "retoure"]);
+  });
+
+  it("erlaubt shipped → retoure und retoure → refunded", () => {
+    expect(isAllowedOrderStatusTransition("shipped", "retoure")).toBe(true);
+    expect(isAllowedOrderStatusTransition("retoure", "refunded")).toBe(true);
   });
 
   it("terminal cancelled ohne Folge", () => {

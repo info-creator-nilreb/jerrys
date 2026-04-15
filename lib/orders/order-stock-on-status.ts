@@ -60,5 +60,8 @@ export async function restoreStockOnOrderCancelled(
     }
     return { ok: true };
   }
+  if (fromStatus === "retoure") {
+    return { ok: true };
+  }
   return { ok: true };
 }

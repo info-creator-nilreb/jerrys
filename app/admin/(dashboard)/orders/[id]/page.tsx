@@ -9,7 +9,6 @@ import {
   orderEventMetadataDescription,
   orderEventTypeTitle,
 } from "@/lib/orders/order-event-label";
-import { allowedNextOrderStatuses } from "@/lib/orders/order-status-machine";
 import { orderPaymentStatusLabel } from "@/lib/orders/order-payment-label";
 import { orderStatusLabel } from "@/lib/orders/order-status-label";
 
@@ -109,8 +108,6 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
     order.billingCountry,
   );
   const billingMatchesShipping = shipLines.join("\n") === billLines.join("\n");
-  const allowedNext = allowedNextOrderStatuses(order.status);
-
   return (
     <div className="mx-auto max-w-4xl space-y-8 rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -125,17 +122,15 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
           </h1>
           <p className="mt-1 text-sm text-[#6b7280]">{dateFmt.format(order.createdAt)}</p>
         </div>
-        <span className="rounded-full bg-[#ecfdf5] px-3 py-1 text-sm font-medium text-emerald-800">
-          {orderStatusLabel(order.status)}
-        </span>
       </div>
 
       <section className="border-t border-[#e8eaed] pt-6">
         <h2 className="text-sm font-semibold text-[#374151]">Status ändern</h2>
         <p className="mt-1 text-sm text-[#6b7280]">
-          Aktuell: <span className="font-medium text-[#1f2937]">{orderStatusLabel(order.status)}</span>
+          Technischer Status:{" "}
+          <span className="font-medium text-[#1f2937]">{orderStatusLabel(order.status)}</span>
         </p>
-        <OrderStatusPanel orderId={order.id} allowedNext={allowedNext} />
+        <OrderStatusPanel orderId={order.id} order={order} />
       </section>
 
       <section className="border-t border-[#e8eaed] pt-6">

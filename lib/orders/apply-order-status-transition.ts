@@ -50,6 +50,11 @@ export async function applyOrderStatusTransition(
       if (!w.ok) return { ok: false, error: "insufficient_warehouse" } as const;
     }
 
+    if (toStatus === "retoure" && (from === "shipped" || from === "completed")) {
+      const r = await restoreStockOnOrderCancelled(tx, "shipped", order.items);
+      if (!r.ok) return { ok: false, error: "insufficient_warehouse" } as const;
+    }
+
     if (toStatus === "cancelled") {
       const r = await restoreStockOnOrderCancelled(tx, from, order.items);
       if (!r.ok) return { ok: false, error: "insufficient_warehouse" } as const;

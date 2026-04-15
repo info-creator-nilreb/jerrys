@@ -2,6 +2,19 @@ export function formatPrice(cents: number, currency = "EUR"): string {
   return new Intl.NumberFormat("de-DE", { style: "currency", currency }).format(cents / 100);
 }
 
+/**
+ * Währungsbetrag aus Cent; bei ganzzahligen Euro ohne Nachkommastellen (z. B. 100 € statt 100,00 €).
+ */
+export function formatPriceWholeEurosWhenInteger(cents: number, currency = "EUR"): string {
+  const wholeEuro = cents % 100 === 0;
+  return new Intl.NumberFormat("de-DE", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: wholeEuro ? 0 : 2,
+    maximumFractionDigits: wholeEuro ? 0 : 2,
+  }).format(cents / 100);
+}
+
 /** Für Preisfelder im Admin-Formular (de-DE). */
 export function centsToPriceInputString(cents: number): string {
   return new Intl.NumberFormat("de-DE", {

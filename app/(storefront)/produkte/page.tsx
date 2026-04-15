@@ -1,6 +1,8 @@
+import { DatabaseUnavailableNotice } from "@/components/storefront/database-unavailable-notice";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
+import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +12,17 @@ export const metadata = {
 };
 
 export default async function ProduktePage() {
-  const products = await listActiveProductsForStorefront();
+  let products: Awaited<ReturnType<typeof listActiveProductsForStorefront>> = [];
+  let dbUnavailable = false;
+  try {
+    products = await listActiveProductsForStorefront();
+  } catch (e) {
+    if (isDatabaseUnreachable(e)) {
+      dbUnavailable = true;
+    } else {
+      throw e;
+    }
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-24 md:py-28">
@@ -22,7 +34,9 @@ export default async function ProduktePage() {
         Hochwertige Katzenmöbel – designed und gefertigt in Deutschland.
       </p>
 
-      {products.length === 0 ? (
+      {dbUnavailable ? (
+        <DatabaseUnavailableNotice />
+      ) : products.length === 0 ? (
         <p className="mt-10 text-(--foreground-muted)">
           Aktuell sind keine Produkte im Shop sichtbar. Bitte später erneut vorbeischauen.
         </p>

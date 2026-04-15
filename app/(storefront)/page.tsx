@@ -1,10 +1,12 @@
 import Image from "next/image";
+import { DatabaseUnavailableNotice } from "@/components/storefront/database-unavailable-notice";
 import { HeroScrollHint } from "@/components/storefront/hero-scroll-hint";
 import { HomepageReviewsCarousel } from "@/components/storefront/homepage-reviews-carousel";
 import { HomepageSocialCarousel } from "@/components/storefront/homepage-social-carousel";
 import { ProductCard } from "@/components/storefront/product-card";
 import { UspIcon } from "@/components/storefront/usp-icons";
 import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
+import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 import {
   listActiveHomepageAmazonReviews,
   listActiveHomepageSocialImages,
@@ -31,11 +33,24 @@ const usps = [
 export const dynamic = "force-dynamic";
 
 export default async function StorefrontHomePage() {
-  const [products, homepageReviews, homepageSocial] = await Promise.all([
-    listActiveProductsForStorefront(),
-    listActiveHomepageAmazonReviews(),
-    listActiveHomepageSocialImages(),
-  ]);
+  let products: Awaited<ReturnType<typeof listActiveProductsForStorefront>> = [];
+  let homepageReviews: Awaited<ReturnType<typeof listActiveHomepageAmazonReviews>> = [];
+  let homepageSocial: Awaited<ReturnType<typeof listActiveHomepageSocialImages>> = [];
+  let dbUnavailable = false;
+  try {
+    const tuple = await Promise.all([
+      listActiveProductsForStorefront(),
+      listActiveHomepageAmazonReviews(),
+      listActiveHomepageSocialImages(),
+    ]);
+    [products, homepageReviews, homepageSocial] = tuple;
+  } catch (e) {
+    if (isDatabaseUnreachable(e)) {
+      dbUnavailable = true;
+    } else {
+      throw e;
+    }
+  }
   return (
     <div>
       {/* Eine Viewporthöhe; Text links (freier Bildbereich), kein Karten-Overlay über dem Produkt */}
@@ -139,7 +154,9 @@ export default async function StorefrontHomePage() {
           <h2 className="text-center text-2xl font-semibold text-(--foreground-heading) md:text-3xl">
             Produkte
           </h2>
-          {products.length === 0 ? (
+          {dbUnavailable ? (
+            <DatabaseUnavailableNotice />
+          ) : products.length === 0 ? (
             <p className="mt-10 text-center text-base text-(--foreground-muted) md:text-lg">
               Demnächst findet ihr hier unsere Katzenmöbel. Schaut bald wieder vorbei.
             </p>

@@ -13,6 +13,7 @@ import { ProductJsonLd } from "@/components/storefront/product-json-ld";
 import { ProductPdpSpecsPanel } from "@/components/storefront/product-pdp-specs-panel";
 import { ProductPdpTrustFooterBar, ProductPdpUspRow } from "@/components/storefront/product-pdp-trust-blocks";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
+import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
 import { absoluteUrl } from "@/lib/site/canonical-origin";
 
 export const dynamic = "force-dynamic";
@@ -64,7 +65,10 @@ export default async function ProduktDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = await getActiveProductBySlug(slug);
+  const [product, shopShip] = await Promise.all([
+    getActiveProductBySlug(slug),
+    getShopShippingSettings(),
+  ]);
   if (!product) notFound();
 
   const specs = resolvePdpSpecs(product);
@@ -239,7 +243,9 @@ export default async function ProduktDetailPage({
         </div>
       </div>
 
-      <ProductPdpTrustFooterBar />
+      <ProductPdpTrustFooterBar
+        freeShippingFromSubtotalGrossCents={shopShip.freeShippingFromSubtotalGrossCents}
+      />
     </>
   );
 }

@@ -65,11 +65,15 @@ export function getPrisma(): PrismaClient {
 
   const pool =
     globalForPrisma.pgPool ?? new pg.Pool(createPgPoolConfig(connectionString));
-  if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.pgPool = pool;
-    globalForPrisma.pgPoolSslRelaxed = sslRelaxed;
-    globalForPrisma.pgPoolConfigVersion = PG_POOL_CONFIG_VERSION;
+
+  if (!globalForPrisma.pgPool) {
+    /** Dev (HMR) / erneute Prisma-Instanzen: Adapter hängen ggf. mehrere Listener an denselben Pool. */
+    pool.setMaxListeners(0);
   }
+
+  globalForPrisma.pgPool = pool;
+  globalForPrisma.pgPoolSslRelaxed = sslRelaxed;
+  globalForPrisma.pgPoolConfigVersion = PG_POOL_CONFIG_VERSION;
 
   const client = new PrismaClient({
     adapter: new PrismaPg(pool),

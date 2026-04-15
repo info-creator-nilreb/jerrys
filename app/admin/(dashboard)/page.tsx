@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { OrderTableRowLink } from "@/app/admin/(dashboard)/orders/order-table-row-link";
+import { OrderTriplePill } from "@/app/admin/(dashboard)/orders/order-triple-pill";
 import { auth } from "@/auth";
 import { formatPrice } from "@/lib/catalog/format";
 import { getAdminDashboardOrdersSnapshot } from "@/lib/orders/admin-queries";
-import { orderStatusLabel } from "@/lib/orders/order-status-label";
+import { deriveTripleFromOrder } from "@/lib/orders/order-admin-triple";
 
 export const dynamic = "force-dynamic";
 
@@ -145,41 +147,49 @@ export default async function AdminHomePage() {
                     Positionen
                   </th>
                   <th scope="col" className="px-4 py-3 font-medium">
-                    Status
+                    Zahlung
+                  </th>
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    Lieferung
+                  </th>
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    Bestellung
                   </th>
                   <th scope="col" className="px-4 py-3 font-medium">
                     Summe
                   </th>
-                  <th scope="col" className="px-4 py-3 font-medium" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e8eaed]">
-                {recent.map((o) => (
-                  <tr key={o.id} className="bg-white">
-                    <td className="px-4 py-3 font-mono text-xs text-[#374151]">{o.orderNumber}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-[#6b7280]">
-                      {dateFmt.format(o.createdAt)}
-                    </td>
-                    <td className="max-w-[14rem] truncate px-4 py-3 text-[#374151]">{o.email}</td>
-                    <td className="px-4 py-3 text-[#6b7280]">{o._count.items}</td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full bg-[#ecfdf5] px-2.5 py-0.5 text-xs font-medium text-emerald-800">
-                        {orderStatusLabel(o.status)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 font-medium">
-                      {formatPrice(o.totalGrossCents, o.currency)}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/admin/orders/${o.id}`}
-                        className="font-medium text-primary hover:underline"
-                      >
-                        Details
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                {recent.map((o) => {
+                  const triple = deriveTripleFromOrder(o);
+                  return (
+                    <OrderTableRowLink
+                      key={o.id}
+                      href={`/admin/orders/${o.id}`}
+                      ariaLabel={`Bestellung ${o.orderNumber} öffnen`}
+                    >
+                      <td className="px-4 py-3 font-mono text-xs text-[#374151]">{o.orderNumber}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-[#6b7280]">
+                        {dateFmt.format(o.createdAt)}
+                      </td>
+                      <td className="max-w-[14rem] truncate px-4 py-3 text-[#374151]">{o.email}</td>
+                      <td className="px-4 py-3 text-[#6b7280]">{o._count.items}</td>
+                      <td className="px-4 py-3">
+                        <OrderTriplePill triple={triple} dim="payment" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <OrderTriplePill triple={triple} dim="shipping" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <OrderTriplePill triple={triple} dim="order" />
+                      </td>
+                      <td className="px-4 py-3 font-medium text-[#1f2937]">
+                        {formatPrice(o.totalGrossCents, o.currency)}
+                      </td>
+                    </OrderTableRowLink>
+                  );
+                })}
               </tbody>
             </table>
           </div>

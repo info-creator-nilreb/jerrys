@@ -22,6 +22,7 @@ export async function getAdminDashboardOrdersSnapshot() {
         currency: true,
         createdAt: true,
         _count: { select: { items: true } },
+        payments: { select: { status: true } },
       },
     }),
   ]);
@@ -46,6 +47,7 @@ export async function listOrdersForAdmin() {
       currency: true,
       createdAt: true,
       _count: { select: { items: true } },
+      payments: { select: { status: true } },
     },
   });
 }

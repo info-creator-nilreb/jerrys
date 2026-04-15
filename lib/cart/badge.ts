@@ -1,15 +1,6 @@
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { getCartLineCountSum } from "@/lib/cart/cart-queries";
-
-function isDatabaseUnreachable(e: unknown): boolean {
-  if (e == null || typeof e !== "object") return false;
-  const o = e as { code?: unknown; message?: unknown };
-  if (o.code === "P1001") return true;
-  if (typeof o.message === "string" && /Can't reach database server/i.test(o.message)) {
-    return true;
-  }
-  return false;
-}
+import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 
 /** Summe der Stückzahlen aller Positionen (für Header-Badge). */
 export async function getStorefrontCartBadgeCount(): Promise<number> {

@@ -96,6 +96,15 @@ Fortführung von [DELIVERY_PLAN.md](./DELIVERY_PLAN.md) (Epics 1–6). Gleiche P
 6. Supply Chain (`npm audit`, CI).
 7. Optional: DAST-Baseline (ZAP).
 
+**Umsetzungsstand (Repo, laufende Ergänzung):**
+
+| Story | Kurz | Status |
+|-------|------|--------|
+| 1 | Inventar | [SECURITY_SURFACE.md](./SECURITY_SURFACE.md) inkl. neuer Admin-Actions (Startseite, Versand) und Hinweis Login-Rate-Limit. |
+| 2 | AuthZ-Negative | Integrationstests `tests/integration/admin-api-authz.test.ts` (Admin-APIs ohne Session → 401). |
+| 3 | Rate-Limiting | In-Memory-Limit für `POST …/callback/credentials` (Admin-Credentials), siehe `lib/security/sign-in-rate-limit.ts` + `app/api/auth/[...nextauth]/route.ts`. Checkout/Webhooks: später. |
+| 6 | Supply Chain | CI-Job `check`: `npm audit --audit-level=high` nach `npm ci` in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). |
+
 ---
 
 ## Epic 11: Performance, Skalierung & Lasttests
