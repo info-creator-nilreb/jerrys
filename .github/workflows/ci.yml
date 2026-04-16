@@ -98,6 +98,9 @@ jobs:
       PORT: "3000"
       NODE_ENV: production
       PLAYWRIGHT_WEB_SERVER: none
+      # PayPal Sandbox (GitHub Secrets) — sonst leitet /checkout nach /warenkorb um und der Commerce-E2E bricht ab.
+      PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_SANDBOX_CLIENT_ID }}
+      PAYPAL_CLIENT_SECRET: ${{ secrets.PAYPAL_SANDBOX_CLIENT_SECRET }}
     steps:
       - uses: actions/checkout@v4
 
