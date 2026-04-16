@@ -1,9 +1,22 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { completePayPalCaptureFlow } from "@/lib/checkout/complete-paypal-capture-flow";
+import { clientIpFromRequest } from "@/lib/security/client-ip";
+import {
+  payPalApiRateLimitJsonHeaders,
+  touchPayPalCheckoutApiAttempt,
+} from "@/lib/security/paypal-checkout-api-rate-limit";
 import { canonicalSiteOrigin } from "@/lib/site/canonical-origin";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 
 export async function POST(req: NextRequest) {
+  const limited = touchPayPalCheckoutApiAttempt(clientIpFromRequest(req));
+  if (!limited.ok) {
+    return NextResponse.json(
+      { ok: false, error: "Zu viele Anfragen. Bitte kurz warten und erneut versuchen." },
+      { status: 429, headers: payPalApiRateLimitJsonHeaders(limited.retryAfterSec) },
+    );
+  }
+
   if (!isPayPalConfigured()) {
     return NextResponse.json(
       { ok: false, error: "PayPal ist nicht konfiguriert." },

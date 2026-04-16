@@ -31,17 +31,26 @@ const nextConfig: NextConfig = {
      * Kombination aus Antwort-Headern / MIME nicht exakt passt.
      * Nosniff nur für Pfade, die Next mit festen MIME-Typen ausliefert.
      */
+    const docSecurityHeaders: { key: string; value: string }[] = [
+      { key: "X-Frame-Options", value: "DENY" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      {
+        key: "Permissions-Policy",
+        value: "camera=(), microphone=(), geolocation=()",
+      },
+    ];
+    /** Nur auf Vercel (HTTPS), nicht lokal per `next start` ohne TLS. */
+    if (process.env.VERCEL === "1") {
+      docSecurityHeaders.push({
+        key: "Strict-Transport-Security",
+        value: "max-age=63072000; includeSubDomains; preload",
+      });
+    }
+
     return [
       {
         source: "/:path*",
-        headers: [
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          {
-            key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()",
-          },
-        ],
+        headers: docSecurityHeaders,
       },
       {
         source: "/_next/static/:path*",

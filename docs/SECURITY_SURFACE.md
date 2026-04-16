@@ -17,6 +17,8 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | `GET /sitemap.xml` | Öffentlich | SEO-Sitemap (Produkt-URLs u. a.) |
 | `GET /robots.txt` | Öffentlich | Crawler-Regeln inkl. Sitemap-Verweis |
 | `GET /checkout/paypal-rueckkehr` | Öffentlich (Redirect von PayPal) | Nach erfolgreichem Capture: Bestellung `paid`, Lager, E-Mail ([PAYMENT_PROVIDER_STRATEGY](./PAYMENT_PROVIDER_STRATEGY.md)) |
+| `POST /api/checkout/paypal/create-order` | Öffentlich (Checkout) | Bestellung anlegen + PayPal-Order; **Rate-Limit** pro IP (`lib/security/paypal-checkout-api-rate-limit.ts`) |
+| `POST /api/checkout/paypal/capture-order` | Öffentlich (Checkout) | Capture nach Karte/Wallet; **gleiches Rate-Limit** wie create-order |
 | Tabelle `order_payments` | — | PSP-Versuche pro Bestellung (Prisma-Modell `OrderPayment`) |
 | Seiten unter `/admin/*` (außer Login) | Middleware + Layout `auth()` | Admin-UI |
 

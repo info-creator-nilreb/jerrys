@@ -1,4 +1,5 @@
 import { handlers } from "@/auth";
+import { clientIpFromRequest } from "@/lib/security/client-ip";
 import {
   credentialSignInRateLimitHeaders,
   touchCredentialSignInAttempt,
@@ -9,21 +10,10 @@ export const runtime = "nodejs";
 
 export const GET = handlers.GET;
 
-function clientIp(req: NextRequest): string {
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) {
-    const first = xff.split(",")[0]?.trim();
-    if (first) return first;
-  }
-  const realIp = req.headers.get("x-real-ip")?.trim();
-  if (realIp) return realIp;
-  return "unknown";
-}
-
 export async function POST(req: NextRequest) {
   const path = req.nextUrl.pathname;
   if (path.includes("/callback/credentials")) {
-    const limited = touchCredentialSignInAttempt(clientIp(req));
+    const limited = touchCredentialSignInAttempt(clientIpFromRequest(req));
     if (!limited.ok) {
       return NextResponse.json(
         { error: "Zu viele Anmeldeversuche. Bitte später erneut versuchen." },

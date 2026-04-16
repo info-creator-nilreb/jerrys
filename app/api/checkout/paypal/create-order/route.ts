@@ -3,9 +3,22 @@ import {
   createPendingPayPalOrderFromFormData,
   createPendingPayPalOrderFromJsonBody,
 } from "@/lib/checkout/create-pending-paypal-order-from-form";
+import { clientIpFromRequest } from "@/lib/security/client-ip";
+import {
+  payPalApiRateLimitJsonHeaders,
+  touchPayPalCheckoutApiAttempt,
+} from "@/lib/security/paypal-checkout-api-rate-limit";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 
 export async function POST(req: Request) {
+  const limited = touchPayPalCheckoutApiAttempt(clientIpFromRequest(req));
+  if (!limited.ok) {
+    return NextResponse.json(
+      { ok: false, error: "Zu viele Anfragen. Bitte kurz warten und erneut versuchen." },
+      { status: 429, headers: payPalApiRateLimitJsonHeaders(limited.retryAfterSec) },
+    );
+  }
+
   if (!isPayPalConfigured()) {
     return NextResponse.json(
       { ok: false, error: "PayPal ist nicht konfiguriert." },
