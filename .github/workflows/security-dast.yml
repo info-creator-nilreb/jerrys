@@ -1,0 +1,72 @@
+# OWASP ZAP Baseline — optional vertiefende Prüfung (Epic 10).
+# Läuft wöchentlich und manuell; nicht bei jedem Push (Flakiness/Laufzeit).
+
+name: Security DAST (ZAP)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * 0"
+
+concurrency:
+  group: security-dast-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  zap-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+      DIRECT_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+      AUTH_SECRET: ci-zap-secret-minimum-32-characters-long-xx
+      AUTH_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder-anon-key
+      PORT: "3000"
+      NODE_ENV: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --include=dev
+
+      - name: Wait for Postgres
+        run: npx --yes wait-on@8.0.1 tcp:127.0.0.1:5432 -t 120000
+
+      - name: Apply database migrations
+        run: npx prisma migrate deploy
+
+      - name: Production build
+        run: npm run build
+
+      - name: Start app & ZAP Baseline (Docker host network)
+        continue-on-error: true
+        run: |
+          npm run start &
+          npx --yes wait-on@8.0.1 http://127.0.0.1:3000 -t 120000
+          docker run --rm --network host \
+            zaproxy/zap-stable \
+            zap-baseline.py \
+            -t http://127.0.0.1:3000 \
+            -J zap-report.json

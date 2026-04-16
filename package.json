@@ -18,8 +18,10 @@
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:e2e": "playwright test",
+    "security:semgrep": "semgrep scan --config=p/typescript --config=p/javascript --config=p/security-audit --error .",
     "lighthouse:local": "echo 'Dev-Server starten, dann: npx lighthouse http://127.0.0.1:${PORT:-3001} --only-categories=performance,accessibility,best-practices,seo --view'",
     "lighthouse:ci": "npx --yes @lhci/cli@0.14.0 autorun",
+    "load:k6": "k6 run scripts/load/k6-smoke.js",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed"
   },
@@ -43,11 +45,12 @@
     "lucide-react": "^0.544.0",
     "next": "16.2.3",
     "next-auth": "^5.0.0-beta.30",
-    "nodemailer": "^7.0.13",
+    "pdf-lib": "^1.17.1",
     "pg": "^8.20.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "tailwindcss": "^4",
+    "web-vitals": "^4.2.4",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -56,7 +59,6 @@
     "@testing-library/react": "^16.3.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
-    "@types/nodemailer": "^8.0.0",
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",

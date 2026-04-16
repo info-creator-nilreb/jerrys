@@ -3,7 +3,7 @@ import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { getCartWithLines } from "@/lib/cart/cart-queries";
 import { checkoutFormSchema } from "@/lib/checkout/schemas";
 import { generateOrderNumber } from "@/lib/checkout/order-number";
-import { vatCentsFromGross } from "@/lib/catalog/pricing";
+import { netCentsFromGross } from "@/lib/catalog/pricing";
 import { sendOrderConfirmationIfNeeded } from "@/lib/email/order-confirmation";
 import { ORDER_EVENT_PLACED } from "@/lib/orders/order-events";
 import { getPrisma } from "@/lib/db/prisma";
@@ -11,11 +11,8 @@ import { createLogger, errorMeta } from "@/lib/logging/logger";
 import { createPayPalCheckoutOrder } from "@/lib/payments/paypal-orders";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 import { usesPaypalHostedCheckout } from "@/lib/payments/online-payment-method";
-import {
-  shippingGrossCentsForCountry,
-  shippingVatCentsFromGross,
-} from "@/lib/shop/shipping-compute";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
+import { computeCheckoutOrderTotals } from "@/lib/tax/order-price-totals";
 import { z } from "zod";
 
 const log = createLogger("checkout.paypal_create");
@@ -239,22 +236,22 @@ async function createPendingPayPalOrderFromParsedRaw(
     }
   }
 
-  let subtotal = 0;
-  let taxTotal = 0;
-  for (const line of activeLines) {
-    const gross = line.quantity * line.product.priceGrossCents;
-    subtotal += gross;
-    taxTotal += vatCentsFromGross(gross, line.product.taxRatePercent);
-  }
-
-  const shippingCents = shippingGrossCentsForCountry({
-    subtotalGrossCents: subtotal,
+  const totals = computeCheckoutOrderTotals({
+    lines: activeLines.map((line) => ({
+      quantity: line.quantity,
+      priceGrossCents: line.product.priceGrossCents,
+      taxRatePercent: line.product.taxRatePercent,
+    })),
     shippingCountryCode: d.shippingCountry,
     shippingRatesCentsByCountry: shopShip.shippingRatesCentsByCountry,
     freeShippingFromSubtotalGrossCents: shopShip.freeShippingFromSubtotalGrossCents,
   });
-  taxTotal += shippingVatCentsFromGross(shippingCents);
-  const totalGross = subtotal + shippingCents;
+
+  const subtotal = totals.subtotalCents;
+  const taxTotal = totals.taxAmountCents;
+  const shippingCents = totals.shippingCents;
+  const totalGross = totals.totalCents;
+  const vatApplies = totals.vatApplies;
   const orderCurrency = activeLines[0]!.product.currency;
 
   const orderNumber = generateOrderNumber();
@@ -294,16 +291,33 @@ async function createPendingPayPalOrderFromParsedRaw(
           shippingCents,
           taxAmountCents: taxTotal,
           totalGrossCents: totalGross,
+          vatApplies,
           idempotencyKey: d.idempotencyKey,
           items: {
-            create: activeLines.map((line) => ({
-              productId: line.product.id,
-              productTitleSnapshot: line.product.title,
-              unitPriceGrossCents: line.product.priceGrossCents,
-              taxRatePercentSnapshot: line.product.taxRatePercent,
-              quantity: line.quantity,
-              lineTotalGrossCents: line.quantity * line.product.priceGrossCents,
-            })),
+            create: activeLines.map((line) => {
+              if (vatApplies) {
+                return {
+                  productId: line.product.id,
+                  productTitleSnapshot: line.product.title,
+                  unitPriceGrossCents: line.product.priceGrossCents,
+                  taxRatePercentSnapshot: line.product.taxRatePercent,
+                  quantity: line.quantity,
+                  lineTotalGrossCents: line.quantity * line.product.priceGrossCents,
+                };
+              }
+              const unitNet = netCentsFromGross(
+                line.product.priceGrossCents,
+                line.product.taxRatePercent,
+              );
+              return {
+                productId: line.product.id,
+                productTitleSnapshot: line.product.title,
+                unitPriceGrossCents: unitNet,
+                taxRatePercentSnapshot: 0,
+                quantity: line.quantity,
+                lineTotalGrossCents: line.quantity * unitNet,
+              };
+            }),
           },
           statusHistory: {
             create: [{ fromStatus: null, toStatus: orderStatus }],

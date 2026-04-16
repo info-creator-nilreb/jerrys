@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Source_Sans_3 } from "next/font/google";
+import { WebVitalsReporter } from "@/components/storefront/web-vitals-reporter";
 import { canonicalSiteOrigin } from "@/lib/site/canonical-origin";
 import "./globals.css";
 
@@ -40,7 +41,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de" className={`${sourceSans.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        <WebVitalsReporter />
+        {children}
+      </body>
     </html>
   );
 }

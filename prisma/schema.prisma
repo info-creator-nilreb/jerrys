@@ -85,6 +85,7 @@ model Product {
   cartLines   CartLine[]
   orderItems  OrderItem[]
 
+  @@index([isActive, sortOrder])
   @@map("products")
 }
 
@@ -122,6 +123,22 @@ enum OrderPaymentStatus {
   refunded
 }
 
+/// Versanddienst für Sendungsverfolgung (Admin + E-Mail).
+enum ShippingCarrier {
+  DHL
+  DPD
+  UPS
+  Hermes
+}
+
+/// Fortlaufende Rechnungsnummer (eine Zeile, atomar inkrementieren).
+model InvoiceCounter {
+  id      Int @id @default(1)
+  nextSeq Int @default(1) @map("next_seq")
+
+  @@map("invoice_counter")
+}
+
 model Order {
   id                  String      @id @default(cuid())
   orderNumber         String      @unique @map("order_number")
@@ -150,6 +167,12 @@ model Order {
   shippingCents       Int         @default(0) @map("shipping_cents")
   taxAmountCents      Int         @map("tax_amount_cents")
   totalGrossCents     Int         @map("total_gross_cents")
+  /// true = EU-27: Katalogpreise inkl. USt.; false = Drittland: Netto, keine ausgewiesene USt.
+  vatApplies          Boolean     @default(true) @map("vat_applies")
+  shippingCarrier     ShippingCarrier? @map("shipping_carrier")
+  trackingNumber      String?     @map("tracking_number")
+  invoiceNumber       String?     @unique @map("invoice_number")
+  invoiceIssuedAt     DateTime?   @map("invoice_issued_at")
   currency            String      @default("EUR")
   idempotencyKey      String?     @unique @map("idempotency_key")
   createdAt           DateTime    @default(now()) @map("created_at")
@@ -231,6 +254,7 @@ model OrderItem {
   lineTotalGrossCents    Int     @map("line_total_gross_cents")
   currency               String  @default("EUR")
 
+  @@index([orderId])
   @@map("order_items")
 }
 
@@ -258,6 +282,7 @@ model ProductImage {
   isCover   Boolean  @default(false) @map("is_cover")
   createdAt DateTime @default(now()) @map("created_at")
 
+  @@index([productId])
   @@map("product_images")
 }
 

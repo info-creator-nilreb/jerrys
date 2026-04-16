@@ -90,7 +90,7 @@ export async function resendOrderEmailFromAdmin(
   if (log.status === "skipped_no_provider") {
     return {
       ok: false,
-      error: "Kein E-Mail-Provider konfiguriert (vollständiges SMTP oder RESEND_API_KEY und MAIL_FROM).",
+      error: "Kein E-Mail-Versand konfiguriert (RESEND_API_KEY und MAIL_FROM in der Umgebung).",
     };
   }
   return { ok: false, error: `Versand nicht erfolgreich (Status: ${log.status}).` };

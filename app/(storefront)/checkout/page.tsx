@@ -47,10 +47,6 @@ export default async function CheckoutPage({
     redirect("/warenkorb");
   }
 
-  const subtotalCents = activeLines.reduce(
-    (s, l) => s + l.quantity * l.product.priceGrossCents,
-    0,
-  );
   const currency = activeLines[0]!.product.currency;
   const idempotencyKey = randomUUID();
 
@@ -98,7 +94,6 @@ export default async function CheckoutPage({
         <CheckoutForm
           idempotencyKey={idempotencyKey}
           lines={summaryLines}
-          subtotalCents={subtotalCents}
           shippingRatesByCountry={shopShip.shippingRatesCentsByCountry}
           freeShippingFromSubtotalGrossCents={shopShip.freeShippingFromSubtotalGrossCents}
           initialShippingCountry={initialShippingCountry}

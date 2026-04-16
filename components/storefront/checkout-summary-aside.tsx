@@ -1,8 +1,6 @@
 import Image from "next/image";
 import { formatPrice } from "@/lib/catalog/format";
 import { PriceEUR } from "@/components/storefront/price-eur";
-import { vatCentsFromGross } from "@/lib/catalog/pricing";
-import { shippingVatCentsFromGross } from "@/lib/shop/shipping-compute";
 
 export type CheckoutSummaryLine = {
   id: string;
@@ -19,21 +17,19 @@ export function CheckoutSummaryAside({
   lines,
   subtotalCents,
   shippingCents,
+  taxAmountCents,
+  totalCents,
+  vatApplies,
   currency,
 }: {
   lines: CheckoutSummaryLine[];
   subtotalCents: number;
   shippingCents: number;
+  taxAmountCents: number;
+  totalCents: number;
+  vatApplies: boolean;
   currency: string;
 }) {
-  const taxSum = lines.reduce(
-    (s, l) => s + vatCentsFromGross(l.quantity * l.product.priceGrossCents, l.product.taxRatePercent),
-    0,
-  );
-  const shippingVat = shippingVatCentsFromGross(shippingCents);
-  const totalVatIncluded = taxSum + shippingVat;
-  const total = subtotalCents + shippingCents;
-
   return (
     <aside className="order-1 min-w-0 border-b border-(--surface-muted) bg-(--surface-soft) p-6 lg:order-2 lg:sticky lg:top-[5.5rem] lg:max-h-[calc(100dvh-5.75rem)] lg:overflow-y-auto lg:self-start lg:border-b-0 lg:border-l lg:pl-8">
       <h2 className="text-sm font-semibold text-(--foreground-heading)">Bestellübersicht</h2>
@@ -97,7 +93,10 @@ export function CheckoutSummaryAside({
         <div className="flex justify-between gap-4">
           <dt className="flex items-center gap-1 text-(--foreground-muted)">
             Versand
-            <span className="inline-flex size-4 items-center justify-center rounded-full border border-(--surface-muted) text-[10px] text-(--foreground-muted)" title="Versandkosten nach Adresse">
+            <span
+              className="inline-flex size-4 items-center justify-center rounded-full border border-(--surface-muted) text-[10px] text-(--foreground-muted)"
+              title="Versandkosten nach Adresse"
+            >
               ?
             </span>
           </dt>
@@ -108,11 +107,19 @@ export function CheckoutSummaryAside({
         <div className="flex justify-between gap-4 border-t border-(--surface-muted) pt-3 text-base font-semibold">
           <dt className="text-(--foreground-heading)">Gesamt</dt>
           <dd className="text-(--foreground-heading)">
-            <PriceEUR cents={total} />
+            <PriceEUR cents={totalCents} />
           </dd>
         </div>
       </dl>
-      <p className="mt-2 text-sm text-(--foreground-muted)">inkl. {formatPrice(totalVatIncluded, currency)} MwSt.</p>
+      {vatApplies ? (
+        <p className="mt-2 text-sm text-(--foreground-muted)">
+          inkl. {formatPrice(taxAmountCents, currency)} MwSt.
+        </p>
+      ) : (
+        <p className="mt-2 text-sm text-(--foreground-muted)">
+          Ohne ausgewiesene Umsatzsteuer (Lieferung außerhalb der EU).
+        </p>
+      )}
     </aside>
   );
 }

@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
+/**
+ * Neue geschützte Routen unter `app/api/admin/**`: hier einen Negative-Test ergänzen
+ * und `docs/SECURITY_SURFACE.md` pflegen (siehe `security-surface-manifest.test.ts`).
+ */
 const authMock = vi.fn();
 vi.mock("@/auth", () => ({
   auth: authMock,

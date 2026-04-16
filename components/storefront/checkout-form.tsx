@@ -21,7 +21,7 @@ import {
 import { PayPalCardFieldsCheckout } from "@/components/storefront/paypal-card-fields-checkout";
 import { addressLine1HouseNumberMessage } from "@/lib/checkout/address-line-validation";
 import { postalCodeErrorMessage } from "@/lib/checkout/postal-code-validation";
-import { shippingGrossCentsForCountry } from "@/lib/shop/shipping-compute";
+import { computeCheckoutOrderTotals } from "@/lib/tax/order-price-totals";
 import { z } from "zod";
 
 const initial: CheckoutActionState = null;
@@ -112,7 +112,6 @@ function ariaFieldErr(err: string | undefined, describeId: string) {
 export function CheckoutForm({
   idempotencyKey,
   lines,
-  subtotalCents,
   shippingRatesByCountry,
   freeShippingFromSubtotalGrossCents,
   initialShippingCountry,
@@ -124,7 +123,6 @@ export function CheckoutForm({
 }: {
   idempotencyKey: string;
   lines: CheckoutSummaryLine[];
-  subtotalCents: number;
   shippingRatesByCountry: Record<string, number>;
   freeShippingFromSubtotalGrossCents: number | null;
   initialShippingCountry: string;
@@ -144,15 +142,19 @@ export function CheckoutForm({
   const [payPalSurface, setPayPalSurface] = useState<CheckoutPayPalMethodId>("paypal");
   const [shippingCountry, setShippingCountry] = useState(initialShippingCountry);
 
-  const displayShippingCents = useMemo(
+  const orderTotals = useMemo(
     () =>
-      shippingGrossCentsForCountry({
-        subtotalGrossCents: subtotalCents,
+      computeCheckoutOrderTotals({
+        lines: lines.map((l) => ({
+          quantity: l.quantity,
+          priceGrossCents: l.product.priceGrossCents,
+          taxRatePercent: l.product.taxRatePercent,
+        })),
         shippingCountryCode: shippingCountry,
         shippingRatesCentsByCountry: shippingRatesByCountry,
         freeShippingFromSubtotalGrossCents,
       }),
-    [subtotalCents, shippingCountry, shippingRatesByCountry, freeShippingFromSubtotalGrossCents],
+    [lines, shippingCountry, shippingRatesByCountry, freeShippingFromSubtotalGrossCents],
   );
 
   const onPayPalSurfaceChange = (id: CheckoutPayPalMethodId) => {
@@ -834,8 +836,11 @@ export function CheckoutForm({
 
       <CheckoutSummaryAside
         lines={lines}
-        subtotalCents={subtotalCents}
-        shippingCents={displayShippingCents}
+        subtotalCents={orderTotals.subtotalCents}
+        shippingCents={orderTotals.shippingCents}
+        taxAmountCents={orderTotals.taxAmountCents}
+        totalCents={orderTotals.totalCents}
+        vatApplies={orderTotals.vatApplies}
         currency={currency}
       />
     </form>

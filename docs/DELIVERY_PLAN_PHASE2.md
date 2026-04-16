@@ -103,7 +103,7 @@ Fortführung von [DELIVERY_PLAN.md](./DELIVERY_PLAN.md) (Epics 1–6). Gleiche P
 | 1 | Inventar | [SECURITY_SURFACE.md](./SECURITY_SURFACE.md) inkl. neuer Admin-Actions (Startseite, Versand) und Hinweis Login-Rate-Limit. |
 | 2 | AuthZ-Negative | Integrationstests `tests/integration/admin-api-authz.test.ts` (Admin-APIs ohne Session → 401). |
 | 3 | Rate-Limiting | In-Memory: Admin-Credentials (`sign-in-rate-limit.ts` + Auth-Route); PayPal-Checkout-APIs (`paypal-checkout-api-rate-limit.ts` + `create-order` / `capture-order`). |
-| 5 | HSTS | `Strict-Transport-Security` für Vercel (`VERCEL=1`) in [next.config.ts](../next.config.ts). CSP bewusst nicht global (PayPal-Skripte). |
+| 5 | CSP / HSTS | **CSP** in Production: [`lib/site/content-security-policy.ts`](../lib/site/content-security-policy.ts) (PayPal, Supabase connect, `unsafe-inline`/`unsafe-eval` für Next/React). **HSTS** bei `VERCEL=1`. Kein CSP im `next dev`. |
 | 6 | Supply Chain | CI-Job `check`: `npm audit --audit-level=high` nach `npm ci` in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). |
 
 ---
@@ -119,6 +119,17 @@ Fortführung von [DELIVERY_PLAN.md](./DELIVERY_PLAN.md) (Epics 1–6). Gleiche P
 4. DB-Indizes & N+1-Review.
 5. Caching / CDN-Strategie.
 6. Optional: SLOs & Alarmierung.
+
+**Umsetzungsstand (Repo):**
+
+| Story | Kurz | Status |
+|-------|------|--------|
+| 1 | Web-Vitals & Budgets | [`lib/site/web-vitals-config.ts`](../lib/site/web-vitals-config.ts) (Schwellen aus `web-vitals`); [`WebVitalsReporter`](../components/storefront/web-vitals-reporter.tsx) im Root-[`layout.tsx`](../app/layout.tsx): nur **Production**, `console.warn(JSON)` wenn Rating nicht „good“. Vitest `tests/unit/web-vitals-config.test.ts`. |
+| 2 | Lighthouse CI | Unverändert Epic 8: Job `lighthouse` in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), [lighthouserc.json](../lighthouserc.json). |
+| 3 | Lasttests | k6-Skript [`scripts/load/k6-smoke.js`](../scripts/load/k6-smoke.js), npm `load:k6` (k6 muss installiert sein). `BASE_URL` für Staging setzen. |
+| 4 | DB & N+1 | Migration `20260416172133_epic11_performance_indexes`: Indizes `products(is_active, sort_order)`, `product_images(product_id)`, `order_items(order_id)`. Katalog/Warenkorb: bereits **ein** Query mit `include`/`select` ([`lib/catalog/queries.ts`](../lib/catalog/queries.ts), [`lib/cart/cart-queries.ts`](../lib/cart/cart-queries.ts)). |
+| 5 | Caching / CDN | [`next.config.ts`](../next.config.ts): `Cache-Control` für `/branding/*` (öffentliche Assets). **Vercel:** Edge-CDN für statische Assets automatisch; HTML dynamisch. |
+| 6 | SLOs / Alarmierung | Optional (Monitoring-Stack), nicht im Repo. |
 
 ---
 

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { buildContentSecurityPolicy } from "./lib/site/content-security-policy";
 
 const devPort = process.env.PORT ?? "3001";
 
@@ -47,10 +48,24 @@ const nextConfig: NextConfig = {
       });
     }
 
+    const csp = buildContentSecurityPolicy();
+    if (csp) {
+      docSecurityHeaders.push({ key: "Content-Security-Policy", value: csp });
+    }
+
     return [
       {
         source: "/:path*",
         headers: docSecurityHeaders,
+      },
+      {
+        source: "/branding/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
+        ],
       },
       {
         source: "/_next/static/:path*",

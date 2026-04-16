@@ -11,6 +11,7 @@ import {
 } from "@/lib/orders/order-event-label";
 import { orderPaymentStatusLabel } from "@/lib/orders/order-payment-label";
 import { orderStatusLabel } from "@/lib/orders/order-status-label";
+import { buildCarrierTrackingUrl, shippingCarrierLabel } from "@/lib/shipping/carrier-tracking";
 
 export const dynamic = "force-dynamic";
 
@@ -132,6 +133,38 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         </p>
         <OrderStatusPanel orderId={order.id} order={order} />
       </section>
+
+      {order.shippingCarrier && order.trackingNumber ? (
+        <section className="border-t border-[#e8eaed] pt-6">
+          <h2 className="text-sm font-semibold text-[#374151]">Versand</h2>
+          <p className="mt-2 text-sm text-[#1f2937]">
+            {shippingCarrierLabel(order.shippingCarrier)} ·{" "}
+            <span className="font-mono">{order.trackingNumber}</span>
+          </p>
+          {(() => {
+            const u = buildCarrierTrackingUrl(order.shippingCarrier!, order.trackingNumber!);
+            return u ? (
+              <p className="mt-2 text-sm">
+                <a href={u} className="font-medium text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+                  Sendung verfolgen
+                </a>
+              </p>
+            ) : null;
+          })()}
+        </section>
+      ) : null}
+
+      {order.invoiceNumber ? (
+        <section className="border-t border-[#e8eaed] pt-6">
+          <h2 className="text-sm font-semibold text-[#374151]">Rechnung</h2>
+          <p className="mt-2 text-sm text-[#1f2937]">
+            Rechnungsnr. <span className="font-mono font-medium">{order.invoiceNumber}</span>
+            {order.invoiceIssuedAt ? (
+              <span className="text-[#6b7280]"> · {dateFmt.format(order.invoiceIssuedAt)}</span>
+            ) : null}
+          </p>
+        </section>
+      ) : null}
 
       <section className="border-t border-[#e8eaed] pt-6">
         <h2 className="text-sm font-semibold text-[#374151]">Status-Historie</h2>
@@ -257,8 +290,15 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
               <div className="min-w-0">
                 <p className="font-medium text-[#1f2937]">{item.productTitleSnapshot}</p>
                 <p className="text-xs text-[#6b7280]">
-                  {item.quantity} × {formatPrice(item.unitPriceGrossCents, item.currency)} · MwSt.{" "}
-                  {item.taxRatePercentSnapshot}%
+                  {item.quantity} × {formatPrice(item.unitPriceGrossCents, item.currency)}
+                  {item.taxRatePercentSnapshot > 0 ? (
+                    <>
+                      {" "}
+                      · MwSt. {item.taxRatePercentSnapshot}%
+                    </>
+                  ) : (
+                    <> · ohne USt.-Ausweis</>
+                  )}
                 </p>
                 <Link
                   href={`/admin/products/${item.product.id}/edit`}
@@ -278,7 +318,9 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
       <section className="border-t border-[#e8eaed] pt-6">
         <dl className="mx-auto max-w-sm space-y-2 text-sm">
           <div className="flex justify-between gap-4">
-            <dt className="text-[#6b7280]">Zwischensumme (brutto)</dt>
+            <dt className="text-[#6b7280]">
+              {order.vatApplies ? "Zwischensumme (brutto)" : "Zwischensumme (netto)"}
+            </dt>
             <dd className="font-medium">{formatPrice(order.subtotalGrossCents, order.currency)}</dd>
           </div>
           <div className="flex justify-between gap-4">
@@ -286,8 +328,10 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
             <dd className="font-medium">{formatPrice(order.shippingCents, order.currency)}</dd>
           </div>
           <div className="flex justify-between gap-4">
-            <dt className="text-[#6b7280]">MwSt. gesamt</dt>
-            <dd className="font-medium">{formatPrice(order.taxAmountCents, order.currency)}</dd>
+            <dt className="text-[#6b7280]">{order.vatApplies ? "MwSt. gesamt" : "Umsatzsteuer"}</dt>
+            <dd className="font-medium">
+              {order.vatApplies ? formatPrice(order.taxAmountCents, order.currency) : "—"}
+            </dd>
           </div>
           <div className="flex justify-between gap-4 border-t border-[#e8eaed] pt-3 text-base font-semibold">
             <dt className="text-[#1f2937]">Gesamt</dt>
