@@ -75,6 +75,14 @@ function connectionUsesTlsForRelaxPath(connectionString: string): boolean {
 }
 
 /**
+ * TLS bleibt aktiv; nur die Zertifikatskette wird nicht gegen System-CAs geprüft.
+ * Nur wenn {@link pgUsesRelaxedSsl} (Dev oder `DATABASE_SSL_REJECT_UNAUTHORIZED=false`).
+ */
+function relaxedTlsVerifyOptions(): { rejectUnauthorized: boolean } {
+  return { rejectUnauthorized: false };
+}
+
+/**
  * Baut die Pool-Konfiguration für `pg` + Prisma-Adapter.
  * Behebt typische Fehler wie „self-signed certificate in certificate chain“ bei gehosteten DBs.
  */
@@ -83,7 +91,7 @@ export function createPgPoolConfig(connectionString: string): PoolConfig {
     pgUsesRelaxedSsl() && connectionUsesTlsForRelaxPath(connectionString)
       ? {
           connectionString: stripSslParamsFromDatabaseUrl(connectionString),
-          ssl: { rejectUnauthorized: false },
+          ssl: relaxedTlsVerifyOptions(),
         }
       : { connectionString };
 

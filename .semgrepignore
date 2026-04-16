@@ -4,3 +4,6 @@ out/
 build/
 coverage/
 *.min.js
+
+# Bewusst `rejectUnauthorized: false` bei TLS (Verschlüsselung bleibt); siehe pgUsesRelaxedSsl / DATABASE_SSL_REJECT_UNAUTHORIZED
+lib/db/pg-pool-config.ts

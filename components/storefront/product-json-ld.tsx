@@ -63,10 +63,12 @@ export function ProductJsonLd({
     };
   }
 
+  /** Verhindert `</script>`-Injection in String-Werten; kein dangerouslySetInnerHTML nötig. */
+  const safeJson = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
+
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-    />
+    <script type="application/ld+json" suppressHydrationWarning>
+      {safeJson}
+    </script>
   );
 }

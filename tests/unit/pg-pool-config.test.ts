@@ -32,7 +32,9 @@ describe("createPgPoolConfig", () => {
       "postgresql://u:p@remote.supabase.co:5432/postgres?sslmode=require";
     const cfg = createPgPoolConfig(url);
 
-    expect(cfg.ssl).toEqual({ rejectUnauthorized: false });
+    expect(cfg.ssl).toBeDefined();
+    // Gleiche Semantik wie Pool-Config (relaxierte Zertifikatsprüfung bei explizitem Env).
+    expect((cfg.ssl as { rejectUnauthorized: boolean }).rejectUnauthorized).toBe(false);
     expect(cfg.connectionString).not.toContain("sslmode");
 
     if (prevSsl === undefined) {
