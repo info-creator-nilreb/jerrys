@@ -7,6 +7,7 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | `GET/POST …/api/auth/[...nextauth]` | NextAuth | Login, Session, CSRF-Token; **POST** `…/callback/credentials`: Rate-Limit pro Client-IP (`lib/security/sign-in-rate-limit.ts`) |
 | `GET /api/admin/search` | Admin-Session (`auth()`) | Globale Suche |
 | `GET /api/admin/order-alerts` | Admin-Session | Bestell-Alerts |
+| `GET /api/admin/orders/[id]/invoice` | Admin-Session | Rechnungs-PDF (falls `invoiceNumber` gesetzt); sonst 404 |
 | Server Actions `lib/cart/actions.ts` | Öffentlich (Cart-Cookie) | Warenkorb |
 | Server Actions `app/(storefront)/checkout/actions.ts` | Öffentlich | Checkout |
 | Server Actions `app/admin/.../orders/actions.ts` | `auth()` in Action | Bestellstatus |
