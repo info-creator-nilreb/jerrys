@@ -3,11 +3,9 @@ import path from "node:path";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import type { Order, OrderItem } from "@/app/generated/prisma/client";
 import { formatPrice } from "@/lib/catalog/format";
-import { loadLegalHtmlRaw } from "@/lib/legal/load-legal-html";
-import { htmlToInvoicePlainFooter } from "@/lib/invoice/legal-plain-text";
+import { loadInvoiceImpressumFooterPlain } from "@/lib/invoice/invoice-impressum-footer";
 import { getInvoiceSellerDetails } from "@/lib/invoice/seller-details";
 
-const PRIMARY = rgb(0.545, 0.745, 0.145); // #8bbe25
 const TEXT = rgb(0.12, 0.16, 0.22);
 const MUTED = rgb(0.35, 0.38, 0.42);
 
@@ -28,26 +26,17 @@ function wrapLine(text: string, maxChars: number): string[] {
   return lines.length ? lines : [""];
 }
 
-function drawLines(
-  page: ReturnType<PDFDocument["getPages"]>[0],
-  text: string,
-  x: number,
-  y: number,
-  size: number,
-  font: Awaited<ReturnType<PDFDocument["embedFont"]>>,
-  color = TEXT,
-  maxWidthChars = 72,
-  lineHeight = size * 1.25,
-): number {
-  let yy = y;
-  for (const para of text.split("\n\n")) {
-    for (const line of wrapLine(para.replace(/\n/g, " "), maxWidthChars)) {
-      page.drawText(line, { x, y: yy, size, font, color });
-      yy -= lineHeight;
+/** Fließtext für Fußzeile umbrechen (zeilenweise zentrierbar). */
+function wrapInvoiceFooterParagraphs(text: string, maxChars: number): string[] {
+  const out: string[] = [];
+  for (const para of text.split(/\n\n/)) {
+    const trimmed = para.trim();
+    if (!trimmed) continue;
+    for (const line of wrapLine(trimmed.replace(/\n/g, " "), maxChars)) {
+      out.push(line);
     }
-    yy -= lineHeight * 0.25;
   }
-  return yy;
+  return out;
 }
 
 export async function buildInvoicePdfBuffer(order: Order & { items: OrderItem[] }): Promise<Buffer> {
@@ -65,18 +54,10 @@ export async function buildInvoicePdfBuffer(order: Order & { items: OrderItem[] 
   let y = pageH - margin;
 
   const headerH = 56;
-  page.drawRectangle({
-    x: 0,
-    y: y - headerH + 8,
-    width: pageW,
-    height: headerH,
-    color: PRIMARY,
-  });
-
-  const logoPath = path.join(process.cwd(), "public", "branding", "jerrys-logo-white.png");
+  const logoPath = path.join(process.cwd(), "public", "branding", "jerrys-wordmark.jpg");
   if (fs.existsSync(logoPath)) {
-    const pngBytes = fs.readFileSync(logoPath);
-    const img = await pdf.embedPng(pngBytes);
+    const jpgBytes = fs.readFileSync(logoPath);
+    const img = await pdf.embedJpg(jpgBytes);
     const targetH = 36;
     const scale = targetH / img.height;
     const w = img.width * scale;
@@ -199,16 +180,32 @@ export async function buildInvoicePdfBuffer(order: Order & { items: OrderItem[] 
   page.drawText(formatPrice(order.totalGrossCents, order.currency), { x: margin + 440, y, size: 11, font: fontBold, color: TEXT });
   y -= 28;
 
-  let footerPlain: string;
-  try {
-    footerPlain = htmlToInvoicePlainFooter(loadLegalHtmlRaw("impressum"));
-  } catch {
-    footerPlain = "";
-  }
+  const footerPlain = loadInvoiceImpressumFooterPlain();
   if (footerPlain) {
-    page.drawText("Anbieter / Impressum", { x: margin, y, size: 8, font: fontBold, color: MUTED });
-    y -= 10;
-    y = drawLines(page, footerPlain.slice(0, 2000), margin, y, 7, font, MUTED, 88, 9);
+    const bodyLines = wrapInvoiceFooterParagraphs(footerPlain, 68);
+    const lines = ["Impressum", ...bodyLines];
+    const footerLineH = 10;
+    const footerBlockH = lines.length * footerLineH + 4;
+    if (y < margin + footerBlockH + 24) {
+      page = pdf.addPage([pageW, pageH]);
+    }
+    const lastPage = pdf.getPages()[pdf.getPageCount() - 1];
+    const n = lines.length;
+    for (let i = 0; i < n; i++) {
+      const line = lines[i]!;
+      const isTitle = i === 0;
+      const f = isTitle ? fontBold : font;
+      const size = isTitle ? 9 : 8;
+      const yy = margin + (n - i) * footerLineH;
+      const w = f.widthOfTextAtSize(line, size);
+      lastPage.drawText(line, {
+        x: (pageW - w) / 2,
+        y: yy,
+        size,
+        font: f,
+        color: MUTED,
+      });
+    }
   }
 
   const bytes = await pdf.save();

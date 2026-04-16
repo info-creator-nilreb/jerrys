@@ -10,7 +10,7 @@ test.describe("Cookie-Einwilligung", () => {
     const dialog = page.getByRole("dialog", { name: /Cookies und Einwilligung/i });
     await expect(dialog).toBeVisible({ timeout: 15_000 });
 
-    await page.getByRole("button", { name: "Nur notwendige" }).click();
+    await page.getByRole("button", { name: "Nur notwendige", exact: true }).click();
     await expect(dialog).toBeHidden({ timeout: 10_000 });
 
     await page.getByRole("navigation", { name: "Rechtliches" }).getByRole("button", { name: "Cookie-Einstellungen" }).click();

@@ -7,9 +7,12 @@ import type { ShippingCarrier } from "@/app/generated/prisma/client";
 import { resendOrderEmailFromAdmin } from "@/lib/email/resend-order-email-from-admin";
 import { applyOrderStatusTransition } from "@/lib/orders/apply-order-status-transition";
 import { getPrisma } from "@/lib/db/prisma";
+import { allocateInvoiceForOrderIfMissing } from "@/lib/invoice/allocate-invoice-for-order";
 import { z } from "zod";
 
 export type OrderStatusActionState = { error?: string; ok?: boolean } | null;
+
+export type GenerateInvoiceState = { ok?: boolean; error?: string; message?: string } | null;
 
 export type MarkOrderShippedState = { error?: string; ok?: boolean } | null;
 
@@ -116,6 +119,36 @@ export async function markOrderShippedWithDetails(
   revalidatePath("/admin/orders");
   revalidatePath(`/admin/orders/${orderId}`);
   return { ok: true };
+}
+
+export async function generateOrderInvoiceDocument(
+  _prev: GenerateInvoiceState,
+  formData: FormData,
+): Promise<GenerateInvoiceState> {
+  const session = await auth();
+  if (!session?.user) {
+    redirect("/admin/login");
+  }
+
+  const orderId = formData.get("orderId");
+  if (typeof orderId !== "string" || !orderId.trim()) {
+    return { error: "Ungültige Bestellung." };
+  }
+
+  const result = await allocateInvoiceForOrderIfMissing(getPrisma(), orderId.trim());
+  if (!result.ok) {
+    if (result.error === "not_found") {
+      return { error: "Bestellung nicht gefunden." };
+    }
+    return { error: "Für diese Bestellung kann keine Rechnung erzeugt werden." };
+  }
+
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${orderId.trim()}`);
+  return {
+    ok: true,
+    message: result.created ? "Rechnung wurde erzeugt." : "Rechnung lag bereits vor.",
+  };
 }
 
 export async function resendOrderEmail(

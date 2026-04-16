@@ -66,12 +66,9 @@ export function CookieConsentBanner() {
 
   return (
     <div className="fixed inset-0 z-[700000] flex items-end justify-center p-4 sm:items-center" role="presentation">
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"
-        aria-label={
-          hasValidConsentRecord() ? "Cookie-Einstellungen schließen" : "Nur notwendige Cookies übernehmen"
-        }
+      <div
+        role="presentation"
+        className="absolute inset-0 cursor-pointer bg-black/40 backdrop-blur-[1px]"
         onClick={() => {
           if (!hasValidConsentRecord()) {
             acceptNecessary();

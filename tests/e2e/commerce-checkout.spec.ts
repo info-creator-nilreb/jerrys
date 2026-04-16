@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { CONSENT_STORAGE_KEY } from "../../lib/consent/constants";
+import { buildConsentRecord, serializeConsent } from "../../lib/consent/storage";
 
 const adminEmail = process.env.E2E_ADMIN_EMAIL ?? process.env.ADMIN_SEED_EMAIL ?? "admin@example.com";
 const adminPassword =
@@ -8,6 +10,13 @@ const adminPassword =
 test.describe.serial("Checkout & Admin-Spiegel", () => {
   test("Kunde bestellt, Bestellung erscheint im Admin", async ({ page }) => {
     test.setTimeout(120_000);
+    const consentJson = serializeConsent(buildConsentRecord({ statistics: false, marketing: false }));
+    await page.addInitScript(
+      ({ key, value }: { key: string; value: string }) => {
+        localStorage.setItem(key, value);
+      },
+      { key: CONSENT_STORAGE_KEY, value: consentJson },
+    );
     await page.goto("/produkte");
     const addBtn = page.getByRole("button", { name: "In den Warenkorb" }).first();
     const hasProduct = await addBtn.isVisible().catch(() => false);

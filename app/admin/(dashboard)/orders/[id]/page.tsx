@@ -6,7 +6,10 @@ import { OrderRefundButton } from "@/app/admin/(dashboard)/orders/order-refund-b
 import { OrderStatusPanel } from "@/app/admin/(dashboard)/orders/order-status-panel";
 import { CopyTextButton } from "@/app/admin/(dashboard)/orders/copy-text-button";
 import { OrderDetailTabs } from "@/app/admin/(dashboard)/orders/order-detail-tabs";
+import { OrderInvoiceGenerateButton } from "@/app/admin/(dashboard)/orders/order-invoice-generate-button";
 import { formatPrice } from "@/lib/catalog/format";
+import { EMAIL_ORDER_SHIPPED } from "@/lib/email/email-types";
+import { isInvoiceAllocationAllowedForOrderStatus } from "@/lib/invoice/allocate-invoice-for-order";
 import { getOrderDetailForAdmin } from "@/lib/orders/admin-queries";
 import { emailSendStatusLabel, emailTypeLabel } from "@/lib/orders/email-status-label";
 import {
@@ -127,6 +130,11 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
     order.billingCountry,
   );
   const billingMatchesShipping = shipLines.join("\n") === billLines.join("\n");
+  const shippingEmailSent = order.emailLogs.some(
+    (l) => l.emailType === EMAIL_ORDER_SHIPPED && l.status === "sent",
+  );
+  const canGenerateInvoice =
+    !order.invoiceNumber && isInvoiceAllocationAllowedForOrderStatus(order.status);
   const emailLogsChronological = [...order.emailLogs].sort(
     (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
   );
@@ -236,35 +244,33 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
 
       <section className="grid gap-8 border-t border-[#e8eaed] pt-6 sm:grid-cols-2">
         <div>
-          <div className="flex items-start justify-between gap-2">
-            <h2 className="text-sm font-semibold text-[#374151]">Lieferadresse</h2>
-            <CopyTextButton text={shipLines.join("\n")} label="Lieferadresse kopieren" />
-          </div>
-          <address className="mt-2 text-sm not-italic leading-relaxed text-[#6b7280]">
-            {shipLines.map((line) => (
-              <span key={line} className="block">
-                {line}
-              </span>
-            ))}
-          </address>
-        </div>
-        <div>
-          <div className="flex items-start justify-between gap-2">
-            <h2 className="text-sm font-semibold text-[#374151]">Rechnungsadresse</h2>
-            {!billingMatchesShipping ? (
-              <CopyTextButton text={billLines.join("\n")} label="Rechnungsadresse kopieren" />
-            ) : null}
-          </div>
-          {billingMatchesShipping ? (
-            <p className="mt-2 text-sm text-[#6b7280]">Entspricht der Lieferadresse.</p>
-          ) : (
-            <address className="mt-2 text-sm not-italic leading-relaxed text-[#6b7280]">
-              {billLines.map((line) => (
+          <h2 className="text-sm font-semibold text-[#374151]">Lieferadresse</h2>
+          <div className="mt-2 flex items-start gap-2">
+            <address className="inline-block text-sm not-italic leading-relaxed text-[#6b7280]">
+              {shipLines.map((line) => (
                 <span key={line} className="block">
                   {line}
                 </span>
               ))}
             </address>
+            <CopyTextButton text={shipLines.join("\n")} label="Lieferadresse kopieren" />
+          </div>
+        </div>
+        <div>
+          <h2 className="text-sm font-semibold text-[#374151]">Rechnungsadresse</h2>
+          {billingMatchesShipping ? (
+            <p className="mt-2 text-sm text-[#6b7280]">Entspricht der Lieferadresse.</p>
+          ) : (
+            <div className="mt-2 flex items-start gap-2">
+              <address className="inline-block text-sm not-italic leading-relaxed text-[#6b7280]">
+                {billLines.map((line) => (
+                  <span key={line} className="block">
+                    {line}
+                  </span>
+                ))}
+              </address>
+              <CopyTextButton text={billLines.join("\n")} label="Rechnungsadresse kopieren" />
+            </div>
           )}
         </div>
       </section>
@@ -485,10 +491,29 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
               </a>
             </p>
           </div>
+        ) : canGenerateInvoice ? (
+          <div className="mt-3 space-y-3">
+            <p className="text-sm text-[#6b7280]">
+              Noch keine Rechnungsnummer vergeben. Du kannst die Rechnung jetzt erzeugen und als PDF speichern.
+            </p>
+            {!shippingEmailSent ? (
+              <p className="text-sm text-[#374151]">
+                <span className="font-medium text-[#1f2937]">Hinweis:</span> Wurde noch keine Versandbenachrichtigung
+                gesendet, verwendet die automatische E-Mail beim Versandmelden dieselbe PDF-Datei als Anhang (sobald
+                Rechnungsnummer und PDF vorliegen).
+              </p>
+            ) : (
+              <p className="text-sm text-[#374151]">
+                <span className="font-medium text-[#1f2937]">Hinweis:</span> Die Versandbenachrichtigung wurde bereits
+                gesendet. Die Rechnung kannst du hier erzeugen und herunterladen; sie wird nicht erneut per E-Mail
+                verschickt.
+              </p>
+            )}
+            <OrderInvoiceGenerateButton orderId={order.id} />
+          </div>
         ) : (
           <p className="mt-2 text-sm text-[#6b7280]">
-            Noch keine Rechnung vorhanden. Die Rechnung wird in der Regel beim Versand erzeugt und an die Kundin /
-            den Kunden gesendet.
+            Für diese Bestellung kann keine Rechnung erzeugt werden, oder sie wird beim Versandmelden vergeben.
           </p>
         )}
       </section>
