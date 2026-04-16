@@ -1,6 +1,6 @@
 import type { Prisma } from "@/app/generated/prisma/client";
 import type { OrderLineItemForEmail } from "@/lib/email/transactional-email-layout";
-import { absoluteUrl } from "@/lib/site/canonical-origin";
+import { absoluteUrlForEmail } from "@/lib/email/email-absolute-url";
 
 const productImageOrderForEmail: Prisma.ProductImageOrderByWithRelationInput[] = [
   { isCover: "desc" },
@@ -42,7 +42,7 @@ export function orderItemsToEmailLineItems(rows: OrderItemRowWithCoverImage[]): 
       quantity: line.quantity,
       lineTotalGrossCents: line.lineTotalGrossCents,
       currency: line.currency,
-      coverImageAbsoluteUrl: im ? absoluteUrl(im.url) : null,
+      coverImageAbsoluteUrl: im ? absoluteUrlForEmail(im.url) : null,
       coverImageAlt: im?.alt ?? null,
     };
   });
