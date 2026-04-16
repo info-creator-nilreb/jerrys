@@ -284,14 +284,17 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         {emailLogsChronological.length === 0 ? (
           <p className="mt-2 text-sm text-[#6b7280]">Noch keine Einträge.</p>
         ) : (
-          <ol className="relative mt-6 ms-2 border-l border-[#e5e7eb] pl-6">
+          <ol className="mt-6 space-y-8">
             {emailLogsChronological.map((log) => (
-              <li key={log.id} className="relative pb-8 last:pb-0">
-                <span
-                  className="absolute -left-[21px] top-1.5 size-2.5 rounded-full border-2 border-white bg-primary ring-1 ring-[#e5e7eb]"
+              <li key={log.id} className="flex gap-3">
+                <div
+                  className="relative flex w-6 shrink-0 flex-col items-center justify-center self-stretch"
                   aria-hidden
-                />
-                <div className="rounded-lg border border-[#e8eaed] bg-[#f9fafb] px-4 py-3 text-[#374151]">
+                >
+                  <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-[#e5e7eb]" />
+                  <span className="relative z-10 size-2.5 shrink-0 rounded-full border-2 border-white bg-primary ring-1 ring-[#e5e7eb]" />
+                </div>
+                <div className="min-w-0 flex-1 rounded-lg border border-[#e8eaed] bg-[#f9fafb] px-4 py-3 text-[#374151]">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <span className="font-medium">{emailTypeLabel(log.emailType)}</span>
                     <time className="text-xs text-[#6b7280]" dateTime={log.createdAt.toISOString()}>
