@@ -65,7 +65,7 @@ export function AdminLoginForm() {
         Melde dich im Admin-Bereich an
       </h1>
 
-      <form id={formId} onSubmit={onSubmit} className="mt-10 flex flex-col gap-6">
+      <form id={formId} method="post" onSubmit={onSubmit} className="mt-10 flex flex-col gap-6">
         <div className="flex flex-col gap-2">
           <label htmlFor={`${formId}-email`} className="text-sm text-[#5c5f66]">
             E-Mail <span className="text-primary">*</span>
