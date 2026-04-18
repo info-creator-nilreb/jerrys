@@ -12,6 +12,14 @@ import {
   type FormEvent,
 } from "react";
 import { submitCheckout, type CheckoutActionState } from "@/app/(storefront)/checkout/actions";
+import {
+  previewCheckoutPromotion,
+  type CheckoutPromotionPreview,
+} from "@/app/(storefront)/checkout/promotion-actions";
+import {
+  AutomaticPromotionDismiss,
+  CheckoutDiscountPanel,
+} from "@/components/storefront/checkout-discount-panel";
 import type { CheckoutSummaryLine } from "@/components/storefront/checkout-summary-aside";
 import { CheckoutSummaryAside } from "@/components/storefront/checkout-summary-aside";
 import {
@@ -21,7 +29,8 @@ import {
 import { PayPalCardFieldsCheckout } from "@/components/storefront/paypal-card-fields-checkout";
 import { addressLine1HouseNumberMessage } from "@/lib/checkout/address-line-validation";
 import { postalCodeErrorMessage } from "@/lib/checkout/postal-code-validation";
-import { computeCheckoutOrderTotals } from "@/lib/tax/order-price-totals";
+import { computeCheckoutOrderTotalsWithDiscount } from "@/lib/promotions/checkout-totals";
+import type { OrderPriceLineInput } from "@/lib/tax/order-price-totals";
 import { z } from "zod";
 
 const initial: CheckoutActionState = null;
@@ -53,6 +62,7 @@ const checkoutErrId = {
   billingCity: "checkout-err-billingCity",
   billingCountry: "checkout-err-billingCountry",
   rechtlicheKenntnis: "checkout-err-rechtlicheKenntnis",
+  checkoutPromotionCode: "checkout-err-promotion",
   form: "checkout-err-form",
 } as const;
 
@@ -80,6 +90,7 @@ const CHECKOUT_FIELD_META: Record<string, { label: string; scrollId: string | nu
   paymentMethod: { label: "Zahlungsart", scrollId: null },
   rechtlicheKenntnis: { label: "AGB / Widerruf", scrollId: "rechtlicheKenntnis" },
   idempotencyKey: { label: "Sitzung", scrollId: null },
+  checkoutPromotionCode: { label: "Rabattcode", scrollId: "checkout-section-rabatt" },
 };
 
 const CHECKOUT_ERROR_SCROLL_ORDER: string[] = [
@@ -102,6 +113,7 @@ const CHECKOUT_ERROR_SCROLL_ORDER: string[] = [
   "billingZip",
   "billingCity",
   "rechtlicheKenntnis",
+  "checkoutPromotionCode",
 ];
 
 function ariaFieldErr(err: string | undefined, describeId: string) {
@@ -141,21 +153,64 @@ export function CheckoutForm({
   /** Nur bei „Debit- oder Kreditkarte“ werden die Hosted Card Fields gemountet. */
   const [payPalSurface, setPayPalSurface] = useState<CheckoutPayPalMethodId>("paypal");
   const [shippingCountry, setShippingCountry] = useState(initialShippingCountry);
+  const [committedPromoCode, setCommittedPromoCode] = useState("");
+  const [declineAutomatic, setDeclineAutomatic] = useState(false);
+  const [promoPreview, setPromoPreview] = useState<CheckoutPromotionPreview | { error: string } | null>(
+    null,
+  );
 
-  const orderTotals = useMemo(
+  const lineInputs: OrderPriceLineInput[] = useMemo(
     () =>
-      computeCheckoutOrderTotals({
-        lines: lines.map((l) => ({
-          quantity: l.quantity,
-          priceGrossCents: l.product.priceGrossCents,
-          taxRatePercent: l.product.taxRatePercent,
-        })),
+      lines.map((l) => ({
+        quantity: l.quantity,
+        priceGrossCents: l.product.priceGrossCents,
+        taxRatePercent: l.product.taxRatePercent,
+      })),
+    [lines],
+  );
+
+  const baseTotalsFallback = useMemo(
+    () =>
+      computeCheckoutOrderTotalsWithDiscount({
+        lines: lineInputs,
         shippingCountryCode: shippingCountry,
         shippingRatesCentsByCountry: shippingRatesByCountry,
         freeShippingFromSubtotalGrossCents,
+        discountOffSubtotalCents: 0,
       }),
-    [lines, shippingCountry, shippingRatesByCountry, freeShippingFromSubtotalGrossCents],
+    [lineInputs, shippingCountry, shippingRatesByCountry, freeShippingFromSubtotalGrossCents],
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    void previewCheckoutPromotion({
+      shippingCountry,
+      promotionCode: committedPromoCode || undefined,
+      declineAutomatic,
+    }).then((r) => {
+      if (cancelled) return;
+      setPromoPreview(r);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [shippingCountry, committedPromoCode, declineAutomatic]);
+
+  const displayTotals =
+    promoPreview && !("error" in promoPreview) ? promoPreview.totals : baseTotalsFallback;
+
+  const appliedPromotion =
+    promoPreview && !("error" in promoPreview) ? promoPreview.resolved : null;
+  const discountLabel =
+    appliedPromotion?.kind === "applied" ? appliedPromotion.title : null;
+  const discountDetail =
+    appliedPromotion?.kind === "applied"
+      ? appliedPromotion.source === "code" && appliedPromotion.code
+        ? `Code ${appliedPromotion.code}`
+        : appliedPromotion.source === "automatic"
+          ? "Automatisch angewendet"
+          : null
+      : null;
 
   const onPayPalSurfaceChange = (id: CheckoutPayPalMethodId) => {
     setPayPalSurface(id);
@@ -171,6 +226,8 @@ export function CheckoutForm({
   }, [prefillPaypal]);
 
   const fe = state && "fieldErrors" in state ? state.fieldErrors : undefined;
+
+  const discountCodeMessage = fe?.checkoutPromotionCode ?? (promoPreview && !("error" in promoPreview) ? promoPreview.codeError : null);
 
   useEffect(() => {
     if (!state || state.ok || !("fieldErrors" in state) || !state.fieldErrors) {
@@ -836,13 +893,35 @@ export function CheckoutForm({
 
       <CheckoutSummaryAside
         lines={lines}
-        subtotalCents={orderTotals.subtotalCents}
-        shippingCents={orderTotals.shippingCents}
-        taxAmountCents={orderTotals.taxAmountCents}
-        totalCents={orderTotals.totalCents}
-        vatApplies={orderTotals.vatApplies}
+        shippingCents={displayTotals.shippingCents}
+        taxAmountCents={displayTotals.taxAmountCents}
+        totalCents={displayTotals.totalCents}
+        vatApplies={displayTotals.vatApplies}
         currency={currency}
-      />
+        catalogSubtotalBeforeDiscountCents={displayTotals.catalogSubtotalBeforeDiscountCents}
+        discountOffSubtotalCents={displayTotals.discountOffSubtotalCents}
+        discountLabel={discountLabel}
+        discountDetail={discountDetail}
+      >
+        <div id="checkout-section-rabatt">
+          <CheckoutDiscountPanel
+            committedCode={committedPromoCode}
+            setCommittedCode={setCommittedPromoCode}
+            declineAutomatic={declineAutomatic}
+            setDeclineAutomatic={setDeclineAutomatic}
+            previewLoading={promoPreview === null}
+            codeError={discountCodeMessage}
+          />
+          <AutomaticPromotionDismiss
+            visible={
+              appliedPromotion?.kind === "applied" &&
+              appliedPromotion.source === "automatic" &&
+              committedPromoCode.length === 0
+            }
+            onDismiss={() => setDeclineAutomatic(true)}
+          />
+        </div>
+      </CheckoutSummaryAside>
     </form>
   );
 }

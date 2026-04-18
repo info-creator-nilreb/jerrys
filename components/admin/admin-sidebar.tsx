@@ -12,6 +12,7 @@ import {
   IconCustomers,
   IconDashboard,
   IconOrders,
+  IconPromotions,
   IconShipping,
   IconStorefront,
 } from "@/components/admin/admin-nav-icons";
@@ -30,6 +31,7 @@ const mainNav: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: IconDashboard },
   { href: "/admin/startseite", label: "Startseite", icon: IconStorefront },
   { href: "/admin/products", label: "Katalog", icon: IconCatalog },
+  { href: "/admin/promotions", label: "Promotions", icon: IconPromotions },
   { href: "/admin/versand", label: "Versand", icon: IconShipping },
   { href: "/admin/orders", label: "Bestellungen", icon: IconOrders },
   { href: "/admin/customers", label: "Kunden", icon: IconCustomers },

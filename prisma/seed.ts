@@ -198,6 +198,146 @@ async function main() {
       },
     });
 
+    const now = new Date();
+    const y = now.getUTCFullYear();
+    const startPast = new Date(Date.UTC(y, 0, 1, 0, 0, 0));
+    const endFar = new Date(Date.UTC(y + 1, 11, 31, 23, 59, 59));
+    const startFuture = new Date(Date.UTC(y + 1, 2, 1, 0, 0, 0));
+    const endFuture = new Date(Date.UTC(y + 1, 11, 31, 23, 59, 59));
+    const endPast = new Date(Date.UTC(y - 1, 11, 31, 23, 59, 59));
+
+    await prisma.promotion.upsert({
+      where: { id: "seed_promo_welcome_auto" },
+      create: {
+        id: "seed_promo_welcome_auto",
+        title: "Willkommens-Rabatt (automatisch)",
+        promotionType: "order_discount",
+        applicationMode: "automatic",
+        code: null,
+        discountValueType: "percent",
+        discountValue: 5,
+        minimumRequirementType: "cart_value",
+        minimumCartValueCents: 5000,
+        startDate: startPast,
+        endDate: endFar,
+        isEnabled: true,
+        publishedOnce: true,
+        usageCount: 3,
+      },
+      update: {
+        title: "Willkommens-Rabatt (automatisch)",
+        minimumCartValueCents: 5000,
+        discountValue: 5,
+        isEnabled: true,
+        publishedOnce: true,
+        startDate: startPast,
+        endDate: endFar,
+      },
+    });
+
+    await prisma.promotion.upsert({
+      where: { id: "seed_promo_code_spring" },
+      create: {
+        id: "seed_promo_code_spring",
+        title: "Frühling – Code",
+        promotionType: "order_discount",
+        applicationMode: "code",
+        code: "FRHL24",
+        discountValueType: "fixed",
+        discountValue: 500,
+        minimumRequirementType: "none",
+        minimumCartValueCents: null,
+        startDate: startPast,
+        endDate: endFar,
+        isEnabled: true,
+        publishedOnce: true,
+        usageCount: 12,
+      },
+      update: {
+        code: "FRHL24",
+        discountValue: 500,
+        isEnabled: true,
+        publishedOnce: true,
+        startDate: startPast,
+        endDate: endFar,
+      },
+    });
+
+    await prisma.promotion.upsert({
+      where: { id: "seed_promo_draft" },
+      create: {
+        id: "seed_promo_draft",
+        title: "Neue Aktion (Entwurf)",
+        promotionType: "order_discount",
+        applicationMode: "code",
+        code: "DRAFT1",
+        discountValueType: "percent",
+        discountValue: 10,
+        minimumRequirementType: "none",
+        minimumCartValueCents: null,
+        startDate: startPast,
+        endDate: endFar,
+        isEnabled: false,
+        publishedOnce: false,
+        usageCount: 0,
+      },
+      update: {
+        isEnabled: false,
+        publishedOnce: false,
+      },
+    });
+
+    await prisma.promotion.upsert({
+      where: { id: "seed_promo_planned" },
+      create: {
+        id: "seed_promo_planned",
+        title: "Geplant (Start in der Zukunft)",
+        promotionType: "order_discount",
+        applicationMode: "automatic",
+        code: null,
+        discountValueType: "percent",
+        discountValue: 8,
+        minimumRequirementType: "none",
+        minimumCartValueCents: null,
+        startDate: startFuture,
+        endDate: endFuture,
+        isEnabled: true,
+        publishedOnce: true,
+        usageCount: 0,
+      },
+      update: {
+        startDate: startFuture,
+        endDate: endFuture,
+        isEnabled: true,
+        publishedOnce: true,
+      },
+    });
+
+    await prisma.promotion.upsert({
+      where: { id: "seed_promo_expired" },
+      create: {
+        id: "seed_promo_expired",
+        title: "Alte Kampagne (abgelaufen)",
+        promotionType: "order_discount",
+        applicationMode: "code",
+        code: "OLD99",
+        discountValueType: "percent",
+        discountValue: 15,
+        minimumRequirementType: "none",
+        minimumCartValueCents: null,
+        startDate: startPast,
+        endDate: endPast,
+        isEnabled: true,
+        publishedOnce: true,
+        usageCount: 42,
+      },
+      update: {
+        endDate: endPast,
+        isEnabled: true,
+        publishedOnce: true,
+      },
+    });
+
     await prisma.homepageSocialImage.upsert({
       where: { id: "seed_homepage_social_1" },
       create: {

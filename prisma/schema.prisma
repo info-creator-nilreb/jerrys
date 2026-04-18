@@ -139,6 +139,30 @@ model InvoiceCounter {
   @@map("invoice_counter")
 }
 
+/// Shop-Promotion (Rabatt auf Bestellung); MVP: ein Typ, Code oder automatisch.
+model Promotion {
+  id                     String   @id @default(cuid())
+  title                  String
+  promotionType          String   @default("order_discount") @map("promotion_type")
+  applicationMode        String   @map("application_mode")
+  code                   String?  @unique
+  discountValueType      String   @map("discount_value_type")
+  discountValue          Int      @map("discount_value")
+  minimumRequirementType String   @map("minimum_requirement_type")
+  minimumCartValueCents  Int?     @map("minimum_cart_value_cents")
+  startDate              DateTime @map("start_date")
+  endDate                DateTime @map("end_date")
+  isEnabled              Boolean  @default(false) @map("is_enabled")
+  publishedOnce          Boolean  @default(false) @map("published_once")
+  usageCount             Int      @default(0) @map("usage_count")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+  orders                 Order[]
+
+  @@index([applicationMode, isEnabled, startDate, endDate])
+  @@map("promotions")
+}
+
 model Order {
   id                  String      @id @default(cuid())
   orderNumber         String      @unique @map("order_number")
@@ -167,6 +191,12 @@ model Order {
   shippingCents       Int         @default(0) @map("shipping_cents")
   taxAmountCents      Int         @map("tax_amount_cents")
   totalGrossCents     Int         @map("total_gross_cents")
+  /// Rabatt auf Warenwert (Cent), vor Versand; bei EU aus Brutto-Warenwert, bei Drittland aus Netto-Warenwert.
+  discountOffSubtotalCents Int    @default(0) @map("discount_off_subtotal_cents")
+  promotionId         String?     @map("promotion_id")
+  promotion           Promotion?  @relation(fields: [promotionId], references: [id], onDelete: SetNull)
+  promotionTitleSnapshot String?  @map("promotion_title_snapshot")
+  promotionCodeSnapshot  String?  @map("promotion_code_snapshot")
   /// true = EU-27: Katalogpreise inkl. USt.; false = Drittland: Netto, keine ausgewiesene USt.
   vatApplies          Boolean     @default(true) @map("vat_applies")
   shippingCarrier     ShippingCarrier? @map("shipping_carrier")

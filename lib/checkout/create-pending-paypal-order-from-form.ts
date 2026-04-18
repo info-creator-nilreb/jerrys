@@ -12,7 +12,15 @@ import { createPayPalCheckoutOrder } from "@/lib/payments/paypal-orders";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 import { usesPaypalHostedCheckout } from "@/lib/payments/online-payment-method";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
-import { computeCheckoutOrderTotals } from "@/lib/tax/order-price-totals";
+import { loadPromotionsForCheckoutResolve } from "@/lib/promotions/checkout-load";
+import { computeCheckoutOrderTotalsWithDiscount } from "@/lib/promotions/checkout-totals";
+import {
+  evaluatePromotionCodeEntry,
+  normalizePromotionCode,
+  promotionValidationMessage,
+  resolveCheckoutPromotion,
+} from "@/lib/promotions/engine";
+import type { OrderPriceLineInput } from "@/lib/tax/order-price-totals";
 import { z } from "zod";
 
 const log = createLogger("checkout.paypal_create");
@@ -83,6 +91,8 @@ export function checkoutRawFromFormData(formData: FormData): Record<string, unkn
     paymentMethod: fd(formData, "paymentMethod"),
     rechtlicheKenntnis: fd(formData, "rechtlicheKenntnis"),
     idempotencyKey: fd(formData, "idempotencyKey"),
+    checkoutPromotionCode: fd(formData, "checkoutPromotionCode"),
+    checkoutDeclineAutomatic: fd(formData, "checkoutDeclineAutomatic"),
   };
 }
 
@@ -236,15 +246,52 @@ async function createPendingPayPalOrderFromParsedRaw(
     }
   }
 
-  const totals = computeCheckoutOrderTotals({
-    lines: activeLines.map((line) => ({
-      quantity: line.quantity,
-      priceGrossCents: line.product.priceGrossCents,
-      taxRatePercent: line.product.taxRatePercent,
-    })),
+  const lineInputs: OrderPriceLineInput[] = activeLines.map((line) => ({
+    quantity: line.quantity,
+    priceGrossCents: line.product.priceGrossCents,
+    taxRatePercent: line.product.taxRatePercent,
+  }));
+
+  const prisma = getPrisma();
+  const codeNorm = normalizePromotionCode(d.checkoutPromotionCode ?? "");
+  const { automaticCandidates, codePromotion } = await loadPromotionsForCheckoutResolve(
+    prisma,
+    codeNorm.length > 0 ? codeNorm : null,
+  );
+
+  const now = new Date();
+  if (codeNorm.length > 0) {
+    const ev = evaluatePromotionCodeEntry(codeNorm, codePromotion, lineInputs, now);
+    if (ev.status === "invalid") {
+      return {
+        ok: false,
+        error: "Bitte Eingaben prüfen.",
+        fieldErrors: {
+          checkoutPromotionCode: promotionValidationMessage(ev.reason),
+        },
+      };
+    }
+  }
+
+  const resolved = resolveCheckoutPromotion({
+    lines: lineInputs,
+    shippingCountryCode: d.shippingCountry,
+    now,
+    promotionCode: codeNorm.length > 0 ? codeNorm : null,
+    declineAutomatic: d.checkoutDeclineAutomatic,
+    codePromotion: codeNorm.length > 0 ? codePromotion : null,
+    automaticCandidates,
+  });
+
+  const discountOff =
+    resolved.kind === "applied" ? resolved.discountOffSubtotalCents : 0;
+
+  const totals = computeCheckoutOrderTotalsWithDiscount({
+    lines: lineInputs,
     shippingCountryCode: d.shippingCountry,
     shippingRatesCentsByCountry: shopShip.shippingRatesCentsByCountry,
     freeShippingFromSubtotalGrossCents: shopShip.freeShippingFromSubtotalGrossCents,
+    discountOffSubtotalCents: discountOff,
   });
 
   const subtotal = totals.subtotalCents;
@@ -291,6 +338,13 @@ async function createPendingPayPalOrderFromParsedRaw(
           shippingCents,
           taxAmountCents: taxTotal,
           totalGrossCents: totalGross,
+          discountOffSubtotalCents: totals.discountOffSubtotalCents,
+          promotionId:
+            resolved.kind === "applied" ? resolved.promotionId : null,
+          promotionTitleSnapshot:
+            resolved.kind === "applied" ? resolved.title : null,
+          promotionCodeSnapshot:
+            resolved.kind === "applied" ? resolved.code : null,
           vatApplies,
           idempotencyKey: d.idempotencyKey,
           items: {
@@ -333,6 +387,13 @@ async function createPendingPayPalOrderFromParsedRaw(
         },
       });
       newOrderId = created.id;
+
+      if (resolved.kind === "applied") {
+        await tx.promotion.update({
+          where: { id: resolved.promotionId },
+          data: { usageCount: { increment: 1 } },
+        });
+      }
 
       await tx.cartLine.deleteMany({ where: { cartId } });
     });

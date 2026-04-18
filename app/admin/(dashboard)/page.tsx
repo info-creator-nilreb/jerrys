@@ -47,8 +47,7 @@ export default async function AdminHomePage() {
           {timeGreeting()}, {first}.
         </h1>
         <p className="mt-2 text-[0.9375rem] text-[#6b7280]">
-          Hier steuerst du Katalog und Shop – Schritt für Schritt wie bei Shopware, nur für
-          jerry&apos;s.
+          Hier steuerst du Katalog und Shop von jerry&apos;s.
         </p>
       </div>
 

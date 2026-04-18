@@ -42,6 +42,11 @@ const checkoutBase = z.object({
     }),
   ),
   idempotencyKey: z.string().uuid(),
+  checkoutPromotionCode: z.preprocess(nullToUndef, z.string().optional()),
+  checkoutDeclineAutomatic: z.preprocess(
+    (v) => v === "1" || v === "on",
+    z.boolean().optional().default(false),
+  ),
 });
 
 export const checkoutFormSchema = checkoutBase
@@ -103,6 +108,8 @@ export const checkoutFormSchema = checkoutBase
 
     return {
       email: val.email,
+      checkoutPromotionCode: val.checkoutPromotionCode?.trim() ?? "",
+      checkoutDeclineAutomatic: val.checkoutDeclineAutomatic ?? false,
       shippingFirstName: val.shippingFirstName,
       shippingLastName: val.shippingLastName,
       shippingCompany: val.shippingCompany,
@@ -118,6 +125,7 @@ export const checkoutFormSchema = checkoutBase
       idempotencyKey: val.idempotencyKey,
     };
   });
+
 
 
 export type CheckoutFormInput = z.infer<typeof checkoutFormSchema>;

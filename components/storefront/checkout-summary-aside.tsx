@@ -15,21 +15,32 @@ export type CheckoutSummaryLine = {
 
 export function CheckoutSummaryAside({
   lines,
-  subtotalCents,
   shippingCents,
   taxAmountCents,
   totalCents,
   vatApplies,
   currency,
+  catalogSubtotalBeforeDiscountCents,
+  discountOffSubtotalCents,
+  discountLabel,
+  discountDetail,
+  children,
 }: {
   lines: CheckoutSummaryLine[];
-  subtotalCents: number;
   shippingCents: number;
   taxAmountCents: number;
   totalCents: number;
   vatApplies: boolean;
   currency: string;
+  /** Warenwert vor Rabatt (Anzeige Zwischensumme). */
+  catalogSubtotalBeforeDiscountCents: number;
+  discountOffSubtotalCents: number;
+  discountLabel?: string | null;
+  discountDetail?: string | null;
+  children?: React.ReactNode;
 }) {
+  const hasDiscount = discountOffSubtotalCents > 0;
+
   return (
     <aside className="order-1 min-w-0 border-b border-(--surface-muted) bg-(--surface-soft) p-6 lg:order-2 lg:sticky lg:top-[5.5rem] lg:max-h-[calc(100dvh-5.75rem)] lg:overflow-y-auto lg:self-start lg:border-b-0 lg:border-l lg:pl-8">
       <h2 className="text-sm font-semibold text-(--foreground-heading)">Bestellübersicht</h2>
@@ -64,32 +75,29 @@ export function CheckoutSummaryAside({
         })}
       </ul>
 
-      <div className="mt-6 border-t border-(--surface-muted) pt-6">
-        <label className="text-sm font-medium text-(--foreground-muted)">Rabattcode oder Gutschein</label>
-        <div className="mt-2 flex gap-2">
-          <input
-            type="text"
-            disabled
-            placeholder="Demnächst"
-            className="min-w-0 flex-1 rounded-md border border-(--surface-muted) bg-white px-3 py-2 text-sm opacity-60"
-          />
-          <button
-            type="button"
-            disabled
-            className="shrink-0 rounded-md border border-(--surface-muted) bg-(--surface-muted) px-3 py-2 text-sm font-medium text-(--foreground-muted) opacity-70"
-          >
-            Anwenden
-          </button>
-        </div>
-      </div>
+      {children}
 
       <dl className="mt-8 space-y-3 text-sm">
         <div className="flex justify-between gap-4">
           <dt className="text-(--foreground-muted)">Zwischensumme</dt>
           <dd>
-            <PriceEUR cents={subtotalCents} />
+            <PriceEUR cents={catalogSubtotalBeforeDiscountCents} />
           </dd>
         </div>
+        {hasDiscount ? (
+          <div className="flex justify-between gap-4 text-emerald-800">
+            <dt className="min-w-0 flex-1">
+              <span className="block font-medium">Rabatt</span>
+              {discountLabel ? (
+                <span className="block text-xs font-normal text-(--foreground-muted)">{discountLabel}</span>
+              ) : null}
+              {discountDetail ? (
+                <span className="block text-xs text-(--foreground-muted)">{discountDetail}</span>
+              ) : null}
+            </dt>
+            <dd className="shrink-0">−{formatPrice(discountOffSubtotalCents, currency)}</dd>
+          </div>
+        ) : null}
         <div className="flex justify-between gap-4">
           <dt className="flex items-center gap-1 text-(--foreground-muted)">
             Versand
