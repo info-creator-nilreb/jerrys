@@ -202,14 +202,20 @@ export function CheckoutForm({
   const appliedPromotion =
     promoPreview && !("error" in promoPreview) ? promoPreview.resolved : null;
   const discountLabel =
-    appliedPromotion?.kind === "applied" ? appliedPromotion.title : null;
+    appliedPromotion?.kind === "applied" && appliedPromotion.promotionType === "order_discount"
+      ? appliedPromotion.title
+      : null;
   const discountDetail =
-    appliedPromotion?.kind === "applied"
+    appliedPromotion?.kind === "applied" && appliedPromotion.promotionType === "order_discount"
       ? appliedPromotion.source === "code" && appliedPromotion.code
         ? `Code ${appliedPromotion.code}`
         : appliedPromotion.source === "automatic"
           ? "Automatisch angewendet"
           : null
+      : null;
+  const shippingPromotionLabel =
+    appliedPromotion?.kind === "applied" && appliedPromotion.promotionType === "free_shipping"
+      ? appliedPromotion.title
       : null;
 
   const onPayPalSurfaceChange = (id: CheckoutPayPalMethodId) => {
@@ -902,6 +908,8 @@ export function CheckoutForm({
         discountOffSubtotalCents={displayTotals.discountOffSubtotalCents}
         discountLabel={discountLabel}
         discountDetail={discountDetail}
+        shippingSavedByPromotionCents={displayTotals.shippingSavedByPromotionCents}
+        shippingPromotionLabel={shippingPromotionLabel}
       >
         <div id="checkout-section-rabatt">
           <CheckoutDiscountPanel

@@ -12,7 +12,7 @@ export default async function NewPromotionPage({
   searchParams: Promise<{ type?: string }>;
 }) {
   const sp = await searchParams;
-  const t = sp.type === "order_discount" ? "order_discount" : "order_discount";
+  const t: PromotionTypeId = sp.type === "free_shipping" ? "free_shipping" : "order_discount";
 
   const start = new Date();
   const end = new Date(start);
@@ -33,7 +33,7 @@ export default async function NewPromotionPage({
       </p>
       <div className="mt-8">
         <PromotionForm
-          promotionType={t as PromotionTypeId}
+          promotionType={t}
           defaultStartDate={defaultStartDate}
           defaultEndDate={defaultEndDate}
         />

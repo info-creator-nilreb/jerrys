@@ -63,6 +63,7 @@ export function PromotionForm({
   };
 
   const typeLabel = PROMOTION_TYPES[promotionType];
+  const isFreeShipping = promotionType === "free_shipping";
 
   return (
     <form onSubmit={onSubmit} className="w-full space-y-10">
@@ -94,7 +95,7 @@ export function PromotionForm({
             ) : null}
           </div>
           <div>
-            <span className="block text-sm text-[#374151]">Rabattart</span>
+            <span className="block text-sm text-[#374151]">Aktionstyp</span>
             <p className="mt-1 rounded-md border border-dashed border-[#e5e7eb] bg-[#fafbfc] px-3 py-2 text-sm text-[#1f2937]">
               {typeLabel}
             </p>
@@ -159,73 +160,85 @@ export function PromotionForm({
         )}
       </section>
 
-      <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-[#6b7280]">Rabattwert</h2>
-        <input type="hidden" name="discountValueType" value={discountValueType} />
-        <div className="mt-4 flex flex-wrap gap-4">
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-[#374151]">
-            <input
-              type="radio"
-              checked={discountValueType === "percent"}
-              onChange={() => setDiscountValueType("percent")}
-              className="size-4 text-primary"
-            />
-            Prozentual
-          </label>
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-[#374151]">
-            <input
-              type="radio"
-              checked={discountValueType === "fixed"}
-              onChange={() => setDiscountValueType("fixed")}
-              className="size-4 text-primary"
-            />
-            Absolut (EUR)
-          </label>
-        </div>
-        {discountValueType === "percent" ? (
-          <div className="mt-4 max-w-xs">
-            <label htmlFor="discountValuePercent" className="block text-sm text-[#374151]">
-              Prozent
+      {isFreeShipping ? (
+        <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-[#6b7280]">Versand</h2>
+          <p className="mt-2 text-sm text-[#6b7280]">
+            Bei dieser Aktion entfallen die Versandkosten, sobald die Promotion greift (z. B. nach
+            Einlösung des Codes oder bei automatischer Anwendung).
+          </p>
+          <input type="hidden" name="discountValueType" value="percent" />
+          <input type="hidden" name="discountValuePercent" value="0" />
+        </section>
+      ) : (
+        <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-[#6b7280]">Rabattwert</h2>
+          <input type="hidden" name="discountValueType" value={discountValueType} />
+          <div className="mt-4 flex flex-wrap gap-4">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-[#374151]">
+              <input
+                type="radio"
+                checked={discountValueType === "percent"}
+                onChange={() => setDiscountValueType("percent")}
+                className="size-4 text-primary"
+              />
+              Prozentual
             </label>
-            <input
-              id="discountValuePercent"
-              name="discountValuePercent"
-              type="number"
-              min={1}
-              max={100}
-              step={1}
-              defaultValue={
-                initialPromotion?.discountValueType === "percent" ? initialPromotion.discountValue : 10
-              }
-              className="mt-1 w-full rounded-md border border-[#e3e4e8] px-3 py-2 text-sm outline-none ring-primary focus:border-primary focus:ring-1"
-            />
-            {fe?.discountValuePercent ? (
-              <p className="mt-1 text-sm text-red-600">{fe.discountValuePercent}</p>
-            ) : null}
-          </div>
-        ) : (
-          <div className="mt-4 max-w-xs">
-            <label htmlFor="discountValueEuro" className="block text-sm text-[#374151]">
-              Betrag (EUR)
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-[#374151]">
+              <input
+                type="radio"
+                checked={discountValueType === "fixed"}
+                onChange={() => setDiscountValueType("fixed")}
+                className="size-4 text-primary"
+              />
+              Absolut (EUR)
             </label>
-            <input
-              id="discountValueEuro"
-              name="discountValueEuro"
-              type="text"
-              inputMode="decimal"
-              defaultValue={
-                initialPromotion?.discountValueType === "fixed"
-                  ? (initialPromotion.discountValue / 100).toFixed(2)
-                  : "5.00"
-              }
-              className="mt-1 w-full rounded-md border border-[#e3e4e8] px-3 py-2 text-sm outline-none ring-primary focus:border-primary focus:ring-1"
-            />
-            {fe?.discountValueEuro ? (
-              <p className="mt-1 text-sm text-red-600">{fe.discountValueEuro}</p>
-            ) : null}
           </div>
-        )}
-      </section>
+          {discountValueType === "percent" ? (
+            <div className="mt-4 max-w-xs">
+              <label htmlFor="discountValuePercent" className="block text-sm text-[#374151]">
+                Prozent
+              </label>
+              <input
+                id="discountValuePercent"
+                name="discountValuePercent"
+                type="number"
+                min={1}
+                max={100}
+                step={1}
+                defaultValue={
+                  initialPromotion?.discountValueType === "percent" ? initialPromotion.discountValue : 10
+                }
+                className="mt-1 w-full rounded-md border border-[#e3e4e8] px-3 py-2 text-sm outline-none ring-primary focus:border-primary focus:ring-1"
+              />
+              {fe?.discountValuePercent ? (
+                <p className="mt-1 text-sm text-red-600">{fe.discountValuePercent}</p>
+              ) : null}
+            </div>
+          ) : (
+            <div className="mt-4 max-w-xs">
+              <label htmlFor="discountValueEuro" className="block text-sm text-[#374151]">
+                Betrag (EUR)
+              </label>
+              <input
+                id="discountValueEuro"
+                name="discountValueEuro"
+                type="text"
+                inputMode="decimal"
+                defaultValue={
+                  initialPromotion?.discountValueType === "fixed"
+                    ? (initialPromotion.discountValue / 100).toFixed(2)
+                    : "5.00"
+                }
+                className="mt-1 w-full rounded-md border border-[#e3e4e8] px-3 py-2 text-sm outline-none ring-primary focus:border-primary focus:ring-1"
+              />
+              {fe?.discountValueEuro ? (
+                <p className="mt-1 text-sm text-red-600">{fe.discountValueEuro}</p>
+              ) : null}
+            </div>
+          )}
+        </section>
+      )}
 
       <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-[#6b7280]">Mindestanforderungen</h2>

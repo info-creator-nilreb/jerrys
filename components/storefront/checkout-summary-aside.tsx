@@ -24,6 +24,8 @@ export function CheckoutSummaryAside({
   discountOffSubtotalCents,
   discountLabel,
   discountDetail,
+  shippingSavedByPromotionCents,
+  shippingPromotionLabel,
   children,
 }: {
   lines: CheckoutSummaryLine[];
@@ -37,9 +39,12 @@ export function CheckoutSummaryAside({
   discountOffSubtotalCents: number;
   discountLabel?: string | null;
   discountDetail?: string | null;
+  shippingSavedByPromotionCents: number;
+  shippingPromotionLabel?: string | null;
   children?: React.ReactNode;
 }) {
   const hasDiscount = discountOffSubtotalCents > 0;
+  const hasShippingPromotionSave = shippingSavedByPromotionCents > 0;
 
   return (
     <aside className="order-1 min-w-0 border-b border-(--surface-muted) bg-(--surface-soft) p-6 lg:order-2 lg:sticky lg:top-[5.5rem] lg:max-h-[calc(100dvh-5.75rem)] lg:overflow-y-auto lg:self-start lg:border-b-0 lg:border-l lg:pl-8">
@@ -109,7 +114,13 @@ export function CheckoutSummaryAside({
             </span>
           </dt>
           <dd className="text-right text-(--foreground-muted)">
-            {shippingCents === 0 ? "kostenlos" : formatPrice(shippingCents, currency)}
+            <div>{shippingCents === 0 ? "kostenlos" : formatPrice(shippingCents, currency)}</div>
+            {hasShippingPromotionSave ? (
+              <div className="mt-1 text-xs font-medium text-emerald-800">
+                {shippingPromotionLabel ? `${shippingPromotionLabel}: ` : null}
+                Versand gespart {formatPrice(shippingSavedByPromotionCents, currency)}
+              </div>
+            ) : null}
           </dd>
         </div>
         <div className="flex justify-between gap-4 border-t border-(--surface-muted) pt-3 text-base font-semibold">

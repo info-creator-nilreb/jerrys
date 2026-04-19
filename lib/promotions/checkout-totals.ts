@@ -7,6 +7,8 @@ export type CheckoutOrderTotalsWithDiscount = CheckoutOrderTotals & {
   discountOffSubtotalCents: number;
   /** Warenwert vor Rabatt (wie bisherige Zwischensumme). */
   catalogSubtotalBeforeDiscountCents: number;
+  /** Differenz zum normalen Versandpreis durch Versandkostenfrei-Promotion (Anzeige). */
+  shippingSavedByPromotionCents: number;
 };
 
 /**
@@ -18,6 +20,8 @@ export function computeCheckoutOrderTotalsWithDiscount(input: {
   shippingRatesCentsByCountry: Record<string, number>;
   freeShippingFromSubtotalGrossCents: number | null;
   discountOffSubtotalCents: number;
+  /** Versandkostenfrei-Promotion: Versand wird auf 0 gesetzt (nach üblicher Versandberechnung). */
+  applyFreeShippingPromotion?: boolean;
 }): CheckoutOrderTotalsWithDiscount {
   const discountRaw = Math.max(0, Math.round(input.discountOffSubtotalCents));
 
@@ -33,6 +37,17 @@ export function computeCheckoutOrderTotalsWithDiscount(input: {
     freeShippingFromSubtotalGrossCents: input.freeShippingFromSubtotalGrossCents,
   });
 
+  const applyFreeShipping = input.applyFreeShippingPromotion === true;
+  const shippingFinal = applyFreeShipping ? 0 : shippingRaw;
+
+  const shippingSavedByPromotion = (() => {
+    if (!applyFreeShipping || shippingRaw <= 0) return 0;
+    if (vatAppliesForShippingCountry(input.shippingCountryCode)) {
+      return shippingRaw;
+    }
+    return netCentsFromGross(shippingRaw, SHIPPING_VAT_PERCENT);
+  })();
+
   if (vatAppliesForShippingCountry(input.shippingCountryCode)) {
     const discountOff = Math.min(discountRaw, catalogSubtotalGross);
     const subtotalAfter = catalogSubtotalGross - discountOff;
@@ -44,16 +59,17 @@ export function computeCheckoutOrderTotalsWithDiscount(input: {
       const lineGrossDisc = Math.round(lineGross * scale);
       tax += vatCentsFromGross(lineGrossDisc, l.taxRatePercent);
     }
-    tax += shippingVatCentsFromGross(shippingRaw);
+    tax += shippingVatCentsFromGross(shippingFinal);
 
     return {
       vatApplies: true,
       catalogSubtotalBeforeDiscountCents: catalogSubtotalGross,
       subtotalCents: subtotalAfter,
-      shippingCents: shippingRaw,
+      shippingCents: shippingFinal,
       taxAmountCents: tax,
-      totalCents: subtotalAfter + shippingRaw,
+      totalCents: subtotalAfter + shippingFinal,
       discountOffSubtotalCents: discountOff,
+      shippingSavedByPromotionCents: shippingSavedByPromotion,
     };
   }
 
@@ -65,7 +81,7 @@ export function computeCheckoutOrderTotalsWithDiscount(input: {
   const subtotalAfter = subNet - discountOff;
 
   const shippingNet =
-    shippingRaw <= 0 ? 0 : netCentsFromGross(shippingRaw, SHIPPING_VAT_PERCENT);
+    shippingFinal <= 0 ? 0 : netCentsFromGross(shippingFinal, SHIPPING_VAT_PERCENT);
 
   return {
     vatApplies: false,
@@ -75,5 +91,6 @@ export function computeCheckoutOrderTotalsWithDiscount(input: {
     taxAmountCents: 0,
     totalCents: subtotalAfter + shippingNet,
     discountOffSubtotalCents: discountOff,
+    shippingSavedByPromotionCents: shippingSavedByPromotion,
   };
 }

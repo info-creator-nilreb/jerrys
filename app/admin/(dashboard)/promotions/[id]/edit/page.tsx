@@ -18,7 +18,8 @@ export default async function EditPromotionPage({ params }: { params: Promise<{ 
     notFound();
   }
 
-  const pt = (promotion.promotionType === "order_discount" ? "order_discount" : "order_discount") as PromotionTypeId;
+  const pt: PromotionTypeId =
+    promotion.promotionType === "free_shipping" ? "free_shipping" : "order_discount";
 
   return (
     <div className="mx-auto max-w-4xl rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm sm:p-8">

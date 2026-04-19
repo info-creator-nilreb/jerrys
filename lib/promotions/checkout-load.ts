@@ -9,7 +9,7 @@ export async function loadPromotionsForCheckoutResolve(
   const [automaticCandidates, codePromotion] = await Promise.all([
     prisma.promotion.findMany({
       where: {
-        promotionType: "order_discount",
+        promotionType: { in: ["order_discount", "free_shipping"] },
         applicationMode: "automatic",
         isEnabled: true,
         publishedOnce: true,

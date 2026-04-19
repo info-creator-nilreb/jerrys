@@ -29,7 +29,7 @@ const upsertSchema = z
       z.string().min(1).optional(),
     ),
     title: z.string().trim().min(1, "Titel erforderlich."),
-    promotionType: z.literal("order_discount"),
+    promotionType: z.enum(["order_discount", "free_shipping"]),
     applicationMode: z.enum(["automatic", "code"]),
     code: z.string().trim().optional(),
     discountValueType: z.enum(["percent", "fixed"]),
@@ -58,23 +58,25 @@ const upsertSchema = z
         });
       }
     }
-    if (val.discountValueType === "percent") {
-      const p = Number(val.discountValuePercent?.replace(",", "."));
-      if (val.discountValuePercent == null || val.discountValuePercent.trim() === "" || Number.isNaN(p)) {
-        ctx.addIssue({ code: "custom", path: ["discountValuePercent"], message: "Prozentwert erforderlich." });
-      } else if (p <= 0 || p > 100) {
-        ctx.addIssue({ code: "custom", path: ["discountValuePercent"], message: "Prozent zwischen 1 und 100." });
-      }
-    } else {
-      const e = Number(String(val.discountValueEuro ?? "").replace(",", "."));
-      if (
-        val.discountValueEuro == null ||
-        String(val.discountValueEuro).trim() === "" ||
-        Number.isNaN(e)
-      ) {
-        ctx.addIssue({ code: "custom", path: ["discountValueEuro"], message: "Betrag erforderlich." });
-      } else if (e <= 0) {
-        ctx.addIssue({ code: "custom", path: ["discountValueEuro"], message: "Betrag muss größer 0 sein." });
+    if (val.promotionType === "order_discount") {
+      if (val.discountValueType === "percent") {
+        const p = Number(val.discountValuePercent?.replace(",", "."));
+        if (val.discountValuePercent == null || val.discountValuePercent.trim() === "" || Number.isNaN(p)) {
+          ctx.addIssue({ code: "custom", path: ["discountValuePercent"], message: "Prozentwert erforderlich." });
+        } else if (p <= 0 || p > 100) {
+          ctx.addIssue({ code: "custom", path: ["discountValuePercent"], message: "Prozent zwischen 1 und 100." });
+        }
+      } else {
+        const e = Number(String(val.discountValueEuro ?? "").replace(",", "."));
+        if (
+          val.discountValueEuro == null ||
+          String(val.discountValueEuro).trim() === "" ||
+          Number.isNaN(e)
+        ) {
+          ctx.addIssue({ code: "custom", path: ["discountValueEuro"], message: "Betrag erforderlich." });
+        } else if (e <= 0) {
+          ctx.addIssue({ code: "custom", path: ["discountValueEuro"], message: "Betrag muss größer 0 sein." });
+        }
       }
     }
     if (val.minimumRequirementType === "cart_value") {
@@ -134,10 +136,13 @@ export async function savePromotion(_prev: PromotionFormState, formData: FormDat
   const codeNormalized =
     d.applicationMode === "code" ? (d.code ?? "").trim().toUpperCase() : null;
 
+  const discountValueType = d.promotionType === "free_shipping" ? "percent" : d.discountValueType;
   const discountValue =
-    d.discountValueType === "percent"
-      ? Math.round(Number(String(d.discountValuePercent).replace(",", ".")))
-      : Math.round(Number(String(d.discountValueEuro).replace(",", ".")) * 100);
+    d.promotionType === "free_shipping"
+      ? 0
+      : d.discountValueType === "percent"
+        ? Math.round(Number(String(d.discountValuePercent).replace(",", ".")))
+        : Math.round(Number(String(d.discountValueEuro).replace(",", ".")) * 100);
 
   const minimumCartValueCents =
     d.minimumRequirementType === "cart_value"
@@ -159,7 +164,7 @@ export async function savePromotion(_prev: PromotionFormState, formData: FormDat
           promotionType: d.promotionType,
           applicationMode: d.applicationMode,
           code: codeNormalized,
-          discountValueType: d.discountValueType,
+          discountValueType,
           discountValue,
           minimumRequirementType: d.minimumRequirementType,
           minimumCartValueCents,
@@ -184,7 +189,7 @@ export async function savePromotion(_prev: PromotionFormState, formData: FormDat
           promotionType: d.promotionType,
           applicationMode: d.applicationMode,
           code: codeNormalized,
-          discountValueType: d.discountValueType,
+          discountValueType,
           discountValue,
           minimumRequirementType: d.minimumRequirementType,
           minimumCartValueCents,

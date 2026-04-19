@@ -1,9 +1,13 @@
 "use client";
 
-import { Percent, X } from "lucide-react";
+import { Percent, Truck, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useId, useState } from "react";
-import { PROMOTION_TYPES, type PromotionTypeId } from "@/lib/promotions/types";
+import { useCallback, useEffect, useId } from "react";
+import {
+  PROMOTION_TYPES,
+  PROMOTION_TYPE_DESCRIPTIONS,
+  type PromotionTypeId,
+} from "@/lib/promotions/types";
 
 type Props = {
   open: boolean;
@@ -58,7 +62,8 @@ export function PromotionTypeModal({ open, onClose }: Props) {
               Promotionsart auswählen
             </h2>
             <p className="mt-1 text-sm text-[#6b7280]">
-              MVP: ein Typ vollständig unterstützt. Weitere Arten können später ergänzt werden.
+              Wähle die Art der Aktion. Pro Checkout wird höchstens eine automatische Promotion
+              angewendet; bei Code-Einlösung gilt der eingegebene Code.
             </p>
           </div>
           <button
@@ -80,12 +85,16 @@ export function PromotionTypeModal({ open, onClose }: Props) {
                 className="flex w-full items-center gap-4 rounded-lg border border-[#e8eaed] bg-[#fafbfc] px-4 py-4 text-left transition-colors hover:border-primary/40 hover:bg-white"
               >
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Percent className="size-5" aria-hidden />
+                  {id === "free_shipping" ? (
+                    <Truck className="size-5" aria-hidden />
+                  ) : (
+                    <Percent className="size-5" aria-hidden />
+                  )}
                 </span>
                 <span>
                   <span className="block text-sm font-medium text-[#1f2937]">{PROMOTION_TYPES[id]}</span>
                   <span className="mt-0.5 block text-xs text-[#6b7280]">
-                    Prozentualer oder fester Rabatt auf die Bestellsumme
+                    {PROMOTION_TYPE_DESCRIPTIONS[id]}
                   </span>
                 </span>
               </button>

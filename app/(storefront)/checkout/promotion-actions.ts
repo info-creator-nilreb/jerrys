@@ -26,6 +26,7 @@ export type CheckoutPromotionPreview = {
     taxAmountCents: number;
     totalCents: number;
     discountOffSubtotalCents: number;
+    shippingSavedByPromotionCents: number;
   };
 };
 
@@ -89,10 +90,14 @@ export async function previewCheckoutPromotion(input: {
     declineAutomatic,
     codePromotion: codePromotion && effectiveCode ? codePromotion : null,
     automaticCandidates,
+    shippingRatesCentsByCountry: shopShip.shippingRatesCentsByCountry,
+    freeShippingFromSubtotalGrossCents: shopShip.freeShippingFromSubtotalGrossCents,
   });
 
   const discountOff =
     resolved.kind === "applied" ? resolved.discountOffSubtotalCents : 0;
+  const applyFreeShipping =
+    resolved.kind === "applied" && resolved.promotionType === "free_shipping";
 
   const totals = computeCheckoutOrderTotalsWithDiscount({
     lines,
@@ -100,6 +105,7 @@ export async function previewCheckoutPromotion(input: {
     shippingRatesCentsByCountry: shopShip.shippingRatesCentsByCountry,
     freeShippingFromSubtotalGrossCents: shopShip.freeShippingFromSubtotalGrossCents,
     discountOffSubtotalCents: discountOff,
+    applyFreeShippingPromotion: applyFreeShipping,
   });
 
   return {
@@ -113,6 +119,7 @@ export async function previewCheckoutPromotion(input: {
       taxAmountCents: totals.taxAmountCents,
       totalCents: totals.totalCents,
       discountOffSubtotalCents: totals.discountOffSubtotalCents,
+      shippingSavedByPromotionCents: totals.shippingSavedByPromotionCents,
     },
   };
 }

@@ -281,10 +281,14 @@ async function createPendingPayPalOrderFromParsedRaw(
     declineAutomatic: d.checkoutDeclineAutomatic,
     codePromotion: codeNorm.length > 0 ? codePromotion : null,
     automaticCandidates,
+    shippingRatesCentsByCountry: shopShip.shippingRatesCentsByCountry,
+    freeShippingFromSubtotalGrossCents: shopShip.freeShippingFromSubtotalGrossCents,
   });
 
   const discountOff =
     resolved.kind === "applied" ? resolved.discountOffSubtotalCents : 0;
+  const applyFreeShipping =
+    resolved.kind === "applied" && resolved.promotionType === "free_shipping";
 
   const totals = computeCheckoutOrderTotalsWithDiscount({
     lines: lineInputs,
@@ -292,6 +296,7 @@ async function createPendingPayPalOrderFromParsedRaw(
     shippingRatesCentsByCountry: shopShip.shippingRatesCentsByCountry,
     freeShippingFromSubtotalGrossCents: shopShip.freeShippingFromSubtotalGrossCents,
     discountOffSubtotalCents: discountOff,
+    applyFreeShippingPromotion: applyFreeShipping,
   });
 
   const subtotal = totals.subtotalCents;

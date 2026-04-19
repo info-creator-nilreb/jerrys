@@ -12,9 +12,15 @@ export type PromotionDisplayStatus =
 
 export const PROMOTION_TYPES = {
   order_discount: "Betrag oder Prozent auf Bestellung",
+  free_shipping: "Versandkostenfrei",
 } as const;
 
 export type PromotionTypeId = keyof typeof PROMOTION_TYPES;
+
+export const PROMOTION_TYPE_DESCRIPTIONS: Record<PromotionTypeId, string> = {
+  order_discount: "Prozentualer oder fester Rabatt auf die Warenwert-Summe",
+  free_shipping: "Versandkosten entfallen, sobald die Promotion greift",
+};
 
 export type ApplicationMode = "automatic" | "code";
 
@@ -39,6 +45,10 @@ export type ResolvedCheckoutPromotion =
       promotionId: string;
       title: string;
       code: string | null;
-      discountOffSubtotalCents: number;
       source: "code" | "automatic";
+      promotionType: "order_discount" | "free_shipping";
+      /** Warenrabatt (Cent). */
+      discountOffSubtotalCents: number;
+      /** Ersparnis Versand (Cent), nur bei Versandkostenfrei-Promotion. */
+      shippingSavedCents: number;
     };

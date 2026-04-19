@@ -1,4 +1,5 @@
 import { netCentsFromGross } from "@/lib/catalog/pricing";
+import { shippingGrossCentsForCountry } from "@/lib/shop/shipping-compute";
 import type { OrderPriceLineInput } from "@/lib/tax/order-price-totals";
 import { vatAppliesForShippingCountry } from "@/lib/tax/eu-vat";
 import type {
@@ -43,11 +44,30 @@ function orderValueForDiscountCents(
   return catalogNetSubtotalCents(lines);
 }
 
+/** Versand brutto (Cent) wie im Checkout, inkl. Shop-Frei-Versand-Schwelle – ohne Promotions-Effekt. */
+export function computeReferenceShippingGrossCents(
+  lines: OrderPriceLineInput[],
+  shippingCountryCode: string,
+  shippingRatesCentsByCountry: Record<string, number>,
+  freeShippingFromSubtotalGrossCents: number | null,
+): number {
+  const catalogSubtotalGross = catalogGrossSubtotalCents(lines);
+  return shippingGrossCentsForCountry({
+    subtotalGrossCents: catalogSubtotalGross,
+    shippingCountryCode,
+    shippingRatesCentsByCountry,
+    freeShippingFromSubtotalGrossCents,
+  });
+}
+
 export function computePromotionDiscountOffSubtotalCents(
   promotion: PromotionRecord,
   lines: OrderPriceLineInput[],
   shippingCountryCode: string,
 ): number {
+  if (promotion.promotionType === "free_shipping") {
+    return 0;
+  }
   const orderVal = orderValueForDiscountCents(lines, shippingCountryCode);
   if (orderVal <= 0) return 0;
 
@@ -64,6 +84,25 @@ export function computePromotionDiscountOffSubtotalCents(
   }
 
   return 0;
+}
+
+/** Nutzen für „beste“ automatische Promotion: Warenrabatt in Cent oder eingesparte Versandkosten in Cent. */
+export function computePromotionBenefitCents(
+  promotion: PromotionRecord,
+  lines: OrderPriceLineInput[],
+  shippingCountryCode: string,
+  shippingRatesCentsByCountry: Record<string, number>,
+  freeShippingFromSubtotalGrossCents: number | null,
+): number {
+  if (promotion.promotionType === "free_shipping") {
+    return computeReferenceShippingGrossCents(
+      lines,
+      shippingCountryCode,
+      shippingRatesCentsByCountry,
+      freeShippingFromSubtotalGrossCents,
+    );
+  }
+  return computePromotionDiscountOffSubtotalCents(promotion, lines, shippingCountryCode);
 }
 
 export function isPromotionEligibleNow(promotion: PromotionRecord, now: Date): boolean {
@@ -156,24 +195,32 @@ export function promotionValidationMessage(reason: PromotionValidationReason): s
 }
 
 /**
- * Wählt die beste automatische Promotion (höchster Rabattbetrag in Cent).
+ * Wählt die beste automatische Promotion (höchster Nutzen in Cent: Warenrabatt oder gesparte Versandkosten).
  */
 export function pickBestAutomaticPromotion(
   candidates: PromotionRecord[],
   lines: OrderPriceLineInput[],
   shippingCountryCode: string,
   now: Date,
+  shippingRatesCentsByCountry: Record<string, number>,
+  freeShippingFromSubtotalGrossCents: number | null,
 ): PromotionRecord | null {
   let best: PromotionRecord | null = null;
-  let bestDiscount = -1;
+  let bestBenefit = -1;
 
   for (const p of candidates) {
     if (!isPromotionEligibleNow(p, now)) continue;
     const v = validateAutomaticPromotionApplication(p, lines, now);
     if (!v.ok) continue;
-    const d = computePromotionDiscountOffSubtotalCents(p, lines, shippingCountryCode);
-    if (d > bestDiscount) {
-      bestDiscount = d;
+    const b = computePromotionBenefitCents(
+      p,
+      lines,
+      shippingCountryCode,
+      shippingRatesCentsByCountry,
+      freeShippingFromSubtotalGrossCents,
+    );
+    if (b > bestBenefit) {
+      bestBenefit = b;
       best = p;
     }
   }
@@ -193,8 +240,13 @@ export function resolveCheckoutPromotion(input: {
   codePromotion: PromotionRecord | null;
   /** Alle automatischen, aktivierten Promotions (Datum gefiltert optional — Engine prüft nochmal) */
   automaticCandidates: PromotionRecord[];
+  shippingRatesCentsByCountry: Record<string, number>;
+  freeShippingFromSubtotalGrossCents: number | null;
 }): ResolvedCheckoutPromotion {
   const codeNorm = normalizePromotionCode(input.promotionCode);
+
+  const pt = (r: PromotionRecord): "order_discount" | "free_shipping" =>
+    r.promotionType === "free_shipping" ? "free_shipping" : "order_discount";
 
   if (codeNorm.length > 0) {
     const v = validatePromotionCodeApplication(input.codePromotion, input.lines, input.now);
@@ -203,12 +255,23 @@ export function resolveCheckoutPromotion(input: {
     }
     const p = input.codePromotion!;
     const discount = computePromotionDiscountOffSubtotalCents(p, input.lines, input.shippingCountryCode);
+    const shippingSaved =
+      p.promotionType === "free_shipping"
+        ? computeReferenceShippingGrossCents(
+            input.lines,
+            input.shippingCountryCode,
+            input.shippingRatesCentsByCountry,
+            input.freeShippingFromSubtotalGrossCents,
+          )
+        : 0;
     return {
       kind: "applied",
       promotionId: p.id,
       title: p.title,
       code: p.code,
+      promotionType: pt(p),
       discountOffSubtotalCents: discount,
+      shippingSavedCents: shippingSaved,
       source: "code",
     };
   }
@@ -222,6 +285,8 @@ export function resolveCheckoutPromotion(input: {
     input.lines,
     input.shippingCountryCode,
     input.now,
+    input.shippingRatesCentsByCountry,
+    input.freeShippingFromSubtotalGrossCents,
   );
   if (!best) {
     return { kind: "none" };
@@ -232,7 +297,18 @@ export function resolveCheckoutPromotion(input: {
     input.lines,
     input.shippingCountryCode,
   );
-  if (discount <= 0) {
+  const shippingSaved =
+    best.promotionType === "free_shipping"
+      ? computeReferenceShippingGrossCents(
+          input.lines,
+          input.shippingCountryCode,
+          input.shippingRatesCentsByCountry,
+          input.freeShippingFromSubtotalGrossCents,
+        )
+      : 0;
+
+  const benefit = discount + shippingSaved;
+  if (benefit <= 0) {
     return { kind: "none" };
   }
 
@@ -241,7 +317,9 @@ export function resolveCheckoutPromotion(input: {
     promotionId: best.id,
     title: best.title,
     code: best.code,
+    promotionType: pt(best),
     discountOffSubtotalCents: discount,
+    shippingSavedCents: shippingSaved,
     source: "automatic",
   };
 }
