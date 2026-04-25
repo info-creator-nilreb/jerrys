@@ -48,7 +48,7 @@ export function AdminLoginForm() {
   }
 
   return (
-    <div className="flex w-full max-w-md flex-col">
+    <div className="flex w-full max-w-md flex-col lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
       <div className="mb-10 flex justify-center lg:mb-12">
         <Image
           src="/branding/jerrys-wordmark.jpg"

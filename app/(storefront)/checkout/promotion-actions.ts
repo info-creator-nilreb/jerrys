@@ -73,7 +73,7 @@ export async function previewCheckoutPromotion(input: {
   let effectiveCode: string | null = codeNorm.length > 0 ? codeNorm : null;
 
   if (codeNorm.length > 0) {
-    const ev = evaluatePromotionCodeEntry(codeNorm, codePromotion, lines, now);
+    const ev = evaluatePromotionCodeEntry(codeNorm, codePromotion, lines, now, country);
     if (ev.status === "invalid") {
       codeError = promotionValidationMessage(ev.reason);
       effectiveCode = null;

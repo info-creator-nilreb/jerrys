@@ -13,6 +13,8 @@ export type PromotionDisplayStatus =
 export const PROMOTION_TYPES = {
   order_discount: "Betrag oder Prozent auf Bestellung",
   free_shipping: "Versandkostenfrei",
+  /** Rabatt bezieht sich auf die günstigste Warenzeile (nach EU-/Drittland-Logik). */
+  cheapest_item_percent: "Prozent auf günstigsten Artikel",
 } as const;
 
 export type PromotionTypeId = keyof typeof PROMOTION_TYPES;
@@ -20,6 +22,7 @@ export type PromotionTypeId = keyof typeof PROMOTION_TYPES;
 export const PROMOTION_TYPE_DESCRIPTIONS: Record<PromotionTypeId, string> = {
   order_discount: "Prozentualer oder fester Rabatt auf die Warenwert-Summe",
   free_shipping: "Versandkosten entfallen, sobald die Promotion greift",
+  cheapest_item_percent: "Nur der billigste Posten im Warenkorb wird prozentual reduziert",
 };
 
 export type ApplicationMode = "automatic" | "code";
@@ -34,7 +37,9 @@ export type PromotionValidationReason =
   | "NOT_YET_ACTIVE"
   | "EXPIRED"
   | "MIN_CART_NOT_MET"
-  | "WRONG_APPLICATION_MODE";
+  | "WRONG_APPLICATION_MODE"
+  /** Nur Versandkostenfrei: gewähltes Lieferland nicht in der Konfiguration. */
+  | "FREE_SHIPPING_COUNTRY_NOT_ALLOWED";
 
 export type ResolvedCheckoutPromotion =
   | {
@@ -46,7 +51,7 @@ export type ResolvedCheckoutPromotion =
       title: string;
       code: string | null;
       source: "code" | "automatic";
-      promotionType: "order_discount" | "free_shipping";
+      promotionType: "order_discount" | "free_shipping" | "cheapest_item_percent";
       /** Warenrabatt (Cent). */
       discountOffSubtotalCents: number;
       /** Ersparnis Versand (Cent), nur bei Versandkostenfrei-Promotion. */

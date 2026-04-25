@@ -260,8 +260,9 @@ async function createPendingPayPalOrderFromParsedRaw(
   );
 
   const now = new Date();
+  const shippingCountryNorm = d.shippingCountry.trim().toUpperCase();
   if (codeNorm.length > 0) {
-    const ev = evaluatePromotionCodeEntry(codeNorm, codePromotion, lineInputs, now);
+    const ev = evaluatePromotionCodeEntry(codeNorm, codePromotion, lineInputs, now, shippingCountryNorm);
     if (ev.status === "invalid") {
       return {
         ok: false,

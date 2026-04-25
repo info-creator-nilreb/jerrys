@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getPrisma } from "@/lib/db/prisma";
+import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
 import { generateRandomPromotionCode } from "@/lib/promotions/code-generate";
 import { z } from "zod";
 
@@ -29,7 +30,7 @@ const upsertSchema = z
       z.string().min(1).optional(),
     ),
     title: z.string().trim().min(1, "Titel erforderlich."),
-    promotionType: z.enum(["order_discount", "free_shipping"]),
+    promotionType: z.enum(["order_discount", "free_shipping", "cheapest_item_percent"]),
     applicationMode: z.enum(["automatic", "code"]),
     code: z.string().trim().optional(),
     discountValueType: z.enum(["percent", "fixed"]),
@@ -40,6 +41,8 @@ const upsertSchema = z
     startDate: z.string().trim().min(1),
     endDate: z.string().trim().min(1),
     intent: z.enum(["publish", "draft"]),
+    freeShippingCountryScope: z.enum(["all", "allow", "deny"]),
+    freeShippingCountryCodes: z.array(z.string().length(2)).default([]),
   })
   .superRefine((val, ctx) => {
     const start = parseDateStartUtc(val.startDate);
@@ -77,6 +80,23 @@ const upsertSchema = z
         } else if (e <= 0) {
           ctx.addIssue({ code: "custom", path: ["discountValueEuro"], message: "Betrag muss größer 0 sein." });
         }
+      }
+    }
+    if (val.promotionType === "cheapest_item_percent") {
+      const p = Number(val.discountValuePercent?.replace(",", "."));
+      if (val.discountValuePercent == null || val.discountValuePercent.trim() === "" || Number.isNaN(p)) {
+        ctx.addIssue({ code: "custom", path: ["discountValuePercent"], message: "Prozentwert erforderlich." });
+      } else if (p <= 0 || p > 100) {
+        ctx.addIssue({ code: "custom", path: ["discountValuePercent"], message: "Prozent zwischen 1 und 100." });
+      }
+    }
+    if (val.promotionType === "free_shipping") {
+      if (val.freeShippingCountryScope === "allow" && val.freeShippingCountryCodes.length < 1) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["freeShippingCountryCodes"],
+          message: "Mindestens ein Land für „Nur ausgewählte Länder“ wählen.",
+        });
       }
     }
     if (val.minimumRequirementType === "cart_value") {
@@ -124,6 +144,15 @@ export async function savePromotion(_prev: PromotionFormState, formData: FormDat
     startDate: formData.get("startDate")?.toString() ?? "",
     endDate: formData.get("endDate")?.toString() ?? "",
     intent: formData.get("intent")?.toString() === "draft" ? "draft" : "publish",
+    freeShippingCountryScope: (() => {
+      const s = formData.get("freeShippingCountryScope")?.toString() ?? "all";
+      if (s === "allow" || s === "deny") return s;
+      return "all" as const;
+    })(),
+    freeShippingCountryCodes: formData
+      .getAll("freeShippingCountryCodes")
+      .map((v) => String(v).trim().toUpperCase())
+      .filter((c) => /^[A-Z]{2}$/.test(c)),
   };
 
   const parsed = upsertSchema.safeParse(raw);
@@ -136,18 +165,38 @@ export async function savePromotion(_prev: PromotionFormState, formData: FormDat
   const codeNormalized =
     d.applicationMode === "code" ? (d.code ?? "").trim().toUpperCase() : null;
 
-  const discountValueType = d.promotionType === "free_shipping" ? "percent" : d.discountValueType;
+  const discountValueType =
+    d.promotionType === "free_shipping" || d.promotionType === "cheapest_item_percent" ? "percent" : d.discountValueType;
   const discountValue =
     d.promotionType === "free_shipping"
       ? 0
-      : d.discountValueType === "percent"
+      : d.promotionType === "cheapest_item_percent"
         ? Math.round(Number(String(d.discountValuePercent).replace(",", ".")))
-        : Math.round(Number(String(d.discountValueEuro).replace(",", ".")) * 100);
+        : d.discountValueType === "percent"
+          ? Math.round(Number(String(d.discountValuePercent).replace(",", ".")))
+          : Math.round(Number(String(d.discountValueEuro).replace(",", ".")) * 100);
 
   const minimumCartValueCents =
     d.minimumRequirementType === "cart_value"
       ? Math.round(Number(String(d.minimumCartEuro).replace(",", ".")) * 100)
       : null;
+
+  const freeShipScope = d.promotionType === "free_shipping" ? d.freeShippingCountryScope : "all";
+  const freeShipCodes =
+    d.promotionType === "free_shipping" ? [...new Set(d.freeShippingCountryCodes)].sort((a, b) => a.localeCompare(b)) : [];
+
+  if (d.promotionType === "free_shipping" && freeShipCodes.length > 0) {
+    const shop = await getShopShippingSettings();
+    const allowed = new Set(shop.shippingCountryCodes);
+    const invalid = freeShipCodes.filter((c) => !allowed.has(c));
+    if (invalid.length > 0) {
+      return {
+        ok: false,
+        error: "Ungültige Länderauswahl.",
+        fieldErrors: { freeShippingCountryCodes: "Nur Länder aus der Shop-Versandkonfiguration wählbar." },
+      };
+    }
+  }
 
   const prisma = getPrisma();
 
@@ -172,6 +221,8 @@ export async function savePromotion(_prev: PromotionFormState, formData: FormDat
           endDate: parseDateEndUtc(d.endDate),
           isEnabled: isPublish ? true : false,
           publishedOnce: isPublish ? true : existing.publishedOnce,
+          freeShippingCountryScope: freeShipScope,
+          freeShippingCountryCodes: freeShipCodes,
         },
       });
     } catch (e: unknown) {
@@ -197,6 +248,8 @@ export async function savePromotion(_prev: PromotionFormState, formData: FormDat
           endDate: parseDateEndUtc(d.endDate),
           isEnabled: isPublish,
           publishedOnce: isPublish,
+          freeShippingCountryScope: freeShipScope,
+          freeShippingCountryCodes: freeShipCodes,
         },
       });
     } catch (e: unknown) {

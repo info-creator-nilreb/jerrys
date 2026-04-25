@@ -1,6 +1,6 @@
 "use client";
 
-import { Percent, Truck, X } from "lucide-react";
+import { Package, Percent, Truck, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId } from "react";
 import {
@@ -87,6 +87,8 @@ export function PromotionTypeModal({ open, onClose }: Props) {
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   {id === "free_shipping" ? (
                     <Truck className="size-5" aria-hidden />
+                  ) : id === "cheapest_item_percent" ? (
+                    <Package className="size-5" aria-hidden />
                   ) : (
                     <Percent className="size-5" aria-hidden />
                   )}

@@ -12,8 +12,9 @@ export async function SiteHeader() {
 
   return (
     <header className="fixed top-0 right-0 left-0 z-[500000] border-b border-(--surface-muted) bg-white">
-      <div className="relative mx-auto flex max-w-6xl items-center justify-center px-4 py-3 md:py-3.5">
-        <Link href="/">
+      <div className="flex w-full items-center gap-2 px-4 py-3 md:gap-3 md:px-6 md:py-3.5 lg:px-8 xl:px-10">
+        <div className="min-w-0 flex-1" aria-hidden />
+        <Link href="/" className="shrink-0">
           {/* unoptimized: direkt /public, um veraltete /_next/image?url=…png Caches zu umgehen */}
           <Image
             src="/branding/jerrys-wordmark.jpg"
@@ -26,7 +27,9 @@ export async function SiteHeader() {
             unoptimized
           />
         </Link>
-        <HeaderCartFlyout cartBadgeCount={cartCount} />
+        <div className="flex min-w-0 flex-1 justify-end">
+          <HeaderCartFlyout cartBadgeCount={cartCount} />
+        </div>
       </div>
     </header>
   );

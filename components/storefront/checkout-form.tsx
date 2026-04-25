@@ -201,18 +201,18 @@ export function CheckoutForm({
 
   const appliedPromotion =
     promoPreview && !("error" in promoPreview) ? promoPreview.resolved : null;
-  const discountLabel =
-    appliedPromotion?.kind === "applied" && appliedPromotion.promotionType === "order_discount"
-      ? appliedPromotion.title
-      : null;
-  const discountDetail =
-    appliedPromotion?.kind === "applied" && appliedPromotion.promotionType === "order_discount"
-      ? appliedPromotion.source === "code" && appliedPromotion.code
-        ? `Code ${appliedPromotion.code}`
-        : appliedPromotion.source === "automatic"
-          ? "Automatisch angewendet"
-          : null
-      : null;
+  const hasSubtotalPromotion =
+    appliedPromotion?.kind === "applied" &&
+    (appliedPromotion.promotionType === "order_discount" ||
+      appliedPromotion.promotionType === "cheapest_item_percent");
+  const discountLabel = hasSubtotalPromotion ? appliedPromotion.title : null;
+  const discountDetail = hasSubtotalPromotion
+    ? appliedPromotion.source === "code" && appliedPromotion.code
+      ? `Code ${appliedPromotion.code}`
+      : appliedPromotion.source === "automatic"
+        ? "Automatisch angewendet"
+        : null
+    : null;
   const shippingPromotionLabel =
     appliedPromotion?.kind === "applied" && appliedPromotion.promotionType === "free_shipping"
       ? appliedPromotion.title

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { startTransition, useActionState, useState, type FormEvent } from "react";
+import { startTransition, useActionState, useMemo, useState, type FormEvent } from "react";
 import {
   generateUniquePromotionCodeAction,
   savePromotion,
@@ -20,6 +20,8 @@ function eurosFromCents(cents: number | null | undefined): string {
 type Props = {
   promotionType: PromotionTypeId;
   initialPromotion?: Promotion;
+  /** Für Versandkostenfrei: Länder aus der Shop-Versandkonfiguration (Admin → Versand). */
+  availableShippingCountryCodes: string[];
   /** Nur Anlage: Default-Datumsstrings (von der Server-Seite gesetzt). */
   defaultStartDate?: string;
   defaultEndDate?: string;
@@ -28,6 +30,7 @@ type Props = {
 export function PromotionForm({
   promotionType,
   initialPromotion,
+  availableShippingCountryCodes,
   defaultStartDate,
   defaultEndDate,
 }: Props) {
@@ -41,12 +44,35 @@ export function PromotionForm({
   const [minReq, setMinReq] = useState<"none" | "cart_value">(
     (initialPromotion?.minimumRequirementType as "none" | "cart_value") ?? "none",
   );
+  const [freeShipScope, setFreeShipScope] = useState<"all" | "allow" | "deny">(() => {
+    const s = initialPromotion?.freeShippingCountryScope;
+    if (s === "allow" || s === "deny") return s;
+    return "all";
+  });
+  const [freeShipCountrySelection, setFreeShipCountrySelection] = useState<Set<string>>(() => {
+    const raw = initialPromotion?.freeShippingCountryCodes ?? [];
+    return new Set(
+      raw.map((c) => c.trim().toUpperCase()).filter((c) => /^[A-Z]{2}$/.test(c)),
+    );
+  });
+
+  const regionNamesDe = useMemo(() => new Intl.DisplayNames(["de"], { type: "region" }), []);
 
   const fe = state != null && state.ok === false ? state.fieldErrors : undefined;
 
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    if (promotionType === "free_shipping") {
+      for (const k of [...fd.keys()]) {
+        if (k === "freeShippingCountryCodes") fd.delete(k);
+      }
+      if (freeShipScope === "allow" || freeShipScope === "deny") {
+        for (const c of freeShipCountrySelection) {
+          fd.append("freeShippingCountryCodes", c);
+        }
+      }
+    }
     startTransition(() => {
       formAction(fd);
     });
@@ -64,6 +90,7 @@ export function PromotionForm({
 
   const typeLabel = PROMOTION_TYPES[promotionType];
   const isFreeShipping = promotionType === "free_shipping";
+  const isCheapestItemPercent = promotionType === "cheapest_item_percent";
 
   return (
     <form onSubmit={onSubmit} className="w-full space-y-10">
@@ -169,6 +196,119 @@ export function PromotionForm({
           </p>
           <input type="hidden" name="discountValueType" value="percent" />
           <input type="hidden" name="discountValuePercent" value="0" />
+
+          <div className="mt-6 border-t border-[#e8eaed] pt-6">
+            <h3 className="text-sm font-medium text-[#374151]">Lieferländer</h3>
+            <p className="mt-1 text-sm text-[#6b7280]">
+              Einschränkung nur für Versandkostenfrei: entweder nur bestimmte Länder oder Ausschluss.
+              Es stehen nur Länder zur Auswahl, die in der Shop-Versandkonfiguration aktiviert sind.
+            </p>
+            <div className="mt-4 space-y-3">
+              <label className="flex cursor-pointer items-center gap-3 text-sm text-[#374151]">
+                <input
+                  type="radio"
+                  name="freeShippingCountryScope"
+                  value="all"
+                  checked={freeShipScope === "all"}
+                  onChange={() => setFreeShipScope("all")}
+                  className="size-4 text-primary"
+                />
+                Alle konfigurierten Lieferländer
+              </label>
+              <label className="flex cursor-pointer items-center gap-3 text-sm text-[#374151]">
+                <input
+                  type="radio"
+                  name="freeShippingCountryScope"
+                  value="allow"
+                  checked={freeShipScope === "allow"}
+                  onChange={() => setFreeShipScope("allow")}
+                  className="size-4 text-primary"
+                />
+                Nur ausgewählte Länder
+              </label>
+              <label className="flex cursor-pointer items-center gap-3 text-sm text-[#374151]">
+                <input
+                  type="radio"
+                  name="freeShippingCountryScope"
+                  value="deny"
+                  checked={freeShipScope === "deny"}
+                  onChange={() => setFreeShipScope("deny")}
+                  className="size-4 text-primary"
+                />
+                Alle außer ausgewählte Länder (Ausschluss)
+              </label>
+            </div>
+            {freeShipScope !== "all" ? (
+              <div className="mt-4 flex flex-wrap gap-3">
+                {availableShippingCountryCodes.length === 0 ? (
+                  <p className="text-sm text-amber-800">
+                    Keine Lieferländer in der Versandkonfiguration – bitte unter Admin → Versand Länder
+                    anlegen.
+                  </p>
+                ) : (
+                  availableShippingCountryCodes.map((code) => {
+                    const label = regionNamesDe.of(code) ?? code;
+                    const checked = freeShipCountrySelection.has(code);
+                    return (
+                      <label
+                        key={code}
+                        className="flex cursor-pointer items-center gap-2 rounded-md border border-[#e3e4e8] bg-[#fafbfc] px-3 py-2 text-sm text-[#374151]"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            setFreeShipCountrySelection((prev) => {
+                              const n = new Set(prev);
+                              if (n.has(code)) n.delete(code);
+                              else n.add(code);
+                              return n;
+                            });
+                          }}
+                          className="size-4 rounded border-[#cfd2d8] text-primary"
+                        />
+                        <span>
+                          {code} <span className="text-[#6b7280]">({label})</span>
+                        </span>
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+            ) : null}
+            {fe?.freeShippingCountryCodes ? (
+              <p className="mt-2 text-sm text-red-600">{fe.freeShippingCountryCodes}</p>
+            ) : null}
+          </div>
+        </section>
+      ) : isCheapestItemPercent ? (
+        <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-[#6b7280]">Rabattwert</h2>
+          <p className="mt-2 text-sm text-[#6b7280]">
+            Es wird nur die günstigste Warenzeile (nach Steuerlogik wie im Checkout) mit dem folgenden
+            Prozentsatz rabattiert – nicht die gesamte Bestellung.
+          </p>
+          <input type="hidden" name="discountValueType" value="percent" />
+          <div className="mt-4 max-w-xs">
+            <label htmlFor="discountValuePercent" className="block text-sm text-[#374151]">
+              Prozent
+            </label>
+            <input
+              id="discountValuePercent"
+              name="discountValuePercent"
+              type="number"
+              min={1}
+              max={100}
+              step={1}
+              defaultValue={
+                initialPromotion?.discountValueType === "percent" ? initialPromotion.discountValue : 10
+              }
+              className="mt-1 w-full rounded-md border border-[#e3e4e8] px-3 py-2 text-sm outline-none ring-primary focus:border-primary focus:ring-1"
+            />
+            {fe?.discountValuePercent ? (
+              <p className="mt-1 text-sm text-red-600">{fe.discountValuePercent}</p>
+            ) : null}
+          </div>
         </section>
       ) : (
         <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
@@ -373,6 +513,8 @@ export function PromotionForm({
           Abbrechen
         </Link>
       </div>
+
+      {!isFreeShipping ? <input type="hidden" name="freeShippingCountryScope" value="all" /> : null}
     </form>
   );
 }

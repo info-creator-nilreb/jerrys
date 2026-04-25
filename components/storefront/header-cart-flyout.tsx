@@ -213,7 +213,7 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
     <>
       <button
         type="button"
-        className="absolute top-1/2 right-4 -translate-y-1/2 rounded-md p-2 text-(--foreground-heading) transition-colors hover:text-primary md:right-6"
+        className="rounded-md p-2 text-(--foreground-heading) transition-colors hover:text-primary"
         aria-label={`Warenkorb${cartBadgeCount > 0 ? `, ${cartBadgeCount} Artikel` : ""}`}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}

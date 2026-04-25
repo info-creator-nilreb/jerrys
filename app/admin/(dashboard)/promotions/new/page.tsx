@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PromotionForm } from "@/app/admin/(dashboard)/promotions/promotion-form";
 import type { PromotionTypeId } from "@/lib/promotions/types";
+import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
 
 export const metadata = {
   title: "Neue Promotion",
@@ -12,13 +13,19 @@ export default async function NewPromotionPage({
   searchParams: Promise<{ type?: string }>;
 }) {
   const sp = await searchParams;
-  const t: PromotionTypeId = sp.type === "free_shipping" ? "free_shipping" : "order_discount";
+  const t: PromotionTypeId =
+    sp.type === "free_shipping"
+      ? "free_shipping"
+      : sp.type === "cheapest_item_percent"
+        ? "cheapest_item_percent"
+        : "order_discount";
 
   const start = new Date();
   const end = new Date(start);
   end.setUTCDate(end.getUTCDate() + 30);
   const defaultStartDate = start.toISOString().slice(0, 10);
   const defaultEndDate = end.toISOString().slice(0, 10);
+  const shopShip = await getShopShippingSettings();
 
   return (
     <div className="mx-auto max-w-4xl rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm sm:p-8">
@@ -34,6 +41,7 @@ export default async function NewPromotionPage({
       <div className="mt-8">
         <PromotionForm
           promotionType={t}
+          availableShippingCountryCodes={shopShip.shippingCountryCodes}
           defaultStartDate={defaultStartDate}
           defaultEndDate={defaultEndDate}
         />

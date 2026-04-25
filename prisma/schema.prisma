@@ -150,6 +150,10 @@ model Promotion {
   discountValue          Int      @map("discount_value")
   minimumRequirementType String   @map("minimum_requirement_type")
   minimumCartValueCents  Int?     @map("minimum_cart_value_cents")
+  /// Nur `free_shipping`: `all` = jedes Land, `allow` = nur in `freeShippingCountryCodes`, `deny` = außer diesen.
+  freeShippingCountryScope  String   @default("all") @map("free_shipping_country_scope")
+  /// ISO-3166-1 alpha-2, Großbuchstaben; je nach `freeShippingCountryScope` Positiv- oder Negativliste.
+  freeShippingCountryCodes  String[] @default([]) @map("free_shipping_country_codes")
   startDate              DateTime @map("start_date")
   endDate                DateTime @map("end_date")
   isEnabled              Boolean  @default(false) @map("is_enabled")

@@ -44,6 +44,14 @@ function orderValueForDiscountCents(
   return catalogNetSubtotalCents(lines);
 }
 
+/** Zeilenwert für Rabatt-Basis: EU Brutto, Drittland Netto (wie Warenwert). */
+function lineValueForDiscountCents(line: OrderPriceLineInput, shippingCountryCode: string): number {
+  if (vatAppliesForShippingCountry(shippingCountryCode)) {
+    return line.quantity * line.priceGrossCents;
+  }
+  return line.quantity * netCentsFromGross(line.priceGrossCents, line.taxRatePercent);
+}
+
 /** Versand brutto (Cent) wie im Checkout, inkl. Shop-Frei-Versand-Schwelle – ohne Promotions-Effekt. */
 export function computeReferenceShippingGrossCents(
   lines: OrderPriceLineInput[],
@@ -60,6 +68,30 @@ export function computeReferenceShippingGrossCents(
   });
 }
 
+/** Nur `free_shipping`: Lieferland gemäß Admin-Konfiguration (alle / nur Liste / außer Liste). */
+export function isFreeShippingAllowedForCountry(
+  promotion: PromotionRecord,
+  shippingCountryCode: string,
+): boolean {
+  if (promotion.promotionType !== "free_shipping") return true;
+  const scope = promotion.freeShippingCountryScope ?? "all";
+  const codes = (promotion.freeShippingCountryCodes ?? [])
+    .map((c) => c.trim().toUpperCase())
+    .filter((c) => c.length === 2);
+  const norm = shippingCountryCode.trim().toUpperCase();
+  if (norm.length !== 2) return false;
+  if (scope === "all") return true;
+  if (scope === "allow") {
+    if (codes.length === 0) return false;
+    return codes.includes(norm);
+  }
+  if (scope === "deny") {
+    if (codes.length === 0) return true;
+    return !codes.includes(norm);
+  }
+  return true;
+}
+
 export function computePromotionDiscountOffSubtotalCents(
   promotion: PromotionRecord,
   lines: OrderPriceLineInput[],
@@ -68,6 +100,21 @@ export function computePromotionDiscountOffSubtotalCents(
   if (promotion.promotionType === "free_shipping") {
     return 0;
   }
+
+  if (promotion.promotionType === "cheapest_item_percent") {
+    if (lines.length === 0) return 0;
+    if (promotion.discountValueType !== "percent") return 0;
+    const p = promotion.discountValue;
+    if (p <= 0 || p > 100) return 0;
+    let minLine = Number.POSITIVE_INFINITY;
+    for (const line of lines) {
+      const v = lineValueForDiscountCents(line, shippingCountryCode);
+      if (v > 0 && v < minLine) minLine = v;
+    }
+    if (minLine === Number.POSITIVE_INFINITY || minLine <= 0) return 0;
+    return Math.min(Math.round((minLine * p) / 100), minLine);
+  }
+
   const orderVal = orderValueForDiscountCents(lines, shippingCountryCode);
   if (orderVal <= 0) return 0;
 
@@ -95,6 +142,7 @@ export function computePromotionBenefitCents(
   freeShippingFromSubtotalGrossCents: number | null,
 ): number {
   if (promotion.promotionType === "free_shipping") {
+    if (!isFreeShippingAllowedForCountry(promotion, shippingCountryCode)) return 0;
     return computeReferenceShippingGrossCents(
       lines,
       shippingCountryCode,
@@ -116,12 +164,13 @@ export function evaluatePromotionCodeEntry(
   codePromotion: PromotionRecord | null,
   lines: OrderPriceLineInput[],
   now: Date,
+  shippingCountryCode: string,
 ):
   | { status: "empty" }
   | { status: "invalid"; reason: PromotionValidationReason }
   | { status: "valid"; promotion: PromotionRecord } {
   if (!codeNorm) return { status: "empty" };
-  const v = validatePromotionCodeApplication(codePromotion, lines, now);
+  const v = validatePromotionCodeApplication(codePromotion, lines, now, shippingCountryCode);
   if (!v.ok) return { status: "invalid", reason: v.reason };
   return { status: "valid", promotion: codePromotion! };
 }
@@ -130,6 +179,7 @@ export function validatePromotionCodeApplication(
   promotion: PromotionRecord | null,
   lines: OrderPriceLineInput[],
   now: Date,
+  shippingCountryCode?: string,
 ): { ok: true } | { ok: false; reason: PromotionValidationReason } {
   if (!promotion) {
     return { ok: false, reason: "CODE_NOT_FOUND" };
@@ -149,6 +199,14 @@ export function validatePromotionCodeApplication(
   if (!minCartMet(promotion, lines)) {
     return { ok: false, reason: "MIN_CART_NOT_MET" };
   }
+  if (
+    promotion.promotionType === "free_shipping" &&
+    shippingCountryCode != null &&
+    shippingCountryCode.trim() !== "" &&
+    !isFreeShippingAllowedForCountry(promotion, shippingCountryCode)
+  ) {
+    return { ok: false, reason: "FREE_SHIPPING_COUNTRY_NOT_ALLOWED" };
+  }
   return { ok: true };
 }
 
@@ -156,6 +214,7 @@ export function validateAutomaticPromotionApplication(
   promotion: PromotionRecord,
   lines: OrderPriceLineInput[],
   now: Date,
+  shippingCountryCode?: string,
 ): { ok: true } | { ok: false; reason: PromotionValidationReason } {
   if (promotion.applicationMode !== "automatic") {
     return { ok: false, reason: "WRONG_APPLICATION_MODE" };
@@ -171,6 +230,14 @@ export function validateAutomaticPromotionApplication(
   }
   if (!minCartMet(promotion, lines)) {
     return { ok: false, reason: "MIN_CART_NOT_MET" };
+  }
+  if (
+    promotion.promotionType === "free_shipping" &&
+    shippingCountryCode != null &&
+    shippingCountryCode.trim() !== "" &&
+    !isFreeShippingAllowedForCountry(promotion, shippingCountryCode)
+  ) {
+    return { ok: false, reason: "FREE_SHIPPING_COUNTRY_NOT_ALLOWED" };
   }
   return { ok: true };
 }
@@ -189,6 +256,8 @@ export function promotionValidationMessage(reason: PromotionValidationReason): s
       return "Der Mindestwarenkorbwert für diesen Rabatt ist nicht erreicht.";
     case "WRONG_APPLICATION_MODE":
       return "Dieser Rabatt kann so nicht angewendet werden.";
+    case "FREE_SHIPPING_COUNTRY_NOT_ALLOWED":
+      return "Dieser Code gilt für das gewählte Lieferland nicht.";
     default:
       return "Der Rabattcode konnte nicht angewendet werden.";
   }
@@ -210,7 +279,7 @@ export function pickBestAutomaticPromotion(
 
   for (const p of candidates) {
     if (!isPromotionEligibleNow(p, now)) continue;
-    const v = validateAutomaticPromotionApplication(p, lines, now);
+    const v = validateAutomaticPromotionApplication(p, lines, now, shippingCountryCode);
     if (!v.ok) continue;
     const b = computePromotionBenefitCents(
       p,
@@ -245,18 +314,29 @@ export function resolveCheckoutPromotion(input: {
 }): ResolvedCheckoutPromotion {
   const codeNorm = normalizePromotionCode(input.promotionCode);
 
-  const pt = (r: PromotionRecord): "order_discount" | "free_shipping" =>
-    r.promotionType === "free_shipping" ? "free_shipping" : "order_discount";
+  const pt = (
+    r: PromotionRecord,
+  ): "order_discount" | "free_shipping" | "cheapest_item_percent" => {
+    if (r.promotionType === "free_shipping") return "free_shipping";
+    if (r.promotionType === "cheapest_item_percent") return "cheapest_item_percent";
+    return "order_discount";
+  };
 
   if (codeNorm.length > 0) {
-    const v = validatePromotionCodeApplication(input.codePromotion, input.lines, input.now);
+    const v = validatePromotionCodeApplication(
+      input.codePromotion,
+      input.lines,
+      input.now,
+      input.shippingCountryCode,
+    );
     if (!v.ok) {
       return { kind: "none" };
     }
     const p = input.codePromotion!;
     const discount = computePromotionDiscountOffSubtotalCents(p, input.lines, input.shippingCountryCode);
     const shippingSaved =
-      p.promotionType === "free_shipping"
+      p.promotionType === "free_shipping" &&
+      isFreeShippingAllowedForCountry(p, input.shippingCountryCode)
         ? computeReferenceShippingGrossCents(
             input.lines,
             input.shippingCountryCode,
@@ -298,7 +378,8 @@ export function resolveCheckoutPromotion(input: {
     input.shippingCountryCode,
   );
   const shippingSaved =
-    best.promotionType === "free_shipping"
+    best.promotionType === "free_shipping" &&
+    isFreeShippingAllowedForCountry(best, input.shippingCountryCode)
       ? computeReferenceShippingGrossCents(
           input.lines,
           input.shippingCountryCode,
