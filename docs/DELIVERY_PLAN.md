@@ -1,5 +1,7 @@
 # DELIVERY_PLAN.md
 
+> Historical V1 delivery plan. Completed foundations remain useful, but new platform work follows [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md).
+
 ## Delivery Philosophy
 Implement V1 in small, vertically useful increments. Avoid large horizontal phases that delay feedback.
 

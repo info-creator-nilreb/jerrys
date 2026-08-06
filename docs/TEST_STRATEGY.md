@@ -5,9 +5,13 @@ Testing must focus on reliability of commerce-critical flows, not on achieving v
 
 Primary risks to control:
 - duplicate orders
+- duplicate captures or refunds
 - invalid state transitions
 - duplicate emails
 - price manipulation
+- stock overselling
+- workshop overbooking
+- forged or replayed provider webhooks
 - broken checkout
 - broken admin status handling
 
@@ -17,8 +21,10 @@ Test pure logic and isolated business rules.
 
 Priority targets:
 - order state machine transitions
+- payment, fulfillment, and booking state machine transitions
 - guard conditions
 - pricing calculations
+- inventory and workshop capacity reservation rules
 - order number generation format
 - snapshot mapping logic
 - email deduplication logic
@@ -34,6 +40,9 @@ Priority targets:
 - write email log records
 - admin product CRUD service behavior
 - authorization checks on admin use cases
+- concurrent last-item and last-seat reservations
+- webhook inbox deduplication and transactional outbox persistence
+- payment finalization and refund idempotency
 
 ### 3. End-to-End Tests
 Test the most important user flows through the running application.
@@ -81,6 +90,8 @@ Must exist for:
 - `Playwright` for E2E tests
 - `Testing Library` for React component tests only where helpful
 - Prisma test database for integration tests
+- provider fixtures and sandbox-backed contract tests
+- `k6` for checkout, webhook, and reservation load scenarios
 
 ## Recommended Commands
 ```bash
@@ -94,11 +105,29 @@ pnpm test:e2e
 
 ## CI Quality Gate
 Every pull request or major change should pass:
-1. lint
-2. typecheck
-3. unit tests
-4. integration tests
-5. critical E2E smoke tests
+1. architecture boundary check
+2. lint
+3. typecheck
+4. unit tests
+5. integration tests
+6. critical E2E smoke tests
+7. SAST, secret scan, and high-severity dependency audit
+8. Lighthouse budgets for user-facing changes
+
+`npm run validate` is the local baseline. Provider contract, E2E, security, and load suites are added according to story risk and remain separate where credentials or running infrastructure are required.
+
+## Contract and Webhook Tests
+- keep signed provider payload fixtures without real customer data or secrets
+- test valid, invalid, expired, duplicated, and reordered events
+- assert provider API version and response mapping
+- verify timeout, retry, rate-limit, and provider-error behavior
+
+## Concurrency and Resilience Tests
+- race two transactions for the final product unit and final workshop seat
+- repeat checkout, capture, refund, and label commands with the same idempotency key
+- simulate failure after provider success but before internal completion
+- verify restartable outbox delivery and reconciliation
+- test recovery from queue delay and duplicate delivery
 
 ## Fixture Strategy
 - keep fixtures small and explicit

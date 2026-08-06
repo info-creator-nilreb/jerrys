@@ -1,0 +1,23 @@
+{
+  "name": "jerrys",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+  "forwardPorts": [3001],
+  "portsAttributes": {
+    "3001": {
+      "label": "Storefront (Next.js)",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "remoteEnv": {
+    "PORT": "3001"
+  },
+  "postCreateCommand": "npm ci",
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode", "Prisma.prisma"]
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  }
+}

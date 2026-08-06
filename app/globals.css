@@ -13,6 +13,16 @@
   --primary-hover: #74a320;
   --surface-muted: #e9e8e8;
   --surface-soft: #fafafa;
+  --surface-subtle: #f6f6f7;
+  --surface-raised: #ffffff;
+  --border-subtle: #e1e3e5;
+  --admin-canvas: #f1f2f3;
+  --semantic-success: #008060;
+  --semantic-warning: #916a00;
+  --semantic-critical: #b42318;
+  --radius-control: 0.5rem;
+  --radius-card: 0.75rem;
+  --shadow-overlay: 0 0.25rem 1rem rgb(0 0 0 / 0.12);
   --accent-green: #4c864d;
   --accent-teal: #26b6cf;
   --accent-slate: #758ca3;

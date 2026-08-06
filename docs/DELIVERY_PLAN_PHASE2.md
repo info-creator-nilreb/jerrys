@@ -1,5 +1,7 @@
 # DELIVERY_PLAN_PHASE2.md
 
+> Historical Phase-2 plan. Open platform work is reprioritized in [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md).
+
 Fortführung von [DELIVERY_PLAN.md](./DELIVERY_PLAN.md) (Epics 1–6). Gleiche Philosophie: kleine, vertikal nutzbare Inkremente.
 
 **Stand (Kurzüberblick, Stand Repo):** Epics 7–9 sind teils bereits im Code umgesetzt; Details und offene Feinarbeit siehe unter jedem Epic. Zusätzlich umgesetzt: **Startseite Marketing** (Amazon-Zitat-Slider + Social-Bilder, Admin `/admin/startseite`, Migration `20260412120000_homepage_marketing_content`).

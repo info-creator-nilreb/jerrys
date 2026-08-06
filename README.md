@@ -1,5 +1,26 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Architecture and Delivery
+
+The shop is developed as a modular monolith and deployed on Vercel.
+
+- [Engineering rules](docs/AGENT.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Platform roadmap and epics](docs/PLATFORM_ROADMAP.md)
+- [Storefront and admin design system](docs/DESIGN_SYSTEM.md)
+- [Privacy, security, updateability, and performance guardrails](docs/QUALITY_GUARDRAILS.md)
+- [Vercel operations baseline](docs/OPERATIONS.md)
+- [Cloud development and remote builds](docs/CLOUD_DEVELOPMENT.md)
+- [GitHub + Vercel setup (checklist)](docs/VERCEL_GITHUB_SETUP.md)
+- [Architecture decisions](docs/adr/README.md)
+- [Test strategy](docs/TEST_STRATEGY.md)
+
+Run the local quality baseline before opening a pull request:
+
+```bash
+npm run validate
+```
+
 ## Getting Started
 
 First, run the development server:

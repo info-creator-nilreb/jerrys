@@ -10,6 +10,15 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **Regel:** Storefront, **Admin-Login**, **Admin-Dashboard** (`AdminShell`) und alle primären Aktionen (Haupt-Buttons, zentrale Links, Nav-Aktivzustand, Avatar-Akzente, Pflichtfeld-Sterne, Fokus) nutzen dieses Grün — nicht Referenz-Blau aus Drittanbieter-UI (z. B. Shopware-Screenshots).
 - **Layout-Hinweis:** Die **Sidebar** darf dunkles Navy (`#182d4d`) als Hintergrund behalten (Lesbarkeit, Shopware-ähnliche Struktur); **interaktive Akzente** darauf sind trotzdem **Primärgrün** (nicht Blau).
 
+## Design-Prämissen
+
+- Verbindliche Grundlage für Storefront und administratives Backend: `docs/DESIGN_SYSTEM.md`.
+- „Shopify-like“ bedeutet ruhige Hierarchie, bekannte Commerce-Muster, neutrale Flächen, klare Zustände und geringe visuelle Komplexität; keine pixelgenaue Shopify-Kopie.
+- Pro Ansicht nur eine visuell dominante Primäraktion. Sekundäre und destruktive Aktionen bleiben klar unterscheidbar.
+- Vor neuen Einzelwerten bestehende Design-Tokens aus `app/globals.css` verwenden. Bestehende hart codierte Werte werden beim Anfassen der jeweiligen Ansicht schrittweise migriert, nicht durch einen unkontrollierten Komplettumbau.
+- Backend-Oberflächen zeigen den autoritativen Serverzustand. Zahlung, Refund, Bestand, Buchung, Rollen und Versand dürfen nicht nur optimistisch als erfolgreich dargestellt werden.
+- Neue UI berücksichtigt leere, ladende, erfolgreiche, fehlgeschlagene, deaktivierte und mobile Zustände sowie WCAG 2.2 AA.
+
 ## Icons (Lucide React)
 
 - Alle **UI-Icons** im Anwendungscode nutzen **`lucide-react`** (benannte Komponenten aus `lucide-react`). Keine handgeschriebenen Inline-`<svg>` für Standard-Icons in TSX/JSX.

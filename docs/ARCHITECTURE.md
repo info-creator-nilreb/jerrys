@@ -17,7 +17,33 @@ Build a **modular monolith** using a single Next.js application.
 - Playwright for end-to-end tests
 
 ## Why This Architecture
-For a shop with only two products, separated frontend/backend systems would increase infrastructure and cognitive load without meaningful business value. A modular monolith is simpler to deploy, easier to reason about, and still allows clean separation of concerns.
+The business requires strong consistency between orders, payments, stock, and workshop capacity. Separating these concerns into networked services would add distributed transactions, eventual consistency, service authentication, and operational overhead without a demonstrated scaling need. A modular monolith is simpler to deploy and reason about while still enforcing clean domain boundaries.
+
+This decision is recorded in [ADR-0001](./adr/0001-modular-monolith.md). Extraction into a service requires a new ADR and measurable evidence that a module needs independent scaling, deployment, ownership, or availability.
+
+## Bounded Contexts
+New commerce capabilities are organized into these modules:
+
+- `catalog`: products, variants, collections, prices, and media
+- `inventory`: stock movements, reservations, and availability
+- `customers`: identities, profiles, addresses, consent, and privacy operations
+- `orders`: cart finalization, orders, line snapshots, and promotions
+- `payments`: payment attempts, provider transactions, webhooks, refunds, and reconciliation
+- `workshops`: sessions, capacity, reservations, bookings, and attendance
+- `fulfillment`: shipments, labels, tracking, pickup, and returns
+- `integrations`: provider adapters, email, object storage, and durable jobs
+
+Each module exposes a public API from `features/<module>/index.ts`. Code outside a module must not import its `domain`, `application`, or `infrastructure` internals. Cross-module collaboration uses public application services or published events. `npm run architecture:check` enforces this import rule.
+
+Existing code under `lib/` is migrated incrementally when an affected use case is changed. Epic 0 does not perform a risky mechanical move of working commerce code.
+
+## Runtime and Persistence
+- One Next.js application is deployed to Vercel.
+- PostgreSQL is the transactional source of truth.
+- Provider callbacks use Route Handlers; UI-coupled mutations may use Server Actions.
+- Durable asynchronous work uses a persistent outbox and a queue/job provider. Critical work must not depend on in-memory timers.
+- Product media, invoices, and shipping labels use private or public object storage according to data classification. The Vercel filesystem is not persistent storage.
+- Preview, staging, and production are isolated environments with separate data and provider credentials.
 
 ## High-Level Structure
 ```text
@@ -204,33 +230,15 @@ Suggested fields:
 - payloadHash nullable
 - createdAt
 
-## Order State Machine
-### States
-- `draft`
-- `pending_payment`
-- `paid`
-- `processing`
-- `shipped`
-- `completed`
-- `cancelled`
-- `refunded`
+## State Machines
+Order, payment, fulfillment, and workshop booking lifecycles are separate:
 
-### Allowed transitions
-- `draft` -> `pending_payment` via `PLACE_ORDER`
-- `pending_payment` -> `paid` via `CONFIRM_PAYMENT`
-- `paid` -> `processing` via `START_PROCESSING`
-- `processing` -> `shipped` via `MARK_AS_SHIPPED`
-- `shipped` -> `completed` via `COMPLETE_ORDER`
-- `pending_payment` -> `cancelled` via `CANCEL_ORDER`
-- `paid` -> `cancelled` via `CANCEL_ORDER` only if business rule permits and fulfillment has not started
-- `paid` -> `refunded` via `REFUND_ORDER`
-- `shipped` -> `refunded` via `REFUND_ORDER` only if business rule permits
+- Order: `pending_payment`, `confirmed`, `cancelled`, `completed`
+- Payment: `pending`, `processing`, `succeeded`, `partially_refunded`, `refunded`, `failed`, `cancelled`
+- Fulfillment: `unfulfilled`, `preparing`, `shipped`, `delivered`, `returned`
+- Booking: `held`, `confirmed`, `cancelled`, `attended`, `no_show`, `refunded`, `expired`
 
-### Required behaviors
-- transition validation is centralized
-- invalid transitions fail clearly
-- every transition writes history
-- transitions may emit domain events
+Exact transitions and guards are defined in the owning domain module. Every transition is centrally validated and records actor, timestamp, reason, and correlation ID. A payment provider transaction is recorded before aggregate payment state changes. Browser redirects are never authoritative payment confirmation.
 
 ## Domain Events
 Suggested initial events:
@@ -244,6 +252,13 @@ Suggested initial events:
 - `EmailRequested`
 - `EmailSent`
 - `EmailFailed`
+- `StockReserved`
+- `StockReservationExpired`
+- `WorkshopCapacityHeld`
+- `WorkshopBookingConfirmed`
+- `ShipmentLabelRequested`
+
+Domain events are persisted through a transactional outbox before asynchronous publication. Consumers are idempotent.
 
 ## Application Layer Use Cases
 Examples:
@@ -280,15 +295,24 @@ Rules:
 - `createdAt` and `updatedAt` required on all core entities
 - unique constraints on SKU, order number, slug where applicable
 - use soft delete only where there is a real business reason; prefer `isActive` for products
+- migrations use expand/contract for changes that cannot be deployed atomically
+- prices, addresses, tax rates, product names, and workshop session details are snapshotted on orders
+- stock and workshop capacity changes use atomic database operations
 
 ## Logging and Observability
 - use structured logging
 - all order transitions logged
 - all email attempts logged
 - critical checkout errors logged with correlation ID if possible
+- attach `requestId`, `orderId`, `paymentId`, and `eventId` where applicable
+- never log secrets, payment credentials, complete addresses, or unnecessary personal data
+- alert on webhook failures, outbox backlog, payment reconciliation differences, negative stock, and capacity inconsistencies
 
 ## UI Principles
 - minimal, fast, storefront-first
 - admin UI should be utility-focused, not decorative
 - keep admin actions explicit and reversible where possible
 - do not hide important status information
+- use the shared premises and tokens in [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md)
+- expose authoritative payment, stock, booking, and fulfillment state instead of optimistic success
+- keep Shopify-like interaction familiarity without copying proprietary assets or layouts
