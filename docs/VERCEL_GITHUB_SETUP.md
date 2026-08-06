@@ -55,6 +55,8 @@ Optional je Feature: PayPal, Seed-Admin nur für Staging, siehe [`.env.example`]
 
 Schema-Änderungen nicht blind in den Build legen, solange Preview und Production getrennte Datenbanken haben.
 
+**Erster Import:** Der Build kann auch starten, wenn `DATABASE_URL` noch fehlt — die Sitemap enthält dann nur statische URLs. Für einen funktionierenden Shop **Preview/Production** brauchst du trotzdem `DATABASE_URL` (und übrige Pflicht-Env) vor dem ersten sinnvollen Deploy.
+
 Empfohlen:
 
 1. Migration lokal oder in CI gegen Staging testen (`npx prisma migrate deploy`).
