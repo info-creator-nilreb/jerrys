@@ -1,4 +1,6 @@
 import type { PrismaClient, ShippingCarrier } from "@/app/generated/prisma/client";
+import { releaseStockReservationsForOrder } from "@/features/inventory";
+import { fulfillmentStatusAfterOrderTransition } from "@/features/orders";
 import { sendOrderCancelledIfNeeded } from "@/lib/email/order-cancelled";
 import { sendOrderRefundedIfNeeded } from "@/lib/email/order-refunded";
 import { sendOrderShippedIfNeeded } from "@/lib/email/order-shipped";
@@ -64,22 +66,30 @@ export async function applyOrderStatusTransition(
         return { ok: false, error: "shipment_required" } as const;
       }
 
-      const w = await decrementWarehouseForShippedOrder(tx, order.items);
+      const w = await decrementWarehouseForShippedOrder(tx, order.items, orderId);
       if (!w.ok) return { ok: false, error: "insufficient_warehouse" } as const;
     }
 
     if (toStatus === "retoure" && (from === "shipped" || from === "completed")) {
-      const r = await restoreStockOnOrderCancelled(tx, "shipped", order.items);
+      const r = await restoreStockOnOrderCancelled(tx, "shipped", order.items, orderId);
       if (!r.ok) return { ok: false, error: "insufficient_warehouse" } as const;
     }
 
     if (toStatus === "cancelled") {
-      const r = await restoreStockOnOrderCancelled(tx, from, order.items);
+      if (from === "pending_payment") {
+        await releaseStockReservationsForOrder(tx, {
+          orderId,
+          correlationId: `cancel:${orderId}`,
+        });
+      }
+      const r = await restoreStockOnOrderCancelled(tx, from, order.items, orderId);
       if (!r.ok) return { ok: false, error: "insufficient_warehouse" } as const;
     }
 
     let invoiceNumber: string | undefined;
     let invoiceIssuedAt: Date | undefined;
+
+    const nextFulfillment = fulfillmentStatusAfterOrderTransition(toStatus);
 
     if (toStatus === "shipped" && !order.invoiceNumber) {
       const inv = await allocateNextInvoiceNumber(tx);
@@ -91,6 +101,7 @@ export async function applyOrderStatusTransition(
       where: { id: orderId },
       data: {
         status: toStatus,
+        ...(nextFulfillment ? { fulfillmentStatus: nextFulfillment } : {}),
         ...(toStatus === "shipped" && options?.shipment
           ? {
               shippingCarrier: options.shipment.carrier,

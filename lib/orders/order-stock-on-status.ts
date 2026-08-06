@@ -1,4 +1,8 @@
 import type { Prisma } from "@/app/generated/prisma/client";
+import {
+  recordWarehouseShipmentMovements,
+  releaseStockReservationsForOrder,
+} from "@/features/inventory";
 
 export type OrderLineForStock = { productId: string; quantity: number };
 
@@ -12,6 +16,7 @@ export type StockAdjustResult = StockAdjustOk | StockAdjustError;
 export async function decrementWarehouseForShippedOrder(
   tx: Prisma.TransactionClient,
   items: OrderLineForStock[],
+  orderId?: string,
 ): Promise<StockAdjustResult> {
   for (const line of items) {
     const p = await tx.product.findUnique({
@@ -28,18 +33,36 @@ export async function decrementWarehouseForShippedOrder(
       data: { stockQuantity: { decrement: line.quantity } },
     });
   }
+  if (orderId) {
+    await recordWarehouseShipmentMovements(tx, {
+      orderId,
+      lines: items,
+      correlationId: `ship:${orderId}`,
+    });
+  }
   return { ok: true };
 }
 
 /**
- * Bei Storno: Verfügbarkeit zurückgeben; war die Sendung schon raus, auch Lager zurückbuchen.
+ * Bei Storno: Reservierungen freigeben oder Legacy-Bestand zurückbuchen.
  */
 export async function restoreStockOnOrderCancelled(
   tx: Prisma.TransactionClient,
   fromStatus: string,
   items: OrderLineForStock[],
+  orderId?: string,
 ): Promise<StockAdjustResult> {
   if (fromStatus === "paid" || fromStatus === "processing") {
+    if (orderId) {
+      const { releasedCount } = await releaseStockReservationsForOrder(tx, {
+        orderId,
+        includeCommitted: true,
+        correlationId: `cancel:${orderId}`,
+      });
+      if (releasedCount > 0) {
+        return { ok: true };
+      }
+    }
     for (const line of items) {
       await tx.product.update({
         where: { id: line.productId },

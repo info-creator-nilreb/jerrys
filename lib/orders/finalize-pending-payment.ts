@@ -1,4 +1,7 @@
 import type { PrismaClient } from "@/app/generated/prisma/client";
+import {
+  commitStockReservationsForOrder,
+} from "@/features/inventory";
 import { createOrderEvent, ORDER_EVENT_STATUS_CHANGED } from "@/lib/orders/order-events";
 
 export type FinalizePendingPaymentResult =
@@ -6,8 +9,8 @@ export type FinalizePendingPaymentResult =
   | { ok: false; error: "not_found" | "invalid_status" | "insufficient_stock" | "transaction_failed" };
 
 /**
- * Nach erfolgreicher Online-Zahlung (PayPal Capture o. Ä.): **verfügbaren** Bestand abbuchen,
- * Bestellung auf `paid`, Historie, Zahlungszeile. Physisches Lager (`stock_quantity`) erst bei „versandt“.
+ * Nach erfolgreicher Online-Zahlung (PayPal Capture o. Ä.): Reservierung committen
+ * (oder Legacy-Abbuchung ohne Reservierung), Bestellung auf `paid`, Historie, Zahlungszeile.
  * Idempotent: bei bereits `paid` ohne erneute Bestandsbuchung.
  */
 export async function finalizeOrderAfterPendingPaymentCapture(
@@ -32,21 +35,27 @@ export async function finalizeOrderAfterPendingPaymentCapture(
         return { ok: false, error: "invalid_status" };
       }
 
-      for (const line of order.items) {
-        const p = await tx.product.findUnique({
-          where: { id: line.productId },
-          select: { availableQuantity: true },
-        });
-        if (!p || p.availableQuantity < line.quantity) {
-          return { ok: false, error: "insufficient_stock" };
-        }
-      }
+      const { committedCount } = await commitStockReservationsForOrder(tx, {
+        orderId: params.orderId,
+        correlationId: params.providerRef,
+      });
 
-      for (const line of order.items) {
-        await tx.product.update({
-          where: { id: line.productId },
-          data: { availableQuantity: { decrement: line.quantity } },
-        });
+      if (committedCount === 0) {
+        for (const line of order.items) {
+          const p = await tx.product.findUnique({
+            where: { id: line.productId },
+            select: { availableQuantity: true },
+          });
+          if (!p || p.availableQuantity < line.quantity) {
+            return { ok: false, error: "insufficient_stock" };
+          }
+        }
+        for (const line of order.items) {
+          await tx.product.update({
+            where: { id: line.productId },
+            data: { availableQuantity: { decrement: line.quantity } },
+          });
+        }
       }
 
       await tx.order.update({
