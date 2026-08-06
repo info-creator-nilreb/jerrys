@@ -7,6 +7,7 @@ import { OrderStatusPanel } from "@/app/admin/(dashboard)/orders/order-status-pa
 import { CopyTextButton } from "@/app/admin/(dashboard)/orders/copy-text-button";
 import { OrderDetailTabs } from "@/app/admin/(dashboard)/orders/order-detail-tabs";
 import { OrderInvoiceGenerateButton } from "@/app/admin/(dashboard)/orders/order-invoice-generate-button";
+import { fulfillmentStatusLabel } from "@/features/orders";
 import { formatPrice } from "@/lib/catalog/format";
 import { EMAIL_ORDER_SHIPPED } from "@/lib/email/email-types";
 import { isInvoiceAllocationAllowedForOrderStatus } from "@/lib/invoice/allocate-invoice-for-order";
@@ -146,9 +147,31 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         <p className="mt-1 text-sm text-[#6b7280]">
           Technischer Status:{" "}
           <span className="font-medium text-[#1f2937]">{orderStatusLabel(order.status)}</span>
+          {" · "}
+          Fulfillment:{" "}
+          <span className="font-medium text-[#1f2937]">
+            {fulfillmentStatusLabel(order.fulfillmentStatus)}
+          </span>
         </p>
         <OrderStatusPanel orderId={order.id} order={order} />
       </section>
+
+      {order.stockReservations.length > 0 ? (
+        <section className="border-t border-[#e8eaed] pt-6">
+          <h2 className="text-sm font-semibold text-[#374151]">Bestandsreservierungen</h2>
+          <ul className="mt-3 space-y-2 text-sm">
+            {order.stockReservations.map((r) => (
+              <li key={r.id} className="flex flex-wrap gap-x-2 text-[#374151]">
+                <span className="font-medium">{r.product.title}</span>
+                <span className="text-[#6b7280]">
+                  {r.quantity} Stk. · {r.status}
+                  {r.expiresAt ? ` · läuft ab ${dateFmt.format(r.expiresAt)}` : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {order.shippingCarrier && order.trackingNumber ? (
         <section className="border-t border-[#e8eaed] pt-6">

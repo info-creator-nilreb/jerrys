@@ -1,5 +1,6 @@
 import type { Prisma } from "@/app/generated/prisma/client";
 import type { ReservationLine } from "@/features/inventory/domain/reservation-line";
+import { reservationExpiresAt } from "@/features/inventory/domain/reservation-ttl";
 
 export class InsufficientStockError extends Error {
   readonly code = "insufficient_stock" as const;
@@ -42,6 +43,7 @@ export async function reserveStockForOrder(
         productId: line.productId,
         quantity: line.quantity,
         status: "active",
+        expiresAt: reservationExpiresAt(),
       },
     });
     await tx.stockMovement.create({

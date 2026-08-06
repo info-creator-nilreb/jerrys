@@ -13,9 +13,81 @@ Referenz: [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md#epic-1-commerce-core)
 | Ereignishistorie + Outbox | `order_events` + `integration_outbox_messages` (transaktional via `createOrderEvent`) |
 | Webhook-/Capture-Dedupe | `webhook_inbox_entries` für PayPal-Capture (`completePayPalCaptureFlow`) |
 
+## Ergänzt (zweites Inkrement)
+
+- Reservierungs-TTL (2 h) + `expireStaleStockReservations` + Route `POST /api/internal/commerce-maintenance`
+- Outbox-Batch-Publisher (`publishIntegrationOutboxBatch`) über dieselbe Route
+- Admin-Bestelldetail: `fulfillment_status` + Liste `stock_reservations`
+
 ## Bewusst noch offen (Folge-Stories)
 
-- Outbox-Publisher / Queue-Worker (nur Persistenz, kein Versand)
-- Reservierungs-Ablauf (TTL / Cron) für hängende `pending_payment`
-- Admin-UI: explizite Anzeige `fulfillment_status` statt nur abgeleiteter Triple-Achse
+- Outbox-Publisher an echte Queue koppeln (MVP markiert Nachrichten als `published`)
 - Vollständige Entkopplung des aggregierten `orders.status` von Zahlung/Versand
+
+## Testen (Epic 1)
+
+### Automatisiert (lokal oder Cloud Agent)
+
+```bash
+npm run validate
+```
+
+Relevante Unit-Tests: `fulfillment-status-machine`, `payment-status-machine`, `webhook-inbox`, `order-events`, `reservation-ttl`.
+
+Optional nur Commerce-Tests:
+
+```bash
+npm run test:unit -- tests/unit/fulfillment-status-machine.test.ts tests/unit/payment-status-machine.test.ts tests/unit/webhook-inbox.test.ts tests/unit/order-events.test.ts tests/unit/reservation-ttl.test.ts
+npm run test:integration -- tests/integration/commerce-maintenance-route.test.ts
+```
+
+### Dev-Server
+
+```bash
+npm run dev
+```
+
+Standard: **http://127.0.0.1:3001** (Cloud-Umgebung: Port 3001, `DATABASE_URL` und PayPal/Auth aus Dashboard-Secrets).
+
+### Manueller Checkout (Reservierung + Zahlung)
+
+Voraussetzungen: aktives Produkt mit `available_quantity` ≥ 1, PayPal Sandbox konfiguriert (`PAYPAL_*`).
+
+1. Storefront: Produkt in den Warenkorb, Checkout ausfüllen, PayPal starten.
+2. In der DB (oder Admin-Bestelldetail): Bestellung `pending_payment`, Abschnitt **Bestandsreservierungen** (`active`, Ablaufzeit ~2 h).
+3. **`available_quantity`** am Produkt ist um die Bestellmenge reduziert.
+4. PayPal-Zahlung abschließen → Status `paid`, Reservierung `committed`, Outbox-Einträge `pending` (bis Maintenance läuft).
+5. Capture erneut auslösen (Replay) → kein doppelter Bestandsabbuch; Inbox-Dedupe.
+
+### Admin
+
+1. `/admin/login` → Bestellung öffnen.
+2. **Fulfillment**-Label neben technischem Status; Reservierungen sichtbar bei offenen PayPal-Bestellungen.
+3. Status „In Bearbeitung“ → „Versandt“: `fulfillment_status` → `shipped`, `stock_movements` mit `warehouse_ship`.
+
+### Maintenance (Ablauf + Outbox)
+
+Secret in `.env` oder Cloud-Secrets:
+
+```bash
+COMMERCE_MAINTENANCE_SECRET="…"   # z. B. openssl rand -hex 32
+```
+
+Aufruf:
+
+```bash
+curl -sS -X POST "http://127.0.0.1:3001/api/internal/commerce-maintenance" \
+  -H "Authorization: Bearer $COMMERCE_MAINTENANCE_SECRET"
+```
+
+Antwort u. a. `expiredReservations`, `outbox.published`. Für abgelaufene Reservierungen: Bestand zurück, `pending_payment` → `cancelled`.
+
+### SQL-Snippets (Supabase/psql)
+
+```sql
+SELECT id, status, fulfillment_status FROM orders ORDER BY created_at DESC LIMIT 5;
+SELECT * FROM stock_reservations WHERE order_id = '…';
+SELECT status, event_type, created_at FROM integration_outbox_messages ORDER BY created_at DESC LIMIT 10;
+SELECT * FROM webhook_inbox_entries ORDER BY received_at DESC LIMIT 5;
+SELECT reason, quantity_delta, created_at FROM stock_movements ORDER BY created_at DESC LIMIT 20;
+```

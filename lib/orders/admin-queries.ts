@@ -66,6 +66,12 @@ export async function getOrderDetailForAdmin(id: string) {
       statusHistory: { orderBy: { createdAt: "asc" } },
       events: { orderBy: { createdAt: "asc" } },
       payments: { orderBy: { createdAt: "desc" } },
+      stockReservations: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          product: { select: { title: true } },
+        },
+      },
     },
   });
 }
