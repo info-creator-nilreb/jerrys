@@ -136,7 +136,7 @@ export function OrderStatusPanel({
                   disabled={pending || shipPending || !canTransition}
                   aria-busy={pending || shipPending}
                   onChange={(e) => handleDimensionChange(dim, e.target.value)}
-                  className="h-11 w-full min-w-0 flex-1 cursor-pointer appearance-none rounded-full border-0 bg-transparent pl-4 pr-10 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="relative z-0 h-11 w-full min-w-0 flex-1 cursor-pointer appearance-none rounded-full border-0 bg-transparent pl-4 pr-10 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {adminTripleOptions(dim).map((opt) => {
                     const enabled = isTripleOptionEnabled(order, dim, opt);
@@ -148,7 +148,7 @@ export function OrderStatusPanel({
                   })}
                 </select>
                 <ChevronDown
-                  className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 opacity-70"
+                  className="pointer-events-none absolute top-1/2 right-3 z-10 size-4 -translate-y-1/2 text-current opacity-90"
                   aria-hidden
                 />
               </div>

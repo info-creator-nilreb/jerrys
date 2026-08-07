@@ -56,6 +56,9 @@ export default async function AdminOrdersPage() {
                 <th scope="col" className="px-4 py-3 font-medium">
                   Summe
                 </th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  <span className="sr-only">Aktion</span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#e8eaed]">
