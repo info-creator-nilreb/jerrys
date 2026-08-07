@@ -4,6 +4,8 @@ import type { PrismaClient } from "@/app/generated/prisma/client";
 export const ORDER_EVENT_PLACED = "order.placed" as const;
 export const ORDER_EVENT_STATUS_CHANGED = "order.status_changed" as const;
 export const ORDER_EVENT_EMAIL_DELIVERY = "email.delivery" as const;
+/** Verfügbarer Shop-Bestand wurde bei Bestellaufgabe (`pending_payment`) reserviert. */
+export const ORDER_EVENT_AVAILABLE_STOCK_RESERVED = "inventory.available_reserved" as const;
 
 /**
  * Schreibt ein Ereignis in den Bestell-Auditstrom (`order_events`).

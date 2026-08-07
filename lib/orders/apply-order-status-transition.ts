@@ -6,6 +6,10 @@ import { allocateNextInvoiceNumber } from "@/lib/invoice/allocate-invoice-number
 import { createOrderEvent, ORDER_EVENT_STATUS_CHANGED } from "@/lib/orders/order-events";
 import { isAllowedOrderStatusTransition } from "@/lib/orders/order-status-machine";
 import {
+  orderHasAvailableStockReserved,
+  releaseAvailableStockReservation,
+} from "@/lib/orders/order-available-stock";
+import {
   decrementWarehouseForShippedOrder,
   restoreStockOnOrderCancelled,
 } from "@/lib/orders/order-stock-on-status";
@@ -74,8 +78,16 @@ export async function applyOrderStatusTransition(
     }
 
     if (toStatus === "cancelled") {
-      const r = await restoreStockOnOrderCancelled(tx, from, order.items);
-      if (!r.ok) return { ok: false, error: "insufficient_warehouse" } as const;
+      if (from === "pending_payment") {
+        const hadReservation = await orderHasAvailableStockReserved(tx, orderId);
+        if (hadReservation) {
+          const r = await releaseAvailableStockReservation(tx, order.items);
+          if (!r.ok) return { ok: false, error: "insufficient_warehouse" } as const;
+        }
+      } else {
+        const r = await restoreStockOnOrderCancelled(tx, from, order.items);
+        if (!r.ok) return { ok: false, error: "insufficient_warehouse" } as const;
+      }
     }
 
     let invoiceNumber: string | undefined;

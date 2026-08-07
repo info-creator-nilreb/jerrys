@@ -39,6 +39,10 @@ export async function restoreStockOnOrderCancelled(
   fromStatus: string,
   items: OrderLineForStock[],
 ): Promise<StockAdjustResult> {
+  /** `pending_payment` ohne Reservierung (Legacy): nichts zurückbuchen — siehe `releaseAvailableStockReservation`. */
+  if (fromStatus === "pending_payment") {
+    return { ok: true };
+  }
   if (fromStatus === "paid" || fromStatus === "processing") {
     for (const line of items) {
       await tx.product.update({

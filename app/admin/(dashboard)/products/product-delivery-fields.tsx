@@ -56,7 +56,8 @@ export function ProductDeliveryFields({ state, defaults }: Props) {
             Verfügbarer Bestand (Shop)
           </label>
           <p className="text-[11px] leading-snug text-[#9ca3af]">
-            Für Produktseite, Warenkorb und Checkout; wird bei erfolgreicher Zahlung reduziert.
+            Für Produktseite, Warenkorb und Checkout; wird bei Bestellaufgabe (Zahlung ausstehend) reserviert und
+            bei Storno wieder freigegeben.
           </p>
           <input
             id="availableQuantity"

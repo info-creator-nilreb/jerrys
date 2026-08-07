@@ -6,6 +6,7 @@ import { generateOrderNumber } from "@/lib/checkout/order-number";
 import { netCentsFromGross } from "@/lib/catalog/pricing";
 import { sendOrderConfirmationIfNeeded } from "@/lib/email/order-confirmation";
 import { ORDER_EVENT_PLACED } from "@/lib/orders/order-events";
+import { reserveAvailableStockForOrder } from "@/lib/orders/order-available-stock";
 import { getPrisma } from "@/lib/db/prisma";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 import { createPayPalCheckoutOrder } from "@/lib/payments/paypal-orders";
@@ -394,6 +395,15 @@ async function createPendingPayPalOrderFromParsedRaw(
       });
       newOrderId = created.id;
 
+      const stockLines = activeLines.map((line) => ({
+        productId: line.product.id,
+        quantity: line.quantity,
+      }));
+      const stockRes = await reserveAvailableStockForOrder(tx, created.id, stockLines);
+      if (!stockRes.ok) {
+        throw new Error("INSUFFICIENT_AVAILABLE_STOCK");
+      }
+
       if (resolved.kind === "applied") {
         await tx.promotion.update({
           where: { id: resolved.promotionId },
@@ -404,6 +414,12 @@ async function createPendingPayPalOrderFromParsedRaw(
       await tx.cartLine.deleteMany({ where: { cartId } });
     });
   } catch (e) {
+    if (e instanceof Error && e.message === "INSUFFICIENT_AVAILABLE_STOCK") {
+      return {
+        ok: false,
+        error: "Der verfügbare Bestand hat sich geändert. Bitte Warenkorb prüfen und erneut bestellen.",
+      };
+    }
     log.error("order_create_failed", {
       orderNumber,
       idempotencyKey: d.idempotencyKey,

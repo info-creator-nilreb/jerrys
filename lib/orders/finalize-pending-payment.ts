@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@/app/generated/prisma/client";
+import { orderHasAvailableStockReserved } from "@/lib/orders/order-available-stock";
 import { createOrderEvent, ORDER_EVENT_STATUS_CHANGED } from "@/lib/orders/order-events";
 
 export type FinalizePendingPaymentResult =
@@ -6,8 +7,9 @@ export type FinalizePendingPaymentResult =
   | { ok: false; error: "not_found" | "invalid_status" | "insufficient_stock" | "transaction_failed" };
 
 /**
- * Nach erfolgreicher Online-Zahlung (PayPal Capture o. Ä.): **verfügbaren** Bestand abbuchen,
- * Bestellung auf `paid`, Historie, Zahlungszeile. Physisches Lager (`stock_quantity`) erst bei „versandt“.
+ * Nach erfolgreicher Online-Zahlung (PayPal Capture o. Ä.): Bestellung auf `paid`, Historie, Zahlungszeile.
+ * Verfügbarer Shop-Bestand wird in der Regel schon bei Bestellaufgabe reserviert; ältere Bestellungen
+ * ohne Reservierung buchen hier noch ab. Physisches Lager (`stock_quantity`) erst bei „versandt“.
  * Idempotent: bei bereits `paid` ohne erneute Bestandsbuchung.
  */
 export async function finalizeOrderAfterPendingPaymentCapture(
@@ -32,21 +34,23 @@ export async function finalizeOrderAfterPendingPaymentCapture(
         return { ok: false, error: "invalid_status" };
       }
 
-      for (const line of order.items) {
-        const p = await tx.product.findUnique({
-          where: { id: line.productId },
-          select: { availableQuantity: true },
-        });
-        if (!p || p.availableQuantity < line.quantity) {
-          return { ok: false, error: "insufficient_stock" };
+      const alreadyReserved = await orderHasAvailableStockReserved(tx, params.orderId);
+      if (!alreadyReserved) {
+        for (const line of order.items) {
+          const p = await tx.product.findUnique({
+            where: { id: line.productId },
+            select: { availableQuantity: true },
+          });
+          if (!p || p.availableQuantity < line.quantity) {
+            return { ok: false, error: "insufficient_stock" };
+          }
         }
-      }
-
-      for (const line of order.items) {
-        await tx.product.update({
-          where: { id: line.productId },
-          data: { availableQuantity: { decrement: line.quantity } },
-        });
+        for (const line of order.items) {
+          await tx.product.update({
+            where: { id: line.productId },
+            data: { availableQuantity: { decrement: line.quantity } },
+          });
+        }
       }
 
       await tx.order.update({

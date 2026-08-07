@@ -25,7 +25,8 @@
     "lighthouse:ci": "npx --yes @lhci/cli@0.14.0 autorun",
     "load:k6": "k6 run scripts/load/k6-smoke.js",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "orders:backfill-pending-stock-reservation": "tsx scripts/backfill-pending-stock-reservation.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
