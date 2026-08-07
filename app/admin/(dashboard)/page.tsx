@@ -171,7 +171,14 @@ export default async function AdminHomePage() {
                       href={`/admin/orders/${o.id}`}
                       ariaLabel={`Bestellung ${o.orderNumber} öffnen`}
                     >
-                      <td className="px-4 py-3 font-mono text-xs text-[#374151]">{o.orderNumber}</td>
+                      <td className="px-4 py-3 font-mono text-xs">
+                        <Link
+                          href={`/admin/orders/${o.id}`}
+                          className="font-medium text-primary hover:underline"
+                        >
+                          {o.orderNumber}
+                        </Link>
+                      </td>
                       <td className="px-4 py-3 whitespace-nowrap text-[#6b7280]">
                         {dateFmt.format(o.createdAt)}
                       </td>
