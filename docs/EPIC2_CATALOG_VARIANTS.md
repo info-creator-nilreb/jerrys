@@ -2,9 +2,23 @@
 
 Referenz: [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md#epic-2-catalog-variants-and-inventory)
 
-## Status: in Arbeit (Slice 5–6 — Kollektionen & Sale-Badges)
+## Status: in Arbeit (Slice 7–8 — Bestand & Kollektions-Filter)
 
-**Branch:** `cursor/epic-2-slice5-collections-21f6` (baut auf Slice 4 / PR #10)
+**Branch:** `cursor/epic-2-slice7-8-inventory-filter-21f6`
+
+### Slice 8 (Kollektionen Storefront)
+
+| Thema | Umsetzung |
+| --- | --- |
+| Filter | „Nur verfügbare Produkte“, Sortierung (Name, Preis) |
+| UX | Aktive Filter + Zurücksetzen |
+
+### Slice 7 (Admin Bestand)
+
+| Thema | Umsetzung |
+| --- | --- |
+| Admin | `/admin/bestand` — `stock_movements` mit SKU, Grund, Bestell-Link |
+| Navigation | Sidebar „Bestand“ |
 
 ### Slice 6 (Storefront Merchandising)
 
@@ -60,8 +74,8 @@ Referenz: [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md#epic-2-catalog-variants-an
 - [ ] Preis/Bestand variantenspezifisch in allen kritischen Pfaden
 - [ ] Kein Overselling (Reservierung weiterhin atomar auf Variante)
 - [x] Storefront: Variantenwahl + Lieferstatus pro Variante (Slice 3 PDP)
-- [ ] Merchandising: Collections-Admin, Filter, Sale-Badges (Admin Collections + Sale-Karten; Filter folgt)
-- [ ] Lagerbewegungen nachvollziehbar (Variante in Admin-Ansicht)
+- [ ] Merchandising: Collections-Admin, Filter, Sale-Badges (Filter/Sort Kollektion Slice 8; Sale erledigt)
+- [x] Lagerbewegungen nachvollziehbar (Variante/SKU in `/admin/bestand`)
 
 ### Ops (nach Merge)
 

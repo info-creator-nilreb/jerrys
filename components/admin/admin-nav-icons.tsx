@@ -5,6 +5,7 @@ import {
   Home,
   Layers,
   LayoutGrid,
+  Package,
   Percent,
   Search,
   ShoppingBag,
@@ -25,6 +26,10 @@ export function IconCatalog({ className }: { className?: string }) {
 
 export function IconCollections({ className }: { className?: string }) {
   return <Layers className={className} aria-hidden strokeWidth={stroke} />;
+}
+
+export function IconInventory({ className }: { className?: string }) {
+  return <Package className={className} aria-hidden strokeWidth={stroke} />;
 }
 
 export function IconShipping({ className }: { className?: string }) {
