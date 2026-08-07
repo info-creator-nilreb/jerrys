@@ -85,19 +85,30 @@ export async function createProductVariant(
     select: {
       id: true,
       slug: true,
-      taxRatePercent: true,
-      minOrderQty: true,
-      purchaseStep: true,
-      maxOrderQty: true,
-      deliveryTimeKey: true,
-      restockDays: true,
+      productNumber: true,
+      variants: {
+        where: { isDefault: true },
+        take: 1,
+        select: {
+          taxRatePercent: true,
+          minOrderQty: true,
+          purchaseStep: true,
+          maxOrderQty: true,
+          deliveryTimeKey: true,
+          restockDays: true,
+        },
+      },
     },
   });
   if (!product) {
     return { error: "Produkt nicht gefunden." };
   }
+  const template = product.variants[0];
+  if (!template) {
+    return { error: "Standard-Variante fehlt — bitte Produkt zuerst speichern." };
+  }
 
-  const net = netCentsFromGross(gross, product.taxRatePercent);
+  const net = netCentsFromGross(gross, template.taxRatePercent);
   const maxSort = await getPrisma().productVariant.aggregate({
     where: { productId: product.id },
     _max: { sortOrder: true },
@@ -112,14 +123,14 @@ export async function createProductVariant(
         title: d.title ?? null,
         priceGrossCents: gross,
         priceNetCents: net,
-        taxRatePercent: product.taxRatePercent,
+        taxRatePercent: template.taxRatePercent,
         stockQuantity: d.stockQuantity,
         availableQuantity: d.availableQuantity,
-        deliveryTimeKey: product.deliveryTimeKey,
-        restockDays: product.restockDays,
-        minOrderQty: product.minOrderQty,
-        purchaseStep: product.purchaseStep,
-        maxOrderQty: product.maxOrderQty,
+        deliveryTimeKey: template.deliveryTimeKey,
+        restockDays: template.restockDays,
+        minOrderQty: template.minOrderQty,
+        purchaseStep: template.purchaseStep,
+        maxOrderQty: template.maxOrderQty,
         isDefault: false,
         isActive: true,
         sortOrder,

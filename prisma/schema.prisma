@@ -43,24 +43,7 @@ model Product {
   manufacturer   Manufacturer? @relation(fields: [manufacturerId], references: [id], onDelete: SetNull)
   productNumber  String?     @map("product_number")
 
-  priceGrossCents Int        @map("price_gross_cents")
-  priceNetCents   Int        @map("price_net_cents")
-  taxRatePercent  Int        @default(19) @map("tax_rate_percent")
-  listPriceGrossCents Int?   @map("list_price_gross_cents")
-  listPriceNetCents   Int?   @map("list_price_net_cents")
-  lowestPrice30dGrossCents Int? @map("lowest_price_30d_gross_cents")
-  lowestPrice30dNetCents   Int? @map("lowest_price_30d_net_cents")
-
   currency    String         @default("EUR")
-  /// Physisches Lager; Abbuchung bei Bestellstatus „shipped“ (versandt).
-  stockQuantity    Int       @default(0) @map("stock_quantity")
-  /// Für Shop, Warenkorb, Checkout; Abbuchung bei erfolgreicher Zahlung (`paid`).
-  availableQuantity Int      @default(0) @map("available_quantity")
-  deliveryTimeKey  String?   @map("delivery_time_key")
-  restockDays      Int?      @map("restock_days")
-  minOrderQty      Int       @default(1) @map("min_order_qty")
-  purchaseStep     Int       @default(1) @map("purchase_step")
-  maxOrderQty      Int?      @map("max_order_qty")
 
   isActive    Boolean        @default(true) @map("is_active")
   sortOrder   Int            @default(0) @map("sort_order")

@@ -80,7 +80,7 @@ Referenz: [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md#epic-2-catalog-variants-an
 ### Ops (nach Merge)
 
 ```bash
-npm run db:migrate   # Migration 20260807160000_epic2_catalog_variants
+npm run db:migrate   # inkl. 20260807180000_epic2_product_contract_phase
 ```
 
 Production: `prisma migrate deploy` auf Vercel/CI wie üblich.

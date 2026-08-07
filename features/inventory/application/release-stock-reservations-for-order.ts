@@ -1,5 +1,4 @@
 import type { Prisma } from "@/app/generated/prisma/client";
-import { mirrorProductFromDefaultVariant } from "@/features/catalog";
 
 /**
  * Gibt reservierten Bestand frei (Storno vor Zahlung oder Abbruch).
@@ -24,14 +23,12 @@ export async function releaseStockReservationsForOrder(
   }
 
   const now = new Date();
-  const touchedProducts = new Set<string>();
 
   for (const reservation of reservations) {
     await tx.productVariant.update({
       where: { id: reservation.productVariantId },
       data: { availableQuantity: { increment: reservation.quantity } },
     });
-    touchedProducts.add(reservation.productId);
     await tx.stockReservation.update({
       where: { id: reservation.id },
       data: { status: "released", releasedAt: now },
@@ -47,10 +44,6 @@ export async function releaseStockReservationsForOrder(
         correlationId: params.correlationId,
       },
     });
-  }
-
-  for (const productId of touchedProducts) {
-    await mirrorProductFromDefaultVariant(tx, productId);
   }
 
   return { releasedCount: reservations.length };

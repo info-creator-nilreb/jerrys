@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EditProductForm } from "@/app/admin/(dashboard)/products/[id]/edit/edit-product-form";
+import { adminProductForEditForm } from "@/lib/catalog/admin-product-form";
 import { getProductByIdForAdmin, listManufacturersForAdmin } from "@/lib/catalog/queries";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +29,7 @@ export default async function AdminEditProductPage({
     listManufacturersForAdmin(),
   ]);
   if (!product) notFound();
+  const formProduct = adminProductForEditForm(product);
 
   return (
     <div className="mx-auto max-w-4xl rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm sm:p-8">
@@ -41,7 +43,7 @@ export default async function AdminEditProductPage({
       </h1>
       <p className="mt-1 text-sm text-[#6b7280]">{product.title}</p>
       <div className="mt-8">
-        <EditProductForm product={product} manufacturers={manufacturers} />
+        <EditProductForm product={formProduct} manufacturers={manufacturers} />
       </div>
     </div>
   );

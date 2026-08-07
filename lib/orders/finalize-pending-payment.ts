@@ -41,18 +41,32 @@ export async function finalizeOrderAfterPendingPaymentCapture(
       });
 
       if (committedCount === 0) {
+        const variantIds: string[] = [];
         for (const line of order.items) {
-          const p = await tx.product.findUnique({
-            where: { id: line.productId },
-            select: { availableQuantity: true },
-          });
-          if (!p || p.availableQuantity < line.quantity) {
+          let variantId = line.productVariantId;
+          if (!variantId) {
+            const fallback = await tx.productVariant.findFirst({
+              where: { productId: line.productId, isDefault: true },
+              select: { id: true },
+            });
+            variantId = fallback?.id ?? null;
+          }
+          if (!variantId) {
             return { ok: false, error: "insufficient_stock" };
           }
+          const v = await tx.productVariant.findUnique({
+            where: { id: variantId },
+            select: { availableQuantity: true, productId: true },
+          });
+          if (!v || v.productId !== line.productId || v.availableQuantity < line.quantity) {
+            return { ok: false, error: "insufficient_stock" };
+          }
+          variantIds.push(variantId);
         }
-        for (const line of order.items) {
-          await tx.product.update({
-            where: { id: line.productId },
+        for (let i = 0; i < order.items.length; i++) {
+          const line = order.items[i]!;
+          await tx.productVariant.update({
+            where: { id: variantIds[i]! },
             data: { availableQuantity: { decrement: line.quantity } },
           });
         }

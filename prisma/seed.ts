@@ -7,30 +7,66 @@ import { getPrisma } from "../lib/db/prisma";
 async function syncDefaultVariantsForAllProducts(
   prisma: ReturnType<typeof getPrisma>,
 ): Promise<void> {
-  const products = await prisma.product.findMany();
+  const products = await prisma.product.findMany({
+    select: { id: true, productNumber: true, isActive: true },
+  });
   for (const p of products) {
+    const v = await prisma.productVariant.findFirst({
+      where: { productId: p.id, isDefault: true },
+    });
+    if (!v) continue;
     await prisma.$transaction(async (tx) => {
       await syncDefaultVariantFromProduct(tx, {
         id: p.id,
         productNumber: p.productNumber,
-        taxRatePercent: p.taxRatePercent,
-        priceGrossCents: p.priceGrossCents,
-        priceNetCents: p.priceNetCents,
-        listPriceGrossCents: p.listPriceGrossCents,
-        listPriceNetCents: p.listPriceNetCents,
-        lowestPrice30dGrossCents: p.lowestPrice30dGrossCents,
-        lowestPrice30dNetCents: p.lowestPrice30dNetCents,
-        stockQuantity: p.stockQuantity,
-        availableQuantity: p.availableQuantity,
-        deliveryTimeKey: p.deliveryTimeKey,
-        restockDays: p.restockDays,
-        minOrderQty: p.minOrderQty,
-        purchaseStep: p.purchaseStep,
-        maxOrderQty: p.maxOrderQty,
+        taxRatePercent: v.taxRatePercent,
+        priceGrossCents: v.priceGrossCents,
+        priceNetCents: v.priceNetCents,
+        listPriceGrossCents: v.listPriceGrossCents,
+        listPriceNetCents: v.listPriceNetCents,
+        lowestPrice30dGrossCents: v.lowestPrice30dGrossCents,
+        lowestPrice30dNetCents: v.lowestPrice30dNetCents,
+        stockQuantity: v.stockQuantity,
+        availableQuantity: v.availableQuantity,
+        deliveryTimeKey: v.deliveryTimeKey,
+        restockDays: v.restockDays,
+        minOrderQty: v.minOrderQty,
+        purchaseStep: v.purchaseStep,
+        maxOrderQty: v.maxOrderQty,
         isActive: p.isActive,
       });
     });
   }
+}
+
+async function seedDefaultVariantForProduct(
+  prisma: ReturnType<typeof getPrisma>,
+  productId: string,
+  commerce: {
+    taxRatePercent: number;
+    priceGrossCents: number;
+    priceNetCents: number;
+    stockQuantity: number;
+    availableQuantity: number;
+    deliveryTimeKey: string;
+    isActive: boolean;
+  },
+) {
+  await prisma.$transaction(async (tx) => {
+    await syncDefaultVariantFromProduct(tx, {
+      id: productId,
+      productNumber: null,
+      listPriceGrossCents: null,
+      listPriceNetCents: null,
+      lowestPrice30dGrossCents: null,
+      lowestPrice30dNetCents: null,
+      restockDays: null,
+      minOrderQty: 1,
+      purchaseStep: 1,
+      maxOrderQty: null,
+      ...commerce,
+    });
+  });
 }
 
 async function main() {
@@ -65,7 +101,7 @@ async function main() {
     const grossHoehle = 7900;
     const grossNapf = 2400;
 
-    await prisma.product.upsert({
+    const hoehle = await prisma.product.upsert({
       where: { slug: "design-katzenhoehle" },
       create: {
         slug: "design-katzenhoehle",
@@ -74,14 +110,8 @@ async function main() {
         description:
           "Robuste Katzenhöhle mit zeitlosem Look – made in Germany. Ideal für Rückzug und Kuscheln.",
         manufacturerId: "seed_mfr_jerrys",
-        taxRatePercent: tax,
-        priceGrossCents: grossHoehle,
-        priceNetCents: netCentsFromGross(grossHoehle, tax),
         isActive: true,
         sortOrder: 0,
-        stockQuantity: 25,
-        availableQuantity: 25,
-        deliveryTimeKey: "2-4-werktage",
         categoryTag: "Für Auge & Gaumen",
         leadText:
           "Robuste Katzenhöhle mit zeitlosem Look – made in Germany. Ideal für Rückzug, Entspannung und süße Träume.",
@@ -115,14 +145,8 @@ async function main() {
         description:
           "Robuste Katzenhöhle mit zeitlosem Look – made in Germany. Ideal für Rückzug und Kuscheln.",
         manufacturerId: "seed_mfr_jerrys",
-        taxRatePercent: tax,
-        priceGrossCents: grossHoehle,
-        priceNetCents: netCentsFromGross(grossHoehle, tax),
         isActive: true,
         sortOrder: 0,
-        stockQuantity: 25,
-        availableQuantity: 25,
-        deliveryTimeKey: "2-4-werktage",
         categoryTag: "Für Auge & Gaumen",
         leadText:
           "Robuste Katzenhöhle mit zeitlosem Look – made in Germany. Ideal für Rückzug, Entspannung und süße Träume.",
@@ -140,9 +164,20 @@ async function main() {
         amazonReviewUrl:
           "https://www.amazon.de/Jerrys-Design-Katzenh%C3%B6hle-inklusive-Kuschelkissen/dp/B00SYGOLIO",
       },
+      select: { id: true },
     });
 
-    await prisma.product.upsert({
+    await seedDefaultVariantForProduct(prisma, hoehle.id, {
+      taxRatePercent: tax,
+      priceGrossCents: grossHoehle,
+      priceNetCents: netCentsFromGross(grossHoehle, tax),
+      stockQuantity: 25,
+      availableQuantity: 25,
+      deliveryTimeKey: "2-4-werktage",
+      isActive: true,
+    });
+
+    const napf = await prisma.product.upsert({
       where: { slug: "design-futternapf" },
       create: {
         slug: "design-futternapf",
@@ -150,14 +185,8 @@ async function main() {
         subtitle: "Futternapf mit dem gewissen Etwas",
         description: "Hochwertiger Futternapf – formschön und alltagstauglich.",
         manufacturerId: "seed_mfr_jerrys",
-        taxRatePercent: tax,
-        priceGrossCents: grossNapf,
-        priceNetCents: netCentsFromGross(grossNapf, tax),
         isActive: true,
         sortOrder: 1,
-        stockQuantity: 0,
-        availableQuantity: 0,
-        deliveryTimeKey: "2-4-werktage",
         images: {
           create: [
             {
@@ -174,12 +203,20 @@ async function main() {
         subtitle: "Futternapf mit dem gewissen Etwas",
         description: "Hochwertiger Futternapf – formschön und alltagstauglich.",
         manufacturerId: "seed_mfr_jerrys",
-        taxRatePercent: tax,
-        priceGrossCents: grossNapf,
-        priceNetCents: netCentsFromGross(grossNapf, tax),
         isActive: true,
         sortOrder: 1,
       },
+      select: { id: true },
+    });
+
+    await seedDefaultVariantForProduct(prisma, napf.id, {
+      taxRatePercent: tax,
+      priceGrossCents: grossNapf,
+      priceNetCents: netCentsFromGross(grossNapf, tax),
+      stockQuantity: 0,
+      availableQuantity: 0,
+      deliveryTimeKey: "2-4-werktage",
+      isActive: true,
     });
 
     await syncDefaultVariantsForAllProducts(prisma);

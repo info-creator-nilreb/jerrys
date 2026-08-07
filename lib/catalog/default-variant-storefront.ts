@@ -5,6 +5,7 @@ export type StorefrontVariantCommerce = {
   title: string | null;
   isDefault: boolean;
   priceGrossCents: number;
+  listPriceGrossCents: number | null;
   availableQuantity: number;
   minOrderQty: number;
   purchaseStep: number;
@@ -21,6 +22,7 @@ const storefrontVariantSelect = {
   title: true,
   isDefault: true,
   priceGrossCents: true,
+  listPriceGrossCents: true,
   availableQuantity: true,
   minOrderQty: true,
   purchaseStep: true,

@@ -3,7 +3,6 @@ import {
   recordWarehouseShipmentMovements,
   releaseStockReservationsForOrder,
 } from "@/features/inventory";
-import { mirrorProductFromDefaultVariant } from "@/features/catalog";
 
 export type OrderLineForStock = {
   productId: string;
@@ -32,16 +31,11 @@ export async function decrementWarehouseForShippedOrder(
       return { ok: false, error: "insufficient_warehouse" };
     }
   }
-  const touched = new Set<string>();
   for (const line of items) {
     await tx.productVariant.update({
       where: { id: line.productVariantId },
       data: { stockQuantity: { decrement: line.quantity } },
     });
-    touched.add(line.productId);
-  }
-  for (const productId of touched) {
-    await mirrorProductFromDefaultVariant(tx, productId);
   }
   if (orderId) {
     await recordWarehouseShipmentMovements(tx, {
@@ -73,21 +67,15 @@ export async function restoreStockOnOrderCancelled(
         return { ok: true };
       }
     }
-    const touched = new Set<string>();
     for (const line of items) {
       await tx.productVariant.update({
         where: { id: line.productVariantId },
         data: { availableQuantity: { increment: line.quantity } },
       });
-      touched.add(line.productId);
-    }
-    for (const productId of touched) {
-      await mirrorProductFromDefaultVariant(tx, productId);
     }
     return { ok: true };
   }
   if (fromStatus === "shipped") {
-    const touched = new Set<string>();
     for (const line of items) {
       await tx.productVariant.update({
         where: { id: line.productVariantId },
@@ -96,10 +84,6 @@ export async function restoreStockOnOrderCancelled(
           stockQuantity: { increment: line.quantity },
         },
       });
-      touched.add(line.productId);
-    }
-    for (const productId of touched) {
-      await mirrorProductFromDefaultVariant(tx, productId);
     }
     return { ok: true };
   }
