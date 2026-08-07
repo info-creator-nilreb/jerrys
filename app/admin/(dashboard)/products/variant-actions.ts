@@ -32,6 +32,13 @@ function isUniqueConstraintError(e: unknown): boolean {
   );
 }
 
+function revalidateProductVariantPaths(product: { id: string; slug: string }) {
+  revalidatePath("/");
+  revalidatePath("/produkte");
+  revalidatePath(`/produkte/${product.slug}`);
+  revalidatePath(`/admin/products/${product.id}/edit`);
+}
+
 const addVariantSchema = z.object({
   productId: nonEmptyString,
   sku: z.string().trim().min(1, "SKU ist Pflicht.").max(64),
@@ -125,9 +132,94 @@ export async function createProductVariant(
     throw e;
   }
 
-  revalidatePath("/");
-  revalidatePath("/produkte");
-  revalidatePath(`/produkte/${product.slug}`);
-  revalidatePath(`/admin/products/${product.id}/edit`);
+  revalidateProductVariantPaths(product);
+  return { ok: true };
+}
+
+const updateVariantSchema = z.object({
+  variantId: nonEmptyString,
+  sku: z.string().trim().min(1, "SKU ist Pflicht.").max(64),
+  title: z
+    .string()
+    .trim()
+    .transform((s) => (s === "" ? null : s.slice(0, 120)))
+    .nullable()
+    .optional(),
+  priceGrossEuro: nonEmptyString,
+  availableQuantity: z.coerce.number().int().min(0),
+  stockQuantity: z.coerce.number().int().min(0),
+  isActive: z
+    .union([z.literal("on"), z.literal("true"), z.literal("1")])
+    .optional()
+    .transform((v) => v === "on" || v === "true" || v === "1"),
+});
+
+export async function updateProductVariant(
+  _prev: VariantActionState,
+  formData: FormData,
+): Promise<VariantActionState> {
+  const session = await auth();
+  if (!session?.user) {
+    return { error: "Nicht angemeldet." };
+  }
+
+  const parsed = updateVariantSchema.safeParse({
+    variantId: formData.get("variantId"),
+    sku: formData.get("sku"),
+    title: formData.get("title") ?? "",
+    priceGrossEuro: formData.get("priceGrossEuro"),
+    availableQuantity: formData.get("availableQuantity"),
+    stockQuantity: formData.get("stockQuantity"),
+    isActive: formData.get("isActive") ?? undefined,
+  });
+  if (!parsed.success) {
+    return { fieldErrors: fieldErrorsFromZod(parsed.error) };
+  }
+
+  const d = parsed.data;
+  const gross = parseEuroInputToCents(d.priceGrossEuro);
+  if (gross === null || gross < 0) {
+    return { fieldErrors: { priceGrossEuro: "Ungültiger Preis." } };
+  }
+
+  const variant = await getPrisma().productVariant.findUnique({
+    where: { id: d.variantId },
+    select: {
+      id: true,
+      isDefault: true,
+      taxRatePercent: true,
+      product: { select: { id: true, slug: true } },
+    },
+  });
+  if (!variant) {
+    return { error: "Variante nicht gefunden." };
+  }
+  if (variant.isDefault) {
+    return { error: "Die Standard-Variante wird über das Hauptformular gepflegt." };
+  }
+
+  const net = netCentsFromGross(gross, variant.taxRatePercent);
+
+  try {
+    await getPrisma().productVariant.update({
+      where: { id: variant.id },
+      data: {
+        sku: d.sku.trim(),
+        title: d.title ?? null,
+        priceGrossCents: gross,
+        priceNetCents: net,
+        stockQuantity: d.stockQuantity,
+        availableQuantity: d.availableQuantity,
+        isActive: d.isActive ?? false,
+      },
+    });
+  } catch (e) {
+    if (isUniqueConstraintError(e)) {
+      return { fieldErrors: { sku: "Diese SKU ist bereits vergeben." } };
+    }
+    throw e;
+  }
+
+  revalidateProductVariantPaths(variant.product);
   return { ok: true };
 }
