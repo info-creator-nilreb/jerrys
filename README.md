@@ -37,7 +37,11 @@ bun dev
 
 Open [http://localhost:3001](http://localhost:3001) with your browser (Standard-Port **3001**, damit **3000** frei bleibt).
 
-Wenn **3001 bereits belegt** ist: alten Next-/Node-Prozess beenden, z. B. `lsof -ti :3001 | xargs kill`, oder vorübergehend einen anderen Port nutzen: `PORT=3002 npm run dev` → dann **http://localhost:3002**.
+Wenn **bereits ein Next-Dev-Server für dieses Projekt läuft** (Melding „Another next dev server is already running“): zuerst `npm run dev:stop`, danach erneut `npm run dev`. Der Lock gilt pro Projektverzeichnis — ein anderer Port (`PORT=3002 npm run dev`) reicht nicht, solange der alte Prozess noch läuft.
+
+Alternativ nur den Port freimachen (GNU/Linux): `fuser -k 3001/tcp` oder `lsof -ti :3001 | xargs -r kill`.
+
+Cursor Cloud Agent: [docs/CURSOR_CLOUD_AGENT.md](docs/CURSOR_CLOUD_AGENT.md).
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

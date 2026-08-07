@@ -7,6 +7,7 @@
     "dev": "next dev --webpack -p ${PORT:-3001}",
     "dev:cloud": "bash scripts/dev-cursor-cloud.sh",
     "dev:stop": "node scripts/stop-next-dev.mjs",
+    "admin:set-password": "tsx scripts/set-admin-password.ts",
     "dev:turbo": "next dev --turbopack -p ${PORT:-3001}",
     "fix:next-cache": "rm -rf .next",
     "dev:fresh": "rm -rf .next && next dev --webpack -p ${PORT:-3001}",

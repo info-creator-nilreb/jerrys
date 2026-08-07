@@ -23,7 +23,7 @@ try {
 } catch (err) {
   if (err.code === "ESRCH") {
     fs.unlinkSync(lockPath);
-    console.log("Lock entfernt (Prozess existierte nicht).");
+    console.log(`Prozess ${pid} lief nicht mehr — veraltete Lock-Datei entfernt.`);
     process.exit(0);
   }
   throw err;
