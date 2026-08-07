@@ -4,6 +4,10 @@ import { formatPrice } from "@/lib/catalog/format";
 import { getActiveProductBySlug } from "@/lib/catalog/queries";
 import { pdpStockDeliveryLine } from "@/lib/catalog/pdp-stock-delivery";
 import { resolvePdpLeadText, resolvePdpSpecs } from "@/lib/catalog/pdp-resolve-display";
+import {
+  pickDefaultVariant,
+  quantityRulesFromVariant,
+} from "@/lib/catalog/default-variant-storefront";
 import { defaultAddQuantity } from "@/lib/cart/quantity";
 import { AddToCartForm } from "@/components/storefront/add-to-cart-form";
 import { AmazonRatingDisplay } from "@/components/storefront/amazon-rating-display";
@@ -71,15 +75,13 @@ export default async function ProduktDetailPage({
   ]);
   if (!product) notFound();
 
+  const defaultVariant = pickDefaultVariant(product);
+  if (!defaultVariant) notFound();
+
   const specs = resolvePdpSpecs(product);
   const leadDisplay = resolvePdpLeadText(product);
 
-  const qtyRules = {
-    availableQuantity: product.availableQuantity,
-    minOrderQty: product.minOrderQty,
-    purchaseStep: product.purchaseStep,
-    maxOrderQty: product.maxOrderQty,
-  };
+  const qtyRules = quantityRulesFromVariant(defaultVariant);
   const canAddToCart = defaultAddQuantity(qtyRules) !== null;
 
   const titleCrumb =
@@ -89,7 +91,8 @@ export default async function ProduktDetailPage({
     leadDisplay || product.subtitle || textPreviewFromHtml(product.description);
 
   const hasStrikePrice =
-    product.listPriceGrossCents != null && product.listPriceGrossCents > product.priceGrossCents;
+    product.listPriceGrossCents != null &&
+    product.listPriceGrossCents > defaultVariant.priceGrossCents;
 
   const hasSpecsPanel =
     Boolean(specs.dimensionsText?.trim()) ||
@@ -98,10 +101,10 @@ export default async function ProduktDetailPage({
     specs.featureBullets.length > 0;
 
   const stockLine = pdpStockDeliveryLine({
-    availableQuantity: product.availableQuantity,
-    deliveryTimeKey: product.deliveryTimeKey,
+    availableQuantity: defaultVariant.availableQuantity,
+    deliveryTimeKey: defaultVariant.deliveryTimeKey ?? product.deliveryTimeKey,
   });
-  const inStock = product.availableQuantity > 0;
+  const inStock = defaultVariant.availableQuantity > 0;
 
   return (
     <>
@@ -110,9 +113,9 @@ export default async function ProduktDetailPage({
           name={product.title}
           description={jsonLdDescription}
           slug={product.slug}
-          priceGrossCents={product.priceGrossCents}
+          priceGrossCents={defaultVariant.priceGrossCents}
           currency={product.currency}
-          availableQuantity={product.availableQuantity}
+          availableQuantity={defaultVariant.availableQuantity}
           images={product.images.map((i) => ({ url: i.url, alt: i.alt }))}
           aggregateRatingAverage={product.amazonRatingAverage}
           aggregateRatingCount={product.amazonRatingCount}
@@ -195,7 +198,7 @@ export default async function ProduktDetailPage({
                     </p>
                   ) : null}
                   <p className="text-2xl font-semibold tracking-tight text-primary md:text-[1.7rem]">
-                    {formatPrice(product.priceGrossCents, product.currency)}
+                    {formatPrice(defaultVariant.priceGrossCents, product.currency)}
                     <span className="text-base font-normal text-(--foreground-muted)">*</span>
                   </p>
                   <p className="mt-1 text-sm text-(--foreground-muted)">inkl. MwSt., zzgl. Versand</p>
@@ -221,6 +224,7 @@ export default async function ProduktDetailPage({
 
                 <AddToCartForm
                   productId={product.id}
+                  productVariantId={defaultVariant.id}
                   canAdd={canAddToCart}
                   quantityRules={qtyRules}
                   showCartIcon

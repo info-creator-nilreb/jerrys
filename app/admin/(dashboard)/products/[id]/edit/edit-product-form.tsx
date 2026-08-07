@@ -62,6 +62,7 @@ type Product = {
   materialText: string | null;
   featureBullets: string[];
   images: { id: string; url: string; alt: string; sortOrder: number; isCover: boolean }[];
+  variants: { id: string; sku: string }[];
 };
 
 const initialState: ProductFormState = null;
@@ -119,6 +120,16 @@ export function EditProductForm({
             amazonReviewUrl: product.amazonReviewUrl ?? "",
           }}
         />
+
+        {product.variants[0]?.sku ? (
+          <p className="rounded-lg border border-[#e8eaed] bg-[#f9fafb] px-4 py-3 text-sm text-[#374151]">
+            Standard-Variante (SKU):{" "}
+            <span className="font-mono font-medium text-[#1f2937]">{product.variants[0].sku}</span>
+            <span className="mt-1 block text-xs text-[#6b7280]">
+              Preis und Bestand unten werden auf diese Variante synchronisiert (Epic 2).
+            </span>
+          </p>
+        ) : null}
 
         <ProductStorefrontDetailFields
           state={state}

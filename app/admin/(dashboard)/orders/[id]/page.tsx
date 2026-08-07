@@ -163,6 +163,9 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
             {order.stockReservations.map((r) => (
               <li key={r.id} className="flex flex-wrap gap-x-2 text-[#374151]">
                 <span className="font-medium">{r.product.title}</span>
+                {r.productVariant?.sku ? (
+                  <span className="font-mono text-xs text-[#6b7280]">SKU {r.productVariant.sku}</span>
+                ) : null}
                 <span className="text-[#6b7280]">
                   {r.quantity} Stk. · {r.status}
                   {r.expiresAt ? ` · läuft ab ${dateFmt.format(r.expiresAt)}` : null}

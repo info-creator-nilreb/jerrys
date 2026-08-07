@@ -2,12 +2,20 @@
 
 Referenz: [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md#epic-2-catalog-variants-and-inventory)
 
-## Status: in Arbeit (Slice 1 — Datenmodell + Reservierungen)
+## Status: in Arbeit (Slice 2 — Storefront + Admin-SKU)
 
-**Branch:** `cursor/epic-2-catalog-variants-21f6`  
-**ADR:** [0003-catalog-variants-and-collections.md](./adr/0003-catalog-variants-and-collections.md)
+**Branch:** `cursor/epic-2-slice2-storefront-21f6` (nach Merge Slice 1 auf `main`)
 
-### Slice 1 (dieser Stand)
+### Slice 2 (dieser Stand)
+
+| Thema | Umsetzung |
+| --- | --- |
+| PDP / Produktkarten | Preis, Lager, Lieferstatus und Warenkorb über **Default-Variante** + `productVariantId` |
+| Admin Bestellung | SKU in Bestandsreservierungen |
+| Admin Produkt | Anzeige SKU der Standard-Variante |
+
+### Slice 1 (gemergt)
+
 
 | Thema | Umsetzung |
 | --- | --- |
