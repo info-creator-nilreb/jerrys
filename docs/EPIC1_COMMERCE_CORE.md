@@ -23,7 +23,7 @@ Vor Merge auf `main`: Migration `20260806200000_epic1_commerce_core` ausführen 
 
 ## Ergänzt (zweites Inkrement)
 
-- Reservierungs-TTL (2 h) + `expireStaleStockReservations` + Route `POST /api/internal/commerce-maintenance`
+- Reservierungs-TTL (2 h) + `expireStaleStockReservations` + Route `GET`/`POST /api/internal/commerce-maintenance` + `vercel.json` Cron (alle 30 min)
 - Outbox-Batch-Publisher (`publishIntegrationOutboxBatch`) über dieselbe Route
 - Admin-Bestelldetail: `fulfillment_status` + Liste `stock_reservations`
 
@@ -79,20 +79,30 @@ Voraussetzungen: aktives Produkt mit `available_quantity` ≥ 1, PayPal Sandbox 
 
 ### Maintenance (Ablauf + Outbox)
 
-Secret in `.env` oder Cloud-Secrets:
+Secrets in `.env` oder Vercel (Production):
 
 ```bash
-COMMERCE_MAINTENANCE_SECRET="…"   # z. B. openssl rand -hex 32
+COMMERCE_MAINTENANCE_SECRET="…"   # openssl rand -hex 32
+CRON_SECRET="…"                   # Vercel Cron; darf identisch zu COMMERCE_MAINTENANCE_SECRET sein
 ```
 
-Aufruf:
+Manuell (POST):
 
 ```bash
 curl -sS -X POST "http://127.0.0.1:3001/api/internal/commerce-maintenance" \
   -H "Authorization: Bearer $COMMERCE_MAINTENANCE_SECRET"
 ```
 
+Vercel Cron (GET, wie der Scheduler):
+
+```bash
+curl -sS "https://<deine-domain>/api/internal/commerce-maintenance" \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
+
 Antwort u. a. `expiredReservations`, `outbox.published`. Für abgelaufene Reservierungen: Bestand zurück, `pending_payment` → `cancelled`.
+
+**Vercel einrichten:** `vercel.json` im Repo (`crons` → Pfad + `*/30 * * * *`). Nach Deploy: Dashboard → Projekt → **Cron Jobs** prüfen. `CRON_SECRET` in Production-Env setzen (ohne Zeilenumbruch), Redeploy. Cron läuft nur auf **Production**, nicht auf Preview.
 
 ### SQL-Snippets (Supabase/psql)
 
