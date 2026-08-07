@@ -10,6 +10,11 @@ const legalLinks = [
   { href: "/versand", label: "Versand" },
 ] as const;
 
+const shopLinks = [
+  { href: "/produkte", label: "Produkte" },
+  { href: "/kollektionen", label: "Kollektionen" },
+] as const;
+
 /** Dunkles Navy wie Admin-Sidebar; helle Schrift, Primärgrün für Links. */
 export function SiteFooter() {
   return (
@@ -20,6 +25,20 @@ export function SiteFooter() {
         </p>
         <nav
           className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2.5 text-[0.95rem] sm:text-base"
+          aria-label="Shop"
+        >
+          {shopLinks.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              className="font-medium text-primary underline-offset-4 transition-colors hover:text-(--primary-hover) hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#182d4d]"
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
+        <nav
+          className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2.5 text-[0.95rem] sm:text-base"
           aria-label="Rechtliches"
         >
           {legalLinks.map(({ href, label }) => (
