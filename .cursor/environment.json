@@ -7,5 +7,10 @@
       "command": "npm run dev:cloud"
     }
   ],
-  "ports": [3001]
+  "ports": [
+    {
+      "name": "next-dev",
+      "port": 3001
+    }
+  ]
 }
