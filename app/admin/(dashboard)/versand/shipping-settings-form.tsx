@@ -46,7 +46,7 @@ export function ShippingSettingsForm({ defaults }: Props) {
                   name="shippingCountryCodes"
                   value={o.code}
                   defaultChecked={defaults.shippingCountryCodes.includes(o.code)}
-                  className="size-4 rounded border-[#d1d5db] text-primary focus:ring-primary"
+                  className="size-4 checkbox-primary"
                 />
                 {o.label}
               </label>

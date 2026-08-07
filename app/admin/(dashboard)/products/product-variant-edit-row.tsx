@@ -160,7 +160,7 @@ export function ProductVariantEditRow({
                   name="isActive"
                   type="checkbox"
                   defaultChecked={variant.isActive}
-                  className="size-4 accent-primary"
+                  className="size-4 checkbox-primary"
                 />
                 <label htmlFor={`edit-active-${variant.id}`} className="text-sm text-[#374151]">
                   Im Shop aktiv (PDP-Auswahl)

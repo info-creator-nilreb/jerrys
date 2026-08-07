@@ -265,7 +265,7 @@ export function PromotionForm({
                               return n;
                             });
                           }}
-                          className="size-4 rounded border-[#cfd2d8] text-primary"
+                          className="size-4 checkbox-primary"
                         />
                         <span>
                           {code} <span className="text-[#6b7280]">({label})</span>
@@ -481,7 +481,7 @@ export function PromotionForm({
             name="promotionActiveUi"
             defaultChecked={initialPromotion?.isEnabled ?? false}
             disabled
-            className="size-4 rounded border-[#d2d5d9]"
+            className="size-4 checkbox-primary"
           />
           Promotion aktiv (über „Speichern“ / „Aktivieren“ in der Übersicht)
         </label>

@@ -34,7 +34,7 @@ export function ProductStorefrontDetailFields({ state, defaults }: Props) {
             name="isBestseller"
             value="on"
             defaultChecked={defaults.isBestseller}
-            className="mt-1 size-4 rounded border-[#e5e7eb] text-primary focus:ring-primary"
+            className="mt-1 size-4 checkbox-primary"
           />
           <span>
             <span className="text-sm font-medium text-[#1f2937]">Bestseller-Badge</span>

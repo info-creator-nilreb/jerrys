@@ -148,7 +148,7 @@ export function AdminLoginForm() {
           <input
             type="checkbox"
             name="remember"
-            className="size-4 shrink-0 rounded border-[#cfd2d8] text-primary focus:ring-primary/30"
+            className="size-4 shrink-0 checkbox-primary"
           />
           Angemeldet bleiben
         </label>
