@@ -16,9 +16,10 @@ npm run db:migrate   # Migration 20260806200000_epic1_commerce_core
 
 ```bash
 COMMERCE_MAINTENANCE_SECRET="<openssl rand -hex 32>"
+CRON_SECRET="<gleicher oder eigener Wert>"   # Vercel Cron sendet Bearer CRON_SECRET
 ```
 
-Periodisch (Cron / Render Cron / manuell):
+Periodisch: Vercel Cron via `vercel.json` (GET) oder manuell:
 
 ```bash
 curl -sS -X POST "https://<host>/api/internal/commerce-maintenance" \
@@ -31,7 +32,7 @@ curl -sS -X POST "https://<host>/api/internal/commerce-maintenance" \
 
 - `orders.fulfillment_status`, `stock_reservations`, `stock_movements`, `integration_outbox_messages`, `webhook_inbox_entries`
 - Reservierung bei Checkout (`pending_payment`), Commit bei Zahlung, Release bei Storno/TTL
-- `POST /api/internal/commerce-maintenance` (abgelaufene Reservierungen + Outbox-Batch)
+- `GET`/`POST /api/internal/commerce-maintenance` (abgelaufene Reservierungen + Outbox-Batch; Cron in `vercel.json`)
 - Admin: Fulfillment-Anzeige, Bestandsreservierungen auf Bestelldetail
 - Module `features/inventory`, `features/orders`, `features/integrations`
 
