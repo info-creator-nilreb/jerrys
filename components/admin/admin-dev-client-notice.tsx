@@ -1,22 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { AlertTriangle } from "lucide-react";
 
 type Props = {
   devBaseUrl: string;
 };
 
+function useInIframe(): boolean {
+  return useSyncExternalStore(
+    () => () => {},
+    () => window.self !== window.top,
+    () => false,
+  );
+}
+
 /**
  * Warnt, wenn der Next.js-Dev-Client nicht geladen ist (kein nextjs-portal / kein „N“).
  * Typisch in sandboxed Cursor-Previews: Origin null → blockierte `/_next`-Requests.
  */
 export function AdminDevClientNotice({ devBaseUrl }: Props) {
-  const [inIframe, setInIframe] = useState(false);
+  const inIframe = useInIframe();
   const [clientMissing, setClientMissing] = useState(false);
 
   useEffect(() => {
-    setInIframe(window.self !== window.top);
     const timer = window.setTimeout(() => {
       const portal = document.querySelector("nextjs-portal");
       if (!portal) {

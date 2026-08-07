@@ -2,6 +2,13 @@
 
 Referenz: [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md#epic-1-commerce-core)
 
+## Status: abgeschlossen (Lieferumfang Epic 1)
+
+**Branch:** `cursor/epic-1-commerce-core-a364` / `cursor/epic-1-complete-97de`  
+**Exit-Kriterium (Roadmap):** Doppelte/konkurrente Ereignisse wirken auf Geld, Bestand und Status höchstens einmal; ungültige Übergänge werden abgewiesen und protokolliert — umgesetzt über Reservierungen, Webhook-Inbox, Status-Maschinen, `order_events` und `stock_movements`.
+
+Vor Merge auf `main`: Migration `20260806200000_epic1_commerce_core` ausführen (`npm run db:migrate`), Commerce-Tests laut Abschnitt „Testen“.
+
 ## Geliefert (erste Inkremente)
 
 | Thema | Umsetzung |
@@ -19,10 +26,14 @@ Referenz: [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md#epic-1-commerce-core)
 - Outbox-Batch-Publisher (`publishIntegrationOutboxBatch`) über dieselbe Route
 - Admin-Bestelldetail: `fulfillment_status` + Liste `stock_reservations`
 
-## Bewusst noch offen (Folge-Stories)
+## Bewusst noch offen (Folge-Stories / Epic 1.1+)
 
-- Outbox-Publisher an echte Queue koppeln (MVP markiert Nachrichten als `published`)
-- Vollständige Entkopplung des aggregierten `orders.status` von Zahlung/Versand
+Diese Punkte sind **kein** Blocker für den Epic‑1‑Abschluss (MVP bewusst schlank):
+
+- Outbox-Publisher an echte Queue koppeln (MVP markiert Nachrichten als `published` via `publishIntegrationOutboxBatch`)
+- Vollständige Entkopplung des aggregierten `orders.status` von Zahlung/Versand (Admin-Triple bleibt vorerst auf `orders.status` gemappt)
+
+**Hinweis:** PR #3 (`availableQuantity` + Event) ist durch Epic‑1‑`stock_reservations` ersetzt — nicht parallel mergen.
 
 ## Testen (Epic 1)
 
