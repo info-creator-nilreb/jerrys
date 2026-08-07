@@ -36,3 +36,4 @@ ADRs record material decisions that constrain future implementation.
 
 - [ADR-0001: Modular monolith](./0001-modular-monolith.md)
 - [ADR-0002: Vercel deployment and durable infrastructure](./0002-vercel-runtime.md)
+- [ADR-0003: Catalog variants and collections](./0003-catalog-variants-and-collections.md)
