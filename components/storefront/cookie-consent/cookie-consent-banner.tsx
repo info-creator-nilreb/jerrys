@@ -137,7 +137,7 @@ export function CookieConsentBanner() {
             <label className="flex cursor-pointer items-start gap-3 text-sm text-(--foreground-heading)">
               <input
                 type="checkbox"
-                className="mt-1 size-4 rounded border-(--surface-muted) text-primary focus:ring-primary/30"
+                className="mt-1 size-4 checkbox-primary"
                 checked={statistics}
                 onChange={(e) => setStatistics(e.target.checked)}
               />
@@ -151,7 +151,7 @@ export function CookieConsentBanner() {
             <label className="flex cursor-pointer items-start gap-3 text-sm text-(--foreground-heading)">
               <input
                 type="checkbox"
-                className="mt-1 size-4 rounded border-(--surface-muted) text-primary focus:ring-primary/30"
+                className="mt-1 size-4 checkbox-primary"
                 checked={marketing}
                 onChange={(e) => setMarketing(e.target.checked)}
               />

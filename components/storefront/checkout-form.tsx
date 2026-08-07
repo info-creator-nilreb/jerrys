@@ -429,7 +429,7 @@ export function CheckoutForm({
               type="checkbox"
               name="newsletter"
               autoComplete="off"
-              className="size-4 rounded border-[#d2d5d9]"
+              className="size-4 checkbox-primary"
               disabled
             />
             Neuigkeiten und Angebote via E-Mail erhalten
@@ -639,7 +639,7 @@ export function CheckoutForm({
             <label className="flex cursor-pointer items-start gap-3 text-sm text-[#374151]">
               <input
                 type="checkbox"
-                className="mt-0.5 size-4 rounded border-[#d2d5d9] text-primary"
+                className="mt-0.5 size-4 checkbox-primary"
                 checked={billingDifferent}
                 onChange={(e) => setBillingDifferent(e.target.checked)}
               />
@@ -853,7 +853,7 @@ export function CheckoutForm({
               value="on"
               required
               autoComplete="off"
-              className="mt-0.5 size-3.5 shrink-0 rounded border-[#d2d5d9] text-primary"
+              className="mt-0.5 size-3.5 shrink-0 checkbox-primary"
               {...ariaFieldErr(fe?.rechtlicheKenntnis, checkoutErrId.rechtlicheKenntnis)}
             />
             <span>

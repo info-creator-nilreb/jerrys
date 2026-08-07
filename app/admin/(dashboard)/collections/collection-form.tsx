@@ -101,7 +101,7 @@ export function CollectionForm({
             name="isActive"
             type="checkbox"
             defaultChecked={collection?.isActive ?? true}
-            className="size-4 accent-primary"
+            className="size-4 checkbox-primary"
           />
           <label htmlFor="collection-active" className="text-sm text-[#374151]">
             Im Shop sichtbar
@@ -127,7 +127,7 @@ export function CollectionForm({
                     name="productIds"
                     value={p.id}
                     defaultChecked={selected.has(p.id)}
-                    className="mt-0.5 accent-primary"
+                    className="mt-0.5 checkbox-primary size-4"
                   />
                   <span>
                     {p.title}
