@@ -10,6 +10,7 @@ export async function recordWarehouseShipmentMovements(
     await tx.stockMovement.create({
       data: {
         productId: line.productId,
+        productVariantId: line.productVariantId,
         orderId: params.orderId,
         quantityDelta: -line.quantity,
         reason: "warehouse_ship",

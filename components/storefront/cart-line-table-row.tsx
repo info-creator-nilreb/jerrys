@@ -6,37 +6,20 @@ import {
   incrementCartLineQuantity,
   submitRemoveCartLine,
 } from "@/lib/cart/actions";
+import { cartLineCommerceRules, type CartLineWithVariant } from "@/lib/cart/cart-queries";
 import { nextQuantityStep } from "@/lib/cart/quantity";
 import { PriceEUR } from "@/components/storefront/price-eur";
 
-type Line = {
-  id: string;
-  quantity: number;
-  product: {
-    id: string;
-    slug: string;
-    title: string;
-    manufacturer: { name: string } | null;
-    priceGrossCents: number;
-    currency: string;
-    isActive: boolean;
-    availableQuantity: number;
-    minOrderQty: number;
-    purchaseStep: number;
-    maxOrderQty: number | null;
-    images: { url: string; alt: string }[];
-  };
-};
-
-export function CartLineTableRow({ line }: { line: Line }) {
+export function CartLineTableRow({ line }: { line: CartLineWithVariant }) {
   const p = line.product;
+  const commerce = cartLineCommerceRules(line);
   const img = p.images[0];
-  const lineTotal = line.quantity * p.priceGrossCents;
+  const lineTotal = line.quantity * commerce.priceGrossCents;
   const rules = {
-    availableQuantity: p.availableQuantity,
-    minOrderQty: p.minOrderQty,
-    purchaseStep: p.purchaseStep,
-    maxOrderQty: p.maxOrderQty,
+    availableQuantity: commerce.availableQuantity,
+    minOrderQty: commerce.minOrderQty,
+    purchaseStep: commerce.purchaseStep,
+    maxOrderQty: commerce.maxOrderQty,
   };
   const canInc = p.isActive && nextQuantityStep(rules, line.quantity) !== null;
 
@@ -94,7 +77,7 @@ export function CartLineTableRow({ line }: { line: Line }) {
         </div>
       </td>
       <td className="px-3 py-6 text-right align-top whitespace-nowrap">
-        <PriceEUR cents={p.priceGrossCents} />
+        <PriceEUR cents={commerce.priceGrossCents} />
       </td>
       <td className="px-3 py-6 align-top">
         <div className="flex items-center justify-center gap-1.5 sm:gap-2">

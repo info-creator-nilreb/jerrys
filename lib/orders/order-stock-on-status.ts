@@ -3,8 +3,13 @@ import {
   recordWarehouseShipmentMovements,
   releaseStockReservationsForOrder,
 } from "@/features/inventory";
+import { mirrorProductFromDefaultVariant } from "@/features/catalog";
 
-export type OrderLineForStock = { productId: string; quantity: number };
+export type OrderLineForStock = {
+  productId: string;
+  productVariantId: string;
+  quantity: number;
+};
 
 export type StockAdjustError = { ok: false; error: "insufficient_warehouse" };
 export type StockAdjustOk = { ok: true };
@@ -19,19 +24,24 @@ export async function decrementWarehouseForShippedOrder(
   orderId?: string,
 ): Promise<StockAdjustResult> {
   for (const line of items) {
-    const p = await tx.product.findUnique({
-      where: { id: line.productId },
-      select: { stockQuantity: true },
+    const v = await tx.productVariant.findUnique({
+      where: { id: line.productVariantId },
+      select: { stockQuantity: true, productId: true },
     });
-    if (!p || p.stockQuantity < line.quantity) {
+    if (!v || v.productId !== line.productId || v.stockQuantity < line.quantity) {
       return { ok: false, error: "insufficient_warehouse" };
     }
   }
+  const touched = new Set<string>();
   for (const line of items) {
-    await tx.product.update({
-      where: { id: line.productId },
+    await tx.productVariant.update({
+      where: { id: line.productVariantId },
       data: { stockQuantity: { decrement: line.quantity } },
     });
+    touched.add(line.productId);
+  }
+  for (const productId of touched) {
+    await mirrorProductFromDefaultVariant(tx, productId);
   }
   if (orderId) {
     await recordWarehouseShipmentMovements(tx, {
@@ -63,23 +73,33 @@ export async function restoreStockOnOrderCancelled(
         return { ok: true };
       }
     }
+    const touched = new Set<string>();
     for (const line of items) {
-      await tx.product.update({
-        where: { id: line.productId },
+      await tx.productVariant.update({
+        where: { id: line.productVariantId },
         data: { availableQuantity: { increment: line.quantity } },
       });
+      touched.add(line.productId);
+    }
+    for (const productId of touched) {
+      await mirrorProductFromDefaultVariant(tx, productId);
     }
     return { ok: true };
   }
   if (fromStatus === "shipped") {
+    const touched = new Set<string>();
     for (const line of items) {
-      await tx.product.update({
-        where: { id: line.productId },
+      await tx.productVariant.update({
+        where: { id: line.productVariantId },
         data: {
           availableQuantity: { increment: line.quantity },
           stockQuantity: { increment: line.quantity },
         },
       });
+      touched.add(line.productId);
+    }
+    for (const productId of touched) {
+      await mirrorProductFromDefaultVariant(tx, productId);
     }
     return { ok: true };
   }

@@ -24,6 +24,7 @@ export async function commitStockReservationsForOrder(
     await tx.stockMovement.create({
       data: {
         productId: reservation.productId,
+        productVariantId: reservation.productVariantId,
         orderId: params.orderId,
         reservationId: reservation.id,
         quantityDelta: 0,

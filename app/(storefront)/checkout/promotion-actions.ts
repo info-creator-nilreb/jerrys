@@ -1,7 +1,7 @@
 "use server";
 
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
-import { getCartWithLines } from "@/lib/cart/cart-queries";
+import { cartLineCommerceRules, getCartWithLines } from "@/lib/cart/cart-queries";
 import { getPrisma } from "@/lib/db/prisma";
 import { loadPromotionsForCheckoutResolve } from "@/lib/promotions/checkout-load";
 import { computeCheckoutOrderTotalsWithDiscount } from "@/lib/promotions/checkout-totals";
@@ -49,11 +49,14 @@ export async function previewCheckoutPromotion(input: {
     return { error: "Keine bestellbaren Artikel im Warenkorb." };
   }
 
-  const lines: OrderPriceLineInput[] = activeLines.map((line) => ({
-    quantity: line.quantity,
-    priceGrossCents: line.product.priceGrossCents,
-    taxRatePercent: line.product.taxRatePercent,
-  }));
+  const lines: OrderPriceLineInput[] = activeLines.map((line) => {
+    const commerce = cartLineCommerceRules(line);
+    return {
+      quantity: line.quantity,
+      priceGrossCents: commerce.priceGrossCents,
+      taxRatePercent: commerce.taxRatePercent,
+    };
+  });
 
   const shopShip = await getShopShippingSettings();
   const country = input.shippingCountry.trim().toUpperCase();

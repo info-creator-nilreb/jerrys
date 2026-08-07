@@ -82,6 +82,8 @@ model Product {
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
   images      ProductImage[]
+  variants    ProductVariant[]
+  collectionMemberships CollectionProduct[]
   cartLines   CartLine[]
   orderItems  OrderItem[]
   stockReservations StockReservation[]
@@ -89,6 +91,74 @@ model Product {
 
   @@index([isActive, sortOrder])
   @@map("products")
+}
+
+/// Verkaufbare SKU (Epic 2); Preis und Bestand sind variantenspezifisch.
+model ProductVariant {
+  id          String   @id @default(cuid())
+  productId   String   @map("product_id")
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku         String   @unique
+  title       String?
+
+  priceGrossCents Int        @map("price_gross_cents")
+  priceNetCents   Int        @map("price_net_cents")
+  taxRatePercent  Int        @default(19) @map("tax_rate_percent")
+  listPriceGrossCents Int?   @map("list_price_gross_cents")
+  listPriceNetCents   Int?   @map("list_price_net_cents")
+  lowestPrice30dGrossCents Int? @map("lowest_price_30d_gross_cents")
+  lowestPrice30dNetCents   Int? @map("lowest_price_30d_net_cents")
+
+  stockQuantity     Int @default(0) @map("stock_quantity")
+  availableQuantity Int @default(0) @map("available_quantity")
+  deliveryTimeKey   String? @map("delivery_time_key")
+  restockDays       Int?    @map("restock_days")
+  minOrderQty       Int     @default(1) @map("min_order_qty")
+  purchaseStep      Int     @default(1) @map("purchase_step")
+  maxOrderQty       Int?    @map("max_order_qty")
+
+  isDefault Boolean @default(false) @map("is_default")
+  isActive  Boolean @default(true) @map("is_active")
+  sortOrder Int     @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  cartLines         CartLine[]
+  orderItems        OrderItem[]
+  stockReservations StockReservation[]
+  stockMovements    StockMovement[]
+
+  @@index([productId, isDefault])
+  @@index([productId, isActive, sortOrder])
+  @@map("product_variants")
+}
+
+model Collection {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  products    CollectionProduct[]
+
+  @@index([isActive, sortOrder])
+  @@map("collections")
+}
+
+model CollectionProduct {
+  collectionId String @map("collection_id")
+  productId    String @map("product_id")
+  sortOrder    Int    @default(0) @map("sort_order")
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([collectionId, productId])
+  @@index([productId])
+  @@map("collection_products")
 }
 
 /// Globale Versandkonfiguration (genau eine Zeile, id = default).
@@ -266,6 +336,8 @@ model StockReservation {
   order       Order                  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId   String                 @map("product_id")
   product     Product                @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productVariantId String            @map("product_variant_id")
+  productVariant   ProductVariant     @relation(fields: [productVariantId], references: [id], onDelete: Restrict)
   quantity    Int
   status      StockReservationStatus @default(active)
   expiresAt   DateTime?              @map("expires_at")
@@ -275,7 +347,7 @@ model StockReservation {
   updatedAt   DateTime               @updatedAt @map("updated_at")
   movements   StockMovement[]
 
-  @@unique([orderId, productId])
+  @@unique([orderId, productVariantId])
   @@index([orderId, status])
   @@map("stock_reservations")
 }
@@ -284,6 +356,8 @@ model StockMovement {
   id              String              @id @default(cuid())
   productId       String              @map("product_id")
   product         Product             @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productVariantId String?            @map("product_variant_id")
+  productVariant   ProductVariant?    @relation(fields: [productVariantId], references: [id], onDelete: Restrict)
   orderId         String?             @map("order_id")
   reservationId   String?             @map("reservation_id")
   reservation     StockReservation?   @relation(fields: [reservationId], references: [id], onDelete: SetNull)
@@ -293,6 +367,7 @@ model StockMovement {
   createdAt       DateTime            @default(now()) @map("created_at")
 
   @@index([productId, createdAt])
+  @@index([productVariantId, createdAt])
   @@index([orderId])
   @@map("stock_movements")
 }
@@ -387,6 +462,9 @@ model OrderItem {
   order                  Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId              String  @map("product_id")
   product                Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productVariantId       String? @map("product_variant_id")
+  productVariant         ProductVariant? @relation(fields: [productVariantId], references: [id], onDelete: SetNull)
+  skuSnapshot            String? @map("sku_snapshot")
   productTitleSnapshot   String  @map("product_title_snapshot")
   unitPriceGrossCents    Int     @map("unit_price_gross_cents")
   taxRatePercentSnapshot Int     @map("tax_rate_percent_snapshot")
@@ -399,16 +477,18 @@ model OrderItem {
 }
 
 model CartLine {
-  id        String   @id @default(cuid())
-  cartId    String   @map("cart_id")
-  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  productId String   @map("product_id")
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  quantity  Int
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id               String         @id @default(cuid())
+  cartId           String         @map("cart_id")
+  cart             Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId        String         @map("product_id")
+  product          Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productVariantId String         @map("product_variant_id")
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+  quantity         Int
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
 
-  @@unique([cartId, productId])
+  @@unique([cartId, productVariantId])
   @@map("cart_lines")
 }
 

@@ -1,7 +1,37 @@
 import { hash } from "bcryptjs";
 import "dotenv/config";
+import { syncDefaultVariantFromProduct } from "../features/catalog";
 import { netCentsFromGross } from "../lib/catalog/pricing";
 import { getPrisma } from "../lib/db/prisma";
+
+async function syncDefaultVariantsForAllProducts(
+  prisma: ReturnType<typeof getPrisma>,
+): Promise<void> {
+  const products = await prisma.product.findMany();
+  for (const p of products) {
+    await prisma.$transaction(async (tx) => {
+      await syncDefaultVariantFromProduct(tx, {
+        id: p.id,
+        productNumber: p.productNumber,
+        taxRatePercent: p.taxRatePercent,
+        priceGrossCents: p.priceGrossCents,
+        priceNetCents: p.priceNetCents,
+        listPriceGrossCents: p.listPriceGrossCents,
+        listPriceNetCents: p.listPriceNetCents,
+        lowestPrice30dGrossCents: p.lowestPrice30dGrossCents,
+        lowestPrice30dNetCents: p.lowestPrice30dNetCents,
+        stockQuantity: p.stockQuantity,
+        availableQuantity: p.availableQuantity,
+        deliveryTimeKey: p.deliveryTimeKey,
+        restockDays: p.restockDays,
+        minOrderQty: p.minOrderQty,
+        purchaseStep: p.purchaseStep,
+        maxOrderQty: p.maxOrderQty,
+        isActive: p.isActive,
+      });
+    });
+  }
+}
 
 async function main() {
   const prisma = getPrisma();
@@ -151,6 +181,8 @@ async function main() {
         sortOrder: 1,
       },
     });
+
+    await syncDefaultVariantsForAllProducts(prisma);
 
     await prisma.homepageAmazonReview.upsert({
       where: { id: "seed_homepage_review_1" },
