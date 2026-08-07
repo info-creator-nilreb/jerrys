@@ -1,7 +1,6 @@
 import type { Prisma } from "@/app/generated/prisma/client";
 import type { ReservationLine } from "@/features/inventory/domain/reservation-line";
 import { reservationExpiresAt } from "@/features/inventory/domain/reservation-ttl";
-import { mirrorProductFromDefaultVariant } from "@/features/catalog";
 
 export class InsufficientStockError extends Error {
   readonly code = "insufficient_stock" as const;
@@ -24,8 +23,6 @@ export async function reserveStockForOrder(
     correlationId?: string;
   },
 ): Promise<void> {
-  const touchedProducts = new Set<string>();
-
   for (const line of params.lines) {
     const updated = await tx.productVariant.updateMany({
       where: {
@@ -38,11 +35,6 @@ export async function reserveStockForOrder(
     if (updated.count !== 1) {
       throw new InsufficientStockError();
     }
-    touchedProducts.add(line.productId);
-  }
-
-  for (const productId of touchedProducts) {
-    await mirrorProductFromDefaultVariant(tx, productId);
   }
 
   for (const line of params.lines) {

@@ -1,20 +1,14 @@
 import { getPrisma } from "@/lib/db/prisma";
 import { prismaDefaultVariantInclude, prismaStorefrontActiveVariantsInclude } from "@/lib/catalog/default-variant-storefront";
 
-const storefrontProductCardSelect = {
+/** Storefront-Produktkarte: Commerce-Felder nur über `variants`. */
+export const storefrontProductCardSelect = {
   id: true,
   slug: true,
   title: true,
   subtitle: true,
   isBestseller: true,
-  priceGrossCents: true,
-  listPriceGrossCents: true,
   currency: true,
-  stockQuantity: true,
-  availableQuantity: true,
-  minOrderQty: true,
-  purchaseStep: true,
-  maxOrderQty: true,
   amazonRatingAverage: true,
   amazonRatingCount: true,
   amazonReviewUrl: true,
@@ -24,8 +18,6 @@ const storefrontProductCardSelect = {
     select: { url: true, alt: true },
   },
 };
-
-export { storefrontProductCardSelect };
 
 export async function listActiveProductsForStorefront() {
   return getPrisma().product.findMany({
@@ -45,10 +37,37 @@ export async function getActiveProductBySlug(slug: string) {
   });
 }
 
+const defaultVariantAdminSelect = {
+  id: true,
+  sku: true,
+  title: true,
+  isDefault: true,
+  isActive: true,
+  taxRatePercent: true,
+  priceGrossCents: true,
+  priceNetCents: true,
+  listPriceGrossCents: true,
+  listPriceNetCents: true,
+  lowestPrice30dGrossCents: true,
+  lowestPrice30dNetCents: true,
+  stockQuantity: true,
+  availableQuantity: true,
+  deliveryTimeKey: true,
+  restockDays: true,
+  minOrderQty: true,
+  purchaseStep: true,
+  maxOrderQty: true,
+} as const;
+
 export async function listProductsForAdmin() {
   return getPrisma().product.findMany({
     orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
     include: {
+      variants: {
+        where: { isDefault: true },
+        take: 1,
+        select: { priceGrossCents: true },
+      },
       images: {
         orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }],
         take: 1,
@@ -65,16 +84,7 @@ export async function getProductByIdForAdmin(id: string) {
       images: { orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }] },
       variants: {
         orderBy: [{ isDefault: "desc" }, { sortOrder: "asc" }],
-        select: {
-          id: true,
-          sku: true,
-          title: true,
-          isDefault: true,
-          isActive: true,
-          priceGrossCents: true,
-          availableQuantity: true,
-          stockQuantity: true,
-        },
+        select: defaultVariantAdminSelect,
       },
     },
   });

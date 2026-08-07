@@ -6,7 +6,7 @@ import { ProductCardImageSlider } from "@/components/storefront/product-card-ima
 import {
   pickDefaultVariant,
   quantityRulesFromVariant,
-  type DefaultVariantCommerce,
+  type StorefrontVariantCommerce,
 } from "@/lib/catalog/default-variant-storefront";
 import { defaultAddQuantity } from "@/lib/cart/quantity";
 
@@ -16,35 +16,29 @@ export type StorefrontProductCard = {
   title: string;
   subtitle: string | null;
   isBestseller: boolean;
-  priceGrossCents: number;
-  listPriceGrossCents: number | null;
   currency: string;
-  availableQuantity: number;
-  minOrderQty: number;
-  purchaseStep: number;
-  maxOrderQty: number | null;
   amazonRatingAverage: number | null;
   amazonRatingCount: number | null;
   amazonReviewUrl: string | null;
   images: { url: string; alt: string }[];
-  variants: DefaultVariantCommerce[];
+  variants: StorefrontVariantCommerce[];
 };
 
 export function ProductCard({ product }: { product: StorefrontProductCard }) {
   const variant = pickDefaultVariant(product);
-  const quantityRules = variant
-    ? quantityRulesFromVariant(variant)
-    : {
-        availableQuantity: product.availableQuantity,
-        minOrderQty: product.minOrderQty,
-        purchaseStep: product.purchaseStep,
-        maxOrderQty: product.maxOrderQty,
-      };
-  const canAdd = defaultAddQuantity(quantityRules) !== null;
-  const displayPriceCents = variant?.priceGrossCents ?? product.priceGrossCents;
-  const listPriceCents = product.listPriceGrossCents;
-  const onSale =
-    listPriceCents != null && listPriceCents > displayPriceCents;
+  const quantityRules = variant ? quantityRulesFromVariant(variant) : null;
+  const canAdd = quantityRules ? defaultAddQuantity(quantityRules) !== null : false;
+  const displayPriceCents = variant?.priceGrossCents ?? 0;
+  const listPriceCents = variant?.listPriceGrossCents ?? null;
+  const onSale = listPriceCents != null && listPriceCents > displayPriceCents;
+
+  if (!variant) {
+    return (
+      <article className="rounded-xl border border-(--surface-muted) bg-white p-6 text-sm text-(--foreground-muted)">
+        {product.title} — derzeit nicht bestellbar.
+      </article>
+    );
+  }
 
   return (
     <article className="group relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl border border-(--surface-muted) bg-white shadow-sm transition-shadow hover:shadow-md">
@@ -90,11 +84,9 @@ export function ProductCard({ product }: { product: StorefrontProductCard }) {
             </div>
             <p className="mt-4 text-lg font-semibold text-primary md:text-xl">
               {onSale ? (
-                <>
-                  <span className="mr-2 font-normal text-(--foreground-muted) line-through">
-                    {formatPrice(listPriceCents!, product.currency)}
-                  </span>
-                </>
+                <span className="mr-2 font-normal text-(--foreground-muted) line-through">
+                  {formatPrice(listPriceCents, product.currency)}
+                </span>
               ) : null}
               {formatPrice(displayPriceCents, product.currency)}*
             </p>
@@ -104,9 +96,9 @@ export function ProductCard({ product }: { product: StorefrontProductCard }) {
       <div className="relative z-10 flex shrink-0 flex-col justify-start border-t border-(--surface-muted) bg-white px-6 pt-4 pb-6 md:min-h-[8.5rem] md:px-7 md:pb-7">
         <AddToCartForm
           productId={product.id}
-          productVariantId={variant?.id}
+          productVariantId={variant.id}
           canAdd={canAdd}
-          quantityRules={quantityRules}
+          quantityRules={quantityRules!}
           compact
         />
       </div>

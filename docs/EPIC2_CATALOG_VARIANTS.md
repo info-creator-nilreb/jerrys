@@ -2,11 +2,21 @@
 
 Referenz: [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md#epic-2-catalog-variants-and-inventory)
 
-## Status: in Arbeit (Slice 7–8 — Bestand & Kollektions-Filter)
+## Status: Contract-Phase (Epic 2 abgeschlossen im Code)
 
-**Branch:** `cursor/epic-2-slice7-8-inventory-filter-21f6`
+**Migration:** `20260807180000_epic2_product_contract_phase` — Spiegelspalten auf `products` entfernt.
 
-### Slice 8 (Kollektionen Storefront)
+### Contract-Phase
+
+| Thema | Umsetzung |
+| --- | --- |
+| Schema | Preis/Bestand/Lieferregeln nur noch auf `product_variants` |
+| Admin | Produkt speichern → nur Default-Variante (`syncDefaultVariantFromProduct`), kein Spiegel |
+| Bestand | Reservierung/Versand/Storno nur Varianten-Updates |
+| Storefront | Karten/PDP/Kollektionen lesen Commerce aus Varianten |
+| Legacy-Zahlung | `finalize-pending-payment` ohne Reservierung bucht auf Variante (Fallback Default) |
+
+### Slice 7–8
 
 | Thema | Umsetzung |
 | --- | --- |
@@ -71,16 +81,14 @@ Referenz: [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md#epic-2-catalog-variants-an
 ### Exit-Kriterium (Roadmap) — offen
 
 - [ ] Bestehende Produkte ohne Datenverlust (Migration deploy + Verify)
-- [ ] Preis/Bestand variantenspezifisch in allen kritischen Pfaden
-- [ ] Kein Overselling (Reservierung weiterhin atomar auf Variante)
-- [x] Storefront: Variantenwahl + Lieferstatus pro Variante (Slice 3 PDP)
-- [ ] Merchandising: Collections-Admin, Filter, Sale-Badges (Filter/Sort Kollektion Slice 8; Sale erledigt)
+- [x] Preis/Bestand variantenspezifisch in allen kritischen Pfaden (Contract-Phase)
+- [x] Merchandising: Collections-Admin, Filter, Sale-Badges
 - [x] Lagerbewegungen nachvollziehbar (Variante/SKU in `/admin/bestand`)
 
 ### Ops (nach Merge)
 
 ```bash
-npm run db:migrate   # Migration 20260807160000_epic2_catalog_variants
+npm run db:migrate   # inkl. 20260807180000_epic2_product_contract_phase
 ```
 
 Production: `prisma migrate deploy` auf Vercel/CI wie üblich.
@@ -97,4 +105,4 @@ npm run test:unit -- tests/unit/default-variant-sku.test.ts tests/unit/reservati
 - Mehrere Varianten im Admin-UI, Attribute/Optionen
 - Storefront-Variantenpicker
 - Collection-Listing, Filter/Sortierung, Sale-Preis-Badges
-- Entfernen der Produkt-Spiegelspalten (Contract-Phase)
+- Entfernen der Produkt-Spiegelspalten (Contract-Phase) — **erledigt** (`20260807180000`)

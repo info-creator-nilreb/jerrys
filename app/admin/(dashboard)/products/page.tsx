@@ -76,7 +76,9 @@ export default async function AdminProductsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-[#6b7280]">{p.slug}</td>
-                    <td className="px-4 py-3">{formatPrice(p.priceGrossCents, p.currency)}</td>
+                    <td className="px-4 py-3">
+                      {formatPrice(p.variants[0]?.priceGrossCents ?? 0, p.currency)}
+                    </td>
                     <td className="px-4 py-3">
                       {p.isActive ? (
                         <span className="text-emerald-700 dark:text-emerald-400">Aktiv</span>

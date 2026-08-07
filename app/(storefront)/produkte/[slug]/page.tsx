@@ -168,8 +168,8 @@ export default async function ProduktDetailPage({
               <ProductPdpPurchasePanel
                 productId={product.id}
                 currency={product.currency}
-                listPriceGrossCents={product.listPriceGrossCents}
-                deliveryTimeKeyFallback={product.deliveryTimeKey}
+                listPriceGrossCents={defaultVariant.listPriceGrossCents}
+                deliveryTimeKeyFallback={defaultVariant.deliveryTimeKey}
                 variants={product.variants}
               />
             </article>

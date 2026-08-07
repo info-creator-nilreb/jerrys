@@ -10,12 +10,12 @@ export function parseCollectionSort(value: string | undefined): CollectionSort {
 
 function displayPriceCents(product: StorefrontProductCard): number {
   const v = pickDefaultVariant(product);
-  return v?.priceGrossCents ?? product.priceGrossCents;
+  return v?.priceGrossCents ?? 0;
 }
 
 function isProductAvailable(product: StorefrontProductCard): boolean {
   const v = pickDefaultVariant(product);
-  return (v?.availableQuantity ?? product.availableQuantity) > 0;
+  return (v?.availableQuantity ?? 0) > 0;
 }
 
 export function filterAndSortCollectionProducts(
