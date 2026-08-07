@@ -8,6 +8,7 @@ const storefrontProductCardSelect = {
   subtitle: true,
   isBestseller: true,
   priceGrossCents: true,
+  listPriceGrossCents: true,
   currency: true,
   stockQuantity: true,
   availableQuantity: true,
@@ -23,6 +24,8 @@ const storefrontProductCardSelect = {
     select: { url: true, alt: true },
   },
 };
+
+export { storefrontProductCardSelect };
 
 export async function listActiveProductsForStorefront() {
   return getPrisma().product.findMany({

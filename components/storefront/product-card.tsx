@@ -17,6 +17,7 @@ export type StorefrontProductCard = {
   subtitle: string | null;
   isBestseller: boolean;
   priceGrossCents: number;
+  listPriceGrossCents: number | null;
   currency: string;
   availableQuantity: number;
   minOrderQty: number;
@@ -41,6 +42,9 @@ export function ProductCard({ product }: { product: StorefrontProductCard }) {
       };
   const canAdd = defaultAddQuantity(quantityRules) !== null;
   const displayPriceCents = variant?.priceGrossCents ?? product.priceGrossCents;
+  const listPriceCents = product.listPriceGrossCents;
+  const onSale =
+    listPriceCents != null && listPriceCents > displayPriceCents;
 
   return (
     <article className="group relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl border border-(--surface-muted) bg-white shadow-sm transition-shadow hover:shadow-md">
@@ -51,11 +55,18 @@ export function ProductCard({ product }: { product: StorefrontProductCard }) {
           aria-label={`${product.title} – zur Produktseite`}
         />
         <div className="relative z-10 shrink-0 pointer-events-auto">
-          {product.isBestseller ? (
-            <span className="absolute left-3 top-3 z-30 inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-white shadow-sm">
-              Bestseller
-            </span>
-          ) : null}
+          <div className="absolute left-3 top-3 z-30 flex flex-col gap-1.5">
+            {onSale ? (
+              <span className="inline-flex w-fit items-center rounded-full bg-(--foreground-heading) px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-white shadow-sm">
+                Sale
+              </span>
+            ) : null}
+            {product.isBestseller ? (
+              <span className="inline-flex w-fit items-center gap-1 rounded-full bg-primary px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-white shadow-sm">
+                Bestseller
+              </span>
+            ) : null}
+          </div>
           <ProductCardImageSlider images={product.images} productTitle={product.title} />
         </div>
         <div className="relative z-10 flex min-h-0 flex-1 flex-col pointer-events-none p-6 md:p-7">
@@ -78,6 +89,13 @@ export function ProductCard({ product }: { product: StorefrontProductCard }) {
               ) : null}
             </div>
             <p className="mt-4 text-lg font-semibold text-primary md:text-xl">
+              {onSale ? (
+                <>
+                  <span className="mr-2 font-normal text-(--foreground-muted) line-through">
+                    {formatPrice(listPriceCents!, product.currency)}
+                  </span>
+                </>
+              ) : null}
               {formatPrice(displayPriceCents, product.currency)}*
             </p>
           </div>

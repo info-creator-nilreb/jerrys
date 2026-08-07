@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { DatabaseUnavailableNotice } from "@/components/storefront/database-unavailable-notice";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
@@ -31,7 +32,10 @@ export default async function ProduktePage() {
         Produkte
       </h1>
       <p className="mt-2 max-w-2xl text-base text-(--foreground-muted) md:text-lg">
-        Hochwertige Katzenmöbel – designed und gefertigt in Deutschland.
+        Hochwertige Katzenmöbel – designed und gefertigt in Deutschland.{" "}
+        <Link href="/kollektionen" className="font-medium text-primary hover:underline">
+          Kollektionen entdecken
+        </Link>
       </p>
 
       {dbUnavailable ? (
