@@ -66,12 +66,35 @@ export async function applyOrderStatusTransition(
         return { ok: false, error: "shipment_required" } as const;
       }
 
-      const w = await decrementWarehouseForShippedOrder(tx, order.items, orderId);
+      const stockLines = order.items.flatMap((item) =>
+        item.productVariantId
+          ? [
+              {
+                productId: item.productId,
+                productVariantId: item.productVariantId,
+                quantity: item.quantity,
+              },
+            ]
+          : [],
+      );
+
+      const w = await decrementWarehouseForShippedOrder(tx, stockLines, orderId);
       if (!w.ok) return { ok: false, error: "insufficient_warehouse" } as const;
     }
 
     if (toStatus === "retoure" && (from === "shipped" || from === "completed")) {
-      const r = await restoreStockOnOrderCancelled(tx, "shipped", order.items, orderId);
+      const stockLines = order.items.flatMap((item) =>
+        item.productVariantId
+          ? [
+              {
+                productId: item.productId,
+                productVariantId: item.productVariantId,
+                quantity: item.quantity,
+              },
+            ]
+          : [],
+      );
+      const r = await restoreStockOnOrderCancelled(tx, "shipped", stockLines, orderId);
       if (!r.ok) return { ok: false, error: "insufficient_warehouse" } as const;
     }
 
@@ -82,7 +105,18 @@ export async function applyOrderStatusTransition(
           correlationId: `cancel:${orderId}`,
         });
       }
-      const r = await restoreStockOnOrderCancelled(tx, from, order.items, orderId);
+      const stockLines = order.items.flatMap((item) =>
+        item.productVariantId
+          ? [
+              {
+                productId: item.productId,
+                productVariantId: item.productVariantId,
+                quantity: item.quantity,
+              },
+            ]
+          : [],
+      );
+      const r = await restoreStockOnOrderCancelled(tx, from, stockLines, orderId);
       if (!r.ok) return { ok: false, error: "insufficient_warehouse" } as const;
     }
 

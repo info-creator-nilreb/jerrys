@@ -1,18 +1,22 @@
 import { getPrisma } from "@/lib/db/prisma";
 
-const lineProductSelect = {
+export const cartVariantSelect = {
   id: true,
-  slug: true,
-  title: true,
+  sku: true,
   priceGrossCents: true,
-  currency: true,
   taxRatePercent: true,
-  isActive: true,
-  stockQuantity: true,
   availableQuantity: true,
   minOrderQty: true,
   purchaseStep: true,
   maxOrderQty: true,
+};
+
+const lineProductSelect = {
+  id: true,
+  slug: true,
+  title: true,
+  currency: true,
+  isActive: true,
   manufacturer: { select: { name: true } },
   images: {
     orderBy: [{ isCover: "desc" as const }, { sortOrder: "asc" as const }],
@@ -36,9 +40,38 @@ export async function getCartWithLines(cartId: string) {
       lines: {
         include: {
           product: { select: lineProductSelect },
+          productVariant: { select: cartVariantSelect },
         },
         orderBy: { createdAt: "asc" },
       },
     },
   });
+}
+
+export type CartLineWithVariant = NonNullable<
+  Awaited<ReturnType<typeof getCartWithLines>>
+>["lines"][number];
+
+export type CartLineCommerceSource = {
+  productVariant: {
+    availableQuantity: number;
+    minOrderQty: number;
+    purchaseStep: number;
+    maxOrderQty: number | null;
+    priceGrossCents: number;
+    taxRatePercent: number;
+  };
+};
+
+/** Preis- und Bestandsregeln aus der Warenkorb-Variante (Epic 2). */
+export function cartLineCommerceRules(line: CartLineCommerceSource) {
+  const v = line.productVariant;
+  return {
+    availableQuantity: v.availableQuantity,
+    minOrderQty: v.minOrderQty,
+    purchaseStep: v.purchaseStep,
+    maxOrderQty: v.maxOrderQty,
+    priceGrossCents: v.priceGrossCents,
+    taxRatePercent: v.taxRatePercent,
+  };
 }

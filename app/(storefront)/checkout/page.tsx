@@ -4,7 +4,7 @@ import { CheckoutForm } from "@/components/storefront/checkout-form";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import type { CheckoutSummaryLine } from "@/components/storefront/checkout-summary-aside";
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
-import { getCartWithLines } from "@/lib/cart/cart-queries";
+import { cartLineCommerceRules, getCartWithLines } from "@/lib/cart/cart-queries";
 import { labelForShippingCountryCode } from "@/lib/catalog/shipping-countries-catalog";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
@@ -50,16 +50,19 @@ export default async function CheckoutPage({
   const currency = activeLines[0]!.product.currency;
   const idempotencyKey = randomUUID();
 
-  const summaryLines: CheckoutSummaryLine[] = activeLines.map((l) => ({
-    id: l.id,
-    quantity: l.quantity,
-    product: {
-      title: l.product.title,
-      priceGrossCents: l.product.priceGrossCents,
-      taxRatePercent: l.product.taxRatePercent,
-      images: l.product.images,
-    },
-  }));
+  const summaryLines: CheckoutSummaryLine[] = activeLines.map((l) => {
+    const commerce = cartLineCommerceRules(l);
+    return {
+      id: l.id,
+      quantity: l.quantity,
+      product: {
+        title: l.product.title,
+        priceGrossCents: commerce.priceGrossCents,
+        taxRatePercent: commerce.taxRatePercent,
+        images: l.product.images,
+      },
+    };
+  });
 
   const shopShip = await getShopShippingSettings();
   const allowedShippingCountries = shopShip.shippingCountryCodes.map((code) => ({

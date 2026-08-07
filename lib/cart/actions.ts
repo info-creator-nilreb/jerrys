@@ -10,7 +10,7 @@ import {
   nextQuantityStep,
   previousQuantityStep,
 } from "@/lib/cart/quantity";
-import { getCartWithLines } from "@/lib/cart/cart-queries";
+import { cartLineCommerceRules, cartVariantSelect, getCartWithLines } from "@/lib/cart/cart-queries";
 import { getPrisma } from "@/lib/db/prisma";
 import { nonEmptyString } from "@/lib/validation/form";
 
@@ -18,6 +18,7 @@ export type CartActionState = { error?: string; ok?: boolean } | null;
 
 const addSchema = z.object({
   productId: nonEmptyString,
+  productVariantId: z.string().optional(),
 });
 
 const lineSchema = z.object({
@@ -32,30 +33,50 @@ export async function addToCart(
   _prev: CartActionState,
   formData: FormData,
 ): Promise<CartActionState> {
-  const parsed = addSchema.safeParse({ productId: formData.get("productId") });
+  const parsed = addSchema.safeParse({
+    productId: formData.get("productId"),
+    productVariantId: formData.get("productVariantId") ?? undefined,
+  });
   if (!parsed.success) {
     return { error: "Ungültiges Produkt." };
   }
 
   const product = await getPrisma().product.findFirst({
     where: { id: parsed.data.productId, isActive: true },
+    select: { id: true, slug: true },
   });
   if (!product) {
     return { error: "Produkt nicht verfügbar." };
   }
 
+  const variant = parsed.data.productVariantId
+    ? await getPrisma().productVariant.findFirst({
+        where: {
+          id: parsed.data.productVariantId,
+          productId: product.id,
+          isActive: true,
+        },
+      })
+    : await getPrisma().productVariant.findFirst({
+        where: { productId: product.id, isDefault: true, isActive: true },
+      });
+
+  if (!variant) {
+    return { error: "Produkt nicht verfügbar." };
+  }
+
   const rules = {
-    availableQuantity: product.availableQuantity,
-    minOrderQty: product.minOrderQty,
-    purchaseStep: product.purchaseStep,
-    maxOrderQty: product.maxOrderQty,
+    availableQuantity: variant.availableQuantity,
+    minOrderQty: variant.minOrderQty,
+    purchaseStep: variant.purchaseStep,
+    maxOrderQty: variant.maxOrderQty,
   };
 
   const cartId = await ensureCartIdAndCookie();
 
   const existing = await getPrisma().cartLine.findUnique({
     where: {
-      cartId_productId: { cartId, productId: product.id },
+      cartId_productVariantId: { cartId, productVariantId: variant.id },
     },
   });
 
@@ -90,7 +111,12 @@ export async function addToCart(
     });
   } else {
     await getPrisma().cartLine.create({
-      data: { cartId, productId: product.id, quantity: nextQty },
+      data: {
+        cartId,
+        productId: product.id,
+        productVariantId: variant.id,
+        quantity: nextQty,
+      },
     });
   }
 
@@ -101,6 +127,16 @@ export async function addToCart(
   revalidatePath("/");
   revalidatePath("/", "layout");
   return { ok: true };
+}
+
+async function loadCartLineForMutation(lineId: string, cartId: string) {
+  return getPrisma().cartLine.findFirst({
+    where: { id: lineId, cartId },
+    include: {
+      product: { select: { isActive: true } },
+      productVariant: { select: cartVariantSelect },
+    },
+  });
 }
 
 export async function updateCartLineQuantity(
@@ -120,22 +156,12 @@ export async function updateCartLineQuantity(
     return { error: "Warenkorb nicht gefunden." };
   }
 
-  const line = await getPrisma().cartLine.findFirst({
-    where: { id: parsed.data.lineId, cartId },
-    include: { product: true },
-  });
+  const line = await loadCartLineForMutation(parsed.data.lineId, cartId);
   if (!line || !line.product.isActive) {
     return { error: "Position nicht gefunden." };
   }
 
-  const p = line.product;
-  const rules = {
-    availableQuantity: p.availableQuantity,
-    minOrderQty: p.minOrderQty,
-    purchaseStep: p.purchaseStep,
-    maxOrderQty: p.maxOrderQty,
-  };
-
+  const rules = cartLineCommerceRules(line);
   const q = clampToValidQuantity(rules, parsed.data.quantity);
   if (q === null || !isValidCartQuantity(rules, q)) {
     return { error: "Menge nicht zulässig (Mindestabnahme, Staffelung, Lager)." };
@@ -211,20 +237,10 @@ export async function incrementCartLineQuantity(formData: FormData) {
   const cartId = await getCartIdFromCookie();
   if (!cartId) return;
 
-  const line = await getPrisma().cartLine.findFirst({
-    where: { id: parsed.data.lineId, cartId },
-    include: { product: true },
-  });
+  const line = await loadCartLineForMutation(parsed.data.lineId, cartId);
   if (!line?.product.isActive) return;
 
-  const p = line.product;
-  const rules = {
-    availableQuantity: p.availableQuantity,
-    minOrderQty: p.minOrderQty,
-    purchaseStep: p.purchaseStep,
-    maxOrderQty: p.maxOrderQty,
-  };
-
+  const rules = cartLineCommerceRules(line);
   const next = nextQuantityStep(rules, line.quantity);
   if (next === null) return;
 
@@ -270,7 +286,8 @@ export async function getCartFlyoutPreview(): Promise<CartFlyoutPreview> {
   const currency = active[0]?.product.currency ?? "EUR";
 
   const lines = active.map((l) => {
-    const gross = l.quantity * l.product.priceGrossCents;
+    const commerce = cartLineCommerceRules(l);
+    const gross = l.quantity * commerce.priceGrossCents;
     subtotal += gross;
     const img = l.product.images[0];
     return {
@@ -280,9 +297,9 @@ export async function getCartFlyoutPreview(): Promise<CartFlyoutPreview> {
       quantity: l.quantity,
       imageUrl: img?.url ?? null,
       imageAlt: img?.alt ?? null,
-      unitPriceGrossCents: l.product.priceGrossCents,
+      unitPriceGrossCents: commerce.priceGrossCents,
       lineTotalGrossCents: gross,
-      currency: l.product.currency,
+      currency,
     };
   });
 
@@ -296,20 +313,10 @@ export async function decrementCartLineQuantity(formData: FormData) {
   const cartId = await getCartIdFromCookie();
   if (!cartId) return;
 
-  const line = await getPrisma().cartLine.findFirst({
-    where: { id: parsed.data.lineId, cartId },
-    include: { product: true },
-  });
+  const line = await loadCartLineForMutation(parsed.data.lineId, cartId);
   if (!line?.product.isActive) return;
 
-  const p = line.product;
-  const rules = {
-    availableQuantity: p.availableQuantity,
-    minOrderQty: p.minOrderQty,
-    purchaseStep: p.purchaseStep,
-    maxOrderQty: p.maxOrderQty,
-  };
-
+  const rules = cartLineCommerceRules(line);
   const prev = previousQuantityStep(rules, line.quantity);
   if (prev === "remove") {
     await getPrisma().cartLine.delete({ where: { id: line.id } });

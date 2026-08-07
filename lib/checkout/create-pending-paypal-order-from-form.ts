@@ -1,7 +1,7 @@
 import { InsufficientStockError, reserveStockForOrder } from "@/features/inventory";
 import { revalidatePath } from "next/cache";
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
-import { getCartWithLines } from "@/lib/cart/cart-queries";
+import { getCartWithLines, cartLineCommerceRules } from "@/lib/cart/cart-queries";
 import { checkoutFormSchema } from "@/lib/checkout/schemas";
 import { generateOrderNumber } from "@/lib/checkout/order-number";
 import { netCentsFromGross } from "@/lib/catalog/pricing";
@@ -238,20 +238,23 @@ async function createPendingPayPalOrderFromParsedRaw(
   }
 
   for (const line of activeLines) {
-    const p = line.product;
-    if (line.quantity > p.availableQuantity) {
+    const commerce = cartLineCommerceRules(line);
+    if (line.quantity > commerce.availableQuantity) {
       return {
         ok: false,
-        error: `Nicht genug verfügbarer Bestand für „${p.title}“. Bitte Menge anpassen.`,
+        error: `Nicht genug verfügbarer Bestand für „${line.product.title}“. Bitte Menge anpassen.`,
       };
     }
   }
 
-  const lineInputs: OrderPriceLineInput[] = activeLines.map((line) => ({
-    quantity: line.quantity,
-    priceGrossCents: line.product.priceGrossCents,
-    taxRatePercent: line.product.taxRatePercent,
-  }));
+  const lineInputs: OrderPriceLineInput[] = activeLines.map((line) => {
+    const commerce = cartLineCommerceRules(line);
+    return {
+      quantity: line.quantity,
+      priceGrossCents: commerce.priceGrossCents,
+      taxRatePercent: commerce.taxRatePercent,
+    };
+  });
 
   const prisma = getPrisma();
   const codeNorm = normalizePromotionCode(d.checkoutPromotionCode ?? "");
@@ -356,22 +359,28 @@ async function createPendingPayPalOrderFromParsedRaw(
           idempotencyKey: d.idempotencyKey,
           items: {
             create: activeLines.map((line) => {
+              const commerce = cartLineCommerceRules(line);
+              const variant = line.productVariant;
               if (vatApplies) {
                 return {
                   productId: line.product.id,
+                  productVariantId: variant.id,
+                  skuSnapshot: variant.sku,
                   productTitleSnapshot: line.product.title,
-                  unitPriceGrossCents: line.product.priceGrossCents,
-                  taxRatePercentSnapshot: line.product.taxRatePercent,
+                  unitPriceGrossCents: commerce.priceGrossCents,
+                  taxRatePercentSnapshot: commerce.taxRatePercent,
                   quantity: line.quantity,
-                  lineTotalGrossCents: line.quantity * line.product.priceGrossCents,
+                  lineTotalGrossCents: line.quantity * commerce.priceGrossCents,
                 };
               }
               const unitNet = netCentsFromGross(
-                line.product.priceGrossCents,
-                line.product.taxRatePercent,
+                commerce.priceGrossCents,
+                commerce.taxRatePercent,
               );
               return {
                 productId: line.product.id,
+                productVariantId: variant.id,
+                skuSnapshot: variant.sku,
                 productTitleSnapshot: line.product.title,
                 unitPriceGrossCents: unitNet,
                 taxRatePercentSnapshot: 0,
@@ -399,6 +408,7 @@ async function createPendingPayPalOrderFromParsedRaw(
         orderId: newOrderId,
         lines: activeLines.map((line) => ({
           productId: line.product.id,
+          productVariantId: line.productVariant.id,
           quantity: line.quantity,
         })),
         correlationId: d.idempotencyKey,

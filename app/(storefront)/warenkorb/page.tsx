@@ -5,7 +5,7 @@ import { CartLineTableRow } from "@/components/storefront/cart-line-table-row";
 import { PriceEUR } from "@/components/storefront/price-eur";
 import { updateCartCustomerNote } from "@/lib/cart/actions";
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
-import { getCartWithLines } from "@/lib/cart/cart-queries";
+import { cartLineCommerceRules, getCartWithLines } from "@/lib/cart/cart-queries";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 
 export const dynamic = "force-dynamic";
@@ -27,10 +27,10 @@ export default async function WarenkorbPage({
 
   const lines = cart?.lines ?? [];
   const activeLines = lines.filter((l) => l.product.isActive);
-  const subtotalCents = activeLines.reduce(
-    (sum, l) => sum + l.quantity * l.product.priceGrossCents,
-    0,
-  );
+  const subtotalCents = activeLines.reduce((sum, l) => {
+    const commerce = cartLineCommerceRules(l);
+    return sum + l.quantity * commerce.priceGrossCents;
+  }, 0);
   const currency = activeLines[0]?.product.currency ?? "EUR";
   const hasCheckout = activeLines.length > 0;
 

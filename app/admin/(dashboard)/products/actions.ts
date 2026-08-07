@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { auth } from "@/auth";
+import { syncDefaultVariantFromProduct } from "@/features/catalog";
 import { parseEuroInputToCents } from "@/lib/catalog/format";
 import {
   createProductFormSchema,
@@ -153,49 +154,60 @@ export async function createProduct(
   const description = sanitizeProductDescriptionHtml(d.descriptionHtml);
   const amazon = amazonFieldsForPrisma(d);
 
+  const variantMirror = {
+    taxRatePercent: d.taxRatePercent,
+    priceGrossCents: mainGross,
+    priceNetCents: mainNet,
+    listPriceGrossCents: listGross,
+    listPriceNetCents: listNet,
+    lowestPrice30dGrossCents: lowGross,
+    lowestPrice30dNetCents: lowNet,
+    stockQuantity: d.stockQuantity,
+    availableQuantity: d.availableQuantity,
+    deliveryTimeKey: d.deliveryTimeKey,
+    restockDays: d.restockDays,
+    minOrderQty: d.minOrderQty,
+    purchaseStep: d.purchaseStep,
+    maxOrderQty: d.maxOrderQty,
+    isActive: d.isActive,
+  };
+
   try {
-    await getPrisma().product.create({
-      data: {
-        title: d.title,
-        slug: d.slug,
-        subtitle: d.subtitle,
-        description,
-        manufacturerId: d.manufacturerId,
-        productNumber: d.productNumber,
-        taxRatePercent: d.taxRatePercent,
-        priceGrossCents: mainGross,
-        priceNetCents: mainNet,
-        listPriceGrossCents: listGross,
-        listPriceNetCents: listNet,
-        lowestPrice30dGrossCents: lowGross,
-        lowestPrice30dNetCents: lowNet,
-        stockQuantity: d.stockQuantity,
-        availableQuantity: d.availableQuantity,
-        deliveryTimeKey: d.deliveryTimeKey,
-        restockDays: d.restockDays,
-        minOrderQty: d.minOrderQty,
-        purchaseStep: d.purchaseStep,
-        maxOrderQty: d.maxOrderQty,
-        isActive: d.isActive,
-        isBestseller: d.isBestseller,
-        categoryTag: d.categoryTag,
-        leadText: d.leadText,
-        dimensionsText: d.dimensionsText,
-        weightText: d.weightText,
-        materialText: d.materialText,
-        featureBullets: d.featureBullets,
-        ...amazon,
-        images: {
-          create: [
-            {
-              url: d.imageUrl,
-              alt: d.imageAlt,
-              sortOrder: 0,
-              isCover: true,
-            },
-          ],
+    await getPrisma().$transaction(async (tx) => {
+      const created = await tx.product.create({
+        data: {
+          title: d.title,
+          slug: d.slug,
+          subtitle: d.subtitle,
+          description,
+          manufacturerId: d.manufacturerId,
+          productNumber: d.productNumber,
+          ...variantMirror,
+          isBestseller: d.isBestseller,
+          categoryTag: d.categoryTag,
+          leadText: d.leadText,
+          dimensionsText: d.dimensionsText,
+          weightText: d.weightText,
+          materialText: d.materialText,
+          featureBullets: d.featureBullets,
+          ...amazon,
+          images: {
+            create: [
+              {
+                url: d.imageUrl,
+                alt: d.imageAlt,
+                sortOrder: 0,
+                isCover: true,
+              },
+            ],
+          },
         },
-      },
+      });
+      await syncDefaultVariantFromProduct(tx, {
+        id: created.id,
+        productNumber: d.productNumber,
+        ...variantMirror,
+      });
     });
   } catch (e) {
     if (isUniqueConstraintError(e)) {
@@ -278,40 +290,51 @@ export async function updateProduct(
 
   const previousSlug = existing.slug;
 
+  const variantMirror = {
+    taxRatePercent: d.taxRatePercent,
+    priceGrossCents: mainGross,
+    priceNetCents: mainNet,
+    listPriceGrossCents: listGross,
+    listPriceNetCents: listNet,
+    lowestPrice30dGrossCents: lowGross,
+    lowestPrice30dNetCents: lowNet,
+    stockQuantity: d.stockQuantity,
+    availableQuantity: d.availableQuantity,
+    deliveryTimeKey: d.deliveryTimeKey,
+    restockDays: d.restockDays,
+    minOrderQty: d.minOrderQty,
+    purchaseStep: d.purchaseStep,
+    maxOrderQty: d.maxOrderQty,
+    isActive: d.isActive,
+  };
+
   try {
-    await getPrisma().product.update({
-      where: { id: d.id },
-      data: {
-        title: d.title,
-        slug: d.slug,
-        subtitle: d.subtitle,
-        description,
-        manufacturerId: d.manufacturerId,
+    await getPrisma().$transaction(async (tx) => {
+      await tx.product.update({
+        where: { id: d.id },
+        data: {
+          title: d.title,
+          slug: d.slug,
+          subtitle: d.subtitle,
+          description,
+          manufacturerId: d.manufacturerId,
+          productNumber: d.productNumber,
+          ...variantMirror,
+          isBestseller: d.isBestseller,
+          categoryTag: d.categoryTag,
+          leadText: d.leadText,
+          dimensionsText: d.dimensionsText,
+          weightText: d.weightText,
+          materialText: d.materialText,
+          featureBullets: d.featureBullets,
+          ...amazon,
+        },
+      });
+      await syncDefaultVariantFromProduct(tx, {
+        id: d.id,
         productNumber: d.productNumber,
-        taxRatePercent: d.taxRatePercent,
-        priceGrossCents: mainGross,
-        priceNetCents: mainNet,
-        listPriceGrossCents: listGross,
-        listPriceNetCents: listNet,
-        lowestPrice30dGrossCents: lowGross,
-        lowestPrice30dNetCents: lowNet,
-        stockQuantity: d.stockQuantity,
-        availableQuantity: d.availableQuantity,
-        deliveryTimeKey: d.deliveryTimeKey,
-        restockDays: d.restockDays,
-        minOrderQty: d.minOrderQty,
-        purchaseStep: d.purchaseStep,
-        maxOrderQty: d.maxOrderQty,
-        isActive: d.isActive,
-        isBestseller: d.isBestseller,
-        categoryTag: d.categoryTag,
-        leadText: d.leadText,
-        dimensionsText: d.dimensionsText,
-        weightText: d.weightText,
-        materialText: d.materialText,
-        featureBullets: d.featureBullets,
-        ...amazon,
-      },
+        ...variantMirror,
+      });
     });
   } catch (e) {
     if (isUniqueConstraintError(e)) {
