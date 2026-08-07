@@ -11,7 +11,9 @@ function isDatabaseUnreachable(message: string): boolean {
     /Can't reach database server/i.test(message) ||
     /\bP1001\b/.test(message) ||
     /connection.*refused/i.test(message) ||
-    /getaddrinfo/i.test(message)
+    /getaddrinfo/i.test(message) ||
+    /EMAXCONNSESSION/i.test(message) ||
+    /max clients reached/i.test(message)
   );
 }
 

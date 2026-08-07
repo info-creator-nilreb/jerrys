@@ -3,23 +3,17 @@ import Link from "next/link";
 import { HeaderCartFlyout } from "@/components/storefront/header-cart-flyout";
 import { StorefrontShopNav } from "@/components/storefront/storefront-shop-nav";
 import { getStorefrontCartBadgeCount } from "@/lib/cart/badge";
-import { listActiveCollectionsForStorefront } from "@/lib/catalog/collection-queries";
-import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
-import { buildStorefrontShopNavLinks } from "@/lib/storefront/shop-nav-links";
+import { getStorefrontShopNavLinksForLayout } from "@/lib/storefront/shop-nav-links-server";
 
 /** Natürliche Logo-Größe (JPEG, Seitenverhältnis 2:1) */
 const LOGO_W = 256;
 const LOGO_H = 128;
 
 export async function SiteHeader() {
-  const cartCount = await getStorefrontCartBadgeCount();
-  let shopNavLinks = buildStorefrontShopNavLinks([]);
-  try {
-    const collections = await listActiveCollectionsForStorefront();
-    shopNavLinks = buildStorefrontShopNavLinks(collections);
-  } catch (e) {
-    if (!isDatabaseUnreachable(e)) throw e;
-  }
+  const [cartCount, shopNavLinks] = await Promise.all([
+    getStorefrontCartBadgeCount(),
+    getStorefrontShopNavLinksForLayout(),
+  ]);
 
   return (
     <header

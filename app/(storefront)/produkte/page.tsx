@@ -2,9 +2,9 @@ import Link from "next/link";
 import { DatabaseUnavailableNotice } from "@/components/storefront/database-unavailable-notice";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
-import { listActiveCollectionsForStorefront } from "@/lib/catalog/collection-queries";
+import { getStorefrontShopNavLinksForLayout } from "@/lib/storefront/shop-nav-links-server";
 import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
-import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
+import { isStorefrontDatabaseDegraded } from "@/lib/db/is-database-unreachable";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +20,7 @@ export default async function ProduktePage() {
   try {
     products = await listActiveProductsForStorefront();
   } catch (e) {
-    if (isDatabaseUnreachable(e)) {
+    if (isStorefrontDatabaseDegraded(e)) {
       dbUnavailable = true;
     } else {
       throw e;
@@ -28,10 +28,10 @@ export default async function ProduktePage() {
   }
   if (!dbUnavailable) {
     try {
-      const collections = await listActiveCollectionsForStorefront();
-      hasPublishedCollections = collections.length > 0;
+      const navLinks = await getStorefrontShopNavLinksForLayout();
+      hasPublishedCollections = navLinks.length > 1;
     } catch (e) {
-      if (!isDatabaseUnreachable(e)) throw e;
+      if (!isStorefrontDatabaseDegraded(e)) throw e;
     }
   }
 

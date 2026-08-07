@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { CookieSettingsButton } from "@/components/storefront/cookie-consent/cookie-settings-button";
-import { listActiveCollectionsForStorefront } from "@/lib/catalog/collection-queries";
-import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
-import { buildStorefrontShopNavLinks } from "@/lib/storefront/shop-nav-links";
+import { getStorefrontShopNavLinksForLayout } from "@/lib/storefront/shop-nav-links-server";
 
 const legalLinks = [
   { href: "/impressum", label: "Impressum" },
@@ -15,13 +13,7 @@ const legalLinks = [
 
 /** Dunkles Navy wie Admin-Sidebar; helle Schrift, Primärgrün für Links. */
 export async function SiteFooter() {
-  let shopLinks = buildStorefrontShopNavLinks([]);
-  try {
-    const collections = await listActiveCollectionsForStorefront();
-    shopLinks = buildStorefrontShopNavLinks(collections);
-  } catch (e) {
-    if (!isDatabaseUnreachable(e)) throw e;
-  }
+  const shopLinks = await getStorefrontShopNavLinksForLayout();
 
   return (
     <footer className="mt-auto border-t border-white/10 bg-[#182d4d] py-12 text-center text-[0.98rem] leading-relaxed text-white/90 sm:py-14 sm:text-base">

@@ -4,7 +4,7 @@ import type { PoolConfig } from "pg";
  * Bei Änderungen an URL- oder SSL-Handling erhöhen, damit der Dev-Pool-Cache in
  * `getPrisma()` verworfen wird (sonst bleibt z. B. eine alte URL mit `sslmode` aktiv).
  */
-export const PG_POOL_CONFIG_VERSION = 3;
+export const PG_POOL_CONFIG_VERSION = 4;
 
 const SSL_QUERY_KEYS = [
   "sslmode",
@@ -96,8 +96,17 @@ export function createPgPoolConfig(connectionString: string): PoolConfig {
       : { connectionString };
 
   /** Langsamere Netze / DNS; vermeidet „ewiges Hängen“ ohne klaren Prisma-Fehler. */
+  const configuredMax = process.env.PG_POOL_MAX ? Number.parseInt(process.env.PG_POOL_MAX, 10) : NaN;
+  const max =
+    Number.isFinite(configuredMax) && configuredMax > 0
+      ? configuredMax
+      : process.env.VERCEL
+        ? 1
+        : 10;
+
   return {
     ...base,
+    max,
     connectionTimeoutMillis: 20_000,
     keepAlive: true,
   };

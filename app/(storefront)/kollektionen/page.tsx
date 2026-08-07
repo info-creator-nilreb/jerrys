@@ -2,7 +2,7 @@ import Link from "next/link";
 import { DatabaseUnavailableNotice } from "@/components/storefront/database-unavailable-notice";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import { listActiveCollectionsForStorefront } from "@/lib/catalog/collection-queries";
-import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
+import { isStorefrontDatabaseDegraded } from "@/lib/db/is-database-unreachable";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +17,7 @@ export default async function KollektionenIndexPage() {
   try {
     collections = await listActiveCollectionsForStorefront();
   } catch (e) {
-    if (isDatabaseUnreachable(e)) dbUnavailable = true;
+    if (isStorefrontDatabaseDegraded(e)) dbUnavailable = true;
     else throw e;
   }
 

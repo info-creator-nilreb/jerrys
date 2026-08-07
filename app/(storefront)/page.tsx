@@ -6,7 +6,7 @@ import { HomepageSocialCarousel } from "@/components/storefront/homepage-social-
 import { ProductCard } from "@/components/storefront/product-card";
 import { UspIcon } from "@/components/storefront/usp-icons";
 import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
-import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
+import { isStorefrontDatabaseDegraded } from "@/lib/db/is-database-unreachable";
 import {
   listActiveHomepageAmazonReviews,
   listActiveHomepageSocialImages,
@@ -45,7 +45,7 @@ export default async function StorefrontHomePage() {
     ]);
     [products, homepageReviews, homepageSocial] = tuple;
   } catch (e) {
-    if (isDatabaseUnreachable(e)) {
+    if (isStorefrontDatabaseDegraded(e)) {
       dbUnavailable = true;
     } else {
       throw e;
