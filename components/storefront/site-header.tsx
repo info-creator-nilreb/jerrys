@@ -3,6 +3,9 @@ import Link from "next/link";
 import { HeaderCartFlyout } from "@/components/storefront/header-cart-flyout";
 import { StorefrontShopNav } from "@/components/storefront/storefront-shop-nav";
 import { getStorefrontCartBadgeCount } from "@/lib/cart/badge";
+import { listActiveCollectionsForStorefront } from "@/lib/catalog/collection-queries";
+import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
+import { buildStorefrontShopNavLinks } from "@/lib/storefront/shop-nav-links";
 
 /** Natürliche Logo-Größe (JPEG, Seitenverhältnis 2:1) */
 const LOGO_W = 256;
@@ -10,12 +13,21 @@ const LOGO_H = 128;
 
 export async function SiteHeader() {
   const cartCount = await getStorefrontCartBadgeCount();
+  let shopNavLinks = buildStorefrontShopNavLinks([]);
+  try {
+    const collections = await listActiveCollectionsForStorefront();
+    shopNavLinks = buildStorefrontShopNavLinks(collections);
+  } catch (e) {
+    if (!isDatabaseUnreachable(e)) throw e;
+  }
 
   return (
-    <header className="fixed top-0 right-0 left-0 z-[500000] border-b border-(--surface-muted) bg-white">
+    <header
+      className="fixed top-0 right-0 left-0 z-[500000] border-b border-(--surface-muted) bg-white [--storefront-header-height:3.25rem] md:[--storefront-header-height:3.75rem]"
+    >
       <div className="flex w-full items-center gap-2 px-4 py-3 md:gap-3 md:px-6 md:py-3.5 lg:px-8 xl:px-10">
         <div className="flex min-w-0 flex-1 items-center">
-          <StorefrontShopNav />
+          <StorefrontShopNav links={shopNavLinks} />
         </div>
         <Link href="/" className="shrink-0">
           {/* unoptimized: direkt /public, um veraltete /_next/image?url=…png Caches zu umgehen */}
