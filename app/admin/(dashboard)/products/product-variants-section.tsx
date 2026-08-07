@@ -1,11 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
-import { formatPrice } from "@/lib/catalog/format";
 import {
   createProductVariant,
   type VariantActionState,
 } from "@/app/admin/(dashboard)/products/variant-actions";
+import { ProductVariantEditRow } from "@/app/admin/(dashboard)/products/product-variant-edit-row";
 
 const initial: VariantActionState = null;
 
@@ -49,27 +49,13 @@ export function ProductVariantsSection({
                 <th className="pb-2 pr-4">Bezeichnung</th>
                 <th className="pb-2 pr-4">Preis</th>
                 <th className="pb-2 pr-4">Verfügbar</th>
-                <th className="pb-2">Status</th>
+                <th className="pb-2 pr-4">Status</th>
+                <th className="pb-2">Aktion</th>
               </tr>
             </thead>
             <tbody>
               {variants.map((v) => (
-                <tr key={v.id} className="border-b border-[#f3f4f6] text-[#374151]">
-                  <td className="py-2.5 pr-4 font-mono text-xs">{v.sku}</td>
-                  <td className="py-2.5 pr-4">{v.title?.trim() || "—"}</td>
-                  <td className="py-2.5 pr-4 tabular-nums">{formatPrice(v.priceGrossCents, currency)}</td>
-                  <td className="py-2.5 pr-4 tabular-nums">{v.availableQuantity}</td>
-                  <td className="py-2.5">
-                    {v.isDefault ? (
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                        Standard
-                      </span>
-                    ) : null}
-                    {!v.isActive ? (
-                      <span className="ml-1 text-xs text-[#6b7280]">inaktiv</span>
-                    ) : null}
-                  </td>
-                </tr>
+                <ProductVariantEditRow key={v.id} variant={v} currency={currency} />
               ))}
             </tbody>
           </table>

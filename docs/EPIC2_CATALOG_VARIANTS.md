@@ -2,9 +2,16 @@
 
 Referenz: [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md#epic-2-catalog-variants-and-inventory)
 
-## Status: in Arbeit (Slice 3 — Mehrvarianten Admin + PDP-Auswahl)
+## Status: in Arbeit (Slice 4 — Varianten bearbeiten)
 
-**Branch:** `cursor/epic-2-slice3-variants-21f6`
+**Branch:** `cursor/epic-2-slice4-variant-edit-21f6` (baut auf Slice 3)
+
+### Slice 4
+
+| Thema | Umsetzung |
+| --- | --- |
+| Admin | Nicht-Standard-Varianten bearbeiten (SKU, Bezeichnung, Preis, Lager, aktiv/inaktiv) |
+| Admin | Standard-Variante weiter nur über Hauptformular |
 
 ### Slice 3
 
