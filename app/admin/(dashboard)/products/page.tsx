@@ -18,12 +18,20 @@ export default async function AdminProductsPage() {
           <h1 className="text-xl font-semibold tracking-tight text-[#1f2937] sm:text-2xl">Katalog</h1>
           <p className="mt-1 text-sm text-[#6b7280]">Produkte für den Shop</p>
         </div>
-        <Link
-          href="/admin/products/new"
-          className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-(--primary-hover)"
-        >
-          Neues Produkt
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/collections"
+            className="rounded-md border border-[#e3e4e8] px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
+          >
+            Kollektionen
+          </Link>
+          <Link
+            href="/admin/products/new"
+            className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-(--primary-hover)"
+          >
+            Neues Produkt
+          </Link>
+        </div>
       </div>
 
       {products.length === 0 ? (

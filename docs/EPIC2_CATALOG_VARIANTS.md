@@ -2,9 +2,23 @@
 
 Referenz: [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md#epic-2-catalog-variants-and-inventory)
 
-## Status: in Arbeit (Slice 4 — Varianten bearbeiten)
+## Status: in Arbeit (Slice 5–6 — Kollektionen & Sale-Badges)
 
-**Branch:** `cursor/epic-2-slice4-variant-edit-21f6` (baut auf Slice 3)
+**Branch:** `cursor/epic-2-slice5-collections-21f6` (baut auf Slice 4 / PR #10)
+
+### Slice 6 (Storefront Merchandising)
+
+| Thema | Umsetzung |
+| --- | --- |
+| Kollektionen | `/kollektionen`, `/kollektionen/[slug]` mit Produktkarten |
+| Sale | Produktkarte: Badge + durchgestrichener Listenpreis bei `listPriceGrossCents` |
+
+### Slice 5 (Admin Kollektionen)
+
+| Thema | Umsetzung |
+| --- | --- |
+| Admin | CRUD Kollektionen, Produkt-Zuordnung per Checkbox, Sortierung Feld |
+| Navigation | Link vom Katalog + Vorschau Storefront |
 
 ### Slice 4
 
@@ -45,8 +59,8 @@ Referenz: [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md#epic-2-catalog-variants-an
 - [ ] Bestehende Produkte ohne Datenverlust (Migration deploy + Verify)
 - [ ] Preis/Bestand variantenspezifisch in allen kritischen Pfaden
 - [ ] Kein Overselling (Reservierung weiterhin atomar auf Variante)
-- [ ] Storefront: Variantenwahl + Lieferstatus pro Variante
-- [ ] Merchandising: Collections-Admin, Filter, Sale-Badges
+- [x] Storefront: Variantenwahl + Lieferstatus pro Variante (Slice 3 PDP)
+- [ ] Merchandising: Collections-Admin, Filter, Sale-Badges (Admin Collections + Sale-Karten; Filter folgt)
 - [ ] Lagerbewegungen nachvollziehbar (Variante in Admin-Ansicht)
 
 ### Ops (nach Merge)
