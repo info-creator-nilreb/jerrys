@@ -2,6 +2,7 @@ import Link from "next/link";
 import { DatabaseUnavailableNotice } from "@/components/storefront/database-unavailable-notice";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
+import { listActiveCollectionsForStorefront } from "@/lib/catalog/collection-queries";
 import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 
@@ -14,6 +15,7 @@ export const metadata = {
 
 export default async function ProduktePage() {
   let products: Awaited<ReturnType<typeof listActiveProductsForStorefront>> = [];
+  let hasPublishedCollections = false;
   let dbUnavailable = false;
   try {
     products = await listActiveProductsForStorefront();
@@ -24,6 +26,14 @@ export default async function ProduktePage() {
       throw e;
     }
   }
+  if (!dbUnavailable) {
+    try {
+      const collections = await listActiveCollectionsForStorefront();
+      hasPublishedCollections = collections.length > 0;
+    } catch (e) {
+      if (!isDatabaseUnreachable(e)) throw e;
+    }
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-24 md:py-28">
@@ -32,10 +42,15 @@ export default async function ProduktePage() {
         Produkte
       </h1>
       <p className="mt-2 max-w-2xl text-base text-(--foreground-muted) md:text-lg">
-        Hochwertige Katzenmöbel – designed und gefertigt in Deutschland.{" "}
-        <Link href="/kollektionen" className="font-medium text-primary hover:underline">
-          Kollektionen entdecken
-        </Link>
+        Hochwertige Katzenmöbel – designed und gefertigt in Deutschland.
+        {hasPublishedCollections ? (
+          <>
+            {" "}
+            <Link href="/kollektionen" className="font-medium text-primary hover:underline">
+              Kollektionen entdecken
+            </Link>
+          </>
+        ) : null}
       </p>
 
       {dbUnavailable ? (
