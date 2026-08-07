@@ -3,6 +3,7 @@ import {
   ChevronLeft,
   ChevronUp,
   Home,
+  Layers,
   LayoutGrid,
   Percent,
   Search,
@@ -20,6 +21,10 @@ export function IconDashboard({ className }: { className?: string }) {
 
 export function IconCatalog({ className }: { className?: string }) {
   return <LayoutGrid className={className} aria-hidden strokeWidth={stroke} />;
+}
+
+export function IconCollections({ className }: { className?: string }) {
+  return <Layers className={className} aria-hidden strokeWidth={stroke} />;
 }
 
 export function IconShipping({ className }: { className?: string }) {
