@@ -22,7 +22,8 @@ export function OrderTableRowLink({
   const navigate = () => router.push(href);
 
   const onRowClick = (e: MouseEvent<HTMLTableRowElement>) => {
-    if ((e.target as HTMLElement).closest("a")) return;
+    const target = e.target as HTMLElement;
+    if (target.closest("a")) return;
     navigate();
   };
 
