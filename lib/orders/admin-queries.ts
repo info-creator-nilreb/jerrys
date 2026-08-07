@@ -70,6 +70,7 @@ export async function getOrderDetailForAdmin(id: string) {
         orderBy: { createdAt: "asc" },
         include: {
           product: { select: { title: true } },
+          productVariant: { select: { sku: true } },
         },
       },
     },

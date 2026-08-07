@@ -3,7 +3,12 @@ import { formatPrice } from "@/lib/catalog/format";
 import { AddToCartForm } from "@/components/storefront/add-to-cart-form";
 import { AmazonRatingDisplay } from "@/components/storefront/amazon-rating-display";
 import { ProductCardImageSlider } from "@/components/storefront/product-card-image-slider";
-import { defaultAddQuantity, type ProductQuantityRules } from "@/lib/cart/quantity";
+import {
+  pickDefaultVariant,
+  quantityRulesFromVariant,
+  type DefaultVariantCommerce,
+} from "@/lib/catalog/default-variant-storefront";
+import { defaultAddQuantity } from "@/lib/cart/quantity";
 
 export type StorefrontProductCard = {
   id: string;
@@ -21,16 +26,21 @@ export type StorefrontProductCard = {
   amazonRatingCount: number | null;
   amazonReviewUrl: string | null;
   images: { url: string; alt: string }[];
+  variants: DefaultVariantCommerce[];
 };
 
 export function ProductCard({ product }: { product: StorefrontProductCard }) {
-  const quantityRules: ProductQuantityRules = {
-    availableQuantity: product.availableQuantity,
-    minOrderQty: product.minOrderQty,
-    purchaseStep: product.purchaseStep,
-    maxOrderQty: product.maxOrderQty,
-  };
+  const variant = pickDefaultVariant(product);
+  const quantityRules = variant
+    ? quantityRulesFromVariant(variant)
+    : {
+        availableQuantity: product.availableQuantity,
+        minOrderQty: product.minOrderQty,
+        purchaseStep: product.purchaseStep,
+        maxOrderQty: product.maxOrderQty,
+      };
   const canAdd = defaultAddQuantity(quantityRules) !== null;
+  const displayPriceCents = variant?.priceGrossCents ?? product.priceGrossCents;
 
   return (
     <article className="group relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl border border-(--surface-muted) bg-white shadow-sm transition-shadow hover:shadow-md">
@@ -68,13 +78,19 @@ export function ProductCard({ product }: { product: StorefrontProductCard }) {
               ) : null}
             </div>
             <p className="mt-4 text-lg font-semibold text-primary md:text-xl">
-              {formatPrice(product.priceGrossCents, product.currency)}*
+              {formatPrice(displayPriceCents, product.currency)}*
             </p>
           </div>
         </div>
       </div>
       <div className="relative z-10 flex shrink-0 flex-col justify-start border-t border-(--surface-muted) bg-white px-6 pt-4 pb-6 md:min-h-[8.5rem] md:px-7 md:pb-7">
-        <AddToCartForm productId={product.id} canAdd={canAdd} quantityRules={quantityRules} compact />
+        <AddToCartForm
+          productId={product.id}
+          productVariantId={variant?.id}
+          canAdd={canAdd}
+          quantityRules={quantityRules}
+          compact
+        />
       </div>
     </article>
   );

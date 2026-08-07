@@ -1,4 +1,5 @@
 import { getPrisma } from "@/lib/db/prisma";
+import { prismaDefaultVariantInclude } from "@/lib/catalog/default-variant-storefront";
 
 const storefrontProductCardSelect = {
   id: true,
@@ -16,6 +17,7 @@ const storefrontProductCardSelect = {
   amazonRatingAverage: true,
   amazonRatingCount: true,
   amazonReviewUrl: true,
+  variants: prismaDefaultVariantInclude,
   images: {
     orderBy: [{ isCover: "desc" as const }, { sortOrder: "asc" as const }],
     select: { url: true, alt: true },
@@ -35,6 +37,7 @@ export async function getActiveProductBySlug(slug: string) {
     where: { slug, isActive: true },
     include: {
       images: { orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }] },
+      variants: prismaDefaultVariantInclude,
     },
   });
 }
@@ -57,6 +60,11 @@ export async function getProductByIdForAdmin(id: string) {
     include: {
       manufacturer: true,
       images: { orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }] },
+      variants: {
+        where: { isDefault: true },
+        take: 1,
+        select: { id: true, sku: true },
+      },
     },
   });
 }

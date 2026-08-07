@@ -12,6 +12,7 @@ const qtyInputClass =
 
 export function AddToCartForm({
   productId,
+  productVariantId,
   canAdd,
   quantityRules,
   compact = false,
@@ -19,6 +20,8 @@ export function AddToCartForm({
   layout = "default",
 }: {
   productId: string;
+  /** Epic 2: verkaufbare Variante; fehlt → Server nutzt Default-Variante. */
+  productVariantId?: string;
   /** `false`, wenn z. B. kein Lager für die Mindestabnahme. */
   canAdd: boolean;
   quantityRules: ProductQuantityRules;
@@ -52,6 +55,9 @@ export function AddToCartForm({
       }
     >
       <input type="hidden" name="productId" value={productId} />
+      {productVariantId ? (
+        <input type="hidden" name="productVariantId" value={productVariantId} />
+      ) : null}
       <div
         className={
           compact
