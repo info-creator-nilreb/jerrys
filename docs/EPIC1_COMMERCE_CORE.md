@@ -23,7 +23,7 @@ Vor Merge auf `main`: Migration `20260806200000_epic1_commerce_core` ausführen 
 
 ## Ergänzt (zweites Inkrement)
 
-- Reservierungs-TTL (2 h) + `expireStaleStockReservations` + Route `GET`/`POST /api/internal/commerce-maintenance` + `vercel.json` Cron (alle 30 min)
+- Reservierungs-TTL (2 h) + `expireStaleStockReservations` + Route `GET`/`POST /api/internal/commerce-maintenance` + `vercel.json` Cron (täglich; Hobby-kompatibel) + optional GitHub Actions (30 min)
 - Outbox-Batch-Publisher (`publishIntegrationOutboxBatch`) über dieselbe Route
 - Admin-Bestelldetail: `fulfillment_status` + Liste `stock_reservations`
 
@@ -102,7 +102,9 @@ curl -sS "https://<deine-domain>/api/internal/commerce-maintenance" \
 
 Antwort u. a. `expiredReservations`, `outbox.published`. Für abgelaufene Reservierungen: Bestand zurück, `pending_payment` → `cancelled`.
 
-**Vercel einrichten:** `vercel.json` im Repo (`crons` → Pfad + `*/30 * * * *`). Nach Deploy: Dashboard → Projekt → **Cron Jobs** prüfen. `CRON_SECRET` in Production-Env setzen (ohne Zeilenumbruch), Redeploy. Cron läuft nur auf **Production**, nicht auf Preview.
+**Vercel einrichten:** `vercel.json` im Repo (`crons` → Pfad + Schedule). Nach **erfolgreichem Production-Deploy**: Dashboard → Projekt → **Settings** → **Cron Jobs** (erscheint nur, wenn der Deploy mit `vercel.json` grün war). `CRON_SECRET` in Production-Env setzen (ohne Zeilenumbruch), Redeploy. Cron läuft nur auf **Production**, nicht auf Preview.
+
+**Hobby vs. Pro:** Auf dem **Hobby**-Plan erlaubt Vercel Cron höchstens **einmal pro Tag** — `*/30 * * * *` führt zum **Deploy-Fehler** ([Pricing](https://vercel.com/docs/cron-jobs/usage-and-pricing)). Im Repo ist deshalb **`0 5 * * *`** (täglich 05:00 UTC) hinterlegt. Für Reservierungs-TTL (2 h) zusätzlich **GitHub Actions** (`.github/workflows/commerce-maintenance.yml`, alle 30 Min.) mit Secrets `COMMERCE_MAINTENANCE_SITE_URL` + `COMMERCE_MAINTENANCE_SECRET`, oder **Pro**-Plan und Schedule in `vercel.json` auf `*/30 * * * *` ändern.
 
 ### SQL-Snippets (Supabase/psql)
 
