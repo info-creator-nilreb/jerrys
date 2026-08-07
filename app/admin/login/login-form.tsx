@@ -23,20 +23,37 @@ export function AdminLoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
+  const errorParam = searchParams.get("error");
+  const urlAuthError =
+    errorParam === "CredentialsSignin"
+      ? "Anmeldung fehlgeschlagen. Bitte Zugangsdaten prüfen."
+      : errorParam === "MissingCSRF"
+        ? "Sitzung abgelaufen (CSRF). Seite neu laden und erneut anmelden — am besten im externen Browser (Safari/Chrome), nicht in der eingebetteten Vorschau."
+        : null;
+  const displayError = error ?? urlAuthError;
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setPending(true);
     try {
       const result = await signIn("credentials", {
-        email,
+        email: email.trim(),
         password,
         redirect: false,
         callbackUrl,
       });
       if (result?.error) {
-        setError("Anmeldung fehlgeschlagen. Bitte Zugangsdaten prüfen.");
+        const msg =
+          result.error === "MissingCSRF"
+            ? "Sitzung abgelaufen (CSRF). Seite neu laden — Admin-Login im externen Browser (http://localhost:3001/admin/login) öffnen."
+            : "Anmeldung fehlgeschlagen. Bitte Zugangsdaten prüfen (Seed: admin@example.com / change-me-now).";
+        setError(msg);
         setPending(false);
+        return;
+      }
+      if (result?.url) {
+        window.location.href = result.url;
         return;
       }
       router.push(callbackUrl);
@@ -65,7 +82,23 @@ export function AdminLoginForm() {
         Melde dich im Admin-Bereich an
       </h1>
 
-      <form id={formId} method="post" onSubmit={onSubmit} className="mt-10 flex flex-col gap-6">
+      {process.env.NODE_ENV === "development" ? (
+        <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+          Cloud-Dev: Login am zuverlässigsten im{" "}
+          <a
+            href="http://localhost:3001/admin/login"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-primary underline"
+          >
+            externen Browser
+          </a>{" "}
+          (http://localhost:3001). Seed: admin@example.com / change-me-now — eigenes Passwort:{" "}
+          <code className="text-xs">npm run admin:set-password</code>
+        </p>
+      ) : null}
+
+      <form id={formId} onSubmit={onSubmit} className="mt-10 flex flex-col gap-6">
         <div className="flex flex-col gap-2">
           <label htmlFor={`${formId}-email`} className="text-sm text-[#5c5f66]">
             E-Mail <span className="text-primary">*</span>
@@ -120,7 +153,7 @@ export function AdminLoginForm() {
           Angemeldet bleiben
         </label>
 
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        {displayError ? <p className="text-sm text-red-600">{displayError}</p> : null}
 
         <div className="flex flex-col items-end gap-4 pt-1">
           <span

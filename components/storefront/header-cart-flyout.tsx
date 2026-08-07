@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { formatPrice } from "@/lib/catalog/format";
 import {
@@ -18,14 +18,20 @@ type Props = {
   cartBadgeCount: number;
 };
 
+function useClientMounted(): boolean {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+}
+
 export function HeaderCartFlyout({ cartBadgeCount }: Props) {
   const panelId = useId();
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useClientMounted();
   const [preview, setPreview] = useState<CartFlyoutPreview | null>(null);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => setMounted(true), []);
 
   const loadPreview = useCallback(async () => {
     setLoading(true);
@@ -213,7 +219,7 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
     <>
       <button
         type="button"
-        className="rounded-md p-2 text-(--foreground-heading) transition-colors hover:text-primary"
+        className="relative z-[500001] rounded-md p-2 text-(--foreground-heading) transition-colors hover:text-primary"
         aria-label={`Warenkorb${cartBadgeCount > 0 ? `, ${cartBadgeCount} Artikel` : ""}`}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
