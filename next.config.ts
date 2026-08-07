@@ -4,10 +4,17 @@ import { buildContentSecurityPolicy } from "./lib/site/content-security-policy";
 const devPort = process.env.PORT ?? "3001";
 
 const nextConfig: NextConfig = {
+  /** Dev-Route-Indikator (N): Standard unten links liegt hinter der Admin-Sidebar — rechts platzieren. */
+  devIndicators: {
+    position: "bottom-right",
+  },
   /** Muss zum Dev-Port passen (`npm run dev` → Standard 3001, oder `PORT=3002 npm run dev`). */
   allowedDevOrigins: [
     `http://127.0.0.1:${devPort}`,
     `http://localhost:${devPort}`,
+    "127.0.0.1",
+    "localhost",
+    "*.trycloudflare.com",
   ],
   /** Standard für Server Actions ist 1 MB — zu klein für Social-Bild-Uploads (mehrere Dateien). */
   experimental: {
@@ -33,13 +40,16 @@ const nextConfig: NextConfig = {
      * Nosniff nur für Pfade, die Next mit festen MIME-Typen ausliefert.
      */
     const docSecurityHeaders: { key: string; value: string }[] = [
-      { key: "X-Frame-Options", value: "DENY" },
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
       {
         key: "Permissions-Policy",
         value: "camera=(), microphone=(), geolocation=()",
       },
     ];
+    /** Cursor/IDE-Previews nutzen oft iframes — in Dev kein DENY (sonst leere Seite / kaputte Client-Navigation). */
+    if (process.env.NODE_ENV === "production") {
+      docSecurityHeaders.unshift({ key: "X-Frame-Options", value: "DENY" });
+    }
     /** Nur auf Vercel (HTTPS), nicht lokal per `next start` ohne TLS. */
     if (process.env.VERCEL === "1") {
       docSecurityHeaders.push({
