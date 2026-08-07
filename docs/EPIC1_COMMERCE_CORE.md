@@ -7,7 +7,8 @@ Referenz: [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md#epic-1-commerce-core)
 **Branch:** `cursor/epic-1-commerce-core-a364` / `cursor/epic-1-complete-97de`  
 **Exit-Kriterium (Roadmap):** Doppelte/konkurrente Ereignisse wirken auf Geld, Bestand und Status höchstens einmal; ungültige Übergänge werden abgewiesen und protokolliert — umgesetzt über Reservierungen, Webhook-Inbox, Status-Maschinen, `order_events` und `stock_movements`.
 
-Vor Merge auf `main`: Migration `20260806200000_epic1_commerce_core` ausführen (`npm run db:migrate`), Commerce-Tests laut Abschnitt „Testen“.
+Vor Merge auf `main`: Migration `20260806200000_epic1_commerce_core` ausführen (`npm run db:migrate`), Commerce-Tests laut Abschnitt „Testen“.  
+**Merge-Checkliste:** [MERGE_EPIC1.md](./MERGE_EPIC1.md)
 
 ## Geliefert (erste Inkremente)
 
