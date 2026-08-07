@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { AdminDevClientNotice } from "@/components/admin/admin-dev-client-notice";
 import { AdminShell } from "@/components/admin/admin-shell";
 import packageJson from "../../../package.json";
 
@@ -24,6 +25,11 @@ export default async function AdminDashboardLayout({
 
   const email = session.user.email ?? "";
   const name = session.user.name?.trim() ?? "";
+  const devPort = process.env.PORT ?? "3001";
+  const devBaseUrl =
+    process.env.NODE_ENV === "development"
+      ? (process.env.AUTH_URL ?? `http://localhost:${devPort}`)
+      : "";
 
   return (
     <AdminShell
@@ -31,6 +37,9 @@ export default async function AdminDashboardLayout({
       userEmail={email}
       userName={name || email}
     >
+      {process.env.NODE_ENV === "development" ? (
+        <AdminDevClientNotice devBaseUrl={devBaseUrl} />
+      ) : null}
       {children}
     </AdminShell>
   );

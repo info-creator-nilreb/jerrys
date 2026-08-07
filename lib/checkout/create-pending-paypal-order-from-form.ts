@@ -1,3 +1,4 @@
+import { InsufficientStockError, reserveStockForOrder } from "@/features/inventory";
 import { revalidatePath } from "next/cache";
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { getCartWithLines } from "@/lib/cart/cart-queries";
@@ -394,6 +395,15 @@ async function createPendingPayPalOrderFromParsedRaw(
       });
       newOrderId = created.id;
 
+      await reserveStockForOrder(tx, {
+        orderId: newOrderId,
+        lines: activeLines.map((line) => ({
+          productId: line.product.id,
+          quantity: line.quantity,
+        })),
+        correlationId: d.idempotencyKey,
+      });
+
       if (resolved.kind === "applied") {
         await tx.promotion.update({
           where: { id: resolved.promotionId },
@@ -404,6 +414,12 @@ async function createPendingPayPalOrderFromParsedRaw(
       await tx.cartLine.deleteMany({ where: { cartId } });
     });
   } catch (e) {
+    if (e instanceof InsufficientStockError) {
+      return {
+        ok: false,
+        error: "Ein Artikel ist nicht mehr in der gewünschten Menge verfügbar. Bitte Warenkorb prüfen.",
+      };
+    }
     log.error("order_create_failed", {
       orderNumber,
       idempotencyKey: d.idempotencyKey,

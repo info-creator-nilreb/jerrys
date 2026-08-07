@@ -4,6 +4,11 @@ import { getPrisma } from "@/lib/db/prisma";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 import { finalizeOrderAfterPendingPaymentCapture } from "@/lib/orders/finalize-pending-payment";
 import { capturePayPalCheckoutOrder } from "@/lib/payments/paypal-orders";
+import {
+  beginWebhookInboxProcessing,
+  markWebhookInboxFailed,
+  markWebhookInboxProcessed,
+} from "@/features/integrations";
 
 const log = createLogger("checkout.paypal_capture");
 
@@ -64,6 +69,20 @@ export async function completePayPalCaptureFlow(
     return { ok: false, code: "betrag" };
   }
 
+  const inboxKey = `capture:${capture.paypalOrderId}`;
+  const inbox = await beginWebhookInboxProcessing(prisma, {
+    provider: "paypal",
+    externalEventId: inboxKey,
+    metadata: { internalOrderId: order.id, eventSource },
+  });
+  if (!inbox.ok) {
+    log.error("paypal_inbox_race", { orderId: order.id });
+    return { ok: false, code: "finalisierung" };
+  }
+  if (inbox.duplicate && inbox.alreadyProcessed) {
+    return { ok: true, orderNumber: order.orderNumber };
+  }
+
   const result = await finalizeOrderAfterPendingPaymentCapture(prisma, {
     orderId: order.id,
     provider: "paypal",
@@ -74,12 +93,16 @@ export async function completePayPalCaptureFlow(
   if (!result.ok) {
     if (result.error === "invalid_status" || result.error === "not_found") {
       if (order.status === "paid") {
+        await markWebhookInboxProcessed(prisma, inbox.entryId);
         return { ok: true, orderNumber: order.orderNumber };
       }
     }
+    await markWebhookInboxFailed(prisma, inbox.entryId);
     log.error("paypal_finalize_failed", { orderId: order.id, error: result.error });
     return { ok: false, code: "finalisierung" };
   }
+
+  await markWebhookInboxProcessed(prisma, inbox.entryId);
 
   await sendOrderConfirmationIfNeeded(order.id);
   revalidatePath("/admin/orders");

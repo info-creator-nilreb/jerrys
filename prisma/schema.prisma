@@ -84,6 +84,8 @@ model Product {
   images      ProductImage[]
   cartLines   CartLine[]
   orderItems  OrderItem[]
+  stockReservations StockReservation[]
+  stockMovements    StockMovement[]
 
   @@index([isActive, sortOrder])
   @@map("products")
@@ -121,6 +123,43 @@ enum OrderPaymentStatus {
   failed
   canceled
   refunded
+}
+
+/// Versand-/Fulfillment-Achse (Epic 1), getrennt vom aggregierten Bestellstatus.
+enum FulfillmentStatus {
+  unfulfilled
+  preparing
+  shipped
+  delivered
+  returned
+}
+
+enum StockReservationStatus {
+  active
+  committed
+  released
+  expired
+}
+
+enum StockMovementReason {
+  reservation_hold
+  reservation_release
+  reservation_commit
+  warehouse_ship
+  warehouse_return
+  manual_adjustment
+}
+
+enum IntegrationOutboxStatus {
+  pending
+  published
+  failed
+}
+
+enum WebhookInboxStatus {
+  received
+  processed
+  failed
 }
 
 /// Versanddienst für Sendungsverfolgung (Admin + E-Mail).
@@ -174,6 +213,7 @@ model Order {
   phone               String?     @map("phone")
   paymentMethod       String      @map("payment_method")
   status              String      @default("bestaetigt") @map("status")
+  fulfillmentStatus   FulfillmentStatus @default(unfulfilled) @map("fulfillment_status")
   shippingFirstName   String      @map("shipping_first_name")
   shippingLastName    String      @map("shipping_last_name")
   shippingCompany     String?     @map("shipping_company")
@@ -215,8 +255,74 @@ model Order {
   statusHistory       OrderStatusHistory[]
   events              OrderEvent[]
   payments            OrderPayment[]
+  stockReservations   StockReservation[]
 
   @@map("orders")
+}
+
+model StockReservation {
+  id          String                 @id @default(cuid())
+  orderId     String                 @map("order_id")
+  order       Order                  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String                 @map("product_id")
+  product     Product                @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity    Int
+  status      StockReservationStatus @default(active)
+  expiresAt   DateTime?              @map("expires_at")
+  committedAt DateTime?              @map("committed_at")
+  releasedAt  DateTime?              @map("released_at")
+  createdAt   DateTime               @default(now()) @map("created_at")
+  updatedAt   DateTime               @updatedAt @map("updated_at")
+  movements   StockMovement[]
+
+  @@unique([orderId, productId])
+  @@index([orderId, status])
+  @@map("stock_reservations")
+}
+
+model StockMovement {
+  id              String              @id @default(cuid())
+  productId       String              @map("product_id")
+  product         Product             @relation(fields: [productId], references: [id], onDelete: Restrict)
+  orderId         String?             @map("order_id")
+  reservationId   String?             @map("reservation_id")
+  reservation     StockReservation?   @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  quantityDelta   Int                 @map("quantity_delta")
+  reason          StockMovementReason
+  correlationId   String?             @map("correlation_id")
+  createdAt       DateTime            @default(now()) @map("created_at")
+
+  @@index([productId, createdAt])
+  @@index([orderId])
+  @@map("stock_movements")
+}
+
+model IntegrationOutboxMessage {
+  id            String                  @id @default(cuid())
+  aggregateType String                  @map("aggregate_type")
+  aggregateId   String                  @map("aggregate_id")
+  eventType     String                  @map("event_type")
+  payload       Json
+  status        IntegrationOutboxStatus @default(pending)
+  createdAt     DateTime                @default(now()) @map("created_at")
+  publishedAt   DateTime?               @map("published_at")
+
+  @@index([status, createdAt])
+  @@map("integration_outbox_messages")
+}
+
+model WebhookInboxEntry {
+  id               String             @id @default(cuid())
+  provider         String
+  externalEventId  String             @map("external_event_id")
+  payloadHash      String?            @map("payload_hash")
+  status           WebhookInboxStatus @default(received)
+  metadata         Json?
+  receivedAt       DateTime           @default(now()) @map("received_at")
+  processedAt      DateTime?          @map("processed_at")
+
+  @@unique([provider, externalEventId])
+  @@map("webhook_inbox_entries")
 }
 
 model OrderPayment {

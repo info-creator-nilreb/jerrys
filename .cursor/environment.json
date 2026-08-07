@@ -1,0 +1,11 @@
+{
+  "name": "jerrys",
+  "install": "npm ci",
+  "terminals": [
+    {
+      "name": "dev-server",
+      "command": "npm run dev:cloud"
+    }
+  ],
+  "ports": [3001]
+}
