@@ -2,13 +2,16 @@ import { describe, expect, it } from "vitest";
 import {
   pickDefaultVariant,
   quantityRulesFromVariant,
+  variantOptionLabel,
 } from "@/lib/catalog/default-variant-storefront";
 
 describe("default-variant-storefront", () => {
-  it("pickDefaultVariant liefert erste Variante", () => {
-    const v = {
+  it("pickDefaultVariant bevorzugt isDefault", () => {
+    const defaultV = {
       id: "v1",
       sku: "SKU-1",
+      title: null,
+      isDefault: true,
       priceGrossCents: 1000,
       availableQuantity: 5,
       minOrderQty: 1,
@@ -16,7 +19,8 @@ describe("default-variant-storefront", () => {
       maxOrderQty: null,
       deliveryTimeKey: null,
     };
-    expect(pickDefaultVariant({ variants: [v] })).toEqual(v);
+    const other = { ...defaultV, id: "v2", sku: "SKU-2", isDefault: false };
+    expect(pickDefaultVariant({ variants: [other, defaultV] })).toEqual(defaultV);
     expect(pickDefaultVariant({ variants: [] })).toBeNull();
   });
 
@@ -25,6 +29,8 @@ describe("default-variant-storefront", () => {
       quantityRulesFromVariant({
         id: "v1",
         sku: "X",
+        title: null,
+        isDefault: true,
         priceGrossCents: 1,
         availableQuantity: 3,
         minOrderQty: 2,
@@ -38,5 +44,10 @@ describe("default-variant-storefront", () => {
       purchaseStep: 2,
       maxOrderQty: 10,
     });
+  });
+
+  it("variantOptionLabel nutzt Titel oder SKU", () => {
+    expect(variantOptionLabel({ title: " Rot ", sku: "A" })).toBe("Rot");
+    expect(variantOptionLabel({ title: null, sku: "A" })).toBe("A");
   });
 });
