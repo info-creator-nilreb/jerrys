@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { DELIVERY_TIME_OPTIONS } from "@/lib/catalog/delivery-options";
 import type { ProductFormState } from "@/app/admin/(dashboard)/products/actions";
@@ -17,6 +18,38 @@ type Props = {
   };
 };
 
+const inputClass =
+  "rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm";
+
+function DeliveryFieldStack({
+  label,
+  htmlFor,
+  hint,
+  error,
+  children,
+}: {
+  label: string;
+  htmlFor: string;
+  hint?: ReactNode;
+  error?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1 lg:h-full">
+      <div className="flex flex-col gap-1">
+        <label htmlFor={htmlFor} className="text-xs font-medium text-[#6b7280]">
+          {label}
+        </label>
+        {hint ? <p className="text-[11px] leading-snug text-[#9ca3af]">{hint}</p> : null}
+      </div>
+      <div className="mt-auto flex flex-col gap-1">
+        {children}
+        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      </div>
+    </div>
+  );
+}
+
 export function ProductDeliveryFields({ state, defaults }: Props) {
   const fe = state?.fieldErrors ?? {};
 
@@ -31,14 +64,13 @@ export function ProductDeliveryFields({ state, defaults }: Props) {
         shopweit gepflegt.
       </p>
       <div className="mt-6 h-px bg-[#e8eaed]" />
-      <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="flex flex-col gap-1">
-          <label htmlFor="stockQuantity" className="text-xs font-medium text-[#6b7280]">
-            Lagerbestand (physikalisch)
-          </label>
-          <p className="text-[11px] leading-snug text-[#9ca3af]">
-            Wird bei Status „Versandt“ je Bestellposition reduziert.
-          </p>
+      <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:items-stretch">
+        <DeliveryFieldStack
+          label="Lagerbestand (physikalisch)"
+          htmlFor="stockQuantity"
+          hint="Wird bei Status „Versandt“ je Bestellposition reduziert."
+          error={fe.stockQuantity}
+        >
           <input
             id="stockQuantity"
             name="stockQuantity"
@@ -46,18 +78,21 @@ export function ProductDeliveryFields({ state, defaults }: Props) {
             min={0}
             step={1}
             defaultValue={defaults.stockQuantity}
-            className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
+            className={inputClass}
           />
-          {fe.stockQuantity ? <p className="text-sm text-red-600">{fe.stockQuantity}</p> : null}
-        </div>
+        </DeliveryFieldStack>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="availableQuantity" className="text-xs font-medium text-[#6b7280]">
-            Verfügbarer Bestand (Shop)
-          </label>
-          <p className="text-[11px] leading-snug text-[#9ca3af]">
-            Für Produktseite, Warenkorb und Checkout; wird bei erfolgreicher Zahlung reduziert.
-          </p>
+        <DeliveryFieldStack
+          label="Verfügbarer Bestand (Shop)"
+          htmlFor="availableQuantity"
+          hint={
+            <>
+              Für Produktseite, Warenkorb und Checkout; wird bei Bestellaufgabe (Zahlung ausstehend) reserviert und bei
+              Storno bzw. Ablauf der Reservierung wieder freigegeben.
+            </>
+          }
+          error={fe.availableQuantity}
+        >
           <input
             id="availableQuantity"
             name="availableQuantity"
@@ -65,34 +100,29 @@ export function ProductDeliveryFields({ state, defaults }: Props) {
             min={0}
             step={1}
             defaultValue={defaults.availableQuantity}
-            className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
+            className={inputClass}
           />
-          {fe.availableQuantity ? <p className="text-sm text-red-600">{fe.availableQuantity}</p> : null}
+        </DeliveryFieldStack>
+
+        <div className="sm:col-span-2 lg:col-span-1 lg:h-full">
+          <DeliveryFieldStack label="Lieferzeit" htmlFor="deliveryTimeKey">
+            <select
+              id="deliveryTimeKey"
+              name="deliveryTimeKey"
+              defaultValue={defaults.deliveryTimeKey ?? ""}
+              className={inputClass}
+            >
+              <option value="">—</option>
+              {DELIVERY_TIME_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </DeliveryFieldStack>
         </div>
 
-        <div className="flex flex-col gap-1 sm:col-span-2 lg:col-span-1">
-          <label htmlFor="deliveryTimeKey" className="text-xs font-medium text-[#6b7280]">
-            Lieferzeit
-          </label>
-          <select
-            id="deliveryTimeKey"
-            name="deliveryTimeKey"
-            defaultValue={defaults.deliveryTimeKey ?? ""}
-            className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
-          >
-            <option value="">—</option>
-            {DELIVERY_TIME_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label htmlFor="restockDays" className="text-xs font-medium text-[#6b7280]">
-            Wiederauffüllzeit in Tagen
-          </label>
+        <DeliveryFieldStack label="Wiederauffüllzeit in Tagen" htmlFor="restockDays">
           <input
             id="restockDays"
             name="restockDays"
@@ -101,14 +131,11 @@ export function ProductDeliveryFields({ state, defaults }: Props) {
             step={1}
             defaultValue={defaults.restockDays ?? ""}
             placeholder="z. B. 21"
-            className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
+            className={inputClass}
           />
-        </div>
+        </DeliveryFieldStack>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="minOrderQty" className="text-xs font-medium text-[#6b7280]">
-            Mindestabnahme
-          </label>
+        <DeliveryFieldStack label="Mindestabnahme" htmlFor="minOrderQty" error={fe.minOrderQty}>
           <input
             id="minOrderQty"
             name="minOrderQty"
@@ -116,15 +143,11 @@ export function ProductDeliveryFields({ state, defaults }: Props) {
             min={1}
             step={1}
             defaultValue={defaults.minOrderQty}
-            className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
+            className={inputClass}
           />
-          {fe.minOrderQty ? <p className="text-sm text-red-600">{fe.minOrderQty}</p> : null}
-        </div>
+        </DeliveryFieldStack>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="purchaseStep" className="text-xs font-medium text-[#6b7280]">
-            Staffelung
-          </label>
+        <DeliveryFieldStack label="Staffelung" htmlFor="purchaseStep" error={fe.purchaseStep}>
           <input
             id="purchaseStep"
             name="purchaseStep"
@@ -132,15 +155,11 @@ export function ProductDeliveryFields({ state, defaults }: Props) {
             min={1}
             step={1}
             defaultValue={defaults.purchaseStep}
-            className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
+            className={inputClass}
           />
-          {fe.purchaseStep ? <p className="text-sm text-red-600">{fe.purchaseStep}</p> : null}
-        </div>
+        </DeliveryFieldStack>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="maxOrderQty" className="text-xs font-medium text-[#6b7280]">
-            Maximalabnahme
-          </label>
+        <DeliveryFieldStack label="Maximalabnahme" htmlFor="maxOrderQty" error={fe.maxOrderQty}>
           <input
             id="maxOrderQty"
             name="maxOrderQty"
@@ -149,10 +168,9 @@ export function ProductDeliveryFields({ state, defaults }: Props) {
             step={1}
             defaultValue={defaults.maxOrderQty ?? ""}
             placeholder="Maximalabnahme …"
-            className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
+            className={inputClass}
           />
-          {fe.maxOrderQty ? <p className="text-sm text-red-600">{fe.maxOrderQty}</p> : null}
-        </div>
+        </DeliveryFieldStack>
       </div>
     </section>
   );
