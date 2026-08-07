@@ -13,6 +13,8 @@ Step-by-step GitHub + Vercel linking: [VERCEL_GITHUB_SETUP.md](./VERCEL_GITHUB_S
 
 GitHub Codespaces: use [.devcontainer/devcontainer.json](../.devcontainer/devcontainer.json) (**Code → Codespaces**).
 
+Cursor Cloud Agent (Dev-„N“, Port 3001, Client-JS in Preview): [CURSOR_CLOUD_AGENT.md](./CURSOR_CLOUD_AGENT.md).
+
 ## Recommended Workflow
 
 ### Normal Feature Development

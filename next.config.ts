@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { additionalAllowedDevOrigins } from "./lib/site/allowed-dev-origins";
 import { buildContentSecurityPolicy } from "./lib/site/content-security-policy";
 
 const devPort = process.env.PORT ?? "3001";
@@ -8,14 +9,8 @@ const nextConfig: NextConfig = {
   devIndicators: {
     position: "bottom-right",
   },
-  /** Muss zum Dev-Port passen (`npm run dev` → Standard 3001, oder `PORT=3002 npm run dev`). */
-  allowedDevOrigins: [
-    `http://127.0.0.1:${devPort}`,
-    `http://localhost:${devPort}`,
-    "127.0.0.1",
-    "localhost",
-    "*.trycloudflare.com",
-  ],
+  /** Cross-Origin in Dev (Cursor-Preview, Codespaces, Tunnel) — sonst 403 auf `/_next/*` und kein Client-JS. */
+  allowedDevOrigins: additionalAllowedDevOrigins(devPort),
   /** Standard für Server Actions ist 1 MB — zu klein für Social-Bild-Uploads (mehrere Dateien). */
   experimental: {
     serverActions: {
