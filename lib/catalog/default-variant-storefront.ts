@@ -1,7 +1,9 @@
-/** Verkaufsrelevante Felder der Default-Variante (Storefront). */
-export type DefaultVariantCommerce = {
+/** Verkaufsrelevante Felder einer Variante (Storefront). */
+export type StorefrontVariantCommerce = {
   id: string;
   sku: string;
+  title: string | null;
+  isDefault: boolean;
   priceGrossCents: number;
   availableQuantity: number;
   minOrderQty: number;
@@ -10,9 +12,14 @@ export type DefaultVariantCommerce = {
   deliveryTimeKey: string | null;
 };
 
-const defaultVariantSelect = {
+/** @deprecated Alias für bestehende Importe */
+export type DefaultVariantCommerce = StorefrontVariantCommerce;
+
+const storefrontVariantSelect = {
   id: true,
   sku: true,
+  title: true,
+  isDefault: true,
   priceGrossCents: true,
   availableQuantity: true,
   minOrderQty: true,
@@ -24,16 +31,27 @@ const defaultVariantSelect = {
 export const prismaDefaultVariantInclude = {
   where: { isDefault: true, isActive: true },
   take: 1,
-  select: defaultVariantSelect,
+  select: storefrontVariantSelect,
 };
 
-export function pickDefaultVariant<T extends { variants: DefaultVariantCommerce[] }>(
+export const prismaStorefrontActiveVariantsInclude = {
+  where: { isActive: true },
+  orderBy: [{ isDefault: "desc" as const }, { sortOrder: "asc" as const }],
+  select: storefrontVariantSelect,
+};
+
+export function pickDefaultVariant<T extends { variants: StorefrontVariantCommerce[] }>(
   product: T,
-): DefaultVariantCommerce | null {
-  return product.variants[0] ?? null;
+): StorefrontVariantCommerce | null {
+  return product.variants.find((v) => v.isDefault) ?? product.variants[0] ?? null;
 }
 
-export function quantityRulesFromVariant(v: DefaultVariantCommerce) {
+export function variantOptionLabel(v: Pick<StorefrontVariantCommerce, "title" | "sku">): string {
+  const t = v.title?.trim();
+  return t ? t : v.sku;
+}
+
+export function quantityRulesFromVariant(v: StorefrontVariantCommerce) {
   return {
     availableQuantity: v.availableQuantity,
     minOrderQty: v.minOrderQty,

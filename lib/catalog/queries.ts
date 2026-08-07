@@ -1,5 +1,5 @@
 import { getPrisma } from "@/lib/db/prisma";
-import { prismaDefaultVariantInclude } from "@/lib/catalog/default-variant-storefront";
+import { prismaDefaultVariantInclude, prismaStorefrontActiveVariantsInclude } from "@/lib/catalog/default-variant-storefront";
 
 const storefrontProductCardSelect = {
   id: true,
@@ -37,7 +37,7 @@ export async function getActiveProductBySlug(slug: string) {
     where: { slug, isActive: true },
     include: {
       images: { orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }] },
-      variants: prismaDefaultVariantInclude,
+      variants: prismaStorefrontActiveVariantsInclude,
     },
   });
 }
@@ -61,9 +61,17 @@ export async function getProductByIdForAdmin(id: string) {
       manufacturer: true,
       images: { orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }] },
       variants: {
-        where: { isDefault: true },
-        take: 1,
-        select: { id: true, sku: true },
+        orderBy: [{ isDefault: "desc" }, { sortOrder: "asc" }],
+        select: {
+          id: true,
+          sku: true,
+          title: true,
+          isDefault: true,
+          isActive: true,
+          priceGrossCents: true,
+          availableQuantity: true,
+          stockQuantity: true,
+        },
       },
     },
   });

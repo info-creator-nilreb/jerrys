@@ -11,6 +11,7 @@ import { ProductGeneralFields } from "@/app/admin/(dashboard)/products/product-g
 import { ProductPricesSection } from "@/app/admin/(dashboard)/products/product-prices-section";
 import { ProductMediaSection } from "@/app/admin/(dashboard)/products/product-media-section";
 import { ProductStorefrontDetailFields } from "@/app/admin/(dashboard)/products/product-storefront-detail-fields";
+import { ProductVariantsSection } from "@/app/admin/(dashboard)/products/product-variants-section";
 import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
 
 function plainDescriptionToHtml(description: string | null): string {
@@ -61,8 +62,18 @@ type Product = {
   weightText: string | null;
   materialText: string | null;
   featureBullets: string[];
+  currency: string;
   images: { id: string; url: string; alt: string; sortOrder: number; isCover: boolean }[];
-  variants: { id: string; sku: string }[];
+  variants: {
+    id: string;
+    sku: string;
+    title: string | null;
+    isDefault: boolean;
+    isActive: boolean;
+    priceGrossCents: number;
+    availableQuantity: number;
+    stockQuantity: number;
+  }[];
 };
 
 const initialState: ProductFormState = null;
@@ -120,16 +131,6 @@ export function EditProductForm({
             amazonReviewUrl: product.amazonReviewUrl ?? "",
           }}
         />
-
-        {product.variants[0]?.sku ? (
-          <p className="rounded-lg border border-[#e8eaed] bg-[#f9fafb] px-4 py-3 text-sm text-[#374151]">
-            Standard-Variante (SKU):{" "}
-            <span className="font-mono font-medium text-[#1f2937]">{product.variants[0].sku}</span>
-            <span className="mt-1 block text-xs text-[#6b7280]">
-              Preis und Bestand unten werden auf diese Variante synchronisiert (Epic 2).
-            </span>
-          </p>
-        ) : null}
 
         <ProductStorefrontDetailFields
           state={state}
@@ -199,6 +200,12 @@ export function EditProductForm({
           ) : null}
         </AdminFormActionDock>
       </form>
+
+      <ProductVariantsSection
+        productId={product.id}
+        variants={product.variants}
+        currency={product.currency}
+      />
 
       <ProductMediaSection productId={product.id} images={product.images} />
     </div>

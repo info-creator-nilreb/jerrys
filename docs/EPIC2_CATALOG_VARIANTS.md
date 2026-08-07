@@ -2,11 +2,18 @@
 
 Referenz: [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md#epic-2-catalog-variants-and-inventory)
 
-## Status: in Arbeit (Slice 2 — Storefront + Admin-SKU)
+## Status: in Arbeit (Slice 3 — Mehrvarianten Admin + PDP-Auswahl)
 
-**Branch:** `cursor/epic-2-slice2-storefront-21f6` (nach Merge Slice 1 auf `main`)
+**Branch:** `cursor/epic-2-slice3-variants-21f6`
 
-### Slice 2 (dieser Stand)
+### Slice 3
+
+| Thema | Umsetzung |
+| --- | --- |
+| Admin | Tabelle aller Varianten; Formular „Weitere Variante anlegen“ (SKU, Preis, Lager) |
+| Storefront PDP | Radio-Auswahl bei mehreren aktiven Varianten; Preis/Lager/Warenkorb pro Auswahl |
+
+### Slice 2 (gemergt)
 
 | Thema | Umsetzung |
 | --- | --- |
