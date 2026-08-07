@@ -53,13 +53,11 @@ type Props = {
 export function StorefrontShopNav({ links, className }: Props) {
   const pathname = usePathname();
   const menuId = useId();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  /** Menü gilt nur für die Route, in der es geöffnet wurde — schließt automatisch bei Navigation. */
+  const [menuOpenForPath, setMenuOpenForPath] = useState<string | null>(null);
+  const mobileOpen = menuOpenForPath === pathname;
 
-  const closeMobile = useCallback(() => setMobileOpen(false), []);
-
-  useEffect(() => {
-    closeMobile();
-  }, [pathname, closeMobile]);
+  const closeMobile = useCallback(() => setMenuOpenForPath(null), []);
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -96,7 +94,9 @@ export function StorefrontShopNav({ links, className }: Props) {
           aria-expanded={mobileOpen}
           aria-controls={menuId}
           aria-label={mobileOpen ? "Menü schließen" : "Menü öffnen"}
-          onClick={() => setMobileOpen((open) => !open)}
+          onClick={() =>
+            setMenuOpenForPath((current) => (current === pathname ? null : pathname))
+          }
         >
           {mobileOpen ? (
             <X className="size-6" aria-hidden strokeWidth={1.75} />
