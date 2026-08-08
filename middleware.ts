@@ -8,14 +8,15 @@ syncAuthUrlForVercelPreview();
 assertAuthSecretForRuntime("middleware");
 
 export default NextAuth(authConfig).auth(async (req) => {
-  if (req.nextUrl.pathname.startsWith("/api/auth")) {
-    return;
-  }
   return updateSession(req);
 });
 
 export const config = {
   matcher: [
-    "/((?!_next|__nextjs|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    /*
+     * /api/auth/* nicht matchen — Auth.js-Handler laufen ohne Edge-Middleware;
+     * sonst getSession in der Middleware ohne zuverlässiges AUTH_SECRET (MissingSecret).
+     */
+    "/((?!_next|__nextjs|api/auth|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
