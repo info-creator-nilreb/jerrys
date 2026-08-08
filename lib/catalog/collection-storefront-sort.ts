@@ -3,6 +3,19 @@ import { pickDefaultVariant } from "@/lib/catalog/default-variant-storefront";
 
 export type CollectionSort = "default" | "title-asc" | "price-asc" | "price-desc";
 
+/** Nur explizite Sortierungen — Default = Katalogreihenfolge ohne URL-Parameter. */
+export const COLLECTION_SORT_OPTIONS: { value: Exclude<CollectionSort, "default">; label: string }[] =
+  [
+    { value: "title-asc", label: "Name A–Z" },
+    { value: "price-asc", label: "Preis aufsteigend" },
+    { value: "price-desc", label: "Preis absteigend" },
+  ];
+
+export function collectionSortLabel(sort: CollectionSort): string | null {
+  if (sort === "default") return null;
+  return COLLECTION_SORT_OPTIONS.find((o) => o.value === sort)?.label ?? null;
+}
+
 export function parseCollectionSort(value: string | undefined): CollectionSort {
   if (value === "title-asc" || value === "price-asc" || value === "price-desc") return value;
   return "default";

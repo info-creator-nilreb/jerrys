@@ -22,6 +22,7 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | `GET /checkout/paypal-rueckkehr` | Öffentlich (Redirect von PayPal) | Nach erfolgreichem Capture: Bestellung `paid`, Lager, E-Mail ([PAYMENT_PROVIDER_STRATEGY](./PAYMENT_PROVIDER_STRATEGY.md)) |
 | `POST /api/checkout/paypal/create-order` | Öffentlich (Checkout) | Bestellung anlegen + PayPal-Order; **Rate-Limit** pro IP (`lib/security/paypal-checkout-api-rate-limit.ts`) |
 | `POST /api/checkout/paypal/capture-order` | Öffentlich (Checkout) | Capture nach Karte/Wallet; **gleiches Rate-Limit** wie create-order |
+| `POST /api/webhooks/paypal` | Öffentlich (PayPal) | PayPal-Webhooks; **Signaturpflicht** (`PAYPAL_WEBHOOK_ID` + verify-webhook-signature); Inbox-Idempotenz (`paypal_webhook` / Event-ID); Rate-Limit pro IP (`lib/security/paypal-webhook-api-rate-limit.ts`); ohne Webhook-ID → **503** |
 | `GET`/`POST /api/internal/commerce-maintenance` | Bearer `CRON_SECRET` (Vercel Cron), Bearer/`x-commerce-maintenance-secret` (`COMMERCE_MAINTENANCE_SECRET`) | Epic 1: abgelaufene Bestandsreservierungen + Outbox-Publisher (Cron/manuell) |
 | Tabelle `order_payments` | — | PSP-Versuche pro Bestellung (Prisma-Modell `OrderPayment`) |
 | Seiten unter `/admin/*` (außer Login) | Middleware + Layout `auth()` | Admin-UI |
@@ -31,4 +32,4 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 - **CSP:** `Content-Security-Policy` nur bei **Production-Build** (`NODE_ENV=production`), nicht bei `next dev` (HMR). Konfiguration: [`lib/site/content-security-policy.ts`](../lib/site/content-security-policy.ts), Header in [`next.config.ts`](../next.config.ts). `upgrade-insecure-requests` zusätzlich nur bei `VERCEL=1`.
 - Admin-APIs: ohne gültige Session → **401 JSON** (siehe Integrationstests).
 - Keine weiteren öffentlichen REST-Endpunkte für schreibende Shop-Daten außer Server Actions.
-- Webhooks (z. B. Zahlungen, Epic 9): nach Einführung hier eintragen inkl. Signaturpflicht.
+- PayPal-Webhooks: Signatur über PayPal Postback; Replay über `webhook_inbox_entries` (`provider: paypal_webhook`). Capture-Finalisierung zusätzlich über `provider: paypal` / `capture:<orderId>` in `completePayPalCaptureFlow`.

@@ -1,7 +1,7 @@
 # REQUIREMENTS.md
 
 ## Product Summary
-This project is a custom online shop intended to replace an existing Shopware installation for a very small catalog of only two products. The system should deliver the core e-commerce workflow with minimal operational overhead.
+This project is a custom boutique online shop that replaces an existing Shopware installation and can be reused for different single-shop purposes through centrally managed branding, content pages, catalog configuration, customer accounts, and group bookings. It remains one shop per installation, not a multi-tenant commerce platform.
 
 ## Business Goals
 - Reduce hosting and platform overhead.
@@ -157,21 +157,53 @@ Optional for V1 if low effort:
 - admin notes on orders
 - manual resend of failed emails
 
+### Central Shop Settings and Branding
+The platform must support one centrally managed active branding:
+- logo, favicon, social image, semantic brand colors, and shop name
+- contact, business, support, and social information
+- consistent use in storefront, admin login, transactional email, metadata, and invoice/PDF output
+
+See [EPIC11_BRANDING_SETTINGS.md](./EPIC11_BRANDING_SETTINGS.md).
+
+### Content Pages
+Admins must be able to create the homepage and additional pages from curated safe blocks:
+- draft, private preview, explicit publish
+- freely selected non-reserved URL
+- preservation of existing legal, shipping, and information URLs during migration
+- stricter sanitization and audit for legal text
+
+Arbitrary code, free-form templates, and third-party plugins remain out of scope. See [EPIC12_CONTENT_PAGES_CMS.md](./EPIC12_CONTENT_PAGES_CMS.md).
+
+### Customer Accounts
+Customers may register and sign in using password or magic link, manage addresses, view their orders and bookings, and self-cancel bookings within an admin-defined cutoff. Guest checkout remains supported. Guest orders require verified identity before account attachment.
+
+See [EPIC3_CUSTOMER_ACCOUNTS.md](./EPIC3_CUSTOMER_ACCOUNTS.md).
+
+### Group Bookings
+Admins must be able to publish sessions with minimum total attendance and maximum capacity. Different customers can book partial quantities against the same capacity. Booking holds, confirmation, cancellation, payment, and capacity release must be concurrency-safe.
+
+The booking calendar may be embedded on selected product pages and CMS pages. See [EPIC5_GROUP_BOOKING.md](./EPIC5_GROUP_BOOKING.md).
+
+### AI Assistance and Search
+AI-generated product text and images are drafts and require explicit admin confirmation. OpenAI may be the first provider, but provider integrations must be replaceable. Personal customer/order data must not be sent to generation providers.
+
+Semantic search supplements rather than replaces lexical search and always uses authoritative shop data for visibility, price, and availability. Agent-facing capabilities are read-only discoverability in the first stage.
+
+See [EPIC13_AI_CONTENT_ASSISTANCE.md](./EPIC13_AI_CONTENT_ASSISTANCE.md) and [EPIC14_SEMANTIC_SEARCH_DISCOVERABILITY.md](./EPIC14_SEMANTIC_SEARCH_DISCOVERABILITY.md).
+
 ## Out of Scope
-- coupons, vouchers, discount engine
-- product variants unless requested later
-- customer accounts
 - reviews and wishlist
 - recommendation engine
-- advanced search
 - ERP/WaWi integration
 - multi-language
 - multi-currency
 - multi-store
 - marketplace features
 - plugin ecosystem
-- page builder
+- generic free-form page builder with arbitrary code or third-party blocks
 - advanced inventory management
+- agent-initiated cart, checkout, payment, or account mutations
+- autonomous AI publishing
 
 ## Non-Functional Requirements
 ### Reliability

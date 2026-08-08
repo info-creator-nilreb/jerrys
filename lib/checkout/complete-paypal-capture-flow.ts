@@ -21,7 +21,11 @@ export type CompletePayPalCaptureResult =
   | { ok: true; orderNumber: string }
   | { ok: false; code: "capture" | "bestellung" | "betrag" | "finalisierung" };
 
-export type PayPalCaptureEventSource = "paypal_return" | "paypal_smart_buttons" | "paypal_card_fields";
+export type PayPalCaptureEventSource =
+  | "paypal_return"
+  | "paypal_smart_buttons"
+  | "paypal_card_fields"
+  | "paypal_webhook";
 
 /**
  * Nach PayPal-Zustimmung (Smart Buttons oder Return-URL): Capture, Betrag prüfen, Bestellung finalisieren, E-Mail.

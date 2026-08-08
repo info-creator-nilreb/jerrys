@@ -109,6 +109,76 @@ Create and test these before their associated feature is enabled:
 - INTERNETMARKE/DHL label purchase failure
 - personal-data incident and data-subject request
 
+Concrete steps for the commerce paths already in production follow below. Features not yet shipped keep the checklist item until an owned runbook exists.
+
+### Runbook: Application rollback (Vercel)
+
+1. Identify the last known-good Production deployment (Vercel → Deployments).
+2. **Promote** that deployment (or redeploy the git SHA) — do not “fix forward” with untested commits under incident pressure.
+3. Confirm Storefront + Admin login + one catalog page load.
+4. Schema: only **expand/contract** rollbacks; never drop columns that the previous release still reads. If a bad migration shipped, restore DB into an isolated clone first (see Backup and Recovery).
+
+### Runbook: PayPal provider outage or sandbox/live misconfig
+
+Symptoms: Checkout zeigt „PayPal nicht eingerichtet“, Create/Capture → 503, erhöhte `paypal_capture_failed` / Checkout-Fehler.
+
+1. Vercel Env (Preview ≠ Production): `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENV` (`sandbox`|`live`), optional `PAYPAL_WEBHOOK_ID`.
+2. PayPal Developer Dashboard: App aktiv, Credentials zum Env passend, Webhook-URL `https://<host>/api/webhooks/paypal` erreichbar (Production/Staging).
+3. Kundenkommunikation: Vorkasse bleibt nutzbar; PayPal temporär deaktivieren nur bewusst (kein Feature-Flag im Code — ggf. Credentials entfernen → kontrollierte 503).
+4. Nach Wiederherstellung: eine Sandbox-/Testzahlung Return-URL **und** Webhook-Pfad prüfen (Inbox-Einträge, Bestellung `paid`).
+
+### Runbook: Extern bezahlt, intern nicht finalisiert
+
+PayPal zeigt Capture/`COMPLETED`, Shop-Bestellung bleibt `pending_payment`.
+
+1. PayPal Order ID aus Kundenmail / PayPal-Dashboard notieren.
+2. DB prüfen:
+   - `orders` / `order_payments` für die interne Bestellung
+   - `webhook_inbox_entries` mit `provider IN ('paypal','paypal_webhook')` und Status `failed`/`received`
+3. Erneut finalisieren (idempotent):
+   - Return-URL simulieren: `GET /checkout/paypal-rueckkehr?token=<PAYPAL_ORDER_ID>` (Staging) **oder**
+   - PayPal Webhook erneut senden (Dashboard → Webhooks → Resend) **oder**
+   - Capture-API intern nur über bestehende App-Pfade (kein manuelles Doppel-Capture außerhalb der App).
+4. Erwartung: Status `paid`, Capture-Inbox `processed`, Bestätigungsmail (falls noch nicht gesendet). Bei Betrags-Mismatch Logs `paypal_amount_mismatch` — **nicht** manuell auf `paid` setzen ohne Klärung.
+
+### Runbook: Webhook- oder Outbox-Backlog
+
+**Webhooks**
+
+1. Logs: `paypal_webhook_invalid_signature`, `paypal_webhook_verify_failed`, `paypal_webhook_processing_failed`.
+2. `PAYPAL_WEBHOOK_ID` muss zur Dashboard-Webhook-URL passen; falsche ID → dauerhaft 401.
+3. Rate-Limit (In-Memory pro Instance): bei massiven Retries kurz 429 möglich — PayPal retried; Ursache beheben, nicht Limit „ausschalten“.
+4. SQL-Orientierung (siehe auch [EPIC1_COMMERCE_CORE.md](./EPIC1_COMMERCE_CORE.md)):
+
+```sql
+SELECT provider, status, external_event_id, received_at, processed_at
+FROM webhook_inbox_entries
+ORDER BY received_at DESC
+LIMIT 20;
+```
+
+**Outbox / Maintenance**
+
+1. Cron / Manual: `POST /api/internal/commerce-maintenance` mit Bearer `CRON_SECRET` bzw. `COMMERCE_MAINTENANCE_SECRET`.
+2. Antwortfelder `expiredReservations`, `outbox.published` prüfen.
+3. Backlog:
+
+```sql
+SELECT status, event_type, created_at
+FROM integration_outbox_messages
+ORDER BY created_at DESC
+LIMIT 20;
+```
+
+4. Wenn Publisher hängt: Secret/Cron auf Production verifizieren (`vercel.json` + GitHub Action laut Epic-1-Doku), dann einen manuellen Maintenance-Call.
+
+### Runbook: Database restore (Kurz)
+
+1. Restore **niemals** direkt über Production als ersten Schritt — isolierte Instanz / Branch-DB.
+2. App gegen Restore-DB starten; Stichproben: letzte bezahlte Bestellung, ein Produkt mit Bestand, Admin-Login.
+3. RPO/RTO-Ziele und Übungshäufigkeit: Abschnitt Backup and Recovery.
+4. Nach bestätigtem Disaster: Cutover nur mit benanntem Operator und Kommunikationsplan.
+
 ## Open Epic 0 Decisions
 
 The architecture is fixed; product choices remain deliberately open until evaluated:

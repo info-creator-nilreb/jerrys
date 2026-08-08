@@ -21,7 +21,9 @@ test.describe("Katalog Filter & Sortierung", () => {
     const desktopSort = page.locator("#collection-sort");
     await expect(desktopSort).toBeVisible();
     await expect(desktopSort).toHaveValue("title-asc");
-    await expect(page.getByLabel("Nur verfügbare Produkte")).toBeChecked();
+    await page.getByRole("button", { name: /^Filter/ }).click();
+    const desktopFilter = page.locator('[id$="-desktop-filter"]');
+    await expect(desktopFilter.getByLabel("Nur verfügbare Produkte")).toBeChecked();
     await expect(page.getByRole("link", { name: "Filter zurücksetzen" })).toBeVisible();
   });
 
@@ -31,13 +33,16 @@ test.describe("Katalog Filter & Sortierung", () => {
     await page.goto("/produkte?sort=price-asc&verfuegbar=1");
     await expect(page.getByRole("heading", { name: "Produkte" })).toBeVisible();
 
-    const trigger = page.getByRole("button", { name: /Filter & Sortierung/i });
+    const mobileSort = page.locator("#collection-sort");
+    await expect(mobileSort).toBeVisible();
+    await expect(mobileSort).toHaveValue("price-asc");
+
+    const trigger = page.getByRole("button", { name: /^Filter(\s+\d+)?$/ });
     await expect(trigger).toBeVisible();
     await trigger.click();
 
-    const sheet = page.getByRole("dialog", { name: /Filter & Sortierung/i });
+    const sheet = page.getByRole("dialog", { name: "Filter" });
     await expect(sheet).toBeVisible();
-    await expect(sheet.getByLabel("Sortierung")).toHaveValue("price-asc");
     await expect(sheet.getByLabel("Nur verfügbare Produkte")).toBeChecked();
 
     await page.keyboard.press("Escape");
@@ -48,7 +53,8 @@ test.describe("Katalog Filter & Sortierung", () => {
     await dismissConsentBanner(page);
     await page.goto("/produkte?q=höhle");
     await expect(page.getByRole("heading", { name: /Suche:/i })).toBeVisible();
-    await expect(page.getByRole("search").getByLabel("Produkte suchen")).toHaveValue("höhle");
+    await expect(page.getByRole("search")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Produkte suchen" })).toBeVisible();
     await expect(page.getByRole("status").filter({ hasText: /Suche/i }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: "Suche zurücksetzen" })).toBeVisible();
   });
@@ -68,9 +74,11 @@ test.describe("Katalog Filter & Sortierung", () => {
   test("Typeahead zeigt Produktvorschläge während der Eingabe", async ({ page }) => {
     await dismissConsentBanner(page);
     await page.goto("/produkte");
-    const search = page.getByRole("combobox", { name: "Produkte suchen" });
+    await page.getByRole("button", { name: "Produkte suchen" }).click();
+    const dialog = page.getByRole("dialog", { name: /Produkte suchen/i });
+    const search = dialog.getByRole("combobox", { name: "Produkte suchen" });
     await search.fill("höhle");
-    const listbox = page.getByRole("listbox", { name: "Produktvorschläge" });
+    const listbox = dialog.getByRole("listbox", { name: "Produktvorschläge" });
     await expect(listbox).toBeVisible({ timeout: 10_000 });
     const option = listbox.getByRole("option").first();
     await expect(option).toBeVisible();

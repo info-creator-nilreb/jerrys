@@ -4,6 +4,13 @@ import { Suspense } from "react";
 import {
   CollectionCatalogToolbar,
 } from "@/components/storefront/collection-catalog-toolbar";
+import {
+  asCatalogProduct,
+  catalogListingFiltersActive,
+  catalogPriceBoundsEuros,
+  filterProductsByPriceEuroRange,
+  parseCatalogListingFilters,
+} from "@/lib/catalog/collection-storefront-filters";
 import { parseCollectionSort } from "@/lib/catalog/collection-storefront-sort";
 import { DatabaseUnavailableNotice } from "@/components/storefront/database-unavailable-notice";
 import { ProductCard } from "@/components/storefront/product-card";
@@ -33,12 +40,17 @@ export default async function KollektionDetailPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ sort?: string; verfuegbar?: string }>;
+  searchParams: Promise<{
+    sort?: string;
+    verfuegbar?: string;
+    preis_min?: string;
+    preis_max?: string;
+  }>;
 }) {
   const { slug } = await params;
   const sp = await searchParams;
   const sort = parseCollectionSort(sp.sort);
-  const onlyAvailable = sp.verfuegbar === "1";
+  const listingFilters = parseCatalogListingFilters(sp);
 
   let collection: Awaited<ReturnType<typeof getActiveCollectionBySlugForStorefront>> = null;
   let dbUnavailable = false;
@@ -60,9 +72,18 @@ export default async function KollektionDetailPage({
 
   if (!collection) notFound();
 
-  const allProducts = collection.products.map((row) => row.product);
-  const products = filterAndSortCollectionProducts(allProducts, { sort, onlyAvailable });
-  const filtersActive = onlyAvailable || sort !== "default";
+  const allProducts = collection.products.map((row) => asCatalogProduct(row.product));
+  const afterPrice = filterProductsByPriceEuroRange(
+    allProducts,
+    listingFilters.priceMinEuros,
+    listingFilters.priceMaxEuros,
+  );
+  const products = filterAndSortCollectionProducts(afterPrice, {
+    sort,
+    onlyAvailable: listingFilters.onlyAvailable,
+  });
+  const filtersActive = catalogListingFiltersActive(listingFilters, sort);
+  const priceBoundsEuros = catalogPriceBoundsEuros(allProducts);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-24 md:py-28">
@@ -80,16 +101,24 @@ export default async function KollektionDetailPage({
 
       {allProducts.length > 0 ? (
         <Suspense fallback={null}>
-          <CollectionCatalogToolbar sort={sort} onlyAvailable={onlyAvailable} />
+          <CollectionCatalogToolbar
+            sort={sort}
+            onlyAvailable={listingFilters.onlyAvailable}
+            resultCount={products.length}
+            priceMinEuros={listingFilters.priceMinEuros}
+            priceMaxEuros={listingFilters.priceMaxEuros}
+            priceBoundsEuros={priceBoundsEuros}
+          />
         </Suspense>
       ) : null}
 
       {filtersActive ? (
         <p className="mt-4 text-sm text-(--foreground-muted)">
-          {products.length} von {allProducts.length} Produkten
-          {onlyAvailable ? " · nur verfügbar" : ""}
-          {sort !== "default" ? " · sortiert" : ""}
-          {" · "}
+          {listingFilters.onlyAvailable ? "Nur verfügbar · " : ""}
+          {listingFilters.priceMinEuros != null || listingFilters.priceMaxEuros != null
+            ? "Preisfilter · "
+            : ""}
+          {sort !== "default" ? "Sortiert · " : ""}
           <Link href={`/kollektionen/${slug}`} className="font-medium text-primary hover:underline">
             Filter zurücksetzen
           </Link>
