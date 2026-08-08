@@ -139,6 +139,30 @@ export async function listActiveCategoryTreeForNav() {
   });
 }
 
+/** Aktive Kategorien mit mindestens einem sichtbaren Produkt (Storefront-Index). */
+export async function listActiveCategoriesForStorefrontIndex() {
+  return getPrisma().category.findMany({
+    where: {
+      isActive: true,
+      products: { some: activeProductOnCategory },
+    },
+    orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      description: true,
+      parentId: true,
+      parent: { select: { title: true, slug: true } },
+      _count: {
+        select: {
+          products: { where: activeProductOnCategory },
+        },
+      },
+    },
+  });
+}
+
 /** Produkte einer aktiven Kategorie (Storefront-Karten), per Slug. */
 export async function listActiveProductsByCategorySlug(slug: string) {
   const category = await getPrisma().category.findFirst({

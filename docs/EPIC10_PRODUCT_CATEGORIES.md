@@ -50,7 +50,7 @@ Storefront primary navigation should follow **customer mental models** (product 
 | Leer | Inaktive/leere Kategorie → 404 oder nicht verlinkt (Nav-Regel) |
 | Breadcrumbs | Start → Kategorie → (Produkt) |
 
-**Exit Slice 3:** Deep-Link und SEO-Title pro Kategorie.
+**Exit Slice 3:** Deep-Link und SEO-Title pro Kategorie. **Status:** umgesetzt (Listings, PDP-Breadcrumbs mit Primary-Kategorie, Sitemap).
 
 ## Slice 4 — Navigation
 

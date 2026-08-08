@@ -4,20 +4,22 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useTransition } from "react";
 import type { CollectionSort } from "@/lib/catalog/collection-storefront-sort";
 
-const sortOptions: { value: CollectionSort; label: string }[] = [
-  { value: "default", label: "Reihenfolge Kollektion" },
-  { value: "title-asc", label: "Name A–Z" },
-  { value: "price-asc", label: "Preis aufsteigend" },
-  { value: "price-desc", label: "Preis absteigend" },
-];
-
 export function CollectionCatalogToolbar({
   sort,
   onlyAvailable,
+  defaultSortLabel = "Reihenfolge Kollektion",
 }: {
   sort: CollectionSort;
   onlyAvailable: boolean;
+  /** Label für Sortierung „default“ (Kategorie vs. Kollektion). */
+  defaultSortLabel?: string;
 }) {
+  const sortOptions: { value: CollectionSort; label: string }[] = [
+    { value: "default", label: defaultSortLabel },
+    { value: "title-asc", label: "Name A–Z" },
+    { value: "price-asc", label: "Preis aufsteigend" },
+    { value: "price-desc", label: "Preis absteigend" },
+  ];
   const router = useRouter();
   const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
