@@ -219,6 +219,48 @@ async function main() {
       isActive: true,
     });
 
+    const catKatzen = await prisma.category.upsert({
+      where: { slug: "katzen" },
+      create: {
+        id: "seed_cat_katzen",
+        slug: "katzen",
+        title: "Katzen",
+        description: "Produkte für Stubentiger — Demo-Kategorie (Epic 10 Seed).",
+        sortOrder: 0,
+        isActive: true,
+      },
+      update: {
+        title: "Katzen",
+        description: "Produkte für Stubentiger — Demo-Kategorie (Epic 10 Seed).",
+        sortOrder: 0,
+        isActive: true,
+      },
+    });
+
+    await prisma.productCategory.upsert({
+      where: {
+        productId_categoryId: { productId: hoehle.id, categoryId: catKatzen.id },
+      },
+      create: {
+        productId: hoehle.id,
+        categoryId: catKatzen.id,
+        isPrimary: true,
+      },
+      update: { isPrimary: true },
+    });
+
+    await prisma.productCategory.upsert({
+      where: {
+        productId_categoryId: { productId: napf.id, categoryId: catKatzen.id },
+      },
+      create: {
+        productId: napf.id,
+        categoryId: catKatzen.id,
+        isPrimary: true,
+      },
+      update: { isPrimary: true },
+    });
+
     await syncDefaultVariantsForAllProducts(prisma);
 
     await prisma.homepageAmazonReview.upsert({

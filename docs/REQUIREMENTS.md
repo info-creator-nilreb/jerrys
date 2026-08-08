@@ -48,11 +48,16 @@ Products must support:
 - image gallery
 - active/inactive flag
 - optional simple availability status
+- **product categories** (Epic 10): assign one primary and optional secondary categories; products without categories remain on `/produkte`
 
 Rules:
 - only active products are visible in the storefront
 - SKU must be unique
 - price authority is server-side only
+- **storefront header navigation** lists active **root** categories that have at least one active product; inactive or empty categories are not linked
+- **collections** remain merchandising (e.g. footer); they do not replace category browse paths
+
+See also: [EPIC10_PRODUCT_CATEGORIES.md](./EPIC10_PRODUCT_CATEGORIES.md), [STOREFRONT_BREADCRUMBS.md](./STOREFRONT_BREADCRUMBS.md).
 
 ### Cart
 Customers must be able to:

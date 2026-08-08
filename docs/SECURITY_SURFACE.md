@@ -12,6 +12,7 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | Server Actions `app/(storefront)/checkout/actions.ts` | Öffentlich | Checkout |
 | Server Actions `app/admin/.../orders/actions.ts` | `auth()` in Action | Bestellstatus |
 | Server Actions `app/admin/.../products/actions.ts` | `auth()` in Action | Katalogpflege |
+| Server Actions `app/admin/.../categories/actions.ts` | `auth()` in Action | Kategorie-CRUD, Produktzuordnung |
 | Server Actions `app/admin/.../startseite/actions.ts` | `auth()` in Action | Startseite Marketing (Amazon-/Social-Inhalte) |
 | Server Actions `app/admin/.../versand/actions.ts` | `auth()` in Action | Shopweite Versandländer und -kosten |
 | `GET /llms.txt` | Öffentlich | KI-/Agenten-Hinweis (nur statischer Text, keine personenbezogenen Daten) |
