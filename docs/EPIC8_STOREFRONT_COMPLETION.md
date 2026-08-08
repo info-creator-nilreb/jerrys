@@ -47,10 +47,10 @@ Auszug — vollständig in `PLATFORM_ROADMAP.md`:
 
 ## Konkrete Lücken (priorisiert)
 
-1. **`/produkte` ohne Filter/Sort** — Kollektionen/Kategorien nutzen `CollectionCatalogToolbar` + URL-Params `sort`, `verfuegbar`; Katalog-Index nicht ([`app/(storefront)/produkte/page.tsx`](../app/(storefront)/produkte/page.tsx)).
+1. ~~**`/produkte` ohne Filter/Sort**~~ — **erledigt** Slice 1: gleiche URL-Params/`CollectionCatalogToolbar` wie Kategorie/Kollektion.
 2. **Keine Storefront-Suche** — nur Admin-Globale-Suche; Roadmap verlangt Kunden-Suche (Minimal: Titel/Slug auf `/produkte?q=` o. ä.).
-3. **Mobile Filter-Sheet** — bewusst verschoben ([MOBILE_UX_AUDIT.md](./MOBILE_UX_AUDIT.md): Inline-Toolbar ok für MVP, Sheet = Epic 8).
-4. **Listing-UX vereinheitlichen** — gleiche Toolbar, aktive Filter, „Filter zurücksetzen“ auf allen Listings (Pattern in [`kollektionen/[slug]/page.tsx`](../app/(storefront)/kollektionen/[slug]/page.tsx)).
+3. ~~**Mobile Filter-Sheet**~~ — **erledigt** Slice 2 in `CollectionCatalogToolbar` (Trigger `max-md`, Bottom-Sheet, Chips).
+4. ~~**Listing-UX vereinheitlichen**~~ — **erledigt** für `/produkte`, `/kategorien/[slug]`, `/kollektionen/[slug]` (Toolbar, aktive Filter, Zurücksetzen).
 5. **Performance / CI** — Lighthouse-Job existiert (`lighthouserc.json`, `continue-on-error`); Budgets schärfen + flake fix optional.
 6. **Admin „Completion“** — kein zentraler Integrations-/Fehler-Hub; eher Slice 2–3 (Bestellungen, Versand, Promotions schon da).
 
@@ -153,8 +153,8 @@ Antworten auf Deutsch.
 
 | Slice | Status |
 | --- | --- |
-| 1 Listing `/produkte` | offen |
-| 2 Mobile Filter-Sheet | offen |
+| 1 Listing `/produkte` | erledigt (Branch `cursor/epic8-slice1-produkte-filter-21f6`) |
+| 2 Mobile Filter-Sheet | erledigt (gleiche PR: `CollectionCatalogToolbar`) |
 | 3 Storefront-Suche | offen |
 | 4 Checkout Legal/Versand | offen |
-| 5 Tests/Ops | offen |
+| 5 Tests/Ops | teilweise (Unit Sort/Filter; E2E Listing folgt) |
