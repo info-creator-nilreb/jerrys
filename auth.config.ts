@@ -1,8 +1,6 @@
 import type { NextAuthConfig } from "next-auth";
-import { resolveAuthSecret } from "@/lib/auth/resolve-auth-secret";
 
 export const authConfig = {
-  secret: resolveAuthSecret(),
   trustHost: true,
   providers: [],
   session: { strategy: "jwt" as const, maxAge: 60 * 60 * 8 },

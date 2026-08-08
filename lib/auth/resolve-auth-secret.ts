@@ -1,7 +1,9 @@
 /** Auth.js / NextAuth JWT signing — Vercel: in Preview & Production setzen. */
 export function resolveAuthSecret(): string | undefined {
+  // Klammer-Notation: in Edge-Middleware nicht beim Build durch Next.js „einfrieren“.
+  const env = process.env;
   const secret =
-    process.env.AUTH_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim();
+    env["AUTH_SECRET"]?.trim() || env["NEXTAUTH_SECRET"]?.trim();
   return secret || undefined;
 }
 
