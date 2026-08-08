@@ -37,8 +37,9 @@ In Vercel → Project → **Settings → Environment Variables** für **Preview*
 
 | Variable | Zweck |
 | --- | --- |
-| `DATABASE_URL` | PostgreSQL (Pooler-URL für Runtime) |
-| `DIRECT_DATABASE_URL` | Optional; direkte URL für Migrationen |
+| `DATABASE_URL` | PostgreSQL **Transaction-Pooler** für Runtime (Supabase Port **6543**, ideal mit `?pgbouncer=true`). Session-Pooler `:5432` / Direct oft → `EMAXCONNSESSION` unter Serverless. |
+| `DIRECT_DATABASE_URL` | Optional; **direkte** URL (`db.*.supabase.co:5432`) für Migrationen / Seed |
+| `PG_POOL_MAX` | Optional; App-`pg.Pool`-Größe (Default auf Vercel: **1**) |
 | `AUTH_SECRET` | Auth.js (min. 32 Zeichen, z. B. `openssl rand -base64 32`) — **für Preview und Production** getrennt setzen (Häkchen in Vercel). Alias: **`NEXTAUTH_SECRET`** (gleicher Wert ok). Nach Änderung **Redeploy**. Bleibt `MissingSecret` in den Logs: zuerst Preview **und** Production prüfen; Runtime-Log `auth_secret_missing_at_runtime` listet sichtbare `AUTH*`-Keys. **Hinweis:** Admin-Auth läuft in Node (`/api/auth`, Dashboard-Layout), nicht in der Edge-Middleware. |
 | `AUTH_URL` | Kanonische App-URL (Production-Domain). **Preview:** weglassen oder nur für Preview setzen — sonst CSRF/Login-Fehler, wenn die Variable auf Production zeigt, du aber die `*.vercel.app`-URL öffnest (die App passt Preview automatisch an, siehe `lib/auth/vercel-auth-env.ts`). |
 | `NEXT_PUBLIC_SITE_URL` | Öffentliche Shop-URL (E-Mails, Links) |

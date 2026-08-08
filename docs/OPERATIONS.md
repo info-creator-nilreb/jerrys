@@ -32,6 +32,7 @@ Selection criteria include Vercel compatibility, EU data options, data-processin
 - Never rely on local filesystem persistence.
 - Never rely on an in-memory timer, rate limiter, queue, or singleton for correctness.
 - Use pooled database connections suitable for concurrent serverless invocations.
+- **Supabase + Vercel:** Runtime-`DATABASE_URL` = Transaction Pooler (`:6543`). Session Pooler (`:5432`, `pool_size` oft 15) nicht für Serverless-Runtime — sonst `EMAXCONNSESSION`. App-Pool ist auf Vercel auf `max: 1` begrenzt (`lib/db/pg-pool-config.ts`); Override `PG_POOL_MAX`. Migrationen über `DIRECT_DATABASE_URL`.
 - Route Handlers that accept webhooks acknowledge only after durable inbox persistence.
 - Long-running or retryable work is delegated to the durable job system.
 - Set explicit timeouts on provider calls and avoid holding database transactions open across network requests.
