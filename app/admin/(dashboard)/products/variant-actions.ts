@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { auth } from "@/auth";
+import { getAdminSession } from "@/lib/auth/admin-session";
 import { parseEuroInputToCents } from "@/lib/catalog/format";
 import { netCentsFromGross } from "@/lib/catalog/pricing";
 import { getPrisma } from "@/lib/db/prisma";
@@ -57,7 +57,7 @@ export async function createProductVariant(
   _prev: VariantActionState,
   formData: FormData,
 ): Promise<VariantActionState> {
-  const session = await auth();
+  const session = await getAdminSession();
   if (!session?.user) {
     return { error: "Nicht angemeldet." };
   }
@@ -169,7 +169,7 @@ export async function updateProductVariant(
   _prev: VariantActionState,
   formData: FormData,
 ): Promise<VariantActionState> {
-  const session = await auth();
+  const session = await getAdminSession();
   if (!session?.user) {
     return { error: "Nicht angemeldet." };
   }

@@ -186,7 +186,7 @@ The architecture is fixed; product choices remain deliberately open until evalua
 - managed PostgreSQL provider
 - object storage provider and retention implementation
 - durable queue/workflow provider
-- authentication provider or retained Auth.js design
+- ~~authentication provider or retained Auth.js design~~ → decided: Auth.js retained for admin + customers ([ADR-0005](./adr/0005-customer-authentication.md))
 - error tracking, logs, metrics, and alert routing
 
 Each selection requires an ADR before implementation. Product selection must not be hidden inside a feature pull request.

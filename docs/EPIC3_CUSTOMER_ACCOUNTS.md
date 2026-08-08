@@ -28,6 +28,8 @@ Kunden können sich per **E-Mail/Passwort oder Magic Link** anmelden und ihre Be
 - Passwort vergessen, Sessionverwaltung und Rate-Limits
 - Gastbestellungen bleiben ohne Konto möglich
 
+**Status:** umgesetzt (ADR-0005). Auth.js bleibt Session-Mechanismus; Identitäten und One-Time-Tokens liegen in Postgres (`customers`, `customer_identities`, `customer_auth_tokens`). Storefront: `/konto/anmelden`, `/konto/registrieren`, Magic Link, Verifikation, Passwort-Reset; minimale `/konto`-Landing. Keine Gastbestell-Zuordnung und keine Epic-5-Termine in Slice 1.
+
 ### Slice 2 — Kundenportal und Bestellungen
 
 - `/konto`, `/konto/bestellungen`, geschützte Bestelldetails
@@ -74,6 +76,6 @@ Kunden können sich per **E-Mail/Passwort oder Magic Link** anmelden und ihre Be
 - Stornierung direkt vor/nach Frist und parallele Doppelstornierung
 - Adressänderung verändert keine Bestell-Snapshots
 
-## Offene Implementierungsentscheidung
+## Auth-Entscheidung
 
-Auth.js, Clerk, Descope oder Auth0 erst nach ADR und Prüfung von Kosten, EU-Datenverarbeitung, Magic-Link-Zustellung, Exportierbarkeit und Vercel-Betrieb auswählen.
+Festgelegt in [ADR-0005](./adr/0005-customer-authentication.md): **Auth.js beibehalten**, Kundenidentität first-party in PostgreSQL, Magic-/Verify-/Reset-Mails über Resend. Hosted IdPs (Clerk, Descope, Auth0) sind für Slice 1 abgelehnt.

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { auth } from "@/auth";
+import { getAdminSession } from "@/lib/auth/admin-session";
 import { replaceCategoryProductMemberships } from "@/lib/catalog/category-membership";
 import { categoryUpsertSchema } from "@/lib/catalog/category-schemas";
 import { getPrisma } from "@/lib/db/prisma";
@@ -66,7 +66,7 @@ export async function saveCategory(
   _prev: CategoryFormState,
   formData: FormData,
 ): Promise<CategoryFormState> {
-  const session = await auth();
+  const session = await getAdminSession();
   if (!session?.user) {
     return { error: "Nicht angemeldet." };
   }

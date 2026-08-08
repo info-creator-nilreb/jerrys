@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { auth } from "@/auth";
+import { getAdminSession } from "@/lib/auth/admin-session";
 import { collectionUpsertSchema } from "@/lib/catalog/collection-schemas";
 import { getPrisma } from "@/lib/db/prisma";
 
@@ -42,7 +42,7 @@ export async function saveCollection(
   _prev: CollectionFormState,
   formData: FormData,
 ): Promise<CollectionFormState> {
-  const session = await auth();
+  const session = await getAdminSession();
   if (!session?.user) {
     return { error: "Nicht angemeldet." };
   }

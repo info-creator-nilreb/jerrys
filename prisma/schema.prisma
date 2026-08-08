@@ -23,6 +23,62 @@ model AdminUser {
   @@map("admin_users")
 }
 
+/// Storefront customer account (Epic 3). Not derived from order emails.
+model Customer {
+  id              String    @id @default(cuid())
+  /// Normalized lowercase email; unique identity anchor after verification.
+  email           String    @unique
+  emailVerifiedAt DateTime? @map("email_verified_at")
+  firstName       String?   @map("first_name")
+  lastName        String?   @map("last_name")
+  /// Null until a password is set (magic-link-only accounts possible later).
+  passwordHash    String?   @map("password_hash")
+  isActive        Boolean   @default(true) @map("is_active")
+  lastLoginAt     DateTime? @map("last_login_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  identities CustomerIdentity[]
+  authTokens CustomerAuthToken[]
+
+  @@index([isActive, createdAt])
+  @@map("customers")
+}
+
+/// Auth provider binding for a customer (password, magic_link, …).
+model CustomerIdentity {
+  id              String   @id @default(cuid())
+  customerId      String   @map("customer_id")
+  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  /// e.g. password | magic_link
+  provider        String
+  /// Stable subject within provider (normalized email for first-party providers).
+  providerSubject String   @map("provider_subject")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@unique([provider, providerSubject])
+  @@index([customerId])
+  @@map("customer_identities")
+}
+
+/// One-time hashed tokens for email verify, magic link, password reset.
+model CustomerAuthToken {
+  id         String    @id @default(cuid())
+  customerId String    @map("customer_id")
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  /// email_verify | magic_link | password_reset
+  purpose    String
+  tokenHash  String    @unique @map("token_hash")
+  expiresAt  DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([customerId, purpose])
+  @@index([expiresAt])
+  @@map("customer_auth_tokens")
+}
+
 model Manufacturer {
   id        String    @id @default(cuid())
   name      String
