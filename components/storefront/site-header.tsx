@@ -3,7 +3,7 @@ import Link from "next/link";
 import { HeaderCartFlyout } from "@/components/storefront/header-cart-flyout";
 import { StorefrontShopNav } from "@/components/storefront/storefront-shop-nav";
 import { getStorefrontCartBadgeCount } from "@/lib/cart/badge";
-import { listActiveCollectionsForStorefront } from "@/lib/catalog/collection-queries";
+import { listActiveCategoriesForNav } from "@/lib/catalog/category-queries";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 import { buildStorefrontShopNavLinks } from "@/lib/storefront/shop-nav-links";
 
@@ -15,8 +15,10 @@ export async function SiteHeader() {
   const cartCount = await getStorefrontCartBadgeCount();
   let shopNavLinks = buildStorefrontShopNavLinks([]);
   try {
-    const collections = await listActiveCollectionsForStorefront();
-    shopNavLinks = buildStorefrontShopNavLinks(collections);
+    const categories = await listActiveCategoriesForNav();
+    shopNavLinks = buildStorefrontShopNavLinks(
+      categories.map((c) => ({ slug: c.slug, title: c.title })),
+    );
   } catch (e) {
     if (!isDatabaseUnreachable(e)) throw e;
   }

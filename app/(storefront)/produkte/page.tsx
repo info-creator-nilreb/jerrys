@@ -37,7 +37,7 @@ export default async function ProduktePage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-24 md:py-28">
-      <StorefrontBreadcrumbs items={[{ href: "/", label: "Start" }, { label: "Produkte" }]} />
+      <StorefrontBreadcrumbs items={[{ href: "/", label: "Start" }, { label: "Alle Produkte" }]} />
       <h1 className="mt-6 text-2xl font-semibold text-(--foreground-heading) md:text-3xl">
         Produkte
       </h1>

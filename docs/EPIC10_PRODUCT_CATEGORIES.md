@@ -4,7 +4,7 @@ Referenz: [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md#epic-10-product-categories
 
 ## Motivation (UX)
 
-Storefront primary navigation should follow **customer mental models** (product types, rooms, use cases), not internal entities (“Produkte”, “Kollektionen”). Collections stay valuable for **merchandising**; categories provide **stable browse paths**. Interim navigation uses `Shop` + active collection titles until this epic ships ([`lib/storefront/shop-nav-links.ts`](../lib/storefront/shop-nav-links.ts)).
+Storefront primary navigation should follow **customer mental models** (product types, rooms, use cases), not internal entities (“Produkte”, “Kollektionen”). Collections stay valuable for **merchandising**; categories provide **stable browse paths**. Interim navigation uses `Shop` + active collection titles until this epic ships ([`lib/storefront/shop-nav-links.ts`](../lib/storefront/shop-nav-links.ts)). **Update Slice 4:** Header = Kategorien + „Alle Produkte“; Kollektionen im Footer.
 
 ## Dependencies
 
@@ -61,7 +61,7 @@ Storefront primary navigation should follow **customer mental models** (product 
 | Collections | Weiterhin nur **aktive** Kollektionen als Zusatzlinks oder nur Footer/Home — Product Owner Entscheid in ADR |
 | Footer | Gleiche Sichtbarkeitslogik wie Header |
 
-**Exit Slice 4:** Kein generischer „Kollektionen“-Index in der Nav ohne veröffentlichte Inhalte (bestehende Regel bleibt).
+**Exit Slice 4:** Kein generischer „Kollektionen“-Index in der Nav ohne veröffentlichte Inhalte (bestehende Regel bleibt). **Status:** umgesetzt (Header Kategorien, Footer Kollektionen, Browse-Kontext + [`docs/STOREFRONT_BREADCRUMBS.md`](./STOREFRONT_BREADCRUMBS.md)).
 
 ## Slice 5 — Migration, Tests, Ops
 

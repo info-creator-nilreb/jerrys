@@ -1,4 +1,10 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import {
+  browseContextCookieOptions,
+  browseContextFromPathname,
+  serializeBrowseContext,
+  BROWSE_CONTEXT_COOKIE,
+} from "@/lib/storefront/browse-context";
 import { updateSession } from "@/utils/supabase/middleware";
 
 /**
@@ -7,7 +13,16 @@ import { updateSession } from "@/utils/supabase/middleware";
  * Admin-Schutz: `app/admin/(dashboard)/layout.tsx` (`auth()`).
  */
 export async function middleware(request: NextRequest) {
-  return updateSession(request);
+  const response = await updateSession(request);
+  const ctx = browseContextFromPathname(request.nextUrl.pathname);
+  if (ctx) {
+    response.cookies.set(
+      BROWSE_CONTEXT_COOKIE,
+      serializeBrowseContext(ctx),
+      browseContextCookieOptions(),
+    );
+  }
+  return response;
 }
 
 export const config = {

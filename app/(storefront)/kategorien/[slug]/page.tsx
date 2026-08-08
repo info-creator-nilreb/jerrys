@@ -14,7 +14,7 @@ import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 
 export const dynamic = "force-dynamic";
 
-function categoryBreadcrumbItems(category: {
+function categoryListingBreadcrumbItems(category: {
   title: string;
   slug: string;
   parent: { slug: string; title: string } | null;
@@ -25,8 +25,6 @@ function categoryBreadcrumbItems(category: {
       href: `/kategorien/${category.parent.slug}`,
       label: category.parent.title,
     });
-  } else {
-    items.push({ href: "/kategorien", label: "Kategorien" });
   }
   items.push({ label: category.title });
   return items;
@@ -87,7 +85,7 @@ export default async function KategorieDetailPage({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-24 md:py-28">
-      <StorefrontBreadcrumbs items={categoryBreadcrumbItems(category)} />
+      <StorefrontBreadcrumbs items={categoryListingBreadcrumbItems(category)} />
       <h1 className="mt-6 text-2xl font-semibold text-(--foreground-heading) md:text-3xl">
         {category.title}
       </h1>

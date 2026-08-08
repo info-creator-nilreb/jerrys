@@ -34,9 +34,9 @@ export async function getActiveProductBySlug(slug: string) {
       images: { orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }] },
       variants: prismaStorefrontActiveVariantsInclude,
       categoryMemberships: {
-        where: { isPrimary: true, category: { isActive: true } },
-        take: 1,
+        where: { category: { isActive: true } },
         select: {
+          isPrimary: true,
           category: {
             select: {
               slug: true,
@@ -44,6 +44,12 @@ export async function getActiveProductBySlug(slug: string) {
               parent: { select: { slug: true, title: true } },
             },
           },
+        },
+      },
+      collectionMemberships: {
+        where: { collection: { isActive: true } },
+        select: {
+          collection: { select: { slug: true, title: true } },
         },
       },
     },
