@@ -126,5 +126,20 @@ Vercel-Deploy-Secrets (`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`) sin
 - [ ] GitHub Actions grün auf dem letzten Push.
 - [ ] Production-Env und Preview-Env getrennt.
 - [ ] `AUTH_URL` / `NEXT_PUBLIC_SITE_URL` passen zur Vercel-Domain.
+- [ ] **`AUTH_SECRET`** für Preview **und** Production gesetzt → danach **Redeploy** (Build muss Secret kennen).
+- [ ] **Admin-Login:** `npx prisma migrate deploy` gegen die Vercel-DB (lokal mit Production-/Preview-`DATABASE_URL` oder CI).
+- [ ] **Admin-User** in derselben DB: einmalig `npm run db:seed` (nur Staging/Preview) oder `npm run admin:set-password` mit Ziel-`DATABASE_URL`.
+
+### Admin-Login (Vercel) — Kurzablauf
+
+1. Env: `DATABASE_URL`, `AUTH_SECRET` (Preview + Production), optional Production-`AUTH_URL`.
+2. Code mit Auth-Fixes auf `main` (PR #17 o. Ä.) → Vercel-Deploy abwarten.
+3. Schema: `DATABASE_URL="…" npx prisma migrate deploy`
+4. Admin anlegen/Passwort:  
+   `DATABASE_URL="…" npm run admin:set-password`  
+   (interaktiv) **oder** Seed nur für nicht-Production: `npm run db:seed`
+5. `/admin/login` testen — **kein** Passwort in der URL; Formular nutzt POST.
+
+Lokal: eigenes `AUTH_SECRET` in `.env.local` (darf von Vercel abweichen).
 
 Bei Problemen: Vercel **Build Logs**, fehlende Env-Variablen, Prisma/DB-Erreichbarkeit, Supabase-Pause prüfen.
