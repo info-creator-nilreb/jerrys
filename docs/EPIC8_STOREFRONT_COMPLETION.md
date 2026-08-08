@@ -48,7 +48,7 @@ Auszug — vollständig in `PLATFORM_ROADMAP.md`:
 ## Konkrete Lücken (priorisiert)
 
 1. ~~**`/produkte` ohne Filter/Sort**~~ — **erledigt** Slice 1: gleiche URL-Params/`CollectionCatalogToolbar` wie Kategorie/Kollektion.
-2. ~~**Keine Storefront-Suche**~~ — **erledigt** Slice 3: `/produkte?q=` (Titel/Subtitle/Slug), Header-Dialog + Formular auf der Listing-Seite.
+2. ~~**Keine Storefront-Suche**~~ — **erledigt** Slice 3: `/produkte?q=` (Titel/Subtitle/Slug), Header-Dialog + Formular; **Typeahead** via `GET /api/storefront/product-suggest`.
 3. ~~**Mobile Filter-Sheet**~~ — **erledigt** Slice 2 in `CollectionCatalogToolbar` (Trigger `max-md`, Bottom-Sheet, Chips).
 4. ~~**Listing-UX vereinheitlichen**~~ — **erledigt** für `/produkte`, `/kategorien/[slug]`, `/kollektionen/[slug]` (Toolbar, aktive Filter, Zurücksetzen).
 5. **Performance / CI** — Lighthouse-Job existiert (`lighthouserc.json`, `continue-on-error`); Budgets schärfen + flake fix optional.
@@ -106,7 +106,7 @@ Branch-Prefix: `cursor/epic8-slice<N>-<kurzname>-21f6`
 | Listings | `app/(storefront)/produkte/page.tsx`, `kategorien/[slug]/page.tsx`, `kollektionen/[slug]/page.tsx` |
 | Toolbar | `components/storefront/collection-catalog-toolbar.tsx` |
 | Sort/Filter | `lib/catalog/collection-storefront-sort.ts` |
-| Suche | `lib/catalog/storefront-product-search.ts`, `storefront-search-form.tsx`, `storefront-header-search.tsx` |
+| Suche | `lib/catalog/storefront-product-search.ts`, `storefront-product-suggest.ts`, `GET /api/storefront/product-suggest`, `storefront-search-form.tsx`, `storefront-header-search.tsx` |
 | Produktliste | `lib/catalog/queries.ts` (`listActiveProductsForStorefront`) |
 | Header/Nav | `components/storefront/site-header.tsx`, `storefront-shop-nav.tsx` |
 | Design | `docs/DESIGN_SYSTEM.md`, `docs/MOBILE_UX_AUDIT.md` |
@@ -156,6 +156,6 @@ Antworten auf Deutsch.
 | --- | --- |
 | 1 Listing `/produkte` | erledigt (Branch `cursor/epic8-slice1-produkte-filter-21f6`) |
 | 2 Mobile Filter-Sheet | erledigt (gleiche PR: `CollectionCatalogToolbar`) |
-| 3 Storefront-Suche | erledigt (`q` min. 2 Zeichen, Header + `/produkte`) |
+| 3 Storefront-Suche | erledigt (`q` + Typeahead-Suggest-API, Header + `/produkte`) |
 | 4 Checkout Legal/Versand | offen |
 | 5 Tests/Ops | teilweise (Unit Sort/Filter/Suche; E2E Filter + Suche) |

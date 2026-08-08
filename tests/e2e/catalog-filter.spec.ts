@@ -60,8 +60,22 @@ test.describe("Katalog Filter & Sortierung", () => {
     const dialog = page.getByRole("dialog", { name: /Produkte suchen/i });
     await expect(dialog).toBeVisible();
     await dialog.getByLabel("Produkte suchen").fill("futternapf");
-    await dialog.getByRole("button", { name: "Suchen" }).click();
+    await dialog.getByRole("button", { name: "Suchen", exact: true }).click();
     await page.waitForURL(/\/produkte\?q=/);
     await expect(page.getByRole("heading", { name: /Suche:/i })).toBeVisible();
+  });
+
+  test("Typeahead zeigt Produktvorschläge während der Eingabe", async ({ page }) => {
+    await dismissConsentBanner(page);
+    await page.goto("/produkte");
+    const search = page.getByRole("combobox", { name: "Produkte suchen" });
+    await search.fill("höhle");
+    const listbox = page.getByRole("listbox", { name: "Produktvorschläge" });
+    await expect(listbox).toBeVisible({ timeout: 10_000 });
+    const option = listbox.getByRole("option").first();
+    await expect(option).toBeVisible();
+    await option.click();
+    await page.waitForURL(/\/produkte\/[^?]+/);
+    await expect(page).not.toHaveURL(/\/produkte\?/);
   });
 });
