@@ -43,4 +43,25 @@ test.describe("Katalog Filter & Sortierung", () => {
     await page.keyboard.press("Escape");
     await expect(sheet).toBeHidden();
   });
+
+  test("Storefront-Suche filtert /produkte per q", async ({ page }) => {
+    await dismissConsentBanner(page);
+    await page.goto("/produkte?q=höhle");
+    await expect(page.getByRole("heading", { name: /Suche:/i })).toBeVisible();
+    await expect(page.getByRole("search").getByLabel("Produkte suchen")).toHaveValue("höhle");
+    await expect(page.getByRole("status").filter({ hasText: /Suche/i }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "Suche zurücksetzen" })).toBeVisible();
+  });
+
+  test("Header-Suche öffnet Dialog und navigiert zu /produkte", async ({ page }) => {
+    await dismissConsentBanner(page);
+    await page.goto("/");
+    await page.getByRole("button", { name: "Produkte suchen" }).click();
+    const dialog = page.getByRole("dialog", { name: /Produkte suchen/i });
+    await expect(dialog).toBeVisible();
+    await dialog.getByLabel("Produkte suchen").fill("futternapf");
+    await dialog.getByRole("button", { name: "Suchen" }).click();
+    await page.waitForURL(/\/produkte\?q=/);
+    await expect(page.getByRole("heading", { name: /Suche:/i })).toBeVisible();
+  });
 });
