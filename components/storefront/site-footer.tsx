@@ -4,8 +4,8 @@ import { listActiveCategoriesForNav } from "@/lib/catalog/category-queries";
 import { listActiveCollectionsForStorefront } from "@/lib/catalog/collection-queries";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 import {
-  buildStorefrontMerchandisingLinks,
   buildStorefrontShopNavLinks,
+  resolveFooterMerchandisingLinks,
 } from "@/lib/storefront/shop-nav-links";
 
 const legalLinks = [
@@ -20,7 +20,7 @@ const legalLinks = [
 /** Dunkles Navy wie Admin-Sidebar; helle Schrift, Primärgrün für Links. */
 export async function SiteFooter() {
   let shopLinks = buildStorefrontShopNavLinks([]);
-  let merchandisingLinks = buildStorefrontMerchandisingLinks([]);
+  let merchandisingLinks: ReturnType<typeof resolveFooterMerchandisingLinks> = [];
   try {
     const categories = await listActiveCategoriesForNav();
     shopLinks = buildStorefrontShopNavLinks(
@@ -31,7 +31,8 @@ export async function SiteFooter() {
   }
   try {
     const collections = await listActiveCollectionsForStorefront();
-    merchandisingLinks = buildStorefrontMerchandisingLinks(
+    merchandisingLinks = resolveFooterMerchandisingLinks(
+      shopLinks,
       collections.filter((c) => c._count.products > 0).map((c) => ({ slug: c.slug, title: c.title })),
     );
   } catch (e) {

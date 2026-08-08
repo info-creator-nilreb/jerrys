@@ -10,6 +10,8 @@ type Props = {
   setDeclineAutomatic: (v: boolean) => void;
   previewLoading: boolean;
   codeError: string | null;
+  /** Systemfehler der Promo-Vorschau (z. B. Warenkorb). */
+  systemError?: string | null;
 };
 
 export function CheckoutDiscountPanel({
@@ -19,24 +21,38 @@ export function CheckoutDiscountPanel({
   setDeclineAutomatic,
   previewLoading,
   codeError,
+  systemError = null,
 }: Props) {
   const errId = useId();
   const [draft, setDraft] = useState(committedCode);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
     setDraft(committedCode);
   }, [committedCode]);
 
+  useEffect(() => {
+    if (codeError) setLocalError(null);
+  }, [codeError]);
+
   const onApply = () => {
     const n = draft.trim().toUpperCase();
+    if (!n) {
+      setLocalError("Bitte einen Rabattcode eingeben.");
+      return;
+    }
+    setLocalError(null);
     setCommittedCode(n);
     setDeclineAutomatic(false);
   };
 
   const onRemoveCode = () => {
     setDraft("");
+    setLocalError(null);
     setCommittedCode("");
   };
+
+  const displayError = localError ?? codeError ?? systemError;
 
   return (
     <div className="mt-6 border-t border-(--surface-muted) pt-6">
@@ -49,31 +65,40 @@ export function CheckoutDiscountPanel({
           type="text"
           autoComplete="off"
           value={draft}
-          onChange={(e) => setDraft(e.target.value.toUpperCase())}
+          onChange={(e) => {
+            setDraft(e.target.value.toUpperCase());
+            if (localError) setLocalError(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              onApply();
+            }
+          }}
           placeholder="Code eingeben"
-          className="min-w-0 flex-1 rounded-md border border-(--surface-muted) bg-white px-3 py-2 text-sm uppercase placeholder:normal-case placeholder:text-[#9ca3af]"
-          aria-invalid={!!codeError}
-          aria-describedby={codeError ? `${errId}-promo-err` : undefined}
+          className="min-h-11 min-w-0 flex-1 rounded-md border border-(--surface-muted) bg-white px-3 py-2 text-base uppercase placeholder:normal-case placeholder:text-[#9ca3af] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:text-sm"
+          aria-invalid={!!displayError}
+          aria-describedby={displayError ? `${errId}-promo-err` : undefined}
         />
         <button
           type="button"
           onClick={onApply}
           disabled={previewLoading}
-          className="shrink-0 rounded-md border border-(--surface-muted) bg-white px-3 py-2 text-sm font-medium text-(--foreground-heading) transition-colors hover:bg-(--surface-soft) disabled:opacity-60"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-md border border-(--surface-muted) bg-white px-3 text-sm font-medium text-(--foreground-heading) transition-colors hover:bg-(--surface-soft) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60"
         >
           {previewLoading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : "Anwenden"}
         </button>
       </div>
-      {codeError ? (
+      {displayError ? (
         <p id={`${errId}-promo-err`} className="mt-2 text-sm text-red-600" role="alert">
-          {codeError}
+          {displayError}
         </p>
       ) : null}
       {committedCode ? (
         <button
           type="button"
           onClick={onRemoveCode}
-          className="mt-2 text-xs font-medium text-primary hover:underline"
+          className="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           Code entfernen
         </button>
@@ -98,7 +123,7 @@ export function AutomaticPromotionDismiss({
       <button
         type="button"
         onClick={onDismiss}
-        className="inline-flex items-center gap-1 rounded-md px-2 py-1 font-medium text-(--foreground-heading) hover:bg-white/80"
+        className="inline-flex min-h-11 items-center gap-1 rounded-md px-2 py-1 font-medium text-(--foreground-heading) hover:bg-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         aria-label="Automatischen Rabatt entfernen"
       >
         <X className="size-3.5" aria-hidden />

@@ -9,8 +9,8 @@ export type CheckoutActionState =
   | null;
 
 /**
- * Nach erfolgreicher Bestellung immer `redirect()` nutzen: sonst refetched Next die Checkout-RSC
- * mit bereits geleertem Warenkorb → `redirect("/warenkorb")` bevor der Client zu PayPal / Erfolg springen kann.
+ * Nach erfolgreichem Pending-PayPal-Start immer `redirect()` nutzen (Approval-URL).
+ * Der Warenkorb bleibt bis zum erfolgreichen Capture erhalten (PayPal-Abbruch → erneut checkouten).
  */
 export async function submitCheckout(
   _prev: CheckoutActionState,

@@ -3,6 +3,7 @@ import {
   buildStorefrontMerchandisingLinks,
   buildStorefrontShopNavLinks,
   isStorefrontShopNavLinkActive,
+  resolveFooterMerchandisingLinks,
 } from "@/lib/storefront/shop-nav-links";
 
 describe("buildStorefrontShopNavLinks", () => {
@@ -29,6 +30,25 @@ describe("buildStorefrontMerchandisingLinks", () => {
     expect(
       buildStorefrontMerchandisingLinks([{ slug: "sommer", title: "Sommer 2026" }]),
     ).toEqual([{ href: "/kollektionen/sommer", label: "Sommer 2026" }]);
+  });
+});
+
+describe("resolveFooterMerchandisingLinks", () => {
+  it("entfernt Kollektionen mit gleichem Label wie eine Kategorie", () => {
+    const shop = buildStorefrontShopNavLinks([{ slug: "katzenhoehlen", title: "Katzenhöhlen" }]);
+    expect(
+      resolveFooterMerchandisingLinks(shop, [
+        { slug: "katzenhoehlen", title: "Katzenhöhlen" },
+        { slug: "neu", title: "Neuheiten" },
+      ]),
+    ).toEqual([{ href: "/kollektionen/neu", label: "Neuheiten" }]);
+  });
+
+  it("liefert Index-Link wenn alle Kollektionsnamen kollidieren", () => {
+    const shop = buildStorefrontShopNavLinks([{ slug: "katzenhoehlen", title: "Katzenhöhlen" }]);
+    expect(
+      resolveFooterMerchandisingLinks(shop, [{ slug: "katzenhoehlen", title: "Katzenhöhlen" }]),
+    ).toEqual([{ href: "/kollektionen", label: "Kollektionen" }]);
   });
 });
 

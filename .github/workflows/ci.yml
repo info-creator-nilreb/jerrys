@@ -183,7 +183,8 @@ jobs:
       - name: Production build
         run: npm run build
 
-      # continue-on-error: Lighthouse auf GitHub-Runnern schwankt stark; Job bleibt grün, Schritt ggf. mit Warnung.
+      # continue-on-error (Epic 8 Slice 5): Lighthouse auf GitHub-Runnern schwankt stark;
+      # Schwellen in lighthouserc.json bleiben soft "warn" — kein Release-Blocker.
       - name: Start server & run Lighthouse
         continue-on-error: true
         run: |

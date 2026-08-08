@@ -1,4 +1,5 @@
 import { revalidatePath } from "next/cache";
+import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { sendOrderConfirmationIfNeeded } from "@/lib/email/order-confirmation";
 import { getPrisma } from "@/lib/db/prisma";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
@@ -104,7 +105,14 @@ export async function completePayPalCaptureFlow(
 
   await markWebhookInboxProcessed(prisma, inbox.entryId);
 
+  const cartId = await getCartIdFromCookie();
+  if (cartId) {
+    await prisma.cartLine.deleteMany({ where: { cartId } });
+  }
+
   await sendOrderConfirmationIfNeeded(order.id);
+  revalidatePath("/warenkorb");
+  revalidatePath("/checkout");
   revalidatePath("/admin/orders");
   revalidatePath("/produkte");
   revalidatePath("/", "layout");

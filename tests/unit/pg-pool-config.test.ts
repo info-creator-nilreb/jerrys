@@ -1,8 +1,26 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   createPgPoolConfig,
+  resolvePgPoolMax,
   stripSslParamsFromDatabaseUrl,
 } from "@/lib/db/pg-pool-config";
+
+const envKeys = ["PG_POOL_MAX", "VERCEL", "AWS_LAMBDA_FUNCTION_NAME"] as const;
+const envSnapshot: Partial<Record<(typeof envKeys)[number], string | undefined>> = {};
+
+afterEach(() => {
+  for (const key of envKeys) {
+    if (envSnapshot[key] === undefined) delete process.env[key];
+    else process.env[key] = envSnapshot[key];
+    delete envSnapshot[key];
+  }
+});
+
+function stubEnv(key: (typeof envKeys)[number], value: string | undefined) {
+  if (!(key in envSnapshot)) envSnapshot[key] = process.env[key];
+  if (value === undefined) delete process.env[key];
+  else process.env[key] = value;
+}
 
 describe("stripSslParamsFromDatabaseUrl", () => {
   it("entfernt sslmode und behält Host und Pfad", () => {
@@ -23,6 +41,21 @@ describe("stripSslParamsFromDatabaseUrl", () => {
   });
 });
 
+describe("resolvePgPoolMax", () => {
+  it("nutzt auf Vercel standardmäßig 1", () => {
+    stubEnv("PG_POOL_MAX", undefined);
+    stubEnv("VERCEL", "1");
+    stubEnv("AWS_LAMBDA_FUNCTION_NAME", undefined);
+    expect(resolvePgPoolMax()).toBe(1);
+  });
+
+  it("respektiert PG_POOL_MAX", () => {
+    stubEnv("VERCEL", "1");
+    stubEnv("PG_POOL_MAX", "2");
+    expect(resolvePgPoolMax()).toBe(2);
+  });
+});
+
 describe("createPgPoolConfig", () => {
   it("setzt bei relaxed Pfad bereinigte URL und ssl.rejectUnauthorized", () => {
     const prevSsl = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED;
@@ -36,6 +69,8 @@ describe("createPgPoolConfig", () => {
     // Gleiche Semantik wie Pool-Config (relaxierte Zertifikatsprüfung bei explizitem Env).
     expect((cfg.ssl as { rejectUnauthorized: boolean }).rejectUnauthorized).toBe(false);
     expect(cfg.connectionString).not.toContain("sslmode");
+    expect(cfg.max).toBe(resolvePgPoolMax());
+    expect(cfg.idleTimeoutMillis).toBe(10_000);
 
     if (prevSsl === undefined) {
       delete process.env.DATABASE_SSL_REJECT_UNAUTHORIZED;

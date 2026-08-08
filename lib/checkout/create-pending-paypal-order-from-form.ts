@@ -421,7 +421,8 @@ async function createPendingPayPalOrderFromParsedRaw(
         });
       }
 
-      await tx.cartLine.deleteMany({ where: { cartId } });
+      // Warenkorb erst nach erfolgreicher Zahlung leeren — bei PayPal-Abbruch
+      // bleiben die Positionen für erneuten Checkout / andere Zahlungsart erhalten.
     });
   } catch (e) {
     if (e instanceof InsufficientStockError) {

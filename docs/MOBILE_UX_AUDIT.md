@@ -8,7 +8,7 @@ Stand: Epic-Nacharbeit nach Storefront-IA (Kategorien/Kollektionen). Ziel: **mob
 | --- | --- | --- | --- |
 | Header | Hamburger + Logo + Cart; kompakt | Burger-Nav ab `md`, Cart rechts | **Erledigt:** Cart/±/Schließen `min-h-11`; Flyout volle Breite ≤sm |
 | Navigation | Menü-Drawer, Fokus/Scroll-Lock | Vorhanden (`StorefrontShopNav`) | **Erledigt:** Drawer-Links `min-h-11` |
-| Katalog-Toolbar | Filter/Sort als Sheet oder klare Controls | Select + Checkbox | **Erledigt:** Select `text-base` mobil; Checkbox-Zeile `min-h-11` |
+| Katalog-Toolbar | Filter/Sort als Sheet oder klare Controls | Select + Checkbox; mobil Sheet | **Erledigt:** Select `text-base` mobil; Checkbox-Zeile `min-h-11`; **Filter-Sheet** (`max-md`, Escape/Scroll-Lock, Chips) |
 | PDP | Preis + ATC sticky unten optional | Panel unter Galerie | OK; ATC-Form prüfen (Touch) |
 | Cart | Drawer volle Breite mobil | Flyout `max-w-md`, full height | **Erledigt:** `max-w-none` ≤sm, Safe-Area Footer |
 | Checkout | Einspaltig, große Felder | Responsive Grids | Bereits `sm:grid-cols-2`; Inputs 16 px |
@@ -27,7 +27,7 @@ Stand: Epic-Nacharbeit nach Storefront-IA (Kategorien/Kollektionen). Ziel: **mob
 ## Bewusst nicht in v1
 
 - Admin-Index **Card-Layout** statt Tabellen (größerer Aufwand; Tabellen + Scroll OK für MVP)
-- Storefront **Filter-Sheet** statt Inline-Toolbar (Slice Epic 8)
+- ~~Storefront **Filter-Sheet** statt Inline-Toolbar~~ (**Erledigt** Epic 8 Slice 2)
 - PDP **sticky ATC-Bar** (nur wenn Conversion-Test es verlangt)
 
 ## Review-Checkliste ( wiederholen bei neuen Views )

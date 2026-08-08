@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { filterAndSortCollectionProducts } from "@/lib/catalog/collection-storefront-sort";
+import {
+  filterAndSortCollectionProducts,
+  parseCollectionSort,
+} from "@/lib/catalog/collection-storefront-sort";
 import type { StorefrontProductCard } from "@/components/storefront/product-card";
 
 function card(
@@ -34,6 +37,20 @@ function card(
   };
 }
 
+describe("parseCollectionSort", () => {
+  it("accepts known sort values", () => {
+    expect(parseCollectionSort("title-asc")).toBe("title-asc");
+    expect(parseCollectionSort("price-asc")).toBe("price-asc");
+    expect(parseCollectionSort("price-desc")).toBe("price-desc");
+  });
+
+  it("falls back to default for unknown or missing values", () => {
+    expect(parseCollectionSort(undefined)).toBe("default");
+    expect(parseCollectionSort("")).toBe("default");
+    expect(parseCollectionSort("price")).toBe("default");
+  });
+});
+
 describe("filterAndSortCollectionProducts", () => {
   it("filters unavailable products", () => {
     const products = [
@@ -51,5 +68,43 @@ describe("filterAndSortCollectionProducts", () => {
     ];
     const out = filterAndSortCollectionProducts(products, { sort: "price-asc", onlyAvailable: false });
     expect(out.map((p) => p.id)).toEqual(["b", "a"]);
+  });
+
+  it("sorts by price descending", () => {
+    const products = [
+      card({ id: "a", title: "A" }, { priceGrossCents: 3000 }),
+      card({ id: "b", title: "B" }, { priceGrossCents: 1000 }),
+    ];
+    const out = filterAndSortCollectionProducts(products, {
+      sort: "price-desc",
+      onlyAvailable: false,
+    });
+    expect(out.map((p) => p.id)).toEqual(["a", "b"]);
+  });
+
+  it("sorts by title ascending with German locale", () => {
+    const products = [
+      card({ id: "b", title: "Ölbaum" }),
+      card({ id: "a", title: "Apfel" }),
+      card({ id: "c", title: "Banane" }),
+    ];
+    const out = filterAndSortCollectionProducts(products, {
+      sort: "title-asc",
+      onlyAvailable: false,
+    });
+    expect(out.map((p) => p.title)).toEqual(["Apfel", "Banane", "Ölbaum"]);
+  });
+
+  it("keeps catalog order for default sort", () => {
+    const products = [
+      card({ id: "c", title: "C" }),
+      card({ id: "a", title: "A" }),
+      card({ id: "b", title: "B" }),
+    ];
+    const out = filterAndSortCollectionProducts(products, {
+      sort: "default",
+      onlyAvailable: false,
+    });
+    expect(out.map((p) => p.id)).toEqual(["c", "a", "b"]);
   });
 });

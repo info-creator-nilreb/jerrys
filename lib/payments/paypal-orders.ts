@@ -59,7 +59,7 @@ export async function createPayPalCheckoutOrder(params: {
       shipping_preference: "NO_SHIPPING",
       user_action: "PAY_NOW",
       return_url: `${origin}/checkout/paypal-rueckkehr`,
-      cancel_url: `${origin}/checkout`,
+      cancel_url: `${origin}/checkout/paypal-abbruch`,
     },
   };
 

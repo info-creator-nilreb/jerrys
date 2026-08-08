@@ -28,6 +28,27 @@ export function buildStorefrontMerchandisingLinks(
   }));
 }
 
+/**
+ * Kollektions-Links ohne Label-Doppelung zur Shop-Nav (z. B. Kategorie + gleichnamige Kollektion).
+ * Wenn alle Kollektionen kollidieren, bleibt ein Index-Link „Kollektionen“.
+ */
+export function resolveFooterMerchandisingLinks(
+  shopLinks: ReadonlyArray<StorefrontShopNavLink>,
+  collections: ReadonlyArray<{ slug: string; title: string }>,
+): StorefrontShopNavLink[] {
+  const merchandising = buildStorefrontMerchandisingLinks(collections);
+  if (merchandising.length === 0) return [];
+
+  const shopLabels = new Set(
+    shopLinks.map((l) => l.label.trim().toLocaleLowerCase("de")),
+  );
+  const unique = merchandising.filter(
+    (l) => !shopLabels.has(l.label.trim().toLocaleLowerCase("de")),
+  );
+  if (unique.length > 0) return unique;
+  return [{ href: "/kollektionen", label: "Kollektionen" }];
+}
+
 export function isStorefrontShopNavLinkActive(pathname: string, href: string): boolean {
   if (href === "/produkte") {
     return pathname === "/produkte" || pathname.startsWith("/produkte/");
