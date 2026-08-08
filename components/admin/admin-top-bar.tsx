@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { IconBell, IconSearch } from "@/components/admin/admin-nav-icons";
+import { IconBell, IconMenu, IconSearch } from "@/components/admin/admin-nav-icons";
 import { formatPrice } from "@/lib/catalog/format";
 import type {
   AdminSearchCustomerHit,
@@ -45,7 +45,7 @@ function SearchScopeSelect({
   );
 }
 
-export function AdminTopBar() {
+export function AdminTopBar({ onOpenMobileNav }: { onOpenMobileNav?: () => void }) {
   const scopeFieldId = useId();
   const searchWrapRef = useRef<HTMLDivElement>(null);
   const bellWrapRef = useRef<HTMLDivElement>(null);
@@ -201,9 +201,19 @@ export function AdminTopBar() {
   const showSearchPanel = openSearch && query.trim().length >= 2;
 
   return (
-    <header className="flex h-[3.25rem] shrink-0 items-center gap-3 border-b border-[#e4e6ea] bg-white px-4 lg:gap-4 lg:px-6">
-      <div ref={searchWrapRef} className="relative min-h-10 min-w-0 flex-1">
-        <div className="flex min-h-10 items-center gap-2 rounded-md border border-[#e4e6ea] bg-[#f7f8fa] px-2 py-1.5 lg:px-3">
+    <header className="flex h-14 shrink-0 items-center gap-2 border-b border-[#e4e6ea] bg-white px-3 sm:gap-3 sm:px-4 lg:gap-4 lg:px-6">
+      {onOpenMobileNav ? (
+        <button
+          type="button"
+          className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-[#374151] hover:bg-[#f3f4f6] lg:hidden"
+          aria-label="Menü öffnen"
+          onClick={onOpenMobileNav}
+        >
+          <IconMenu className="size-6" aria-hidden />
+        </button>
+      ) : null}
+      <div ref={searchWrapRef} className="relative min-h-11 min-w-0 flex-1">
+        <div className="flex min-h-11 items-center gap-2 rounded-md border border-[#e4e6ea] bg-[#f7f8fa] px-2 py-1.5 lg:px-3">
           <SearchScopeSelect id={scopeFieldId} value={scope} onChange={setScope} />
           <IconSearch className="size-4 shrink-0 text-[#9ca3af]" aria-hidden />
           <input
@@ -215,8 +225,8 @@ export function AdminTopBar() {
             onFocus={() => {
               if (query.trim().length >= 2) setOpenSearch(true);
             }}
-            placeholder="Finde Produkte, Kunden, Bestellungen …"
-            className="min-w-0 flex-1 bg-transparent text-sm text-[#374151] outline-none placeholder:text-[#9ca3af]"
+            placeholder="Suchen …"
+            className="min-w-0 flex-1 bg-transparent text-base text-[#374151] outline-none placeholder:text-[#9ca3af] sm:text-sm"
             aria-label="Globale Suche"
           />
           {searchLoading ? (
@@ -319,7 +329,7 @@ export function AdminTopBar() {
       <div ref={bellWrapRef} className="relative flex shrink-0 items-center">
         <button
           type="button"
-          className="relative rounded-lg p-2.5 text-[#6b7280] hover:bg-[#f3f4f6]"
+          className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-[#6b7280] hover:bg-[#f3f4f6]"
           title="Neue Bestellungen"
           aria-label={
             newCount > 0

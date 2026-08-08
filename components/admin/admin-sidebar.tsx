@@ -61,12 +61,19 @@ export function AdminSidebar({
   appVersion,
   userEmail,
   userName,
+  mobileOpen = false,
+  onNavigate,
+  className = "",
 }: {
   collapsed: boolean;
   onToggleCollapsed: () => void;
   appVersion: string;
   userEmail: string;
   userName: string;
+  /** Off-canvas auf Viewports &lt; lg */
+  mobileOpen?: boolean;
+  onNavigate?: () => void;
+  className?: string;
 }) {
   const pathname = usePathname();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -96,16 +103,18 @@ export function AdminSidebar({
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
+  const showLabels = !collapsed || mobileOpen;
+
   return (
     <aside
-      className="flex h-dvh shrink-0 flex-col border-r border-black/10 transition-[width] duration-200 ease-out"
+      className={`flex h-dvh shrink-0 flex-col border-r border-black/10 transition-[width] duration-200 ease-out ${className}`}
       style={{
-        width: collapsed ? "4.25rem" : "15.5rem",
+        width: collapsed && !mobileOpen ? "4.25rem" : "15.5rem",
         backgroundColor: NAVY,
       }}
     >
       <div className="border-b border-white/10 px-3 py-4">
-        {collapsed ? (
+        {collapsed && !mobileOpen ? (
           <div className="flex justify-center px-0.5" title="jerry's Admin">
             <Image
               src="/branding/jerrys-logo-white.png"
@@ -151,9 +160,10 @@ export function AdminSidebar({
             <Link
               key={item.href}
               href={item.href}
-              title={collapsed ? item.label : undefined}
-              className={`flex w-full items-center gap-3 py-2.5 text-sm transition-colors ${
-                collapsed ? "justify-center px-0" : "px-3"
+              title={showLabels ? undefined : item.label}
+              onClick={() => onNavigate?.()}
+              className={`flex w-full min-h-11 items-center gap-3 py-2.5 text-sm transition-colors ${
+                showLabels ? "px-3" : "justify-center px-0"
               } ${
                 active
                   ? "border-l-2 border-primary bg-primary/15 font-medium text-white"
@@ -161,23 +171,23 @@ export function AdminSidebar({
               }`}
             >
               <Icon className="size-[1.35rem] shrink-0" />
-              {!collapsed ? <span className="truncate">{item.label}</span> : null}
+              {showLabels ? <span className="truncate">{item.label}</span> : null}
             </Link>
           );
         })}
       </nav>
 
-      <div className="border-t border-white/10 py-2">
+      <div className="hidden border-t border-white/10 py-2 lg:block">
         <button
           type="button"
           onClick={onToggleCollapsed}
-          className={`flex w-full items-center gap-2 py-2 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white/90 ${collapsed ? "justify-center px-0" : "px-3"}`}
+          className={`flex min-h-11 w-full items-center gap-2 py-2 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white/90 ${showLabels ? "px-3" : "justify-center px-0"}`}
           title={collapsed ? "Menü aufklappen" : undefined}
         >
           <IconChevronLeft
             className={`size-5 shrink-0 transition-transform ${collapsed ? "rotate-180" : ""}`}
           />
-          {!collapsed ? <span>Menü einklappen</span> : null}
+          {showLabels ? <span>Menü einklappen</span> : null}
         </button>
       </div>
 
@@ -185,13 +195,13 @@ export function AdminSidebar({
         <button
           type="button"
           onClick={() => setUserMenuOpen((o) => !o)}
-          className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/5 ${collapsed ? "justify-center px-1" : ""}`}
+          className={`flex min-h-11 w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/5 ${showLabels ? "" : "justify-center px-1"}`}
           aria-expanded={userMenuOpen}
         >
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white ring-2 ring-white/20">
             {initials}
           </span>
-          {!collapsed ? (
+          {showLabels ? (
             <>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-white">{displayName}</p>

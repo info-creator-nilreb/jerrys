@@ -1,6 +1,8 @@
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { AdminSidebar, useSidebarCollapsed } from "@/components/admin/admin-sidebar";
 import { AdminTopBar } from "@/components/admin/admin-top-bar";
 
@@ -16,26 +18,56 @@ export function AdminShell({
   userName: string;
 }) {
   const { collapsed, toggle } = useSidebarCollapsed();
+  const pathname = usePathname();
+  /** Drawer gilt nur für die aktuelle Route — schließt automatisch bei Navigation. */
+  const [mobileNavOpenForPath, setMobileNavOpenForPath] = useState<string | null>(null);
+  const mobileNavOpen = mobileNavOpenForPath === pathname;
+
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileNavOpen]);
+
+  const sidebarWidth = collapsed ? "4.25rem" : "15.5rem";
 
   return (
     <div className="flex h-dvh overflow-hidden bg-[#eef0f3]">
+      {mobileNavOpen ? (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          aria-label="Navigation schließen"
+          onClick={() => setMobileNavOpenForPath(null)}
+        />
+      ) : null}
+
       <AdminSidebar
         collapsed={collapsed}
         onToggleCollapsed={toggle}
         appVersion={appVersion}
         userEmail={userEmail}
         userName={userName}
+        mobileOpen={mobileNavOpen}
+        onNavigate={() => setMobileNavOpenForPath(null)}
+        className={`fixed inset-y-0 left-0 z-50 w-[min(100%,18rem)] transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-auto lg:translate-x-0 ${
+          mobileNavOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
       />
+
       <div
-        className="flex min-h-0 min-w-0 flex-1 flex-col"
+        className="flex min-h-0 min-w-0 flex-1 flex-col max-lg:[--admin-sidebar-width:0px] lg:[--admin-sidebar-width:var(--admin-sidebar-width-lg)]"
         style={
           {
-            "--admin-sidebar-width": collapsed ? "4.25rem" : "15.5rem",
+            "--admin-sidebar-width-lg": sidebarWidth,
           } as CSSProperties
         }
       >
-        <AdminTopBar />
-        <main className="min-h-0 flex-1 overflow-y-auto p-5 lg:p-8">{children}</main>
+        <AdminTopBar onOpenMobileNav={() => setMobileNavOpenForPath(pathname)} />
+        <main className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5 lg:p-8">{children}</main>
       </div>
     </div>
   );

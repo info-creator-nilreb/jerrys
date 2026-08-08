@@ -54,7 +54,7 @@ export function CollectionCatalogToolbar({
           disabled={pending}
           defaultValue={sort}
           onChange={(e) => apply({ sort: e.target.value })}
-          className="rounded-md border border-(--surface-muted) bg-white px-3 py-2 text-sm text-(--foreground-heading) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="min-h-11 rounded-md border border-(--surface-muted) bg-white px-3 py-2 text-base text-(--foreground-heading) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:text-sm"
         >
           {sortOptions.map((o) => (
             <option key={o.value} value={o.value}>
@@ -63,10 +63,10 @@ export function CollectionCatalogToolbar({
           ))}
         </select>
       </div>
-      <label className="flex cursor-pointer items-center gap-2 text-sm text-(--foreground-heading)">
+      <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-(--foreground-heading)">
         <input
           type="checkbox"
-          className="size-4 checkbox-primary"
+          className="size-5 shrink-0 checkbox-primary"
           defaultChecked={onlyAvailable}
           disabled={pending}
           onChange={(e) => apply({ verfuegbar: e.target.checked })}
