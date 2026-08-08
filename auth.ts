@@ -3,8 +3,11 @@ import Credentials from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { z } from "zod";
 import { authConfig } from "./auth.config";
+import { syncAuthUrlForVercelPreview } from "@/lib/auth/vercel-auth-env";
 import { getPrisma } from "@/lib/db/prisma";
 import { createLogger } from "@/lib/logging/logger";
+
+syncAuthUrlForVercelPreview();
 
 const log = createLogger("auth");
 

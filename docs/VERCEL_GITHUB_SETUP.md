@@ -40,7 +40,7 @@ In Vercel → Project → **Settings → Environment Variables** für **Preview*
 | `DATABASE_URL` | PostgreSQL (Pooler-URL für Runtime) |
 | `DIRECT_DATABASE_URL` | Optional; direkte URL für Migrationen |
 | `AUTH_SECRET` | Auth.js (min. 32 Zeichen, z. B. `openssl rand -base64 32`) |
-| `AUTH_URL` | Kanonische App-URL (Production-Domain) |
+| `AUTH_URL` | Kanonische App-URL (Production-Domain). **Preview:** weglassen oder nur für Preview setzen — sonst CSRF/Login-Fehler, wenn die Variable auf Production zeigt, du aber die `*.vercel.app`-URL öffnest (die App passt Preview automatisch an, siehe `lib/auth/vercel-auth-env.ts`). |
 | `NEXT_PUBLIC_SITE_URL` | Öffentliche Shop-URL (E-Mails, Links) |
 | `NEXT_PUBLIC_SUPABASE_URL` | Falls Supabase-Client genutzt wird |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase Anon/Publishable Key |
