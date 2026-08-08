@@ -1,3 +1,4 @@
+import "./load-env-files";
 import { hash } from "bcryptjs";
 import { getPrisma } from "../lib/db/prisma";
 
@@ -7,7 +8,13 @@ async function main() {
 
   if (!email || !password) {
     console.error(
-      "Bitte ADMIN_SEED_EMAIL und ADMIN_SEED_PASSWORD setzen (nur Dev/Cloud-Test).",
+      "Bitte ADMIN_SEED_EMAIL und ADMIN_SEED_PASSWORD setzen.",
+    );
+    console.error(
+      "In .env.local (empfohlen) oder inline, z. B.:",
+    );
+    console.error(
+      '  ADMIN_SEED_EMAIL="admin@example.com" ADMIN_SEED_PASSWORD="…" npm run admin:set-password',
     );
     process.exit(1);
   }
