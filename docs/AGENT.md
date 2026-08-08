@@ -3,14 +3,14 @@
 ## Mission
 Build a production-ready commerce application for a boutique shop. The system must stay simple, reliable, maintainable by a small team with AI assistance, and evolve through explicit bounded contexts rather than infrastructure-driven decomposition.
 
-The goal is **not** to recreate Shopify as a generic platform. The goal is to provide the shop-specific capabilities defined in `PLATFORM_ROADMAP.md`, including variants, customer accounts, online payments, live workshop bookings, Zettle synchronization, and shipping fulfillment.
+The goal is **not** to recreate Shopify as a generic platform. The goal is to provide the shop-specific capabilities defined in `PLATFORM_ROADMAP.md`, including variants, customer accounts, online payments, live workshop bookings, Zettle synchronization, shipping fulfillment, single-shop branding, and a constrained CMS light.
 
 ## Product Scope
 Current and planned scope is maintained in `PLATFORM_ROADMAP.md`. The following remain explicitly out of scope until an ADR changes the decision:
 - Marketplace and multi-tenant capabilities
 - Generic plugin or app ecosystem
 - Complex ERP and multi-warehouse management
-- Generic CMS page builder
+- Generic free-form CMS/page builder with arbitrary code, templates, plugins, or third-party blocks (the curated block system in Epic 12 is explicitly in scope)
 - International tax automation, multi-language, and multi-currency
 
 ## Success Criteria

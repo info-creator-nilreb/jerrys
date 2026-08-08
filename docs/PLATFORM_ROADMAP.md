@@ -19,7 +19,7 @@ Out of scope until explicitly approved:
 - Generic plugin ecosystem
 - Multi-warehouse and full ERP functionality
 - International tax automation, multi-language, and multi-currency
-- Generic CMS page builder
+- Generic free-form CMS/page builder with arbitrary code or third-party blocks (Epic 12 is a constrained CMS light)
 
 ## Delivery Principles
 
@@ -70,10 +70,14 @@ Exit criteria: existing products migrate without data loss; price and stock are 
 
 ## Epic 3: Customers and Privacy
 
+Suggested delivery: [EPIC3_CUSTOMER_ACCOUNTS.md](./EPIC3_CUSTOMER_ACCOUNTS.md) (Passwort + Magic Link, Bestellungen, Adressen, Termine, Gastzuordnung).
+
 User stories:
 
 - As a customer, I can securely register, sign in, and manage orders and addresses.
+- As a customer, I can use password or magic-link authentication and manage my workshop bookings.
 - As a guest, I can order without creating an account.
+- As a verified customer, I can attach matching guest orders to my account without unsafe email-only merging.
 - As a customer, I can request access, export, correction, or deletion of my data.
 - As an administrator, I can assist customers without exposing or incorrectly merging data.
 
@@ -93,15 +97,19 @@ Exit criteria: success, failure, timeout, replay, partial refund, and reconcilia
 
 ## Epic 5: Live Workshop Booking
 
+Suggested delivery: [EPIC5_GROUP_BOOKING.md](./EPIC5_GROUP_BOOKING.md) (Gruppentermine, geteilte Kapazität, CMS-/PDP-Einbettung).
+
 User stories:
 
 - As an admin, I can schedule workshop sessions with time, place, capacity, price, and booking rules.
+- As an admin, I can define minimum total attendance, maximum capacity, publishing state, and customer cancellation cutoff.
 - As a customer, I can see available sessions and remaining seats.
-- As a customer, I can temporarily hold seats during checkout and pay online.
+- As a customer, I can book one or more seats while sharing total capacity with other customers.
+- As a customer, I can temporarily hold seats during checkout and pay online when payment is required.
 - As a customer, I receive confirmation, calendar information, and cancellation terms.
 - As an admin, I can manage participants, attendance, cancellation, and refunds.
 
-Exit criteria: concurrent requests cannot confirm the last seat twice; unpaid holds expire; payment and booking state remain consistent.
+Exit criteria: concurrent requests cannot confirm the last seat twice; multiple partial bookings never exceed capacity; unpaid holds expire; payment, cancellation, and booking state remain consistent.
 
 ## Epic 6: Zettle POS
 
@@ -182,3 +190,55 @@ Out of scope for this epic (explicit):
 - Multi-level unlimited taxonomy and faceted attribute navigation (follow-up if needed).
 - Replacing collections; merging categories and collections into one concept.
 - Marketplace-style vendor categories.
+
+## Epic 11: Central Shop Settings and Branding
+
+Suggested delivery: [EPIC11_BRANDING_SETTINGS.md](./EPIC11_BRANDING_SETTINGS.md).
+
+User stories:
+
+- As an admin, I can configure the single shop's logo, favicon, colors, shop name, contact details, business information, and social links centrally.
+- As an operator, I see the same authoritative branding in storefront, admin login, email, metadata, and invoices.
+- As a maintainer, I can migrate the existing jerry's branding without visual regression.
+
+Exit criteria: branding changes require no code deploy; uploads use durable storage; invalid or inaccessible color configurations cannot silently break critical UI; existing branding remains the migration default.
+
+## Epic 12: Content Pages and CMS Light
+
+Suggested delivery: [EPIC12_CONTENT_PAGES_CMS.md](./EPIC12_CONTENT_PAGES_CMS.md).
+
+User stories:
+
+- As an admin, I can build the homepage and content pages from a curated set of safe blocks.
+- As an admin, I can save drafts, preview privately, and publish explicitly.
+- As an admin, I can choose public URLs while preserving existing homepage, legal, shipping, and information-page URLs by default.
+- As an editor, I can maintain legal text with stricter sanitization and audit requirements.
+- As an editor, I can embed product/category content and the Epic-5 booking calendar without custom code.
+
+Exit criteria: drafts are private and excluded from navigation/sitemaps; published pages preserve canonical URLs; arbitrary HTML/CSS/JavaScript cannot execute; current pages migrate without broken links.
+
+## Epic 13: AI-Assisted Content and Images
+
+Suggested delivery: [EPIC13_AI_CONTENT_ASSISTANCE.md](./EPIC13_AI_CONTENT_ASSISTANCE.md).
+
+User stories:
+
+- As an admin, I can generate draft product text, SEO copy, bullets, and alt text from approved product facts.
+- As an admin, I can generate or edit product images and review them before permanent storage.
+- As an operator, I can use OpenAI first while keeping provider-specific code behind a replaceable application port.
+- As an owner, I can set cost/rate limits and inspect usage and provider failures.
+
+Exit criteria: no AI output is stored or published without explicit confirmation; no customer data or secrets enter prompts; text/image operations are rate- and cost-limited, observable, moderated, and provider-replaceable.
+
+## Epic 14: Semantic Search and AI Discoverability
+
+Suggested delivery: [EPIC14_SEMANTIC_SEARCH_DISCOVERABILITY.md](./EPIC14_SEMANTIC_SEARCH_DISCOVERABILITY.md).
+
+User stories:
+
+- As a customer, I can find products using natural German phrasing, intent, and synonyms.
+- As the storefront, I combine semantic and lexical retrieval while retaining authoritative availability/category filters.
+- As an operator, I can monitor index freshness, search quality, latency, cost, and fallback rate.
+- As a public catalog, I expose consistent schema.org metadata and a read-only machine-readable product feed for search and AI agents.
+
+Exit criteria: semantic search improves a versioned evaluation set and safely falls back to lexical search; provider/index failures do not block catalog browsing; public machine-readable resources expose no private data. Agent checkout and other write actions remain out of scope.
