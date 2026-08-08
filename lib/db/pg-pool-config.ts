@@ -4,7 +4,28 @@ import type { PoolConfig } from "pg";
  * Bei Änderungen an URL- oder SSL-Handling erhöhen, damit der Dev-Pool-Cache in
  * `getPrisma()` verworfen wird (sonst bleibt z. B. eine alte URL mit `sslmode` aktiv).
  */
-export const PG_POOL_CONFIG_VERSION = 3;
+export const PG_POOL_CONFIG_VERSION = 4;
+
+/**
+ * App-seitige Pool-Größe für `pg.Pool`.
+ *
+ * Ohne Cap nutzt node-postgres `max: 10` **pro warmer Serverless-Instanz**.
+ * Supabase Session-Pooler (Port 5432) begrenzt Clients oft auf `pool_size` (z. B. 15)
+ * → `EMAXCONNSESSION`. Auf Vercel daher standardmäßig 1; lokal etwas höher.
+ *
+ * Override: `PG_POOL_MAX` (1–20).
+ */
+export function resolvePgPoolMax(): number {
+  const raw = process.env.PG_POOL_MAX?.trim();
+  if (raw) {
+    const n = Number(raw);
+    if (Number.isFinite(n) && n >= 1 && n <= 20) return Math.floor(n);
+  }
+  if (process.env.VERCEL === "1" || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    return 1;
+  }
+  return 3;
+}
 
 const SSL_QUERY_KEYS = [
   "sslmode",
@@ -95,9 +116,14 @@ export function createPgPoolConfig(connectionString: string): PoolConfig {
         }
       : { connectionString };
 
-  /** Langsamere Netze / DNS; vermeidet „ewiges Hängen“ ohne klaren Prisma-Fehler. */
+  /**
+   * Langsamere Netze / DNS; Idle-Verbindungen schnell zurückgeben.
+   * `max` bewusst klein halten — siehe {@link resolvePgPoolMax}.
+   */
   return {
     ...base,
+    max: resolvePgPoolMax(),
+    idleTimeoutMillis: 10_000,
     connectionTimeoutMillis: 20_000,
     keepAlive: true,
   };

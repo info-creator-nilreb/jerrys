@@ -233,7 +233,69 @@ export function CheckoutForm({
 
   const fe = state && "fieldErrors" in state ? state.fieldErrors : undefined;
 
-  const discountCodeMessage = fe?.checkoutPromotionCode ?? (promoPreview && !("error" in promoPreview) ? promoPreview.codeError : null);
+  const discountCodeMessage =
+    fe?.checkoutPromotionCode ??
+    (promoPreview && !("error" in promoPreview) ? promoPreview.codeError : null);
+  const promoSystemError =
+    promoPreview && "error" in promoPreview ? promoPreview.error : null;
+  const shippingCountryLabel =
+    allowedShippingCountries.find((c) => c.code === shippingCountry)?.label ?? shippingCountry;
+
+  const legalConsentBlock = (
+    <div id="checkout-section-rechtliches" className="mt-8 max-w-md scroll-mt-24">
+      <label
+        htmlFor="rechtlicheKenntnis"
+        className="flex min-h-11 cursor-pointer items-start gap-3 text-left text-sm leading-snug text-[#6b7280]"
+      >
+        <input
+          id="rechtlicheKenntnis"
+          type="checkbox"
+          name="rechtlicheKenntnis"
+          value="on"
+          required
+          autoComplete="off"
+          className="mt-1 size-4 shrink-0 checkbox-primary"
+          {...ariaFieldErr(fe?.rechtlicheKenntnis, checkoutErrId.rechtlicheKenntnis)}
+        />
+        <span>
+          Ich habe die{" "}
+          <Link
+            href="/agb"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-primary underline-offset-2 hover:underline"
+          >
+            AGB
+          </Link>
+          , die{" "}
+          <Link
+            href="/widerruf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-primary underline-offset-2 hover:underline"
+          >
+            Widerrufsbelehrung
+          </Link>{" "}
+          und die{" "}
+          <Link
+            href="/datenschutz"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-primary underline-offset-2 hover:underline"
+          >
+            Datenschutzerklärung
+          </Link>{" "}
+          zur Kenntnis genommen. Die Versandkosten sind in der Bestellübersicht vor der Zahlung
+          ausgewiesen.
+        </span>
+      </label>
+      {fe?.rechtlicheKenntnis ? (
+        <p id={checkoutErrId.rechtlicheKenntnis} className="mt-1.5 text-xs text-red-600" role="alert">
+          {fe.rechtlicheKenntnis}
+        </p>
+      ) : null}
+    </div>
+  );
 
   useEffect(() => {
     if (!state || state.ok || !("fieldErrors" in state) || !state.fieldErrors) {
@@ -816,19 +878,22 @@ export function CheckoutForm({
         <section id="checkout-section-zahlung" className="mt-12 scroll-mt-24">
           <h2 className="text-lg font-semibold text-[#1f2937]">Zahlung</h2>
           {payPalConfigured ? (
-            <>
-              <CheckoutPaymentMethods value={payPalSurface} onChange={onPayPalSurfaceChange} />
-              {payPalSurface === "card" ? (
-                <PayPalCardFieldsCheckout
-                  formId={STOREFRONT_CHECKOUT_FORM_ID}
-                  paypalClientId={payPalClientId}
-                  currency={currency}
-                  onEligibleChange={setPayPalCardFieldsPrimary}
-                />
-              ) : null}
-            </>
+            <CheckoutPaymentMethods value={payPalSurface} onChange={onPayPalSurfaceChange} />
           ) : null}
         </section>
+
+        {legalConsentBlock}
+
+        {payPalConfigured && payPalSurface === "card" ? (
+          <div className="mt-6 max-w-lg">
+            <PayPalCardFieldsCheckout
+              formId={STOREFRONT_CHECKOUT_FORM_ID}
+              paypalClientId={payPalClientId}
+              currency={currency}
+              onEligibleChange={setPayPalCardFieldsPrimary}
+            />
+          </div>
+        ) : null}
 
         {(!payPalConfigured || payPalSurface !== "card" || !payPalCardFieldsPrimary) && (
           <button
@@ -841,57 +906,56 @@ export function CheckoutForm({
           </button>
         )}
 
-        <div className="mt-8 max-w-md">
-          <label
-            htmlFor="rechtlicheKenntnis"
-            className="flex cursor-pointer items-start gap-2 text-left text-xs leading-snug text-[#6b7280]"
+        <nav
+          aria-label="Rechtliche Informationen"
+          className="mt-10 flex flex-wrap gap-x-4 gap-y-2 text-sm text-[#6b7280] underline-offset-2"
+        >
+          <Link
+            href="/widerruf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:text-(--primary-hover) hover:underline"
           >
-            <input
-              id="rechtlicheKenntnis"
-              type="checkbox"
-              name="rechtlicheKenntnis"
-              value="on"
-              required
-              autoComplete="off"
-              className="mt-0.5 size-3.5 shrink-0 checkbox-primary"
-              {...ariaFieldErr(fe?.rechtlicheKenntnis, checkoutErrId.rechtlicheKenntnis)}
-            />
-            <span>
-              Ich habe die{" "}
-              <Link href="/agb" className="text-primary underline-offset-2 hover:underline">
-                AGB
-              </Link>{" "}
-              und die{" "}
-              <Link href="/widerruf" className="text-primary underline-offset-2 hover:underline">
-                Widerrufsbelehrung
-              </Link>{" "}
-              zur Kenntnis genommen.
-            </span>
-          </label>
-          {fe?.rechtlicheKenntnis ? (
-            <p id={checkoutErrId.rechtlicheKenntnis} className="mt-1.5 text-xs text-red-600" role="alert">
-              {fe.rechtlicheKenntnis}
-            </p>
-          ) : null}
-        </div>
-
-        <nav className="mt-10 flex flex-wrap gap-x-4 gap-y-2 text-sm text-[#6b7280] underline-offset-2">
-          <Link href="/widerruf" className="text-primary hover:text-(--primary-hover) hover:underline">
             Widerrufsrecht
           </Link>
-          <Link href="/rueckgabe" className="text-primary hover:text-(--primary-hover) hover:underline">
+          <Link
+            href="/rueckgabe"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:text-(--primary-hover) hover:underline"
+          >
             Rückgabe
           </Link>
-          <Link href="/versand" className="text-primary hover:text-(--primary-hover) hover:underline">
+          <Link
+            href="/versand"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:text-(--primary-hover) hover:underline"
+          >
             Versand
           </Link>
-          <Link href="/datenschutz" className="text-primary hover:text-(--primary-hover) hover:underline">
+          <Link
+            href="/datenschutz"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:text-(--primary-hover) hover:underline"
+          >
             Datenschutz
           </Link>
-          <Link href="/agb" className="text-primary hover:text-(--primary-hover) hover:underline">
+          <Link
+            href="/agb"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:text-(--primary-hover) hover:underline"
+          >
             AGB
           </Link>
-          <Link href="/impressum" className="text-primary hover:text-(--primary-hover) hover:underline">
+          <Link
+            href="/impressum"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:text-(--primary-hover) hover:underline"
+          >
             Impressum
           </Link>
         </nav>
@@ -910,6 +974,8 @@ export function CheckoutForm({
         discountDetail={discountDetail}
         shippingSavedByPromotionCents={displayTotals.shippingSavedByPromotionCents}
         shippingPromotionLabel={shippingPromotionLabel}
+        shippingCountryLabel={shippingCountryLabel}
+        freeShippingFromSubtotalGrossCents={freeShippingFromSubtotalGrossCents}
       >
         <div id="checkout-section-rabatt">
           <CheckoutDiscountPanel
@@ -919,6 +985,7 @@ export function CheckoutForm({
             setDeclineAutomatic={setDeclineAutomatic}
             previewLoading={promoPreview === null}
             codeError={discountCodeMessage}
+            systemError={promoSystemError}
           />
           <AutomaticPromotionDismiss
             visible={
