@@ -48,7 +48,7 @@ In Vercel → Project → **Settings → Environment Variables** für **Preview*
 | `RESEND_API_KEY` | Transaktions-E-Mail |
 | `MAIL_FROM` | Absender (RFC-konform, siehe `.env.example`) |
 
-Optional je Feature: PayPal, Seed-Admin nur für Staging, siehe [`.env.example`](../.env.example).
+Optional je Feature: PayPal (`PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENV`, für Webhooks `PAYPAL_WEBHOOK_ID`), Seed-Admin nur für Staging, siehe [`.env.example`](../.env.example). Webhook-URL in PayPal: `https://<host>/api/webhooks/paypal`.
 
 **Preview:** eigene Preview-DB oder isolierte Branch-DB — keine Production-Kundendaten.
 

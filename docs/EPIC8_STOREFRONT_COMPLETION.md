@@ -10,7 +10,7 @@
 
 | Bezeichnung | Dokument | Inhalt | Status |
 | --- | --- | --- | --- |
-| **Epic 8 (dieses Handoff)** | `PLATFORM_ROADMAP.md` | Search, Filter/Sort, Cart/Checkout-UX, Legal/Versand, Admin-Bedienbarkeit | **Offen — hier weiter** |
+| **Epic 8 (dieses Handoff)** | `PLATFORM_ROADMAP.md` | Search, Filter/Sort, Cart/Checkout-UX, Legal/Versand, Admin-Bedienbarkeit | **Erledigt** (PR #32) |
 | „Epic 8 SEO“ | `DELIVERY_PLAN_PHASE2.md` | Sitemap, robots, JSON-LD, OG, `llms.txt`, Lighthouse CI | **Weitgehend erledigt** — nur Lücken/Regression, kein Neustart |
 
 ---
@@ -148,7 +148,8 @@ Antworten auf Deutsch.
 
 ## Nach Slice 5
 
-- Roadmap-Epic 9 (Hardening Go-Live) bzw. Delivery Plan Epic 10 Security / Workshops später
+- Weiter mit **Epic 9 Hardening & Go-Live**: [EPIC9_HARDENING_GO_LIVE.md](./EPIC9_HARDENING_GO_LIVE.md) (Slice 1: PayPal-Webhooks)
+- Delivery Plan Epic 10 Security / Workshops später
 - Epic-8-Dokument: Slice-Status in Tabelle unten pflegen
 
 ### Slice-Status
