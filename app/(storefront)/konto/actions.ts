@@ -142,8 +142,3 @@ export async function verifyEmailAction(token: string): Promise<CustomerAuthActi
 export async function customerSignOutAction(): Promise<void> {
   await signOut({ redirectTo: "/" });
 }
-
-/** Exported for tests / headers if needed later. */
-export function __customerAuthRetryHeaders(retryAfterSec: number): Record<string, string> {
-  return customerAuthRateLimitHeaders(retryAfterSec);
-}
