@@ -25,7 +25,7 @@ These premises apply to the public storefront and the administrative backend. Ex
    Meet WCAG 2.2 AA contrast and interaction requirements. Keyboard focus is always visible. Color never carries status alone. Controls have text labels or accessible names.
 
 7. **Responsive and touch-safe**  
-   Storefront begins mobile-first. Admin remains usable on tablets and provides safe horizontal handling for data tables. Interactive targets are at least 44 by 44 CSS pixels where practical.
+   Storefront begins mobile-first. Admin remains usable on tablets and provides safe horizontal handling for data tables. Interactive targets are at least 44 by 44 CSS pixels where practical. See `docs/MOBILE_UX_AUDIT.md` for the Shopify-benchmark checklist and implementation status.
 
 8. **Fast perceived response**  
    Every mutation has immediate pending, success, and failure feedback. Preserve entered form data after recoverable errors. Skeletons are used only when layout is known; otherwise use concise loading states.
