@@ -4,7 +4,7 @@ import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 function EyeIcon({ open }: { open: boolean }) {
   const Cmp = open ? EyeOff : Eye;
@@ -29,8 +29,32 @@ export function AdminLoginForm() {
       ? "Anmeldung fehlgeschlagen. Bitte Zugangsdaten prüfen."
       : errorParam === "MissingCSRF"
         ? "Sitzung abgelaufen (CSRF). Seite neu laden und erneut anmelden — am besten im externen Browser (Safari/Chrome), nicht in der eingebetteten Vorschau."
-        : null;
+        : errorParam === "Configuration"
+          ? "Server-Konfiguration (Auth.js). In Vercel unter Environment Variables prüfen: AUTH_SECRET (min. 32 Zeichen, für Preview und Production), DATABASE_URL, AUTH_URL passend zur geöffneten Domain. Logs: Vercel → Deployments → Functions."
+          : null;
   const displayError = error ?? urlAuthError;
+
+  /** GET-Fallback oder alte Links: Passwort nie in der URL lassen. */
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const sensitive = ["password", "pwd", "pass"] as const;
+    let stripped = false;
+    for (const key of sensitive) {
+      if (params.has(key)) {
+        params.delete(key);
+        stripped = true;
+      }
+    }
+    if (stripped) {
+      const q = params.toString();
+      router.replace(q ? `/admin/login?${q}` : "/admin/login", { scroll: false });
+      return;
+    }
+    const emailFromUrl = params.get("email")?.trim();
+    if (emailFromUrl) {
+      setEmail((prev) => prev || emailFromUrl);
+    }
+  }, [searchParams, router]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,7 +71,9 @@ export function AdminLoginForm() {
         const msg =
           result.error === "MissingCSRF"
             ? "Sitzung abgelaufen (CSRF). Seite neu laden — Admin-Login im externen Browser (http://localhost:3001/admin/login) öffnen."
-            : "Anmeldung fehlgeschlagen. Bitte Zugangsdaten prüfen (Seed: admin@example.com / change-me-now).";
+            : result.error === "Configuration"
+              ? "Server-Konfiguration: AUTH_SECRET und DATABASE_URL in Vercel (Preview + Production) setzen, AUTH_URL zur Domain passend."
+              : "Anmeldung fehlgeschlagen. Bitte Zugangsdaten prüfen (Seed: admin@example.com / change-me-now).";
         setError(msg);
         setPending(false);
         return;
@@ -98,7 +124,12 @@ export function AdminLoginForm() {
         </p>
       ) : null}
 
-      <form id={formId} onSubmit={onSubmit} className="mt-10 flex flex-col gap-6">
+      <form
+        id={formId}
+        method="post"
+        onSubmit={onSubmit}
+        className="mt-10 flex flex-col gap-6"
+      >
         <div className="flex flex-col gap-2">
           <label htmlFor={`${formId}-email`} className="text-sm text-[#5c5f66]">
             E-Mail <span className="text-primary">*</span>

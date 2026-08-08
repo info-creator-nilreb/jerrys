@@ -39,8 +39,8 @@ In Vercel → Project → **Settings → Environment Variables** für **Preview*
 | --- | --- |
 | `DATABASE_URL` | PostgreSQL (Pooler-URL für Runtime) |
 | `DIRECT_DATABASE_URL` | Optional; direkte URL für Migrationen |
-| `AUTH_SECRET` | Auth.js (min. 32 Zeichen, z. B. `openssl rand -base64 32`) |
-| `AUTH_URL` | Kanonische App-URL (Production-Domain) |
+| `AUTH_SECRET` | Auth.js (min. 32 Zeichen, z. B. `openssl rand -base64 32`) — **für Preview und Production** getrennt setzen (Häkchen in Vercel). Alias: `NEXTAUTH_SECRET`. Nach Änderung **Redeploy**. |
+| `AUTH_URL` | Kanonische App-URL (Production-Domain). **Preview:** weglassen oder nur für Preview setzen — sonst CSRF/Login-Fehler, wenn die Variable auf Production zeigt, du aber die `*.vercel.app`-URL öffnest (die App passt Preview automatisch an, siehe `lib/auth/vercel-auth-env.ts`). |
 | `NEXT_PUBLIC_SITE_URL` | Öffentliche Shop-URL (E-Mails, Links) |
 | `NEXT_PUBLIC_SUPABASE_URL` | Falls Supabase-Client genutzt wird |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase Anon/Publishable Key |
@@ -126,5 +126,20 @@ Vercel-Deploy-Secrets (`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`) sin
 - [ ] GitHub Actions grün auf dem letzten Push.
 - [ ] Production-Env und Preview-Env getrennt.
 - [ ] `AUTH_URL` / `NEXT_PUBLIC_SITE_URL` passen zur Vercel-Domain.
+- [ ] **`AUTH_SECRET`** für Preview **und** Production gesetzt → danach **Redeploy** (Build muss Secret kennen).
+- [ ] **Admin-Login:** `npx prisma migrate deploy` gegen die Vercel-DB (lokal mit Production-/Preview-`DATABASE_URL` oder CI).
+- [ ] **Admin-User** in derselben DB: einmalig `npm run db:seed` (nur Staging/Preview) oder `npm run admin:set-password` mit Ziel-`DATABASE_URL`.
+
+### Admin-Login (Vercel) — Kurzablauf
+
+1. Env: `DATABASE_URL`, `AUTH_SECRET` (Preview + Production), optional Production-`AUTH_URL`.
+2. Code mit Auth-Fixes auf `main` (PR #17 o. Ä.) → Vercel-Deploy abwarten.
+3. Schema: `DATABASE_URL="…" npx prisma migrate deploy`
+4. Admin anlegen/Passwort:  
+   `DATABASE_URL="…" npm run admin:set-password`  
+   (interaktiv) **oder** Seed nur für nicht-Production: `npm run db:seed`
+5. `/admin/login` testen — **kein** Passwort in der URL; Formular nutzt POST.
+
+Lokal: eigenes `AUTH_SECRET` in `.env.local` (darf von Vercel abweichen).
 
 Bei Problemen: Vercel **Build Logs**, fehlende Env-Variablen, Prisma/DB-Erreichbarkeit, Supabase-Pause prüfen.
