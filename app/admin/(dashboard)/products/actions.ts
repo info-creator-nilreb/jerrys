@@ -77,13 +77,6 @@ function amazonFieldsForPrisma(d: {
   };
 }
 
-async function requireAdminSession(): Promise<void> {
-  const session = await auth();
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
-}
-
 export type ProductFormState = {
   error?: string;
   fieldErrors?: Record<string, string>;
@@ -435,9 +428,7 @@ export async function addProductImage(
   return { ok: true };
 }
 
-export async function deleteProductImage(imageId: string): Promise<{ error?: string }> {
-  await requireAdminSession();
-
+async function deleteProductImageById(imageId: string): Promise<ProductFormState> {
   const image = await getPrisma().productImage.findUnique({
     where: { id: imageId },
     include: { product: { select: { slug: true, id: true } } },
@@ -476,13 +467,11 @@ export async function deleteProductImage(imageId: string): Promise<{ error?: str
   revalidatePath("/");
   revalidatePath("/produkte");
   revalidatePath(`/produkte/${image.product.slug}`);
-  revalidatePath(`/admin/products/${image.productId}/edit`);
-  return {};
+  revalidatePath(`/admin/products/${image.product.id}/edit`);
+  return { ok: true };
 }
 
-export async function setProductCoverImage(imageId: string): Promise<{ error?: string }> {
-  await requireAdminSession();
-
+async function setProductCoverImageById(imageId: string): Promise<ProductFormState> {
   const image = await getPrisma().productImage.findUnique({
     where: { id: imageId },
     include: { product: { select: { slug: true, id: true } } },
@@ -505,8 +494,33 @@ export async function setProductCoverImage(imageId: string): Promise<{ error?: s
   revalidatePath("/");
   revalidatePath("/produkte");
   revalidatePath(`/produkte/${image.product.slug}`);
-  revalidatePath(`/admin/products/${image.productId}/edit`);
-  return {};
+  revalidatePath(`/admin/products/${image.product.id}/edit`);
+  return { ok: true };
+}
+
+/** Form-Action: intent = `delete` | `cover`, Feld `imageId`. */
+export async function productImageMediaAction(
+  _prev: ProductFormState,
+  formData: FormData,
+): Promise<ProductFormState> {
+  const session = await auth();
+  if (!session?.user) {
+    return { error: "Nicht angemeldet." };
+  }
+
+  const intent = String(formData.get("intent") ?? "");
+  const imageId = String(formData.get("imageId") ?? "").trim();
+  if (!imageId) {
+    return { error: "Bild nicht gefunden." };
+  }
+
+  if (intent === "delete") {
+    return deleteProductImageById(imageId);
+  }
+  if (intent === "cover") {
+    return setProductCoverImageById(imageId);
+  }
+  return { error: "Unbekannte Aktion." };
 }
 
 export async function uploadProductImages(

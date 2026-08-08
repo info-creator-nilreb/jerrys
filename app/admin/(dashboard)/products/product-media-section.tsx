@@ -1,15 +1,16 @@
 "use client";
 
-import { useCallback, useRef, useState, useTransition } from "react";
+import { useActionState, useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  deleteProductImage,
-  setProductCoverImage,
+  productImageMediaAction,
   uploadProductImages,
   type ProductFormState,
 } from "@/app/admin/(dashboard)/products/actions";
 
 type ImageRow = { id: string; url: string; alt: string; sortOrder: number; isCover: boolean };
+
+const mediaInitial: ProductFormState = null;
 
 export function ProductMediaSection({
   productId,
@@ -22,25 +23,34 @@ export function ProductMediaSection({
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [uploadErr, setUploadErr] = useState<string | null>(null);
+  const [uploadPending, startUploadTransition] = useTransition();
+  const [mediaState, mediaFormAction, mediaPending] = useActionState(
+    productImageMediaAction,
+    mediaInitial,
+  );
 
   const refresh = useCallback(() => {
     router.refresh();
   }, [router]);
 
+  useEffect(() => {
+    if (!mediaState?.ok) return;
+    refresh();
+  }, [mediaState?.ok, refresh]);
+
   const onUpload = useCallback(
     async (files: FileList | null) => {
       if (!files?.length) return;
-      setErr(null);
+      setUploadErr(null);
       setMessage(null);
       const fd = new FormData();
       for (const f of Array.from(files)) {
         fd.append("files", f);
       }
-      startTransition(async () => {
+      startUploadTransition(async () => {
         const res: ProductFormState = await uploadProductImages(productId, fd);
-        if (res?.error) setErr(res.error);
+        if (res?.error) setUploadErr(res.error);
         else {
           setMessage("Dateien hochgeladen.");
           refresh();
@@ -50,26 +60,10 @@ export function ProductMediaSection({
     [productId, refresh],
   );
 
-  const onDelete = (id: string) => {
-    setErr(null);
-    startTransition(async () => {
-      const r = await deleteProductImage(id);
-      if (r.error) setErr(r.error);
-      else refresh();
-    });
-  };
-
-  const onCover = (id: string) => {
-    setErr(null);
-    startTransition(async () => {
-      const r = await setProductCoverImage(id);
-      if (r.error) setErr(r.error);
-      else refresh();
-    });
-  };
-
   const cover = images.find((i) => i.isCover) ?? images[0];
   const thumbs = images;
+  const err = mediaState?.error ?? uploadErr;
+  const pending = uploadPending || mediaPending;
 
   return (
     <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
@@ -142,29 +136,39 @@ export function ProductMediaSection({
             <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
               {thumbs.map((img) => (
                 <li key={img.id} className="relative">
-                  <button
-                    type="button"
-                    onClick={() => onCover(img.id)}
-                    className={`relative block aspect-square w-full overflow-hidden rounded-md border-2 bg-[#f9fafb] transition-colors ${
-                      img.isCover ? "border-primary" : "border-[#e5e7eb] hover:border-primary/50"
-                    }`}
-                    title="Als Cover setzen"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img.url} alt="" className="size-full object-cover" />
-                    {img.isCover ? (
-                      <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                        Cover
-                      </span>
-                    ) : null}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDelete(img.id)}
-                    className="mt-1 w-full text-center text-xs text-red-600 hover:underline"
-                  >
-                    Löschen
-                  </button>
+                  <form action={mediaFormAction}>
+                    <input type="hidden" name="intent" value="cover" />
+                    <input type="hidden" name="imageId" value={img.id} />
+                    <button
+                      type="submit"
+                      disabled={mediaPending}
+                      className={`relative block aspect-square w-full overflow-hidden rounded-md border-2 bg-[#f9fafb] transition-colors ${
+                        img.isCover
+                          ? "border-primary"
+                          : "border-[#e5e7eb] hover:border-primary/50"
+                      }`}
+                      title="Als Cover setzen"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={img.url} alt="" className="size-full object-cover" />
+                      {img.isCover ? (
+                        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                          Cover
+                        </span>
+                      ) : null}
+                    </button>
+                  </form>
+                  <form action={mediaFormAction} className="mt-1">
+                    <input type="hidden" name="intent" value="delete" />
+                    <input type="hidden" name="imageId" value={img.id} />
+                    <button
+                      type="submit"
+                      disabled={mediaPending}
+                      className="w-full text-center text-xs text-red-600 hover:underline disabled:opacity-50"
+                    >
+                      Löschen
+                    </button>
+                  </form>
                 </li>
               ))}
             </ul>
