@@ -91,16 +91,17 @@ Must exist for:
 - `Testing Library` for React component tests only where helpful
 - Prisma test database for integration tests
 - provider fixtures and sandbox-backed contract tests
-- `k6` for checkout, webhook, and reservation load scenarios
+- `k6` for storefront smoke + unsignierter PayPal-Webhook (`scripts/load/k6-smoke.js`, `npm run load:k6`); Checkout-/Reservierungs-Lastszenarien bei Bedarf erweitern
 
 ## Recommended Commands
 ```bash
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm test:unit
-pnpm test:integration
-pnpm test:e2e
+npm run lint
+npm run typecheck
+npm run test
+npm run test:unit
+npm run test:integration
+npm run test:e2e
+npm run load:k6   # optional; Server muss laufen, BASE_URL setzen
 ```
 
 ## CI Quality Gate
