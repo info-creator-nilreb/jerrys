@@ -4,3 +4,9 @@ export {
   type DefaultVariantCommerceFields,
   type ProductVariantMirrorFields,
 } from "@/features/catalog/application/sync-default-variant-from-product";
+export {
+  listActiveCategoriesForNav,
+  listActiveCategoryTreeForNav,
+  listActiveProductsByCategorySlug,
+} from "@/lib/catalog/category-queries";
+export { categorySlugSchema } from "@/lib/catalog/category-schemas";
