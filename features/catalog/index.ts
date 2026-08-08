@@ -7,6 +7,7 @@ export {
 export {
   listActiveCategoriesForNav,
   listActiveCategoryTreeForNav,
+  listActiveCategoriesForStorefrontIndex,
   listActiveProductsByCategorySlug,
 } from "@/lib/catalog/category-queries";
 export { categorySlugSchema } from "@/lib/catalog/category-schemas";

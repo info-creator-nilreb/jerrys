@@ -33,6 +33,19 @@ export async function getActiveProductBySlug(slug: string) {
     include: {
       images: { orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }] },
       variants: prismaStorefrontActiveVariantsInclude,
+      categoryMemberships: {
+        where: { isPrimary: true, category: { isActive: true } },
+        take: 1,
+        select: {
+          category: {
+            select: {
+              slug: true,
+              title: true,
+              parent: { select: { slug: true, title: true } },
+            },
+          },
+        },
+      },
     },
   });
 }

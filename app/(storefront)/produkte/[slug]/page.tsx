@@ -2,6 +2,10 @@ import { notFound } from "next/navigation";
 import { getActiveProductBySlug } from "@/lib/catalog/queries";
 import { resolvePdpLeadText, resolvePdpSpecs } from "@/lib/catalog/pdp-resolve-display";
 import { pickDefaultVariant } from "@/lib/catalog/default-variant-storefront";
+import {
+  buildStorefrontProductBreadcrumbItems,
+  truncateBreadcrumbLabel,
+} from "@/lib/catalog/product-storefront-breadcrumbs";
 import { AmazonRatingDisplay } from "@/components/storefront/amazon-rating-display";
 import { ProductDetailGallery } from "@/components/storefront/product-detail-gallery";
 import { ProductJsonLd } from "@/components/storefront/product-json-ld";
@@ -73,8 +77,10 @@ export default async function ProduktDetailPage({
   const specs = resolvePdpSpecs(product);
   const leadDisplay = resolvePdpLeadText(product);
 
-  const titleCrumb =
-    product.title.length > 52 ? `${product.title.slice(0, 51).trimEnd()}…` : product.title;
+  const titleCrumb = truncateBreadcrumbLabel(product.title);
+
+  const primaryCategory =
+    product.categoryMemberships[0]?.category ?? null;
 
   const jsonLdDescription =
     leadDisplay || product.subtitle || textPreviewFromHtml(product.description);
@@ -100,11 +106,10 @@ export default async function ProduktDetailPage({
           aggregateRatingCount={product.amazonRatingCount}
         />
         <StorefrontBreadcrumbs
-          items={[
-            { href: "/", label: "Start" },
-            { href: "/produkte", label: "Produkte" },
-            { label: titleCrumb },
-          ]}
+          items={buildStorefrontProductBreadcrumbItems({
+            titleCrumb,
+            primaryCategory,
+          })}
         />
 
         <div className="mt-5 grid gap-8 lg:grid-cols-2 lg:gap-10 lg:items-start">
