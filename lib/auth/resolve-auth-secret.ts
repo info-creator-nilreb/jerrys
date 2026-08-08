@@ -1,10 +1,20 @@
-/** Auth.js / NextAuth JWT signing — Vercel: in Preview & Production setzen. */
+/** Auth.js / NextAuth JWT signing — Edge + Node (kein server-only). */
 export function resolveAuthSecret(): string | undefined {
-  // Klammer-Notation: in Edge-Middleware nicht beim Build durch Next.js „einfrieren“.
   const env = process.env;
-  const secret =
-    env["AUTH_SECRET"]?.trim() || env["NEXTAUTH_SECRET"]?.trim();
-  return secret || undefined;
+  const authSecretKey = ["AUTH", "SECRET"].join("_");
+  const nextAuthSecretKey = ["NEXTAUTH", "SECRET"].join("_");
+
+  const fromAuth = env[authSecretKey]?.trim();
+  if (fromAuth) return fromAuth;
+
+  const fromNext = env[nextAuthSecretKey]?.trim();
+  if (fromNext) return fromNext;
+
+  return (
+    Reflect.get(env, authSecretKey)?.trim() ||
+    Reflect.get(env, nextAuthSecretKey)?.trim() ||
+    undefined
+  );
 }
 
 export function assertAuthSecretForRuntime(scope: "auth" | "middleware"): void {

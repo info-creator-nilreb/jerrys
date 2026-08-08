@@ -4,7 +4,11 @@ import { compare } from "bcryptjs";
 import { z } from "zod";
 import { authConfig } from "./auth.config";
 import { syncAuthUrlForVercelPreview } from "@/lib/auth/vercel-auth-env";
-import { assertAuthSecretForRuntime, resolveAuthSecret } from "@/lib/auth/resolve-auth-secret";
+import {
+  assertAuthSecretForRuntime,
+  resolveAuthSecret,
+} from "@/lib/auth/resolve-auth-secret";
+import { readAuthSecretRuntime } from "@/lib/auth/read-auth-secret-runtime";
 import { getPrisma } from "@/lib/db/prisma";
 import { createLogger } from "@/lib/logging/logger";
 
@@ -18,9 +22,11 @@ const credentialsSchema = z.object({
   password: z.string().min(1),
 });
 
-export const { handlers, auth, signIn, signOut } = NextAuth(() => ({
+export const { handlers, auth, signIn, signOut } = NextAuth(() => {
+  const secret = readAuthSecretRuntime() ?? resolveAuthSecret();
+  return {
   ...authConfig,
-  secret: resolveAuthSecret(),
+  secret,
   trustHost: true,
   providers: [
     Credentials({
@@ -79,4 +85,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => ({
       return session;
     },
   },
-}));
+};
+});
