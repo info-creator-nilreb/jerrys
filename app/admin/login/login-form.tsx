@@ -29,7 +29,9 @@ export function AdminLoginForm() {
       ? "Anmeldung fehlgeschlagen. Bitte Zugangsdaten prüfen."
       : errorParam === "MissingCSRF"
         ? "Sitzung abgelaufen (CSRF). Seite neu laden und erneut anmelden — am besten im externen Browser (Safari/Chrome), nicht in der eingebetteten Vorschau."
-        : null;
+        : errorParam === "Configuration"
+          ? "Server-Konfiguration (Auth.js). In Vercel unter Environment Variables prüfen: AUTH_SECRET (min. 32 Zeichen, für Preview und Production), DATABASE_URL, AUTH_URL passend zur geöffneten Domain. Logs: Vercel → Deployments → Functions."
+          : null;
   const displayError = error ?? urlAuthError;
 
   async function onSubmit(e: React.FormEvent) {
@@ -47,7 +49,9 @@ export function AdminLoginForm() {
         const msg =
           result.error === "MissingCSRF"
             ? "Sitzung abgelaufen (CSRF). Seite neu laden — Admin-Login im externen Browser (http://localhost:3001/admin/login) öffnen."
-            : "Anmeldung fehlgeschlagen. Bitte Zugangsdaten prüfen (Seed: admin@example.com / change-me-now).";
+            : result.error === "Configuration"
+              ? "Server-Konfiguration: AUTH_SECRET und DATABASE_URL in Vercel (Preview + Production) setzen, AUTH_URL zur Domain passend."
+              : "Anmeldung fehlgeschlagen. Bitte Zugangsdaten prüfen (Seed: admin@example.com / change-me-now).";
         setError(msg);
         setPending(false);
         return;

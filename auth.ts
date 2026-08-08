@@ -4,10 +4,12 @@ import { compare } from "bcryptjs";
 import { z } from "zod";
 import { authConfig } from "./auth.config";
 import { syncAuthUrlForVercelPreview } from "@/lib/auth/vercel-auth-env";
+import { assertAuthSecretForRuntime, resolveAuthSecret } from "@/lib/auth/resolve-auth-secret";
 import { getPrisma } from "@/lib/db/prisma";
 import { createLogger } from "@/lib/logging/logger";
 
 syncAuthUrlForVercelPreview();
+assertAuthSecretForRuntime("auth");
 
 const log = createLogger("auth");
 
@@ -18,6 +20,7 @@ const credentialsSchema = z.object({
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  secret: resolveAuthSecret(),
   trustHost: true,
   providers: [
     Credentials({
@@ -41,10 +44,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             log.warn("admin_login_rejected", { email: parsed.data.email });
             return null;
           }
-          await getPrisma().adminUser.update({
-            where: { id: admin.id },
-            data: { lastLoginAt: new Date() },
-          });
           return { id: admin.id, email: admin.email, name: admin.email };
         } catch (e) {
           log.error("authorize_failed", { error: String(e) });
@@ -53,6 +52,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
+  events: {
+    async signIn({ user }) {
+      const id = user?.id;
+      if (!id) return;
+      try {
+        await getPrisma().adminUser.update({
+          where: { id },
+          data: { lastLoginAt: new Date() },
+        });
+      } catch (e) {
+        log.warn("last_login_update_failed", { userId: id, error: String(e) });
+      }
+    },
+  },
   callbacks: {
     ...authConfig.callbacks,
     jwt({ token, user }) {

@@ -1,9 +1,11 @@
 import NextAuth from "next-auth";
 import { authConfig } from "./auth.config";
 import { syncAuthUrlForVercelPreview } from "@/lib/auth/vercel-auth-env";
+import { assertAuthSecretForRuntime } from "@/lib/auth/resolve-auth-secret";
 import { updateSession } from "@/utils/supabase/middleware";
 
 syncAuthUrlForVercelPreview();
+assertAuthSecretForRuntime("middleware");
 
 export default NextAuth(authConfig).auth(async (req) => {
   // Auth.js-Endpoints: keine Supabase-Response — sonst können Session-/CSRF-Cookies kollidieren.
