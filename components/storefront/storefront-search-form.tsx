@@ -224,7 +224,7 @@ export function StorefrontSearchForm({
         <input
           id={inputId}
           name="q"
-          type="search"
+          type="text"
           role="combobox"
           value={value}
           autoFocus={autoFocus}
