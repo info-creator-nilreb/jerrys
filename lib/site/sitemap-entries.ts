@@ -1,7 +1,10 @@
 import type { MetadataRoute } from "next";
 import { listActiveCategoriesForStorefrontIndex } from "@/lib/catalog/category-queries";
 import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
-import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
+import {
+  isNextProductionBuildPhase,
+  shouldSkipSitemapDatabase,
+} from "@/lib/db/is-database-unreachable";
 
 export const STATIC_SITEMAP_PATHS = [
   "/",
@@ -36,7 +39,7 @@ export async function buildProductSitemapEntries(
   base: string,
   now: Date = new Date(),
 ): Promise<MetadataRoute.Sitemap> {
-  if (!process.env.DATABASE_URL?.trim()) {
+  if (!process.env.DATABASE_URL?.trim() || isNextProductionBuildPhase()) {
     return [];
   }
 
@@ -54,7 +57,7 @@ export async function buildProductSitemapEntries(
     if (e instanceof Error && e.message === "DATABASE_URL is not set") {
       return [];
     }
-    if (isDatabaseUnreachable(e)) {
+    if (shouldSkipSitemapDatabase(e)) {
       return [];
     }
     throw e;
@@ -65,7 +68,7 @@ export async function buildCategorySitemapEntries(
   base: string,
   now: Date = new Date(),
 ): Promise<MetadataRoute.Sitemap> {
-  if (!process.env.DATABASE_URL?.trim()) {
+  if (!process.env.DATABASE_URL?.trim() || isNextProductionBuildPhase()) {
     return [];
   }
 
@@ -83,11 +86,20 @@ export async function buildCategorySitemapEntries(
     if (e instanceof Error && e.message === "DATABASE_URL is not set") {
       return [];
     }
-    if (isDatabaseUnreachable(e)) {
+    if (shouldSkipSitemapDatabase(e)) {
       return [];
     }
     throw e;
   }
+}
+
+export async function buildDynamicSitemapEntries(
+  base: string,
+  now: Date = new Date(),
+): Promise<MetadataRoute.Sitemap> {
+  const productEntries = await buildProductSitemapEntries(base, now);
+  const categoryEntries = await buildCategorySitemapEntries(base, now);
+  return [...productEntries, ...categoryEntries];
 }
 
 export async function buildFullSitemap(
@@ -95,7 +107,16 @@ export async function buildFullSitemap(
   now: Date = new Date(),
 ): Promise<MetadataRoute.Sitemap> {
   const staticEntries = buildStaticSitemapEntries(base, now);
-  const productEntries = await buildProductSitemapEntries(base, now);
-  const categoryEntries = await buildCategorySitemapEntries(base, now);
-  return [...staticEntries, ...productEntries, ...categoryEntries];
+  if (isNextProductionBuildPhase()) {
+    return staticEntries;
+  }
+  try {
+    const dynamicEntries = await buildDynamicSitemapEntries(base, now);
+    return [...staticEntries, ...dynamicEntries];
+  } catch (e) {
+    if (shouldSkipSitemapDatabase(e)) {
+      return staticEntries;
+    }
+    throw e;
+  }
 }
