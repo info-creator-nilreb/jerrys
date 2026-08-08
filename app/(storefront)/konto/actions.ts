@@ -11,7 +11,6 @@ import {
 } from "@/features/customers";
 import { clientIpFromHeaders } from "@/lib/security/client-ip";
 import {
-  customerAuthRateLimitHeaders,
   touchCustomerMagicLinkAttempt,
   touchCustomerPasswordResetAttempt,
   touchCustomerRegisterAttempt,
