@@ -27,5 +27,10 @@ describe("browse context cookie", () => {
       kind: "collection",
       slug: "sommer",
     });
+    expect(browseContextFromPathname("/kategorien/katzen")).toEqual({
+      kind: "category",
+      slug: "katzen",
+      parent: null,
+    });
   });
 });

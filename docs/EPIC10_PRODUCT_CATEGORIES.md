@@ -71,7 +71,7 @@ Storefront primary navigation should follow **customer mental models** (product 
 | Tests | Unit: Nav-Sichtbarkeit; Integration: Slug-Routing, inactive category |
 | Docs | REQUIREMENTS-Abschnitt Kategorien; DESIGN_SYSTEM Hinweis Primary Nav |
 
-**Exit Epic 10:** Roadmap-Exit-Kriterien in PLATFORM_ROADMAP erfüllt.
+**Exit Epic 10:** Roadmap-Exit-Kriterien in PLATFORM_ROADMAP erfüllt. **Status:** umgesetzt (Seed-Kategorie „Katzen“, `category-storefront-visibility`, Unit/Integration-Tests, Docs).
 
 ## Risiken
 

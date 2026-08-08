@@ -1,4 +1,5 @@
 import { getPrisma } from "@/lib/db/prisma";
+import { categoryHasActiveProductMembership } from "@/lib/catalog/category-storefront-visibility";
 import { storefrontProductCardSelect } from "@/lib/catalog/queries";
 
 export async function listCategoriesForAdmin() {
@@ -57,9 +58,7 @@ export async function listCategoriesForProductPicker() {
   });
 }
 
-const activeProductOnCategory = {
-  product: { isActive: true },
-} as const;
+const activeProductOnCategory = categoryHasActiveProductMembership;
 
 /** Aktive Root-Kategorien für Navigation (Slice 4); Slice 1 — Daten-API. */
 export async function listActiveCategoriesForNav() {

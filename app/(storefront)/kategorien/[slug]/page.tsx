@@ -6,6 +6,7 @@ import { DatabaseUnavailableNotice } from "@/components/storefront/database-unav
 import { ProductCard } from "@/components/storefront/product-card";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import { listActiveProductsByCategorySlug } from "@/lib/catalog/category-queries";
+import { categoryListingShouldNotFound, isPublishedCategoryListing } from "@/lib/catalog/category-storefront-visibility";
 import {
   filterAndSortCollectionProducts,
   parseCollectionSort,
@@ -77,7 +78,8 @@ export default async function KategorieDetailPage({
     );
   }
 
-  if (!category || category.products.length === 0) notFound();
+  if (categoryListingShouldNotFound(category)) notFound();
+  if (!isPublishedCategoryListing(category)) notFound();
 
   const allProducts = category.products;
   const products = filterAndSortCollectionProducts(allProducts, { sort, onlyAvailable });
