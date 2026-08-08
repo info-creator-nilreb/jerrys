@@ -51,8 +51,8 @@ Auszug — vollständig in `PLATFORM_ROADMAP.md`:
 2. ~~**Keine Storefront-Suche**~~ — **erledigt** Slice 3: `/produkte?q=` (Titel/Subtitle/Slug), Header-Dialog + Formular; **Typeahead** via `GET /api/storefront/product-suggest`.
 3. ~~**Mobile Filter-Sheet**~~ — **erledigt** Slice 2 in `CollectionCatalogToolbar` (Trigger `max-md`, Bottom-Sheet, Chips).
 4. ~~**Listing-UX vereinheitlichen**~~ — **erledigt** für `/produkte`, `/kategorien/[slug]`, `/kollektionen/[slug]` (Toolbar, aktive Filter, Zurücksetzen).
-5. **Performance / CI** — Lighthouse-Job existiert (`lighthouserc.json`, `continue-on-error`); Budgets schärfen + flake fix optional.
-6. **Admin „Completion“** — kein zentraler Integrations-/Fehler-Hub; eher Slice 2–3 (Bestellungen, Versand, Promotions schon da).
+5. **Performance / CI** — Lighthouse bleibt bewusst `continue-on-error` + soft `warn`-Schwellen (Runner-Flake); kein hartes Gate in Slice 5.
+6. **Admin „Completion“** — kein zentraler Integrations-/Fehler-Hub; eher Slice 2–3 (Bestellungen, Versand, Promotions schon da). — bewusst später / nicht Blocker für Epic-8-Listing.
 
 ---
 
@@ -90,12 +90,13 @@ Branch-Prefix: `cursor/epic8-slice<N>-<kurzname>-21f6`
 - Audit: Versandkosten vor PayPal, AGB/Widerruf-Links, Promotion-Fehlerzustände
 - Abgleich `REQUIREMENTS.md` Checkout + `components/storefront/checkout-form.tsx`
 - Kleine UX-Fixes only — keine Payment-Logik umbauen
+- **Umgesetzt:** Rechtliche Zustimmung vor Bestell-CTA; Versandzeile mit Land, Free-Shipping-Hinweis, Link `/versand`; Promo-Leer-/Systemfehler; Legal-Links `target=_blank`
 
 ### Slice 5 — Tests, Ops, Doku
 
-- E2E: Listing-Filter + optional Suche (Playwright)
-- `docs/EPIC8_STOREFRONT_COMPLETION.md` Status-Tabelle aktualisieren
-- Lighthouse: Schwellen / `continue-on-error` evaluieren
+- E2E: Listing-Filter + Suche (+ Typeahead) in `tests/e2e/catalog-filter.spec.ts`
+- Status-Tabelle unten aktualisiert
+- Lighthouse: `continue-on-error` + soft warns beibehalten (siehe Lücke 5)
 
 ---
 
@@ -157,5 +158,5 @@ Antworten auf Deutsch.
 | 1 Listing `/produkte` | erledigt (Branch `cursor/epic8-slice1-produkte-filter-21f6`) |
 | 2 Mobile Filter-Sheet | erledigt (gleiche PR: `CollectionCatalogToolbar`) |
 | 3 Storefront-Suche | erledigt (`q` + Typeahead-Suggest-API, Header + `/produkte`) |
-| 4 Checkout Legal/Versand | offen |
-| 5 Tests/Ops | teilweise (Unit Sort/Filter/Suche; E2E Filter + Suche) |
+| 4 Checkout Legal/Versand | erledigt (UX: Consent vor CTA, Versand sichtbar, Promo-Fehler) |
+| 5 Tests/Ops | erledigt (E2E Filter/Suche/Typeahead; Lighthouse soft + `continue-on-error`) |

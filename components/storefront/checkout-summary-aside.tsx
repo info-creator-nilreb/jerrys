@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { formatPrice } from "@/lib/catalog/format";
 import { PriceEUR } from "@/components/storefront/price-eur";
 
@@ -26,6 +27,8 @@ export function CheckoutSummaryAside({
   discountDetail,
   shippingSavedByPromotionCents,
   shippingPromotionLabel,
+  shippingCountryLabel,
+  freeShippingFromSubtotalGrossCents,
   children,
 }: {
   lines: CheckoutSummaryLine[];
@@ -41,10 +44,20 @@ export function CheckoutSummaryAside({
   discountDetail?: string | null;
   shippingSavedByPromotionCents: number;
   shippingPromotionLabel?: string | null;
+  /** Anzeigename des gewählten Lieferlands (für Versandzeile). */
+  shippingCountryLabel?: string | null;
+  freeShippingFromSubtotalGrossCents?: number | null;
   children?: React.ReactNode;
 }) {
   const hasDiscount = discountOffSubtotalCents > 0;
   const hasShippingPromotionSave = shippingSavedByPromotionCents > 0;
+  const freeShippingThreshold = freeShippingFromSubtotalGrossCents ?? null;
+  const remainingToFreeShipping =
+    freeShippingThreshold != null &&
+    shippingCents > 0 &&
+    catalogSubtotalBeforeDiscountCents < freeShippingThreshold
+      ? freeShippingThreshold - catalogSubtotalBeforeDiscountCents
+      : null;
 
   return (
     <aside className="order-1 min-w-0 border-b border-(--surface-muted) bg-(--surface-soft) p-6 lg:order-2 lg:sticky lg:top-[5.5rem] lg:max-h-[calc(100dvh-5.75rem)] lg:overflow-y-auto lg:self-start lg:border-b-0 lg:border-l lg:pl-8">
@@ -104,14 +117,13 @@ export function CheckoutSummaryAside({
           </div>
         ) : null}
         <div className="flex justify-between gap-4">
-          <dt className="flex items-center gap-1 text-(--foreground-muted)">
-            Versand
-            <span
-              className="inline-flex size-4 items-center justify-center rounded-full border border-(--surface-muted) text-[10px] text-(--foreground-muted)"
-              title="Versandkosten nach Adresse"
-            >
-              ?
-            </span>
+          <dt className="text-(--foreground-muted)">
+            <span className="block">Versand</span>
+            {shippingCountryLabel ? (
+              <span className="mt-0.5 block text-xs font-normal">
+                nach {shippingCountryLabel}
+              </span>
+            ) : null}
           </dt>
           <dd className="text-right text-(--foreground-muted)">
             <div>{shippingCents === 0 ? "kostenlos" : formatPrice(shippingCents, currency)}</div>
@@ -123,6 +135,22 @@ export function CheckoutSummaryAside({
             ) : null}
           </dd>
         </div>
+        {remainingToFreeShipping != null ? (
+          <p className="text-xs leading-relaxed text-(--foreground-muted)">
+            Noch {formatPrice(remainingToFreeShipping, currency)} bis zum versandkostenfreien Versand.
+          </p>
+        ) : null}
+        <p className="text-xs leading-relaxed text-(--foreground-muted)">
+          Versandkosten werden vor der Zahlung anhand der Lieferadresse berechnet.{" "}
+          <Link
+            href="/versand"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-primary underline-offset-2 hover:underline"
+          >
+            Mehr zu Zahlung &amp; Versand
+          </Link>
+        </p>
         <div className="flex justify-between gap-4 border-t border-(--surface-muted) pt-3 text-base font-semibold">
           <dt className="text-(--foreground-heading)">Gesamt</dt>
           <dd className="text-(--foreground-heading)">
