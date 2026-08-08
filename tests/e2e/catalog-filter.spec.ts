@@ -21,7 +21,9 @@ test.describe("Katalog Filter & Sortierung", () => {
     const desktopSort = page.locator("#collection-sort");
     await expect(desktopSort).toBeVisible();
     await expect(desktopSort).toHaveValue("title-asc");
-    await expect(page.getByLabel("Nur verfügbare Produkte")).toBeChecked();
+    await page.getByRole("button", { name: /^Filter/ }).click();
+    const desktopFilter = page.locator('[id$="-desktop-filter"]');
+    await expect(desktopFilter.getByLabel("Nur verfügbare Produkte")).toBeChecked();
     await expect(page.getByRole("link", { name: "Filter zurücksetzen" })).toBeVisible();
   });
 
