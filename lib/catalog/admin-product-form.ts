@@ -55,5 +55,8 @@ export function adminProductForEditForm(product: AdminProductRecord) {
       availableQuantity: v.availableQuantity,
       stockQuantity: v.stockQuantity,
     })),
+    categoryIds: product.categoryMemberships.map((m) => m.categoryId),
+    primaryCategoryId:
+      product.categoryMemberships.find((m) => m.isPrimary)?.categoryId ?? null,
   };
 }

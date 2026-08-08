@@ -7,6 +7,7 @@ import { signOut } from "next-auth/react";
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import {
   IconCatalog,
+  IconCategories,
   IconChevronLeft,
   IconChevronUp,
   IconCollections,
@@ -34,6 +35,7 @@ const mainNav: NavItem[] = [
   { href: "/admin/startseite", label: "Startseite", icon: IconStorefront },
   { href: "/admin/products", label: "Katalog", icon: IconCatalog },
   { href: "/admin/collections", label: "Kollektionen", icon: IconCollections },
+  { href: "/admin/categories", label: "Kategorien", icon: IconCategories },
   { href: "/admin/bestand", label: "Bestand", icon: IconInventory },
   { href: "/admin/promotions", label: "Promotions", icon: IconPromotions },
   { href: "/admin/versand", label: "Versand", icon: IconShipping },

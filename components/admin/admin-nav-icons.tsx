@@ -2,6 +2,7 @@ import {
   Bell,
   ChevronLeft,
   ChevronUp,
+  FolderTree,
   Home,
   Layers,
   LayoutGrid,
@@ -26,6 +27,10 @@ export function IconCatalog({ className }: { className?: string }) {
 
 export function IconCollections({ className }: { className?: string }) {
   return <Layers className={className} aria-hidden strokeWidth={stroke} />;
+}
+
+export function IconCategories({ className }: { className?: string }) {
+  return <FolderTree className={className} aria-hidden strokeWidth={stroke} />;
 }
 
 export function IconInventory({ className }: { className?: string }) {

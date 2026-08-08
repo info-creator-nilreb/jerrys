@@ -6,6 +6,7 @@ import {
   updateProduct,
   type ProductFormState,
 } from "@/app/admin/(dashboard)/products/actions";
+import { ProductCategoriesFields } from "@/app/admin/(dashboard)/products/product-categories-fields";
 import { ProductDeliveryFields } from "@/app/admin/(dashboard)/products/product-delivery-fields";
 import { ProductGeneralFields } from "@/app/admin/(dashboard)/products/product-general-fields";
 import { ProductPricesSection } from "@/app/admin/(dashboard)/products/product-prices-section";
@@ -74,6 +75,8 @@ type Product = {
     availableQuantity: number;
     stockQuantity: number;
   }[];
+  categoryIds: string[];
+  primaryCategoryId: string | null;
 };
 
 const initialState: ProductFormState = null;
@@ -84,9 +87,17 @@ const saveBtnClass =
 export function EditProductForm({
   product,
   manufacturers,
+  categories,
 }: {
   product: Product;
   manufacturers: Manufacturer[];
+  categories: {
+    id: string;
+    title: string;
+    slug: string;
+    isActive: boolean;
+    parentTitle: string | null;
+  }[];
 }) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(updateProduct, initialState);
@@ -143,6 +154,15 @@ export function EditProductForm({
             materialText: product.materialText ?? "",
             featureBullets: product.featureBullets.join("\n"),
           }}
+        />
+
+        <ProductCategoriesFields
+          categories={categories}
+          defaults={{
+            categoryIds: product.categoryIds,
+            primaryCategoryId: product.primaryCategoryId,
+          }}
+          fieldErrors={state?.fieldErrors}
         />
 
         <ProductPricesSection

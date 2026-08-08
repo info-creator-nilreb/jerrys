@@ -86,6 +86,14 @@ export async function getProductByIdForAdmin(id: string) {
         orderBy: [{ isDefault: "desc" }, { sortOrder: "asc" }],
         select: defaultVariantAdminSelect,
       },
+      categoryMemberships: {
+        orderBy: [{ isPrimary: "desc" }, { category: { title: "asc" } }],
+        select: {
+          isPrimary: true,
+          categoryId: true,
+          category: { select: { id: true, title: true, slug: true, isActive: true } },
+        },
+      },
     },
   });
 }
