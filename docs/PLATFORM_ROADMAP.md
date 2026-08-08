@@ -127,6 +127,8 @@ Exit criteria: label purchase is idempotent; protected label files have retentio
 
 ## Epic 8: Storefront and Admin Completion
 
+Suggested delivery: [EPIC8_STOREFRONT_COMPLETION.md](./EPIC8_STOREFRONT_COMPLETION.md) (Agent-Handoff, Slices).
+
 User stories:
 
 - As a customer, I can search, filter, sort, select variants, and use a responsive cart.
