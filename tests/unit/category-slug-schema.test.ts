@@ -7,8 +7,8 @@ describe("categorySlugSchema", () => {
     expect(categorySlugSchema.parse("fuer-den-garten")).toBe("fuer-den-garten");
   });
 
-  it("lehnt Großbuchstaben und ungültige Zeichen ab", () => {
-    expect(() => categorySlugSchema.parse("Hund")).toThrow();
+  it("normalisiert Großbuchstaben und lehnt ungültige Zeichen ab", () => {
+    expect(categorySlugSchema.parse("Hund")).toBe("hund");
     expect(() => categorySlugSchema.parse("-hund")).toThrow();
     expect(() => categorySlugSchema.parse("hund-")).toThrow();
   });

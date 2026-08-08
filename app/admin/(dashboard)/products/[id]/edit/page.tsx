@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { EditProductForm } from "@/app/admin/(dashboard)/products/[id]/edit/edit-product-form";
 import { adminProductForEditForm } from "@/lib/catalog/admin-product-form";
 import { getProductByIdForAdmin, listManufacturersForAdmin } from "@/lib/catalog/queries";
+import { listCategoriesForProductPicker } from "@/lib/catalog/category-queries";
 
 export const dynamic = "force-dynamic";
 
@@ -24,12 +25,20 @@ export default async function AdminEditProductPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [product, manufacturers] = await Promise.all([
+  const [product, manufacturers, categoryRows] = await Promise.all([
     getProductByIdForAdmin(id),
     listManufacturersForAdmin(),
+    listCategoriesForProductPicker(),
   ]);
   if (!product) notFound();
   const formProduct = adminProductForEditForm(product);
+  const categories = categoryRows.map((c) => ({
+    id: c.id,
+    title: c.title,
+    slug: c.slug,
+    isActive: c.isActive,
+    parentTitle: c.parent?.title ?? null,
+  }));
 
   return (
     <div className="mx-auto max-w-4xl rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm sm:p-8">
@@ -43,7 +52,7 @@ export default async function AdminEditProductPage({
       </h1>
       <p className="mt-1 text-sm text-[#6b7280]">{product.title}</p>
       <div className="mt-8">
-        <EditProductForm product={formProduct} manufacturers={manufacturers} />
+        <EditProductForm product={formProduct} manufacturers={manufacturers} categories={categories} />
       </div>
     </div>
   );

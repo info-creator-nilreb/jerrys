@@ -9,6 +9,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { syncDefaultVariantFromProduct } from "@/features/catalog";
+import { replaceProductCategoryMemberships } from "@/lib/catalog/category-membership";
+import { productCategoryAssignmentSchema } from "@/lib/catalog/category-schemas";
 import { parseEuroInputToCents } from "@/lib/catalog/format";
 import {
   createProductFormSchema,
@@ -88,11 +90,13 @@ export type ProductFormState = {
   ok?: boolean;
 } | null;
 
-const updateProductFormSchema = productCoreSchema.and(
-  z.object({
-    id: nonEmptyString,
-  }),
-);
+const updateProductFormSchema = productCoreSchema
+  .and(
+    z.object({
+      id: nonEmptyString,
+    }),
+  )
+  .and(productCategoryAssignmentSchema);
 
 export async function createProduct(
   _prev: ProductFormState,
@@ -263,6 +267,8 @@ export async function updateProduct(
     featureBullets: String(formData.get("featureBullets") ?? ""),
     isBestseller: formData.get("isBestseller") === "on",
     isActive: parseIsActiveFromFormData(formData),
+    categoryIds: formData.getAll("categoryIds"),
+    primaryCategoryId: formData.get("primaryCategoryId"),
   };
 
   const parsed = updateProductFormSchema.safeParse(raw);
@@ -271,6 +277,24 @@ export async function updateProduct(
   }
 
   const d = parsed.data;
+  if (d.primaryCategoryId && !d.categoryIds.includes(d.primaryCategoryId)) {
+    return {
+      fieldErrors: {
+        primaryCategoryId: "Primary-Kategorie muss ausgewählt sein.",
+      },
+    };
+  }
+
+  const existingCategories = await getPrisma().category.findMany({
+    where: { id: { in: d.categoryIds } },
+    select: { id: true },
+  });
+  const validCategoryIds = new Set(existingCategories.map((c) => c.id));
+  const categoryIds = d.categoryIds.filter((id) => validCategoryIds.has(id));
+  const primaryCategoryId =
+    d.primaryCategoryId && categoryIds.includes(d.primaryCategoryId)
+      ? d.primaryCategoryId
+      : null;
   const mainGross = parseEuroInputToCents(d.priceGrossEuro)!;
   const mainNet = parseEuroInputToCents(d.priceNetEuro)!;
   const listGross = d.listPriceGrossEuro.trim() === "" ? null : parseEuroInputToCents(d.listPriceGrossEuro);
@@ -335,6 +359,7 @@ export async function updateProduct(
         productNumber: d.productNumber,
         ...variantMirror,
       });
+      await replaceProductCategoryMemberships(tx, d.id, categoryIds, primaryCategoryId);
     });
   } catch (e) {
     if (isUniqueConstraintError(e)) {
@@ -350,6 +375,7 @@ export async function updateProduct(
     revalidatePath(`/produkte/${previousSlug}`);
   }
   revalidatePath(`/admin/products/${d.id}/edit`);
+  revalidatePath("/admin/categories");
   return { ok: true };
 }
 

@@ -1,6 +1,62 @@
 import { getPrisma } from "@/lib/db/prisma";
 import { storefrontProductCardSelect } from "@/lib/catalog/queries";
 
+export async function listCategoriesForAdmin() {
+  return getPrisma().category.findMany({
+    orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
+    include: {
+      parent: { select: { id: true, title: true } },
+      _count: { select: { products: true, children: true } },
+    },
+  });
+}
+
+export async function getCategoryByIdForAdmin(id: string) {
+  return getPrisma().category.findUnique({
+    where: { id },
+    include: {
+      parent: { select: { id: true, title: true, slug: true } },
+      products: {
+        orderBy: [{ isPrimary: "desc" }, { product: { title: "asc" } }],
+        select: { productId: true, isPrimary: true },
+      },
+      _count: { select: { children: true } },
+    },
+  });
+}
+
+/** Nur Root-Kategorien für Parent-Auswahl (max. eine Verschachtelungsebene). */
+export async function listRootCategoriesForParentPicker(excludeCategoryId?: string) {
+  return getPrisma().category.findMany({
+    where: {
+      parentId: null,
+      ...(excludeCategoryId ? { id: { not: excludeCategoryId } } : {}),
+    },
+    orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
+    select: { id: true, title: true, slug: true },
+  });
+}
+
+export async function listProductsForCategoryPicker() {
+  return getPrisma().product.findMany({
+    orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
+    select: { id: true, title: true, slug: true, isActive: true },
+  });
+}
+
+export async function listCategoriesForProductPicker() {
+  return getPrisma().category.findMany({
+    orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      isActive: true,
+      parent: { select: { title: true } },
+    },
+  });
+}
+
 const activeProductOnCategory = {
   product: { isActive: true },
 } as const;

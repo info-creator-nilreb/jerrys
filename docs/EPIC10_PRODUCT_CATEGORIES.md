@@ -39,7 +39,7 @@ Storefront primary navigation should follow **customer mental models** (product 
 | Produkt | Kategorie-Zuordnung am Produkt (Primary + optional weitere) |
 | Nav | Feld „In Hauptnavigation anzeigen“ oder implizit über `isActive` + Produktanzahl |
 
-**Exit Slice 2:** Operator kann Katalog ohne SQL strukturieren.
+**Exit Slice 2:** Operator kann Katalog ohne SQL strukturieren. **Status:** umgesetzt (Admin CRUD, Sidebar, Produktbearbeitung).
 
 ## Slice 3 — Storefront Listings
 
