@@ -28,7 +28,7 @@ Kunden können sich per **E-Mail/Passwort oder Magic Link** anmelden und ihre Be
 - Passwort vergessen, Sessionverwaltung und Rate-Limits
 - Gastbestellungen bleiben ohne Konto möglich
 
-**Status:** umgesetzt (ADR-0005). Auth.js bleibt Session-Mechanismus; Identitäten und One-Time-Tokens liegen in Postgres (`customers`, `customer_identities`, `customer_auth_tokens`). Storefront: `/konto/anmelden`, `/konto/registrieren`, Magic Link, Verifikation, Passwort-Reset; minimale `/konto`-Landing. Keine Gastbestell-Zuordnung und keine Epic-5-Termine in Slice 1.
+**Status:** umgesetzt (ADR-0005). Auth.js bleibt Session-Mechanismus; Identitäten und One-Time-Tokens liegen in Postgres (`customers`, `customer_identities`, `customer_auth_tokens`). Storefront: Login als Header-Popover, `/konto/registrieren`, Magic-Link-Callback unter `GET /konto/magic-link`, Verifikation, Passwort-Reset; minimale `/konto`-Landing. Keine Gastbestell-Zuordnung und keine Epic-5-Termine in Slice 1.
 
 ### Slice 2 — Kundenportal und Bestellungen
 

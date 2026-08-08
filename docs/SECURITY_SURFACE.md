@@ -5,8 +5,9 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | Pfad / Art | Auth | Zweck (kurz) |
 |------------|------|----------------|
 | `GET/POST …/api/auth/[...nextauth]` | NextAuth | Login, Session, CSRF-Token; **POST** `…/callback/credentials`: Admin-Rate-Limit (`lib/security/sign-in-rate-limit.ts`); **POST** `…/callback/customer-credentials` und `…/callback/customer-magic-link`: Kunden-Rate-Limit (`lib/security/customer-auth-rate-limit.ts`) |
-| Server Actions `app/(storefront)/konto/actions.ts` | Öffentlich (Rate-Limit IP) | Kunden-Registrierung, Passwort-Login, Magic Link, Passwort-Reset; Verifikation |
-| Seiten `/konto/*` | Kunden-Session wo nötig (`getCustomerSession`) | Anmelden, Registrieren, Verifizieren, Magic Link, Reset, minimale Konto-Landing |
+| Server Actions `app/(storefront)/konto/actions.ts` | Öffentlich (Rate-Limit IP) | Kunden-Registrierung, Passwort-Login, Magic-Link-Anforderung, Passwort-Reset; Verifikation |
+| `GET /konto/magic-link` | Öffentlich (One-Time-Token) | Magic-Link-Callback (Route Handler setzt Session-Cookie; ungültig → Redirect `/?konto=magic-…`) |
+| Seiten `/konto/*` | Kunden-Session wo nötig (`getCustomerSession`) | Registrieren, Verifizieren, Reset, minimale Konto-Landing; `/konto/anmelden` öffnet Header-Popover |
 | `GET /api/admin/search` | Admin-Session (`auth()`) | Globale Suche |
 | `GET /api/storefront/product-suggest` | Öffentlich | Typeahead-Produktvorschläge (`q`, min. 2 Zeichen); **Rate-Limit** pro IP (`lib/security/storefront-search-api-rate-limit.ts`) |
 | `GET /api/admin/order-alerts` | Admin-Session | Bestell-Alerts |

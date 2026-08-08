@@ -15,7 +15,13 @@ import {
 
 const initial: CustomerAuthActionState = null;
 
-export function CustomerLoginForm({ callbackUrl = "/konto" }: { callbackUrl?: string }) {
+export function CustomerLoginForm({
+  callbackUrl = "/konto",
+  compact = false,
+}: {
+  callbackUrl?: string;
+  compact?: boolean;
+}) {
   const formId = useId();
   const [mode, setMode] = useState<"password" | "magic">("password");
   const [passwordState, passwordAction, passwordPending] = useActionState(
@@ -25,7 +31,7 @@ export function CustomerLoginForm({ callbackUrl = "/konto" }: { callbackUrl?: st
   const [magicState, magicAction, magicPending] = useActionState(requestMagicLinkAction, initial);
 
   return (
-    <div className="space-y-6">
+    <div className={compact ? "space-y-4" : "space-y-6"}>
       <div className="flex gap-2 border-b border-(--surface-muted) pb-3 text-sm">
         <button
           type="button"

@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { signIn, signOut } from "@/auth";
 import {
   confirmCustomerPasswordReset,
@@ -69,16 +70,8 @@ export async function customerPasswordLoginAction(
     });
     return { ok: true, message: "Angemeldet." };
   } catch (e) {
-    // Auth.js throws NEXT_REDIRECT on success
-    if (
-      e &&
-      typeof e === "object" &&
-      "digest" in e &&
-      typeof (e as { digest?: unknown }).digest === "string" &&
-      String((e as { digest: string }).digest).startsWith("NEXT_REDIRECT")
-    ) {
-      throw e;
-    }
+    // Auth.js wirft bei Erfolg NEXT_REDIRECT — muss durchgereicht werden.
+    if (isRedirectError(e)) throw e;
     return {
       ok: false,
       message:
