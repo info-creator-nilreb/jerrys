@@ -30,8 +30,9 @@ export default async function CheckoutPage({
 }) {
   const sp = await searchParams;
   const paypalCode = sp.paypal;
+  const paypalCancelled = paypalCode === "abbruch";
   const paypalError =
-    typeof paypalCode === "string" && paypalCode.length > 0
+    !paypalCancelled && typeof paypalCode === "string" && paypalCode.length > 0
       ? (paypalReturnErrors[paypalCode] ?? "Die PayPal-Zahlung ist fehlgeschlagen. Bitte erneut versuchen.")
       : null;
 
@@ -85,6 +86,15 @@ export default async function CheckoutPage({
           { label: "Checkout" },
         ]}
       />
+      {paypalCancelled ? (
+        <div
+          className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+          role="status"
+        >
+          PayPal-Zahlung abgebrochen. Dein Warenkorb ist noch vorhanden — du kannst eine andere Zahlungsart wählen
+          oder den Checkout erneut absenden.
+        </div>
+      ) : null}
       {paypalError ? (
         <div
           className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
