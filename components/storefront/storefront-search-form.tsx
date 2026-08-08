@@ -17,7 +17,7 @@ import {
   STOREFRONT_SUGGEST_DEBOUNCE_MS,
   type StorefrontProductSuggestion,
   type StorefrontProductSuggestResponse,
-} from "@/lib/catalog/storefront-product-suggest";
+} from "@/lib/catalog/storefront-product-suggest-shared";
 import { STOREFRONT_SEARCH_MIN_LENGTH } from "@/lib/catalog/storefront-product-search";
 
 type Props = {

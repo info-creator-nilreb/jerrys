@@ -1,23 +1,21 @@
+import "server-only";
+
 import { getPrisma } from "@/lib/db/prisma";
 import { prismaDefaultVariantInclude } from "@/lib/catalog/default-variant-storefront";
 import { parseStorefrontSearchQuery } from "@/lib/catalog/storefront-product-search";
+import {
+  STOREFRONT_SUGGEST_LIMIT,
+  type StorefrontProductSuggestion,
+} from "@/lib/catalog/storefront-product-suggest-shared";
 
-export const STOREFRONT_SUGGEST_LIMIT = 6;
-export const STOREFRONT_SUGGEST_DEBOUNCE_MS = 250;
-
-export type StorefrontProductSuggestion = {
-  slug: string;
-  title: string;
-  subtitle: string | null;
-  imageUrl: string | null;
-  imageAlt: string | null;
-  priceGrossCents: number | null;
-  currency: string;
-};
-
-export type StorefrontProductSuggestResponse = {
-  suggestions: StorefrontProductSuggestion[];
-};
+export type {
+  StorefrontProductSuggestion,
+  StorefrontProductSuggestResponse,
+} from "@/lib/catalog/storefront-product-suggest-shared";
+export {
+  STOREFRONT_SUGGEST_LIMIT,
+  STOREFRONT_SUGGEST_DEBOUNCE_MS,
+} from "@/lib/catalog/storefront-product-suggest-shared";
 
 export async function listStorefrontProductSuggestions(
   rawQuery: string,
