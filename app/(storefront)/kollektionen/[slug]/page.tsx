@@ -67,11 +67,7 @@ export default async function KollektionDetailPage({
   return (
     <div className="mx-auto max-w-6xl px-4 py-24 md:py-28">
       <StorefrontBreadcrumbs
-        items={[
-          { href: "/", label: "Start" },
-          { href: "/kollektionen", label: "Kollektionen" },
-          { label: collection.title },
-        ]}
+        items={[{ href: "/", label: "Start" }, { label: collection.title }]}
       />
       <h1 className="mt-6 text-2xl font-semibold text-(--foreground-heading) md:text-3xl">
         {collection.title}

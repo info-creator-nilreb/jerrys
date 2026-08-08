@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { CookieSettingsButton } from "@/components/storefront/cookie-consent/cookie-settings-button";
+import { listActiveCategoriesForNav } from "@/lib/catalog/category-queries";
 import { listActiveCollectionsForStorefront } from "@/lib/catalog/collection-queries";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
-import { buildStorefrontShopNavLinks } from "@/lib/storefront/shop-nav-links";
+import {
+  buildStorefrontMerchandisingLinks,
+  buildStorefrontShopNavLinks,
+} from "@/lib/storefront/shop-nav-links";
 
 const legalLinks = [
   { href: "/impressum", label: "Impressum" },
@@ -16,9 +20,20 @@ const legalLinks = [
 /** Dunkles Navy wie Admin-Sidebar; helle Schrift, Primärgrün für Links. */
 export async function SiteFooter() {
   let shopLinks = buildStorefrontShopNavLinks([]);
+  let merchandisingLinks = buildStorefrontMerchandisingLinks([]);
+  try {
+    const categories = await listActiveCategoriesForNav();
+    shopLinks = buildStorefrontShopNavLinks(
+      categories.map((c) => ({ slug: c.slug, title: c.title })),
+    );
+  } catch (e) {
+    if (!isDatabaseUnreachable(e)) throw e;
+  }
   try {
     const collections = await listActiveCollectionsForStorefront();
-    shopLinks = buildStorefrontShopNavLinks(collections);
+    merchandisingLinks = buildStorefrontMerchandisingLinks(
+      collections.filter((c) => c._count.products > 0).map((c) => ({ slug: c.slug, title: c.title })),
+    );
   } catch (e) {
     if (!isDatabaseUnreachable(e)) throw e;
   }
@@ -35,6 +50,22 @@ export async function SiteFooter() {
             aria-label="Shop"
           >
             {shopLinks.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className="font-medium text-primary underline-offset-4 transition-colors hover:text-(--primary-hover) hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#182d4d]"
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+        ) : null}
+        {merchandisingLinks.length > 0 ? (
+          <nav
+            className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2.5 text-[0.95rem] text-white/80 sm:text-base"
+            aria-label="Kollektionen"
+          >
+            {merchandisingLinks.map(({ href, label }) => (
               <Link
                 key={href}
                 href={href}

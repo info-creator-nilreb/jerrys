@@ -3,9 +3,10 @@ import { getActiveProductBySlug } from "@/lib/catalog/queries";
 import { resolvePdpLeadText, resolvePdpSpecs } from "@/lib/catalog/pdp-resolve-display";
 import { pickDefaultVariant } from "@/lib/catalog/default-variant-storefront";
 import {
-  buildStorefrontProductBreadcrumbItems,
+  resolveProductBreadcrumbItems,
   truncateBreadcrumbLabel,
 } from "@/lib/catalog/product-storefront-breadcrumbs";
+import { readBrowseContextFromCookies } from "@/lib/storefront/browse-context";
 import { AmazonRatingDisplay } from "@/components/storefront/amazon-rating-display";
 import { ProductDetailGallery } from "@/components/storefront/product-detail-gallery";
 import { ProductJsonLd } from "@/components/storefront/product-json-ld";
@@ -79,8 +80,17 @@ export default async function ProduktDetailPage({
 
   const titleCrumb = truncateBreadcrumbLabel(product.title);
 
-  const primaryCategory =
-    product.categoryMemberships[0]?.category ?? null;
+  const primaryRow = product.categoryMemberships.find((m) => m.isPrimary);
+  const primaryCategory = primaryRow?.category ?? null;
+  const categoryBySlug = new Map(
+    product.categoryMemberships.map((m) => [m.category.slug, m.category] as const),
+  );
+  const collectionTitleBySlug = new Map(
+    product.collectionMemberships.map((m) => [m.collection.slug, m.collection.title] as const),
+  );
+  const browseContext = await readBrowseContextFromCookies();
+  const categorySlugs = new Set(categoryBySlug.keys());
+  const collectionSlugs = new Set(collectionTitleBySlug.keys());
 
   const jsonLdDescription =
     leadDisplay || product.subtitle || textPreviewFromHtml(product.description);
@@ -106,9 +116,14 @@ export default async function ProduktDetailPage({
           aggregateRatingCount={product.amazonRatingCount}
         />
         <StorefrontBreadcrumbs
-          items={buildStorefrontProductBreadcrumbItems({
+          items={resolveProductBreadcrumbItems({
             titleCrumb,
+            browseContext,
             primaryCategory,
+            categorySlugs,
+            collectionSlugs,
+            categoryBySlug,
+            collectionTitleBySlug,
           })}
         />
 
