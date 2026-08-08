@@ -16,17 +16,30 @@ export const dynamic = "force-dynamic";
 const log = createLogger("auth-route");
 
 async function loadHandlers() {
-  if (!readAuthSecretRuntime()) {
+  const secret = readAuthSecretRuntime();
+  if (!secret) {
     log.error("auth_secret_missing_at_runtime", {
       envKeys: listAuthRelatedEnvKeys(),
     });
+    return null;
   }
   const { handlers } = await import("@/auth");
   return handlers;
 }
 
+function misconfiguredAuthResponse() {
+  return NextResponse.json(
+    {
+      error:
+        "Auth nicht konfiguriert (AUTH_SECRET fehlt in dieser Deployment-Umgebung). Vercel: Environment Variables für Preview und Production setzen, dann Redeploy.",
+    },
+    { status: 503 },
+  );
+}
+
 export async function GET(req: NextRequest) {
   const handlers = await loadHandlers();
+  if (!handlers) return misconfiguredAuthResponse();
   return handlers.GET(req);
 }
 
@@ -45,5 +58,6 @@ export async function POST(req: NextRequest) {
     }
   }
   const handlers = await loadHandlers();
+  if (!handlers) return misconfiguredAuthResponse();
   return handlers.POST(req);
 }

@@ -1,22 +1,17 @@
-import NextAuth from "next-auth";
-import { authConfig } from "./auth.config";
-import { syncAuthUrlForVercelPreview } from "@/lib/auth/vercel-auth-env";
-import { assertAuthSecretForRuntime } from "@/lib/auth/resolve-auth-secret";
+import { type NextRequest } from "next/server";
 import { updateSession } from "@/utils/supabase/middleware";
 
-syncAuthUrlForVercelPreview();
-assertAuthSecretForRuntime("middleware");
-
-export default NextAuth(authConfig).auth(async (req) => {
-  return updateSession(req);
-});
+/**
+ * Kein NextAuth in der Edge-Middleware: auf Vercel fehlt dort oft `AUTH_SECRET`
+ * zur Laufzeit → Auth.js `MissingSecret`, obwohl Node (/api/auth, Admin-Layout) ok ist.
+ * Admin-Schutz: `app/admin/(dashboard)/layout.tsx` (`auth()`).
+ */
+export async function middleware(request: NextRequest) {
+  return updateSession(request);
+}
 
 export const config = {
   matcher: [
-    /*
-     * /api/auth/* nicht matchen — Auth.js-Handler laufen ohne Edge-Middleware;
-     * sonst getSession in der Middleware ohne zuverlässiges AUTH_SECRET (MissingSecret).
-     */
     "/((?!_next|__nextjs|api/auth|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
