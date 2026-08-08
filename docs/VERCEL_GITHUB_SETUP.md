@@ -39,7 +39,7 @@ In Vercel → Project → **Settings → Environment Variables** für **Preview*
 | --- | --- |
 | `DATABASE_URL` | PostgreSQL (Pooler-URL für Runtime) |
 | `DIRECT_DATABASE_URL` | Optional; direkte URL für Migrationen |
-| `AUTH_SECRET` | Auth.js (min. 32 Zeichen, z. B. `openssl rand -base64 32`) — **für Preview und Production** getrennt setzen (Häkchen in Vercel). Alias: **`NEXTAUTH_SECRET`** (gleicher Wert ok). Nach Änderung **Redeploy**. Bleibt `MissingSecret` in den Logs: Runtime-Log `auth_secret_missing_at_runtime` zeigt, welche `AUTH*`-Keys die Function sieht. |
+| `AUTH_SECRET` | Auth.js (min. 32 Zeichen, z. B. `openssl rand -base64 32`) — **für Preview und Production** getrennt setzen (Häkchen in Vercel). Alias: **`NEXTAUTH_SECRET`** (gleicher Wert ok). Nach Änderung **Redeploy**. Bleibt `MissingSecret` in den Logs: zuerst Preview **und** Production prüfen; Runtime-Log `auth_secret_missing_at_runtime` listet sichtbare `AUTH*`-Keys. **Hinweis:** Admin-Auth läuft in Node (`/api/auth`, Dashboard-Layout), nicht in der Edge-Middleware. |
 | `AUTH_URL` | Kanonische App-URL (Production-Domain). **Preview:** weglassen oder nur für Preview setzen — sonst CSRF/Login-Fehler, wenn die Variable auf Production zeigt, du aber die `*.vercel.app`-URL öffnest (die App passt Preview automatisch an, siehe `lib/auth/vercel-auth-env.ts`). |
 | `NEXT_PUBLIC_SITE_URL` | Öffentliche Shop-URL (E-Mails, Links) |
 | `NEXT_PUBLIC_SUPABASE_URL` | Falls Supabase-Client genutzt wird |

@@ -1,12 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
-import { resolveAuthSecret } from "@/lib/auth/resolve-auth-secret";
 
 export const authConfig = {
   trustHost: true,
-  /** Laufzeit-Lesen (Edge/Vercel), nicht beim Middleware-Build einfrieren. */
-  get secret() {
-    return resolveAuthSecret();
-  },
   providers: [],
   session: { strategy: "jwt" as const, maxAge: 60 * 60 * 8 },
   pages: {
