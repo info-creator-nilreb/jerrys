@@ -6,6 +6,7 @@ import {
   Home,
   Layers,
   LayoutGrid,
+  Menu,
   Package,
   Percent,
   Search,
@@ -63,6 +64,10 @@ export function IconChevronUp({ className }: { className?: string }) {
 
 export function IconSearch({ className }: { className?: string }) {
   return <Search className={className} aria-hidden strokeWidth={stroke} />;
+}
+
+export function IconMenu({ className }: { className?: string }) {
+  return <Menu className={className} aria-hidden strokeWidth={stroke} />;
 }
 
 export function IconBell({ className }: { className?: string }) {

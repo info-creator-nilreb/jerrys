@@ -30,6 +30,8 @@ function NavLinkList({
               href={href}
               onClick={onNavigate}
               className={`block text-sm font-medium transition-colors focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                onNavigate ? "flex min-h-11 items-center" : ""
+              } ${
                 active
                   ? "text-primary"
                   : "text-(--foreground-heading) hover:text-primary"

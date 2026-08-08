@@ -80,7 +80,7 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
           role="dialog"
           aria-modal="true"
           aria-labelledby={`${panelId}-title`}
-          className="relative z-[600001] flex h-full w-full max-w-md flex-col border-l border-(--surface-muted) bg-white shadow-2xl"
+          className="relative z-[600001] flex h-full w-full max-w-none flex-col border-l border-(--surface-muted) bg-white shadow-2xl sm:max-w-md"
         >
           <div className="flex items-center justify-between border-b border-(--surface-muted) px-4 py-4">
             <h2 id={`${panelId}-title`} className="text-lg font-semibold text-(--foreground-heading)">
@@ -88,7 +88,7 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
             </h2>
             <button
               type="button"
-              className="rounded-md p-2 text-(--foreground-muted) hover:bg-(--surface-soft) hover:text-(--foreground-heading)"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-(--foreground-muted) hover:bg-(--surface-soft) hover:text-(--foreground-heading)"
               aria-label="Schließen"
               onClick={() => setOpen(false)}
             >
@@ -139,7 +139,7 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
                           <input type="hidden" name="lineId" value={line.lineId} />
                           <button
                             type="submit"
-                            className="rounded border border-(--surface-muted) px-2 py-1 text-sm hover:border-primary hover:text-primary"
+                            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-(--surface-muted) text-base font-medium hover:border-primary hover:text-primary"
                             aria-label="Menge erhöhen"
                           >
                             +
@@ -149,7 +149,7 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
                           <input type="hidden" name="lineId" value={line.lineId} />
                           <button
                             type="submit"
-                            className="rounded border border-(--surface-muted) px-2 py-1 text-sm hover:border-primary hover:text-primary"
+                            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-(--surface-muted) text-base font-medium hover:border-primary hover:text-primary"
                             aria-label="Menge verringern"
                           >
                             −
@@ -159,7 +159,7 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
                           <input type="hidden" name="lineId" value={line.lineId} />
                           <button
                             type="submit"
-                            className="text-xs text-(--foreground-muted) underline-offset-2 hover:text-primary hover:underline"
+                            className="inline-flex min-h-11 items-center px-2 text-sm text-(--foreground-muted) underline-offset-2 hover:text-primary hover:underline"
                           >
                             Entfernen
                           </button>
@@ -175,7 +175,7 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
             )}
           </div>
 
-          <div className="border-t border-(--surface-muted) bg-(--surface-soft) px-4 py-4">
+          <div className="border-t border-(--surface-muted) bg-(--surface-soft) px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             {preview && preview.lines.length > 0 ? (
               <>
                 <div className="flex justify-between text-sm">
@@ -219,7 +219,7 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
     <>
       <button
         type="button"
-        className="relative z-[500001] rounded-md p-2 text-(--foreground-heading) transition-colors hover:text-primary"
+        className="relative z-[500001] inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-(--foreground-heading) transition-colors hover:text-primary"
         aria-label={`Warenkorb${cartBadgeCount > 0 ? `, ${cartBadgeCount} Artikel` : ""}`}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
