@@ -19,11 +19,22 @@ export const storefrontProductCardSelect = {
   },
 };
 
+const storefrontPrimaryCategorySelect = {
+  categoryMemberships: {
+    where: { isPrimary: true, category: { isActive: true } },
+    select: { category: { select: { slug: true, title: true } } },
+    take: 1,
+  },
+} as const;
+
 export async function listActiveProductsForStorefront() {
   return getPrisma().product.findMany({
     where: { isActive: true },
     orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
-    select: storefrontProductCardSelect,
+    select: {
+      ...storefrontProductCardSelect,
+      ...storefrontPrimaryCategorySelect,
+    },
   });
 }
 

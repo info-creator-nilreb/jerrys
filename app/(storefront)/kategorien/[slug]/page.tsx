@@ -8,6 +8,13 @@ import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadc
 import { listActiveProductsByCategorySlug } from "@/lib/catalog/category-queries";
 import { categoryListingShouldNotFound, isPublishedCategoryListing } from "@/lib/catalog/category-storefront-visibility";
 import {
+  asCatalogProduct,
+  catalogListingFiltersActive,
+  catalogPriceBoundsEuros,
+  filterProductsByPriceEuroRange,
+  parseCatalogListingFilters,
+} from "@/lib/catalog/collection-storefront-filters";
+import {
   filterAndSortCollectionProducts,
   parseCollectionSort,
 } from "@/lib/catalog/collection-storefront-sort";
@@ -53,12 +60,17 @@ export default async function KategorieDetailPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ sort?: string; verfuegbar?: string }>;
+  searchParams: Promise<{
+    sort?: string;
+    verfuegbar?: string;
+    preis_min?: string;
+    preis_max?: string;
+  }>;
 }) {
   const { slug } = await params;
   const sp = await searchParams;
   const sort = parseCollectionSort(sp.sort);
-  const onlyAvailable = sp.verfuegbar === "1";
+  const listingFilters = parseCatalogListingFilters(sp);
 
   let category: Awaited<ReturnType<typeof listActiveProductsByCategorySlug>> = null;
   let dbUnavailable = false;
@@ -81,9 +93,18 @@ export default async function KategorieDetailPage({
   if (categoryListingShouldNotFound(category)) notFound();
   if (!isPublishedCategoryListing(category)) notFound();
 
-  const allProducts = category.products;
-  const products = filterAndSortCollectionProducts(allProducts, { sort, onlyAvailable });
-  const filtersActive = onlyAvailable || sort !== "default";
+  const allProducts = category.products.map(asCatalogProduct);
+  const afterPrice = filterProductsByPriceEuroRange(
+    allProducts,
+    listingFilters.priceMinEuros,
+    listingFilters.priceMaxEuros,
+  );
+  const products = filterAndSortCollectionProducts(afterPrice, {
+    sort,
+    onlyAvailable: listingFilters.onlyAvailable,
+  });
+  const filtersActive = catalogListingFiltersActive(listingFilters, sort);
+  const priceBoundsEuros = catalogPriceBoundsEuros(allProducts);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-24 md:py-28">
@@ -100,17 +121,21 @@ export default async function KategorieDetailPage({
       <Suspense fallback={null}>
         <CollectionCatalogToolbar
           sort={sort}
-          onlyAvailable={onlyAvailable}
-          defaultSortLabel="Katalogreihenfolge"
+          onlyAvailable={listingFilters.onlyAvailable}
+          resultCount={products.length}
+          priceMinEuros={listingFilters.priceMinEuros}
+          priceMaxEuros={listingFilters.priceMaxEuros}
+          priceBoundsEuros={priceBoundsEuros}
         />
       </Suspense>
 
       {filtersActive ? (
         <p className="mt-4 text-sm text-(--foreground-muted)">
-          {products.length} von {allProducts.length} Produkten
-          {onlyAvailable ? " · nur verfügbar" : ""}
-          {sort !== "default" ? " · sortiert" : ""}
-          {" · "}
+          {listingFilters.onlyAvailable ? "Nur verfügbar · " : ""}
+          {listingFilters.priceMinEuros != null || listingFilters.priceMaxEuros != null
+            ? "Preisfilter · "
+            : ""}
+          {sort !== "default" ? "Sortiert · " : ""}
           <Link href={`/kategorien/${slug}`} className="font-medium text-primary hover:underline">
             Filter zurücksetzen
           </Link>

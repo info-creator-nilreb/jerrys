@@ -4,16 +4,25 @@ import { CollectionCatalogToolbar } from "@/components/storefront/collection-cat
 import { DatabaseUnavailableNotice } from "@/components/storefront/database-unavailable-notice";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
+import { listActiveCategoriesForNav } from "@/lib/catalog/category-queries";
 import { listActiveCollectionsForStorefront } from "@/lib/catalog/collection-queries";
+import {
+  catalogListingFiltersActive,
+  catalogPriceBoundsEuros,
+  filterProductsByPriceEuroRange,
+  filterProductsByPrimaryCategorySlug,
+  mapProductWithPrimaryCategory,
+  parseCatalogListingFilters,
+} from "@/lib/catalog/collection-storefront-filters";
 import {
   filterAndSortCollectionProducts,
   parseCollectionSort,
 } from "@/lib/catalog/collection-storefront-sort";
-import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
 import {
   filterProductsByStorefrontSearch,
   parseStorefrontSearchQuery,
 } from "@/lib/catalog/storefront-product-search";
+import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 
 export const dynamic = "force-dynamic";
@@ -37,11 +46,21 @@ export async function generateMetadata({
   };
 }
 
-function buildProdukteHref(opts: { q?: string | null; sort?: string; verfuegbar?: boolean }) {
+function buildProdukteHref(opts: {
+  q?: string | null;
+  sort?: string;
+  verfuegbar?: boolean;
+  preis_min?: number | null;
+  preis_max?: number | null;
+  kategorie?: string | null;
+}) {
   const params = new URLSearchParams();
   if (opts.q) params.set("q", opts.q);
   if (opts.sort && opts.sort !== "default") params.set("sort", opts.sort);
   if (opts.verfuegbar) params.set("verfuegbar", "1");
+  if (opts.preis_min != null) params.set("preis_min", String(opts.preis_min));
+  if (opts.preis_max != null) params.set("preis_max", String(opts.preis_max));
+  if (opts.kategorie) params.set("kategorie", opts.kategorie);
   const qs = params.toString();
   return qs ? `/produkte?${qs}` : "/produkte";
 }
@@ -49,18 +68,28 @@ function buildProdukteHref(opts: { q?: string | null; sort?: string; verfuegbar?
 export default async function ProduktePage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string; verfuegbar?: string; q?: string }>;
+  searchParams: Promise<{
+    sort?: string;
+    verfuegbar?: string;
+    q?: string;
+    preis_min?: string;
+    preis_max?: string;
+    kategorie?: string;
+  }>;
 }) {
   const sp = await searchParams;
   const sort = parseCollectionSort(sp.sort);
-  const onlyAvailable = sp.verfuegbar === "1";
+  const listingFilters = parseCatalogListingFilters(sp);
   const searchQuery = parseStorefrontSearchQuery(sp.q);
 
   let products: Awaited<ReturnType<typeof listActiveProductsForStorefront>> = [];
+  let categoryFacets: { slug: string; title: string }[] = [];
   let hasPublishedCollections = false;
   let dbUnavailable = false;
   try {
     products = await listActiveProductsForStorefront();
+    const categories = await listActiveCategoriesForNav();
+    categoryFacets = categories.map((c) => ({ slug: c.slug, title: c.title }));
   } catch (e) {
     if (isDatabaseUnreachable(e)) {
       dbUnavailable = true;
@@ -77,23 +106,39 @@ export default async function ProduktePage({
     }
   }
 
-  const catalogProducts = products;
+  const catalogProducts = products.map(mapProductWithPrimaryCategory);
   const searchedProducts = filterProductsByStorefrontSearch(catalogProducts, searchQuery);
-  const filteredProducts = filterAndSortCollectionProducts(searchedProducts, {
+  const afterCategory = filterProductsByPrimaryCategorySlug(
+    searchedProducts,
+    listingFilters.categorySlug,
+  );
+  const afterPrice = filterProductsByPriceEuroRange(
+    afterCategory,
+    listingFilters.priceMinEuros,
+    listingFilters.priceMaxEuros,
+  );
+  const filteredProducts = filterAndSortCollectionProducts(afterPrice, {
     sort,
-    onlyAvailable,
+    onlyAvailable: listingFilters.onlyAvailable,
   });
-  const filtersActive = onlyAvailable || sort !== "default";
+  const filtersActive = catalogListingFiltersActive(listingFilters, sort);
   const searchActive = searchQuery != null;
   const filterResetHref = buildProdukteHref({ q: searchQuery });
   const allResetHref = "/produkte";
+  const selectedCategoryTitle =
+    categoryFacets.find((c) => c.slug === listingFilters.categorySlug)?.title ?? null;
   const activeContext = [
     searchActive ? `Suche „${searchQuery}“` : null,
-    onlyAvailable ? "nur verfügbar" : null,
+    listingFilters.onlyAvailable ? "nur verfügbar" : null,
+    selectedCategoryTitle ? `Kategorie ${selectedCategoryTitle}` : null,
+    listingFilters.priceMinEuros != null || listingFilters.priceMaxEuros != null
+      ? "Preisfilter"
+      : null,
     sort !== "default" ? "sortiert" : null,
   ]
     .filter(Boolean)
     .join(" · ");
+  const priceBoundsEuros = catalogPriceBoundsEuros(catalogProducts);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-24 md:py-28">
@@ -130,9 +175,13 @@ export default async function ProduktePage({
           <Suspense fallback={null}>
             <CollectionCatalogToolbar
               sort={sort}
-              onlyAvailable={onlyAvailable}
+              onlyAvailable={listingFilters.onlyAvailable}
               resultCount={filteredProducts.length}
-              defaultSortLabel="Katalogreihenfolge"
+              priceMinEuros={listingFilters.priceMinEuros}
+              priceMaxEuros={listingFilters.priceMaxEuros}
+              priceBoundsEuros={priceBoundsEuros}
+              categoryFacets={categoryFacets}
+              selectedCategorySlug={listingFilters.categorySlug}
             />
           </Suspense>
 

@@ -33,13 +33,16 @@ test.describe("Katalog Filter & Sortierung", () => {
     await page.goto("/produkte?sort=price-asc&verfuegbar=1");
     await expect(page.getByRole("heading", { name: "Produkte" })).toBeVisible();
 
-    const trigger = page.getByRole("button", { name: /Filter & Sortierung/i });
+    const mobileSort = page.locator("#collection-sort");
+    await expect(mobileSort).toBeVisible();
+    await expect(mobileSort).toHaveValue("price-asc");
+
+    const trigger = page.getByRole("button", { name: /^Filter(\s+\d+)?$/ });
     await expect(trigger).toBeVisible();
     await trigger.click();
 
-    const sheet = page.getByRole("dialog", { name: /Filter & Sortierung/i });
+    const sheet = page.getByRole("dialog", { name: "Filter" });
     await expect(sheet).toBeVisible();
-    await expect(sheet.getByLabel("Sortierung")).toHaveValue("price-asc");
     await expect(sheet.getByLabel("Nur verfügbare Produkte")).toBeChecked();
 
     await page.keyboard.press("Escape");

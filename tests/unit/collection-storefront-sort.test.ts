@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  collectionSortLabel,
   filterAndSortCollectionProducts,
   parseCollectionSort,
 } from "@/lib/catalog/collection-storefront-sort";
@@ -36,6 +37,16 @@ function card(
     ...partial,
   };
 }
+
+describe("collectionSortLabel", () => {
+  it("returns null for default catalog order", () => {
+    expect(collectionSortLabel("default")).toBeNull();
+  });
+
+  it("returns label for explicit sorts", () => {
+    expect(collectionSortLabel("price-asc")).toBe("Preis aufsteigend");
+  });
+});
 
 describe("parseCollectionSort", () => {
   it("accepts known sort values", () => {
