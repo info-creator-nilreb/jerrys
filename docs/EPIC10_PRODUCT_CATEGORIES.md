@@ -25,10 +25,10 @@ Storefront primary navigation should follow **customer mental models** (product 
 | --- | --- |
 | ADR | `docs/adr/0004-product-categories.md` — Taxonomie vs. Collections, Primary category, URL-Konvention |
 | Schema | `categories` (slug unique, title, description, sortOrder, isActive, optional `parentId` für max. 1 Verschachtelung in v1) |
-| Zuordnung | `product_categories` (productId, categoryId, isPrimary) oder äquivalent |
-| API | `features/catalog` — list active categories for nav, list products by category slug |
+| Zuordnung | `product_categories` (productId, categoryId, isPrimary) |
+| API | `features/catalog` — `listActiveCategoriesForNav`, `listActiveCategoryTreeForNav`, `listActiveProductsByCategorySlug` |
 
-**Exit Slice 1:** Migration deploybar; kein Storefront-UI-Zwang.
+**Exit Slice 1:** Migration deploybar; kein Storefront-UI-Zwang. **Status:** umgesetzt (`20260808142000_epic10_product_categories`).
 
 ## Slice 2 — Admin
 

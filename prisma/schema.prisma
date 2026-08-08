@@ -67,6 +67,7 @@ model Product {
   images      ProductImage[]
   variants    ProductVariant[]
   collectionMemberships CollectionProduct[]
+  categoryMemberships   ProductCategory[]
   cartLines   CartLine[]
   orderItems  OrderItem[]
   stockReservations StockReservation[]
@@ -142,6 +143,39 @@ model CollectionProduct {
   @@id([collectionId, productId])
   @@index([productId])
   @@map("collection_products")
+}
+
+/// Browse-Taxonomie (Epic 10); unabhängig von Merchandising-Collections.
+model Category {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  parentId    String?  @map("parent_id")
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Category[] @relation("CategoryHierarchy")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  products    ProductCategory[]
+
+  @@index([isActive, sortOrder])
+  @@index([parentId])
+  @@map("categories")
+}
+
+model ProductCategory {
+  productId  String  @map("product_id")
+  categoryId String  @map("category_id")
+  isPrimary  Boolean @default(false) @map("is_primary")
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId])
+  @@index([categoryId])
+  @@index([productId, isPrimary])
+  @@map("product_categories")
 }
 
 /// Globale Versandkonfiguration (genau eine Zeile, id = default).
