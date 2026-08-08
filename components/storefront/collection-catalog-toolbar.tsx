@@ -27,6 +27,7 @@ function CatalogFilterControls({
   sort,
   onlyAvailable,
   sortOptions,
+  resultCount,
   pending,
   onSortChange,
   onAvailableChange,
@@ -35,13 +36,14 @@ function CatalogFilterControls({
   sort: CollectionSort;
   onlyAvailable: boolean;
   sortOptions: { value: CollectionSort; label: string }[];
+  resultCount?: number;
   pending: boolean;
   onSortChange: (value: string) => void;
   onAvailableChange: (value: boolean) => void;
 }) {
   const sortId = `${idPrefix}-sort`;
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+    <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:gap-6">
       <div className="flex flex-col gap-1">
         <label htmlFor={sortId} className="text-xs font-medium text-(--foreground-muted)">
           Sortierung
@@ -73,6 +75,11 @@ function CatalogFilterControls({
       {pending ? (
         <p className="text-xs text-(--foreground-muted)" role="status">
           Wird aktualisiert…
+        </p>
+      ) : null}
+      {resultCount != null ? (
+        <p className="text-sm text-(--foreground-muted) sm:ml-auto sm:pb-3" aria-live="polite">
+          {resultCount} {resultCount === 1 ? "Produkt" : "Produkte"}
         </p>
       ) : null}
     </div>
@@ -134,10 +141,12 @@ function ActiveFilterChips({
 export function CollectionCatalogToolbar({
   sort,
   onlyAvailable,
+  resultCount,
   defaultSortLabel = "Reihenfolge Kollektion",
 }: {
   sort: CollectionSort;
   onlyAvailable: boolean;
+  resultCount?: number;
   /** Label für Sortierung „default“ (Kategorie vs. Kollektion). */
   defaultSortLabel?: string;
 }) {
@@ -277,30 +286,38 @@ export function CollectionCatalogToolbar({
   return (
     <>
       <div className="mt-8 md:hidden">
-        <button
-          type="button"
-          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-(--surface-muted) bg-white px-4 text-sm font-medium text-(--foreground-heading) transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          aria-expanded={sheetOpen}
-          aria-controls={sheetOpen ? panelId : undefined}
-          onClick={() => setSheetOpen(true)}
-        >
-          <ListFilter className="size-4 shrink-0" aria-hidden strokeWidth={1.75} />
-          Filter & Sortierung
-          {activeCount > 0 ? (
-            <span className="inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-bold text-white">
-              {activeCount}
-            </span>
+        <div className="flex items-center justify-between gap-4 border-y border-(--surface-muted) py-3">
+          <button
+            type="button"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-(--surface-muted) bg-white px-4 text-sm font-medium text-(--foreground-heading) transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            aria-expanded={sheetOpen}
+            aria-controls={sheetOpen ? panelId : undefined}
+            onClick={() => setSheetOpen(true)}
+          >
+            <ListFilter className="size-4 shrink-0" aria-hidden strokeWidth={1.75} />
+            Filter & Sortierung
+            {activeCount > 0 ? (
+              <span className="inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-bold text-white">
+                {activeCount}
+              </span>
+            ) : null}
+          </button>
+          {resultCount != null ? (
+            <p className="shrink-0 text-sm text-(--foreground-muted)" aria-live="polite">
+              {resultCount} {resultCount === 1 ? "Produkt" : "Produkte"}
+            </p>
           ) : null}
-        </button>
+        </div>
         {filterChips}
       </div>
 
-      <div className="mt-8 hidden rounded-xl border border-(--surface-muted) bg-white p-4 md:block">
+      <div className="mt-8 hidden border-y border-(--surface-muted) py-4 md:block">
         <CatalogFilterControls
           idPrefix="collection"
           sort={sort}
           onlyAvailable={onlyAvailable}
           sortOptions={sortOptions}
+          resultCount={resultCount}
           pending={pending}
           onSortChange={(value) => apply({ sort: value })}
           onAvailableChange={(value) => apply({ verfuegbar: value })}

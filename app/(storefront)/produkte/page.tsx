@@ -4,7 +4,6 @@ import { CollectionCatalogToolbar } from "@/components/storefront/collection-cat
 import { DatabaseUnavailableNotice } from "@/components/storefront/database-unavailable-notice";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
-import { StorefrontSearchForm } from "@/components/storefront/storefront-search-form";
 import { listActiveCollectionsForStorefront } from "@/lib/catalog/collection-queries";
 import {
   filterAndSortCollectionProducts,
@@ -56,7 +55,6 @@ export default async function ProduktePage({
   const sort = parseCollectionSort(sp.sort);
   const onlyAvailable = sp.verfuegbar === "1";
   const searchQuery = parseStorefrontSearchQuery(sp.q);
-  const rawQ = sp.q?.trim() ?? "";
 
   let products: Awaited<ReturnType<typeof listActiveProductsForStorefront>> = [];
   let hasPublishedCollections = false;
@@ -89,6 +87,13 @@ export default async function ProduktePage({
   const searchActive = searchQuery != null;
   const filterResetHref = buildProdukteHref({ q: searchQuery });
   const allResetHref = "/produkte";
+  const activeContext = [
+    searchActive ? `Suche „${searchQuery}“` : null,
+    onlyAvailable ? "nur verfügbar" : null,
+    sort !== "default" ? "sortiert" : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-24 md:py-28">
@@ -123,30 +128,17 @@ export default async function ProduktePage({
       ) : (
         <>
           <Suspense fallback={null}>
-            <StorefrontSearchForm
-              query={searchQuery ?? rawQ}
-              preserveParams={{
-                sort: sort !== "default" ? sort : undefined,
-                verfuegbar: onlyAvailable ? "1" : undefined,
-              }}
-            />
-          </Suspense>
-
-          <Suspense fallback={null}>
             <CollectionCatalogToolbar
               sort={sort}
               onlyAvailable={onlyAvailable}
+              resultCount={filteredProducts.length}
               defaultSortLabel="Katalogreihenfolge"
             />
           </Suspense>
 
           {searchActive || filtersActive ? (
             <p className="mt-4 text-sm text-(--foreground-muted)" role="status">
-              {filteredProducts.length} von {searchedProducts.length} Produkten
-              {searchActive ? ` · Suche „${searchQuery}“` : ""}
-              {onlyAvailable ? " · nur verfügbar" : ""}
-              {sort !== "default" ? " · sortiert" : ""}
-              {" · "}
+              {activeContext} ·{" "}
               {filtersActive ? (
                 <Link href={filterResetHref} className="font-medium text-primary hover:underline">
                   Filter zurücksetzen

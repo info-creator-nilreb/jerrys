@@ -48,7 +48,8 @@ test.describe("Katalog Filter & Sortierung", () => {
     await dismissConsentBanner(page);
     await page.goto("/produkte?q=höhle");
     await expect(page.getByRole("heading", { name: /Suche:/i })).toBeVisible();
-    await expect(page.getByRole("search").getByLabel("Produkte suchen")).toHaveValue("höhle");
+    await expect(page.getByRole("search")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Produkte suchen" })).toBeVisible();
     await expect(page.getByRole("status").filter({ hasText: /Suche/i }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: "Suche zurücksetzen" })).toBeVisible();
   });
@@ -68,9 +69,11 @@ test.describe("Katalog Filter & Sortierung", () => {
   test("Typeahead zeigt Produktvorschläge während der Eingabe", async ({ page }) => {
     await dismissConsentBanner(page);
     await page.goto("/produkte");
-    const search = page.getByRole("combobox", { name: "Produkte suchen" });
+    await page.getByRole("button", { name: "Produkte suchen" }).click();
+    const dialog = page.getByRole("dialog", { name: /Produkte suchen/i });
+    const search = dialog.getByRole("combobox", { name: "Produkte suchen" });
     await search.fill("höhle");
-    const listbox = page.getByRole("listbox", { name: "Produktvorschläge" });
+    const listbox = dialog.getByRole("listbox", { name: "Produktvorschläge" });
     await expect(listbox).toBeVisible({ timeout: 10_000 });
     const option = listbox.getByRole("option").first();
     await expect(option).toBeVisible();
