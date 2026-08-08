@@ -10,7 +10,6 @@ export function resolveAuthSecret(): string | undefined {
 export function assertAuthSecretForRuntime(scope: "auth" | "middleware"): void {
   if (process.env.NODE_ENV !== "production") return;
   if (resolveAuthSecret()) return;
-  // eslint-disable-next-line no-console -- startup diagnostic for misconfigured Vercel env
   console.error(
     `[auth] AUTH_SECRET fehlt (${scope}). Admin-Login endet mit Auth.js „Server error“ (Configuration).`,
   );

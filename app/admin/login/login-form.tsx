@@ -17,7 +17,9 @@ export function AdminLoginForm() {
   const callbackUrl = searchParams.get("callbackUrl") ?? "/admin";
   const formId = useId();
 
-  const [email, setEmail] = useState("");
+  const queryEmail = searchParams.get("email")?.trim() ?? "";
+  const [emailEdited, setEmailEdited] = useState<string | null>(null);
+  const email = emailEdited ?? queryEmail;
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,11 +50,6 @@ export function AdminLoginForm() {
     if (stripped) {
       const q = params.toString();
       router.replace(q ? `/admin/login?${q}` : "/admin/login", { scroll: false });
-      return;
-    }
-    const emailFromUrl = params.get("email")?.trim();
-    if (emailFromUrl) {
-      setEmail((prev) => prev || emailFromUrl);
     }
   }, [searchParams, router]);
 
@@ -142,7 +139,7 @@ export function AdminLoginForm() {
             required
             placeholder="Gib deine E-Mail ein …"
             value={email}
-            onChange={(ev) => setEmail(ev.target.value)}
+            onChange={(ev) => setEmailEdited(ev.target.value)}
             className="w-full rounded-md border border-[#e3e4e8] bg-white px-4 py-3.5 text-[0.9375rem] text-[#2d2e32] shadow-[0_1px_2px_rgba(0,0,0,0.04)] placeholder:text-[#9ca3af] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
           />
         </div>
