@@ -26,4 +26,11 @@ describe("sitemap entries", () => {
     const entries = await buildProductSitemapEntries("https://shop.example");
     expect(entries).toEqual([]);
   });
+
+  it("returns no product URLs during next production build phase", async () => {
+    vi.stubEnv("DATABASE_URL", "postgresql://u:p@localhost:5432/db");
+    vi.stubEnv("NEXT_PHASE", "phase-production-build");
+    const entries = await buildProductSitemapEntries("https://shop.example");
+    expect(entries).toEqual([]);
+  });
 });
