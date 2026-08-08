@@ -106,7 +106,7 @@ Branch-Prefix: `cursor/epic8-slice<N>-<kurzname>-21f6`
 | Listings | `app/(storefront)/produkte/page.tsx`, `kategorien/[slug]/page.tsx`, `kollektionen/[slug]/page.tsx` |
 | Toolbar | `components/storefront/collection-catalog-toolbar.tsx` |
 | Sort/Filter | `lib/catalog/collection-storefront-sort.ts` |
-| Suche | `lib/catalog/storefront-product-search.ts`, `storefront-product-suggest.ts`, `GET /api/storefront/product-suggest`, `storefront-search-form.tsx`, `storefront-header-search.tsx` |
+| Suche | `storefront-product-search.ts`, `storefront-product-suggest(-shared).ts`, `GET /api/storefront/product-suggest`, `storefront-search-form.tsx`, `storefront-header-search.tsx` |
 | Produktliste | `lib/catalog/queries.ts` (`listActiveProductsForStorefront`) |
 | Header/Nav | `components/storefront/site-header.tsx`, `storefront-shop-nav.tsx` |
 | Design | `docs/DESIGN_SYSTEM.md`, `docs/MOBILE_UX_AUDIT.md` |
