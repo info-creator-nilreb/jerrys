@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { WorkshopDateRequestForm } from "@/app/(storefront)/termine/wunschtermin/workshop-date-request-form";
+import { WorkshopDateRequestForm } from "@/components/storefront/workshop-date-request-form";
+import {
+  WORKSHOP_DATE_REQUEST_SUCCESS_MESSAGE,
+  WorkshopDateRequestIntro,
+} from "@/components/storefront/workshop-date-request-intro";
 import { storefrontMainPagePaddingClass } from "@/lib/storefront/page-below-header-padding";
 import { getCustomerSession } from "@/lib/auth/customer-session";
 
@@ -30,11 +34,7 @@ export default async function StorefrontWorkshopDateRequestPage({
         <h1 className="text-3xl font-semibold tracking-tight text-(--foreground-heading)">
           Wunschtermin anfragen
         </h1>
-        <p className="text-base text-(--foreground-muted)">
-          Kein passender Termin im Kalender? Schick uns deinen Wunsch — ohne Buchung und ohne Zahlung. Nach
-          Bestätigung durch unser Team legen wir einen Termin an und du kannst deinen Platz buchen, sobald die
-          Online-Buchung freigeschaltet ist.
-        </p>
+        <WorkshopDateRequestIntro />
       </header>
 
       {sent ? (
@@ -42,12 +42,16 @@ export default async function StorefrontWorkshopDateRequestPage({
           className="mb-6 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900"
           role="status"
         >
-          Danke — deine Anfrage ist eingegangen. Wir prüfen sie und melden uns per E-Mail an die angegebene
-          Adresse.
+          {WORKSHOP_DATE_REQUEST_SUCCESS_MESSAGE}
         </p>
       ) : null}
 
-      <WorkshopDateRequestForm defaultEmail={defaultEmail} defaultName={defaultName} />
+      <WorkshopDateRequestForm
+        defaultEmail={defaultEmail}
+        defaultName={defaultName}
+        idPrefix="page-"
+        delivery="page"
+      />
     </div>
   );
 }

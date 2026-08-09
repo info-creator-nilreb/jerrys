@@ -25,6 +25,13 @@ export async function submitWorkshopDateRequestAction(
     return result;
   }
 
+  revalidatePath("/termine");
   revalidatePath("/termine/wunschtermin");
+
+  const delivery = formData.get("delivery");
+  if (delivery === "inline") {
+    return { ok: true, message: "gesendet" };
+  }
+
   redirect("/termine/wunschtermin?gesendet=1");
 }
