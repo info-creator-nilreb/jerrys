@@ -5,7 +5,7 @@ import { customerAuthSecondaryLinkClass } from "@/components/storefront/customer
 import { isCustomerAddressKind } from "@/features/customers/address";
 import { getVerifiedActiveCustomerId } from "@/features/customers";
 import { getCustomerSession } from "@/lib/auth/customer-session";
-import { getAllowedShippingCountriesForStorefront } from "@/lib/shop/shipping-countries-for-storefront";
+import { getShippingCountriesForStorefront } from "@/lib/shop/shipping-countries-for-storefront";
 
 export const metadata = {
   title: "Neue Adresse",
@@ -27,8 +27,8 @@ export default async function CustomerAddressNewPage({
   const kindParam = sp.kind ?? "shipping";
   if (!isCustomerAddressKind(kindParam)) notFound();
 
-  const allowedCountries = await getAllowedShippingCountriesForStorefront();
-  if (!allowedCountries.length) notFound();
+  const { countries, preferredCountry } = await getShippingCountriesForStorefront();
+  if (!countries.length) notFound();
 
   return (
     <div className="space-y-6">
@@ -40,7 +40,12 @@ export default async function CustomerAddressNewPage({
           Neue Adresse
         </h1>
       </header>
-      <CustomerAddressForm mode="create" kind={kindParam} allowedCountries={allowedCountries} />
+      <CustomerAddressForm
+        mode="create"
+        kind={kindParam}
+        allowedCountries={countries}
+        preferredCountry={preferredCountry}
+      />
     </div>
   );
 }

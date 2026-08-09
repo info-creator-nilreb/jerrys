@@ -45,6 +45,12 @@ Kunden können sich per **E-Mail/Passwort oder Magic Link** anmelden und ihre Be
 
 **Status:** umgesetzt. Tabelle `customer_addresses`; Portal unter `/konto/adressen` (nur verifizierte Konten). Checkout übernimmt Standard-Liefer- und ggf. abweichende Rechnungsadresse per `getCheckoutAddressPrefillForCustomer`. Bestell-Snapshots unverändert.
 
+**Adresseingabe (Checkout und Adressbuch):** progressive Reihenfolge **PLZ → Ort → Straße und Hausnummer** über `components/storefront/smart-address-fields.tsx`. Vorschläge (max. 5 pro Feld) kommen aus amtlichen Verzeichnissen der OpenPLZ API (DE/AT/CH/LI) über `GET /api/storefront/address-suggest`; eine eindeutige PLZ ergänzt den Ort automatisch. Ohne Treffer erscheint ein Hinweis, die Eingabe bleibt möglich — harte Fehler kommen nur aus Formatprüfung (`lib/checkout/postal-code-validation.ts`, `lib/checkout/address-line-validation.ts`) und Server-Validierung. Länder ohne Datenquelle verhalten sich wie normale Freitextfelder.
+
+**Länder-Vorauswahl:** `lib/shop/preferred-shipping-country.ts` — Geo-Land des CDN (`x-vercel-ip-country`, nur wenn belieferbar), sonst `DE`, sonst erstes Versandland. Vorher gewann die alphabetische Sortierung der Versandländer (z. B. „AT“).
+
+**Migration:** `npm run db:migrate:deploy` (siehe [OPERATIONS.md](./OPERATIONS.md#migrationen-ausführen)). Ohne angewandte Migration meldet das Formular verständlich, dass das Adressbuch noch nicht eingerichtet ist.
+
 ### Slice 4 — Gastbestellungen sicher zuordnen
 
 - Nach Registrierung/Magic-Link-Verifikation Zuordnung historischer Gastbestellungen derselben verifizierten E-Mail

@@ -41,9 +41,8 @@ describe("syncAuthUrlForVercelPreview", () => {
       expect(process.env.AUTH_URL).toBe(
         "https://jerrys-git-main-nilreb.vercel.app",
       );
-      expect(process.env.NEXT_PUBLIC_SITE_URL).toBe(
-        "https://jerrys-git-main-nilreb.vercel.app",
-      );
+      // NEXT_PUBLIC_* wird zur Build-Zeit inlined und darf nicht zugewiesen werden.
+      expect(process.env.NEXT_PUBLIC_SITE_URL).toBe("https://shop.example.com");
     } finally {
       restoreEnv(before);
     }

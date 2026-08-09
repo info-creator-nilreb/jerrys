@@ -115,3 +115,57 @@ describe("customer addresses (AuthZ)", () => {
     expect(findMany).not.toHaveBeenCalled();
   });
 });
+
+describe("customer addresses (fehlende Migration)", () => {
+  const missingTable = Object.assign(
+    new Error("The table `public.customer_addresses` does not exist in the current database."),
+    { code: "P2021" },
+  );
+
+  beforeEach(() => {
+    findMany.mockReset();
+    findFirst.mockReset();
+    findUnique.mockReset();
+    count.mockReset();
+    create.mockReset();
+    verifiedCustomer();
+  });
+
+  it("liefert eine erklärende Meldung statt einer Exception beim Speichern", async () => {
+    count.mockRejectedValue(missingTable);
+
+    const { createCustomerAddress } = await import("@/features/customers");
+    const result = await createCustomerAddress("cust-a", {
+      kind: "shipping",
+      firstName: "Max",
+      lastName: "Muster",
+      line1: "Invalidenstr. 12",
+      zip: "10115",
+      city: "Berlin",
+      country: "DE",
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain("Datenbank-Migration");
+    }
+  });
+
+  it("zeigt eine leere Liste statt eines Absturzes", async () => {
+    findMany.mockRejectedValue(missingTable);
+
+    const { listCustomerAddresses } = await import("@/features/customers");
+    await expect(listCustomerAddresses("cust-a")).resolves.toEqual([]);
+  });
+
+  it("blockiert den Checkout-Prefill nicht", async () => {
+    findUnique.mockImplementation(async (args: { select?: Record<string, boolean> }) => {
+      if (args?.select?.email) return { email: "kunde@example.com" };
+      return { id: "cust-a", isActive: true, emailVerifiedAt: new Date("2026-08-01") };
+    });
+    findFirst.mockRejectedValue(missingTable);
+
+    const { getCheckoutAddressPrefillForCustomer } = await import("@/features/customers");
+    await expect(getCheckoutAddressPrefillForCustomer("cust-a")).resolves.toBeNull();
+  });
+});

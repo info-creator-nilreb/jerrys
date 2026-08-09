@@ -1,4 +1,5 @@
 import { getPrisma } from "@/lib/db/prisma";
+import { isMissingSchemaError } from "@/lib/db/prisma-error";
 import { createLogger } from "@/lib/logging/logger";
 import type { ZodError } from "zod";
 import {
@@ -109,11 +110,19 @@ export async function listCustomerAddresses(customerId: string): Promise<Custome
   const verified = await requireVerifiedCustomer(customerId);
   if (!verified) return [];
 
-  const rows = await getPrisma().customerAddress.findMany({
-    where: { customerId: verified },
-    orderBy: [{ kind: "asc" }, { isDefault: "desc" }, { updatedAt: "desc" }],
-  });
-  return rows.map(mapRow);
+  try {
+    const rows = await getPrisma().customerAddress.findMany({
+      where: { customerId: verified },
+      orderBy: [{ kind: "asc" }, { isDefault: "desc" }, { updatedAt: "desc" }],
+    });
+    return rows.map(mapRow);
+  } catch (e) {
+    if (isMissingSchemaError(e)) {
+      log.error("customer_address_schema_missing", { operation: "list" });
+      return [];
+    }
+    throw e;
+  }
 }
 
 export async function getCustomerAddressForCustomer(
@@ -123,15 +132,54 @@ export async function getCustomerAddressForCustomer(
   const verified = await requireVerifiedCustomer(customerId);
   if (!verified) return null;
 
-  const row = await getPrisma().customerAddress.findFirst({
-    where: { id: addressId, customerId: verified },
-  });
-  return row ? mapRow(row) : null;
+  try {
+    const row = await getPrisma().customerAddress.findFirst({
+      where: { id: addressId, customerId: verified },
+    });
+    return row ? mapRow(row) : null;
+  } catch (e) {
+    if (isMissingSchemaError(e)) {
+      log.error("customer_address_schema_missing", { operation: "get" });
+      return null;
+    }
+    throw e;
+  }
 }
 
 export type MutateCustomerAddressResult =
   | { ok: true; addressId: string }
   | { ok: false; message: string; fieldErrors?: Record<string, string[]> };
+
+const SCHEMA_MISSING_MESSAGE =
+  "Das Adressbuch ist in dieser Umgebung noch nicht eingerichtet (fehlende Datenbank-Migration). Bitte den Shop-Betreiber informieren.";
+
+const WRITE_FAILED_MESSAGE =
+  "Die Adresse konnte gerade nicht gespeichert werden. Bitte später erneut versuchen.";
+
+/**
+ * Schreibpfade dürfen die Server Action nicht mit einer Prisma-Exception abbrechen —
+ * das Formular soll eine verständliche Meldung zeigen statt einer leeren Fehlerseite.
+ */
+async function guardWrite<T>(
+  operation: string,
+  context: Record<string, unknown>,
+  run: () => Promise<T>,
+): Promise<{ ok: true; value: T } | { ok: false; message: string }> {
+  try {
+    return { ok: true, value: await run() };
+  } catch (e) {
+    if (isMissingSchemaError(e)) {
+      log.error("customer_address_schema_missing", { operation, ...context });
+      return { ok: false, message: SCHEMA_MISSING_MESSAGE };
+    }
+    log.error("customer_address_write_failed", {
+      operation,
+      ...context,
+      error: String(e),
+    });
+    return { ok: false, message: WRITE_FAILED_MESSAGE };
+  }
+}
 
 function fieldErrorsFromZod(error: ZodError) {
   const fieldErrors: Record<string, string[]> = {};
@@ -161,35 +209,43 @@ export async function createCustomerAddress(
 
   const prisma = getPrisma();
   const kind = parsed.data.kind as CustomerAddressKind;
-  const existingCount = await prisma.customerAddress.count({
-    where: { customerId: verified, kind },
-  });
-  const makeDefault = parsed.data.isDefault || existingCount === 0;
 
-  const created = await prisma.$transaction(async (tx) => {
-    if (makeDefault) {
-      await clearDefaultForKind(tx, verified, kind);
-    }
-    return tx.customerAddress.create({
-      data: {
-        customerId: verified,
-        kind,
-        label: parsed.data.label ?? null,
-        firstName: parsed.data.firstName,
-        lastName: parsed.data.lastName,
-        company: parsed.data.company ?? null,
-        line1: parsed.data.line1,
-        line2: parsed.data.line2 ?? null,
-        zip: parsed.data.zip,
-        city: parsed.data.city,
-        country: parsed.data.country,
-        isDefault: makeDefault,
-      },
+  const written = await guardWrite("create", { customerId: verified, kind }, async () => {
+    const existingCount = await prisma.customerAddress.count({
+      where: { customerId: verified, kind },
+    });
+    const makeDefault = parsed.data.isDefault || existingCount === 0;
+
+    return prisma.$transaction(async (tx) => {
+      if (makeDefault) {
+        await clearDefaultForKind(tx, verified, kind);
+      }
+      return tx.customerAddress.create({
+        data: {
+          customerId: verified,
+          kind,
+          label: parsed.data.label ?? null,
+          firstName: parsed.data.firstName,
+          lastName: parsed.data.lastName,
+          company: parsed.data.company ?? null,
+          line1: parsed.data.line1,
+          line2: parsed.data.line2 ?? null,
+          zip: parsed.data.zip,
+          city: parsed.data.city,
+          country: parsed.data.country,
+          isDefault: makeDefault,
+        },
+      });
     });
   });
+  if (!written.ok) return { ok: false, message: written.message };
 
-  log.info("customer_address_created", { customerId: verified, addressId: created.id, kind });
-  return { ok: true, addressId: created.id };
+  log.info("customer_address_created", {
+    customerId: verified,
+    addressId: written.value.id,
+    kind,
+  });
+  return { ok: true, addressId: written.value.id };
 }
 
 export async function updateCustomerAddress(
@@ -210,34 +266,35 @@ export async function updateCustomerAddress(
   }
 
   const prisma = getPrisma();
-  const existing = await prisma.customerAddress.findFirst({
-    where: { id: addressId, customerId: verified },
-  });
+  const existing = await getCustomerAddressForCustomer(verified, addressId);
   if (!existing) return { ok: false, message: "Adresse nicht gefunden." };
 
-  const kind = existing.kind as CustomerAddressKind;
+  const kind = existing.kind;
   const makeDefault = parsed.data.isDefault;
 
-  await prisma.$transaction(async (tx) => {
-    if (makeDefault) {
-      await clearDefaultForKind(tx, verified, kind, addressId);
-    }
-    await tx.customerAddress.update({
-      where: { id: addressId },
-      data: {
-        label: parsed.data.label ?? null,
-        firstName: parsed.data.firstName,
-        lastName: parsed.data.lastName,
-        company: parsed.data.company ?? null,
-        line1: parsed.data.line1,
-        line2: parsed.data.line2 ?? null,
-        zip: parsed.data.zip,
-        city: parsed.data.city,
-        country: parsed.data.country,
-        isDefault: makeDefault ? true : existing.isDefault,
-      },
-    });
-  });
+  const written = await guardWrite("update", { customerId: verified, addressId }, () =>
+    prisma.$transaction(async (tx) => {
+      if (makeDefault) {
+        await clearDefaultForKind(tx, verified, kind, addressId);
+      }
+      await tx.customerAddress.update({
+        where: { id: addressId },
+        data: {
+          label: parsed.data.label ?? null,
+          firstName: parsed.data.firstName,
+          lastName: parsed.data.lastName,
+          company: parsed.data.company ?? null,
+          line1: parsed.data.line1,
+          line2: parsed.data.line2 ?? null,
+          zip: parsed.data.zip,
+          city: parsed.data.city,
+          country: parsed.data.country,
+          isDefault: makeDefault ? true : existing.isDefault,
+        },
+      });
+    }),
+  );
+  if (!written.ok) return { ok: false, message: written.message };
 
   log.info("customer_address_updated", { customerId: verified, addressId });
   return { ok: true, addressId };
@@ -251,26 +308,27 @@ export async function deleteCustomerAddress(
   if (!verified) return { ok: false, message: "Konto nicht verifiziert oder deaktiviert." };
 
   const prisma = getPrisma();
-  const existing = await prisma.customerAddress.findFirst({
-    where: { id: addressId, customerId: verified },
-  });
+  const existing = await getCustomerAddressForCustomer(verified, addressId);
   if (!existing) return { ok: false, message: "Adresse nicht gefunden." };
 
-  await prisma.$transaction(async (tx) => {
-    await tx.customerAddress.delete({ where: { id: addressId } });
-    if (existing.isDefault) {
-      const next = await tx.customerAddress.findFirst({
-        where: { customerId: verified, kind: existing.kind },
-        orderBy: { updatedAt: "desc" },
-      });
-      if (next) {
-        await tx.customerAddress.update({
-          where: { id: next.id },
-          data: { isDefault: true },
+  const written = await guardWrite("delete", { customerId: verified, addressId }, () =>
+    prisma.$transaction(async (tx) => {
+      await tx.customerAddress.delete({ where: { id: addressId } });
+      if (existing.isDefault) {
+        const next = await tx.customerAddress.findFirst({
+          where: { customerId: verified, kind: existing.kind },
+          orderBy: { updatedAt: "desc" },
         });
+        if (next) {
+          await tx.customerAddress.update({
+            where: { id: next.id },
+            data: { isDefault: true },
+          });
+        }
       }
-    }
-  });
+    }),
+  );
+  if (!written.ok) return { ok: false, message: written.message };
 
   log.info("customer_address_deleted", { customerId: verified, addressId });
   return { ok: true };
@@ -284,19 +342,20 @@ export async function setDefaultCustomerAddress(
   if (!verified) return { ok: false, message: "Konto nicht verifiziert oder deaktiviert." };
 
   const prisma = getPrisma();
-  const existing = await prisma.customerAddress.findFirst({
-    where: { id: addressId, customerId: verified },
-  });
+  const existing = await getCustomerAddressForCustomer(verified, addressId);
   if (!existing) return { ok: false, message: "Adresse nicht gefunden." };
 
-  const kind = existing.kind as CustomerAddressKind;
-  await prisma.$transaction(async (tx) => {
-    await clearDefaultForKind(tx, verified, kind, addressId);
-    await tx.customerAddress.update({
-      where: { id: addressId },
-      data: { isDefault: true },
-    });
-  });
+  const kind = existing.kind;
+  const written = await guardWrite("set_default", { customerId: verified, addressId }, () =>
+    prisma.$transaction(async (tx) => {
+      await clearDefaultForKind(tx, verified, kind, addressId);
+      await tx.customerAddress.update({
+        where: { id: addressId },
+        data: { isDefault: true },
+      });
+    }),
+  );
+  if (!written.ok) return { ok: false, message: written.message };
 
   return { ok: true };
 }
@@ -314,14 +373,18 @@ export async function getCheckoutAddressPrefillForCustomer(
   });
   if (!customer) return null;
 
-  const [shipping, billing] = await Promise.all([
-    prisma.customerAddress.findFirst({
-      where: { customerId: verified, kind: "shipping", isDefault: true },
-    }),
-    prisma.customerAddress.findFirst({
-      where: { customerId: verified, kind: "billing", isDefault: true },
-    }),
-  ]);
+  const loaded = await guardWrite("checkout_prefill", { customerId: verified }, () =>
+    Promise.all([
+      prisma.customerAddress.findFirst({
+        where: { customerId: verified, kind: "shipping", isDefault: true },
+      }),
+      prisma.customerAddress.findFirst({
+        where: { customerId: verified, kind: "billing", isDefault: true },
+      }),
+    ]),
+  );
+  if (!loaded.ok) return null;
+  const [shipping, billing] = loaded.value;
 
   if (!shipping) return null;
 

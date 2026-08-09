@@ -7,7 +7,7 @@ import { getCheckoutAddressPrefillForCustomer } from "@/features/customers";
 import { getCustomerSession } from "@/lib/auth/customer-session";
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { cartLineCommerceRules, getCartWithLines } from "@/lib/cart/cart-queries";
-import { labelForShippingCountryCode } from "@/lib/catalog/shipping-countries-catalog";
+import { getShippingCountriesForStorefront } from "@/lib/shop/shipping-countries-for-storefront";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 
@@ -68,14 +68,12 @@ export default async function CheckoutPage({
   });
 
   const shopShip = await getShopShippingSettings();
-  const allowedShippingCountries = shopShip.shippingCountryCodes.map((code) => ({
-    code,
-    label: labelForShippingCountryCode(code),
-  }));
+  const { countries: allowedShippingCountries, preferredCountry } =
+    await getShippingCountriesForStorefront();
   if (!allowedShippingCountries.length) {
     redirect("/warenkorb?grund=versand_nicht_konfiguriert");
   }
-  const initialShippingCountry = allowedShippingCountries[0]!.code;
+  const initialShippingCountry = preferredCountry;
 
   const prefillPaypal = sp.payment === "paypal";
 

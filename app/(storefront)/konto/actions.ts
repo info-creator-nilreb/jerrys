@@ -62,13 +62,19 @@ export async function customerPasswordLoginAction(
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const callbackUrl = String(formData.get("callbackUrl") ?? "/konto");
+  // Header-Popover meldet im Kontext an: keine Navigation, nur Zustandswechsel.
+  const stayOnPage = formData.get("stayOnPage") === "1";
 
   try {
-    await signIn("customer-credentials", {
-      email,
-      password,
-      redirectTo: callbackUrl.startsWith("/") ? callbackUrl : "/konto",
-    });
+    if (stayOnPage) {
+      await signIn("customer-credentials", { email, password, redirect: false });
+    } else {
+      await signIn("customer-credentials", {
+        email,
+        password,
+        redirectTo: callbackUrl.startsWith("/") ? callbackUrl : "/konto",
+      });
+    }
     return { ok: true, message: "Angemeldet." };
   } catch (e) {
     // Auth.js wirft bei Erfolg NEXT_REDIRECT — muss durchgereicht werden.

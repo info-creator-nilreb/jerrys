@@ -7,7 +7,7 @@ import {
   getVerifiedActiveCustomerId,
 } from "@/features/customers";
 import { getCustomerSession } from "@/lib/auth/customer-session";
-import { getAllowedShippingCountriesForStorefront } from "@/lib/shop/shipping-countries-for-storefront";
+import { getShippingCountriesForStorefront } from "@/lib/shop/shipping-countries-for-storefront";
 
 export const metadata = {
   title: "Adresse bearbeiten",
@@ -29,8 +29,8 @@ export default async function CustomerAddressEditPage({
   const address = await getCustomerAddressForCustomer(session.customerId, addressId);
   if (!address) notFound();
 
-  const allowedCountries = await getAllowedShippingCountriesForStorefront();
-  if (!allowedCountries.length) notFound();
+  const { countries, preferredCountry } = await getShippingCountriesForStorefront();
+  if (!countries.length) notFound();
 
   return (
     <div className="space-y-6">
@@ -46,7 +46,8 @@ export default async function CustomerAddressEditPage({
         mode="edit"
         kind={address.kind}
         addressId={address.id}
-        allowedCountries={allowedCountries}
+        allowedCountries={countries}
+        preferredCountry={preferredCountry}
         initialValues={{
           label: address.label,
           firstName: address.firstName,
