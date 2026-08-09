@@ -297,6 +297,10 @@ export function CheckoutForm({
   );
 
   useEffect(() => {
+    if (hidePromotionPanel) {
+      setPromoPreview(null);
+      return;
+    }
     let cancelled = false;
     void previewCheckoutPromotion({
       shippingCountry,
@@ -309,7 +313,7 @@ export function CheckoutForm({
     return () => {
       cancelled = true;
     };
-  }, [shippingCountry, committedPromoCode, declineAutomatic]);
+  }, [shippingCountry, committedPromoCode, declineAutomatic, hidePromotionPanel]);
 
   const displayTotals =
     promoPreview && !("error" in promoPreview) ? promoPreview.totals : baseTotalsFallback;
