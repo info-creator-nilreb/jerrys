@@ -1,5 +1,5 @@
+import Link from "next/link";
 import { randomUUID } from "crypto";
-import { redirect } from "next/navigation";
 import { CheckoutForm } from "@/components/storefront/checkout-form";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import type { CheckoutSummaryLine } from "@/components/storefront/checkout-summary-aside";
@@ -22,19 +22,69 @@ export const metadata = {
   title: "Termin-Checkout",
 };
 
-export default async function WorkshopCheckoutPage() {
+/**
+ * Kein `redirect()` in dieser Page — NEXT_REDIRECT während RSC kann in Production
+ * als Minified React error #441 in der Error Boundary landen.
+ */
+export default async function WorkshopCheckoutPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ fehler?: string }>;
+}) {
+  const sp = await searchParams;
+  const checkoutError = sp.fehler?.trim() || null;
+
   const bookingId = await getWorkshopBookingHoldIdFromCookie();
   if (!bookingId) {
-    redirect("/termine?checkout=fehlt");
+    return (
+      <div className="mx-auto max-w-lg px-4 py-24 md:py-28">
+        <h1 className="text-xl font-semibold text-(--foreground-heading)">Keine Reservierung</h1>
+        <p className="mt-3 text-sm text-(--foreground-muted)">
+          Es liegt keine aktive Platz-Reservierung vor. Bitte wähle erneut einen Termin.
+        </p>
+        <Link
+          href="/termine"
+          className="mt-6 inline-flex rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-(--primary-hover)"
+        >
+          Zu den Terminen
+        </Link>
+      </div>
+    );
   }
 
   const hold = await getWorkshopHoldForCheckout(bookingId);
   if (!hold) {
-    redirect("/termine?hold=abgelaufen");
+    return (
+      <div className="mx-auto max-w-lg px-4 py-24 md:py-28">
+        <h1 className="text-xl font-semibold text-(--foreground-heading)">Reservierung abgelaufen</h1>
+        <p className="mt-3 text-sm text-(--foreground-muted)">
+          Deine Platz-Reservierung ist nicht mehr gültig. Bitte buche den Termin erneut.
+        </p>
+        <Link
+          href="/termine"
+          className="mt-6 inline-flex rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-(--primary-hover)"
+        >
+          Zu den Terminen
+        </Link>
+      </div>
+    );
   }
 
   if (!isPayPalConfigured() && hold.unitPriceCents > 0) {
-    redirect("/termine?grund=paypal_nicht_konfiguriert");
+    return (
+      <div className="mx-auto max-w-lg px-4 py-24 md:py-28">
+        <h1 className="text-xl font-semibold text-(--foreground-heading)">Zahlung nicht verfügbar</h1>
+        <p className="mt-3 text-sm text-(--foreground-muted)">
+          Online-Zahlung ist derzeit nicht konfiguriert. Bitte später erneut versuchen.
+        </p>
+        <Link
+          href={`/termine/${hold.sessionId}`}
+          className="mt-6 inline-flex rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-(--primary-hover)"
+        >
+          Zurück zum Termin
+        </Link>
+      </div>
+    );
   }
 
   const shopShip = await getShopShippingSettings();
@@ -86,6 +136,12 @@ export default async function WorkshopCheckoutPage() {
         Reservierung gültig bis {holdDeadlineLabel}.
         {lineTotal === 0 ? " Kostenloser Termin, keine Online-Zahlung nötig." : null}
       </p>
+
+      {checkoutError ? (
+        <p className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert">
+          {checkoutError}
+        </p>
+      ) : null}
 
       <div className="mt-4">
         <CheckoutForm
