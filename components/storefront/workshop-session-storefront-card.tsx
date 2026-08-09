@@ -93,9 +93,12 @@ export function WorkshopSessionStorefrontCard({
           Details
         </Link>
         {session.availability !== "sold_out" ? (
-          <span className="inline-flex min-h-11 items-center text-sm text-(--foreground-muted)">
-            Online-Buchung folgt in Kürze
-          </span>
+          <Link
+            href={`/termine/${session.id}#workshop-book-seats-heading`}
+            className="inline-flex min-h-11 items-center rounded-md border border-(--surface-muted) bg-white px-4 py-2 text-sm font-semibold text-(--foreground-heading) hover:border-primary hover:text-primary"
+          >
+            Plätze buchen
+          </Link>
         ) : null}
       </div>
     </article>

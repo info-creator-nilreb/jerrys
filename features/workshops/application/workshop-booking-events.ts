@@ -5,6 +5,9 @@ import { appendIntegrationOutbox } from "@/features/integrations";
 export const WORKSHOP_BOOKING_EVENT_SELF_CANCELLED = "workshop.booking.self_cancelled" as const;
 export const WORKSHOP_BOOKING_EVENT_ACCOUNT_ANONYMIZED =
   "workshop.booking.cancelled_account_anonymized" as const;
+export const WORKSHOP_BOOKING_EVENT_HELD = "workshop.booking.held" as const;
+export const WORKSHOP_BOOKING_EVENT_HOLD_EXPIRED = "workshop.booking.hold_expired" as const;
+export const WORKSHOP_BOOKING_EVENT_CONFIRMED = "workshop.booking.confirmed" as const;
 
 export async function createWorkshopBookingEvent(
   db: Pick<PrismaClient, "workshopBookingEvent" | "integrationOutboxMessage">,

@@ -43,6 +43,8 @@ Der Kalender kann als Block auf einer CMS-Seite (Epic 12) und optional auf ausge
 - Kein Overselling bei parallelen Buchungen des letzten Platzes
 - Kostenlose und kostenpflichtige Termine im Datenmodell unterstützen; kostenpflichtige Finalisierung erst nach bestätigter Zahlung
 
+**Status (MVP):** Hold 30 Min (`held` + `hold_expires_at`), `/termine/[id]` → `/checkout/termine`, Order + PayPal oder sofort `paid` bei 0 €; Bestätigung nach Capture. Cron für abgelaufene Holds folgt Slice 6.
+
 ### Slice 4 — Bestätigung und Kundenkonto
 
 - Bestätigungs-/Storno-E-Mail und Kalendereintrag
