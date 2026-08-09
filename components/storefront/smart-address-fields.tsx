@@ -156,6 +156,8 @@ export function SmartAddressFields({
   const [needsHouseNumber, setNeedsHouseNumber] = useState(false);
 
   const cityTouchedRef = useRef(Boolean(defaultValues?.city));
+  /** Zuletzt übernommener Straßenname: danach nur noch die Hausnummer, keine neue Liste. */
+  const appliedStreetRef = useRef<string | null>(null);
   const cityWrapRef = useRef<HTMLDivElement>(null);
   const streetWrapRef = useRef<HTMLDivElement>(null);
   const line1InputRef = useRef<HTMLInputElement>(null);
@@ -332,6 +334,7 @@ export function SmartAddressFields({
 
   const applyStreet = (street: AddressStreetSuggestion) => {
     // Straße ohne Nummer übernehmen und Fokus halten: die Hausnummer kennt nur der Kunde.
+    appliedStreetRef.current = street.street;
     setLine1(`${street.street} `);
     if (street.postalCode && street.postalCode !== zip.trim()) setZip(street.postalCode);
     if (street.city && !city.trim()) {
@@ -548,11 +551,23 @@ export function SmartAddressFields({
               const next = e.target.value;
               setLine1(next);
               setLiveError("line1", "");
-              setOpenList("line1");
               setActiveIndex(-1);
+
+              const query = streetQueryFromLine1(next);
+              // Nach einer übernommenen Straße folgt die Hausnummer — dann keine neue Liste.
+              if (appliedStreetRef.current && query === appliedStreetRef.current) {
+                setOpenList(null);
+                if (/\d/.test(next)) setNeedsHouseNumber(false);
+                return;
+              }
+
+              appliedStreetRef.current = null;
+              setNeedsHouseNumber(false);
+              setOpenList("line1");
               scheduleStreetLookup({ line1: next, zip, city, country });
             }}
             onFocus={() => {
+              if (appliedStreetRef.current) return;
               if (streetOptions.length) setOpenList("line1");
             }}
             onKeyDown={(e) =>

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { addressLine1HouseNumberMessage } from "@/lib/checkout/address-line-validation";
+import { normalizeAddressText } from "@/lib/checkout/address-text";
 import { postalCodeErrorMessage } from "@/lib/checkout/postal-code-validation";
 import {
   CUSTOMER_ADDRESS_KINDS,
@@ -8,9 +9,15 @@ import {
 
 const emptyToUndef = z
   .string()
-  .trim()
+  .transform(normalizeAddressText)
   .optional()
   .transform((s) => (s && s.length > 0 ? s : undefined));
+
+const addressText = (max: number, requiredMessage: string) =>
+  z
+    .string()
+    .transform(normalizeAddressText)
+    .pipe(z.string().min(1, requiredMessage).max(max));
 
 export const customerAddressKindSchema = z
   .string()
@@ -19,14 +26,19 @@ export const customerAddressKindSchema = z
 
 export const customerAddressFieldsSchema = z
   .object({
-    label: z.string().trim().max(80).optional().transform((v) => (v && v.length > 0 ? v : undefined)),
-    firstName: z.string().trim().min(1, "Vorname ist erforderlich.").max(80),
-    lastName: z.string().trim().min(1, "Nachname ist erforderlich.").max(80),
+    label: z
+      .string()
+      .transform(normalizeAddressText)
+      .pipe(z.string().max(80))
+      .optional()
+      .transform((v) => (v && v.length > 0 ? v : undefined)),
+    firstName: addressText(80, "Vorname ist erforderlich."),
+    lastName: addressText(80, "Nachname ist erforderlich."),
     company: emptyToUndef,
-    line1: z.string().trim().min(1, "Straße und Hausnummer sind erforderlich.").max(120),
+    line1: addressText(120, "Straße und Hausnummer sind erforderlich."),
     line2: emptyToUndef,
-    zip: z.string().trim().min(1, "PLZ ist erforderlich.").max(20),
-    city: z.string().trim().min(1, "Ort ist erforderlich.").max(80),
+    zip: addressText(20, "PLZ ist erforderlich."),
+    city: addressText(80, "Ort ist erforderlich."),
     country: z
       .string()
       .trim()

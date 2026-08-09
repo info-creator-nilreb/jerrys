@@ -62,18 +62,26 @@ export function HeaderAccountPopover({ isLoggedIn, email }: Props) {
   const kontoParam = searchParams.get("konto");
   const flash =
     kontoParam && MAGIC_MESSAGES[kontoParam] ? MAGIC_MESSAGES[kontoParam] : null;
+  /**
+   * Ziel nach dem Login hängt am Einstiegspunkt: Wer eine geschützte Seite angefordert hat
+   * (`callbackUrl`), soll dort landen. Wer selbst im Header anmeldet, bleibt im Kontext.
+   */
+  const callbackUrlParam = searchParams.get("callbackUrl");
+  const callbackUrl =
+    callbackUrlParam && callbackUrlParam.startsWith("/") ? callbackUrlParam : null;
   const wantsQueryOpen =
     !isLoggedIn &&
     (kontoParam === "anmelden" || Boolean(kontoParam?.startsWith("magic-")));
   const open = userOpen || (wantsQueryOpen && !queryDismissed);
 
   const clearKontoQuery = useCallback(() => {
-    if (!kontoParam) return;
+    if (!kontoParam && !callbackUrlParam) return;
     const params = new URLSearchParams(searchParams.toString());
     params.delete("konto");
+    params.delete("callbackUrl");
     const q = params.toString();
     router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
-  }, [kontoParam, searchParams, pathname, router]);
+  }, [kontoParam, callbackUrlParam, searchParams, pathname, router]);
 
   const close = useCallback(() => {
     setUserOpen(false);
@@ -187,7 +195,12 @@ export function HeaderAccountPopover({ isLoggedIn, email }: Props) {
             </div>
           ) : (
             <div className="space-y-4">
-              <CustomerLoginForm compact stayOnPage onSignedIn={onSignedIn} />
+              <CustomerLoginForm
+                compact
+                stayOnPage={!callbackUrl}
+                callbackUrl={callbackUrl ?? "/konto"}
+                onSignedIn={onSignedIn}
+              />
               <p className="text-sm text-(--foreground-muted)">
                 Neu hier?{" "}
                 <Link

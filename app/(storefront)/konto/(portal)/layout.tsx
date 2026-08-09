@@ -1,6 +1,8 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { CustomerAccountNav } from "@/components/storefront/customer-account-nav";
 import { getCustomerSession } from "@/lib/auth/customer-session";
+import { REQUEST_PATHNAME_HEADER, safeInternalPath } from "@/lib/http/request-pathname";
 
 export default async function CustomerPortalLayout({
   children,
@@ -9,7 +11,9 @@ export default async function CustomerPortalLayout({
 }) {
   const session = await getCustomerSession();
   if (!session) {
-    redirect("/konto/anmelden?callbackUrl=/konto");
+    // Nach dem Login soll die ursprünglich angefragte Portalseite folgen, nicht pauschal `/konto`.
+    const requested = safeInternalPath((await headers()).get(REQUEST_PATHNAME_HEADER), "/konto");
+    redirect(`/konto/anmelden?callbackUrl=${encodeURIComponent(requested)}`);
   }
 
   return (
