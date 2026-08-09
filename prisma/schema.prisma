@@ -43,8 +43,9 @@ model Customer {
 
   identities CustomerIdentity[]
   authTokens CustomerAuthToken[]
-  orders     Order[]
-  addresses  CustomerAddress[]
+  orders           Order[]
+  addresses        CustomerAddress[]
+  workshopBookings WorkshopBooking[]
 
   @@index([isActive, createdAt])
   @@map("customers")
@@ -643,4 +644,83 @@ model HomepageSocialImage {
 
   @@index([sortOrder])
   @@map("homepage_social_images")
+}
+
+/// Shopweite Workshop-Regeln (genau eine Zeile, id = default). Epic 5 Slice 1/3.
+model ShopWorkshopSettings {
+  id String @id @default("default")
+  /// Stunden vor Terminbeginn, bis wann Kunden selbst stornieren dürfen (globaler Default).
+  selfCancelHoursBeforeStart Int @default(48) @map("self_cancel_hours_before_start")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("shop_workshop_settings")
+}
+
+/// Gruppentermin (Epic 5). Kapazität und Holds werden über Zähler auf der Session geführt.
+model WorkshopSession {
+  id                     String   @id @default(cuid())
+  title                  String
+  description            String?
+  timezone               String   @default("Europe/Berlin")
+  startsAt               DateTime @map("starts_at")
+  endsAt                 DateTime @map("ends_at")
+  locationLabel          String   @map("location_label")
+  priceCentsPerSeat      Int      @default(0) @map("price_cents_per_seat")
+  currency               String   @default("EUR")
+  /// draft | published | cancelled | completed
+  status                 String   @default("draft")
+  minimumParticipants    Int      @default(1) @map("minimum_participants")
+  capacity               Int
+  maxSeatsPerBooking     Int?     @map("max_seats_per_booking")
+  /// Termin-Override für Selbststorno-Frist; null = Shop-Default.
+  selfCancelHoursBeforeStart Int? @map("self_cancel_hours_before_start")
+  confirmedSeatCount     Int      @default(0) @map("confirmed_seat_count")
+  heldSeatCount          Int      @default(0) @map("held_seat_count")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+  bookings               WorkshopBooking[]
+
+  @@index([status, startsAt])
+  @@map("workshop_sessions")
+}
+
+/// Buchung eines Kunden oder Gastes für einen Gruppentermin.
+model WorkshopBooking {
+  id                       String   @id @default(cuid())
+  sessionId                String   @map("session_id")
+  session                  WorkshopSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  customerId               String?  @map("customer_id")
+  customer                 Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  orderId                  String?  @map("order_id")
+  contactEmail             String   @map("contact_email")
+  seatCount                Int      @map("seat_count")
+  /// held | confirmed | cancelled | attended | no_show | refunded | expired
+  status                   String   @default("confirmed")
+  sessionTitleSnapshot     String   @map("session_title_snapshot")
+  sessionStartsAtSnapshot  DateTime @map("session_starts_at_snapshot")
+  sessionTimezoneSnapshot  String   @map("session_timezone_snapshot")
+  sessionLocationSnapshot  String   @map("session_location_snapshot")
+  unitPriceCentsSnapshot   Int      @map("unit_price_cents_snapshot")
+  currencySnapshot         String   @default("EUR") @map("currency_snapshot")
+  cancelledAt              DateTime? @map("cancelled_at")
+  cancelReason             String?  @map("cancel_reason")
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+  events                   WorkshopBookingEvent[]
+
+  @@index([customerId, createdAt])
+  @@index([sessionId, status])
+  @@map("workshop_bookings")
+}
+
+model WorkshopBookingEvent {
+  id        String   @id @default(cuid())
+  bookingId String   @map("booking_id")
+  booking   WorkshopBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  eventType String   @map("event_type")
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([bookingId, createdAt])
+  @@map("workshop_booking_events")
 }

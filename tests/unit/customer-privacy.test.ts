@@ -4,6 +4,7 @@ const customerFindUnique = vi.fn();
 const customerUpdate = vi.fn();
 const orderFindMany = vi.fn();
 const orderUpdateMany = vi.fn();
+const workshopBookingFindMany = vi.fn();
 const addressDeleteMany = vi.fn();
 const tokenDeleteMany = vi.fn();
 const identityDeleteMany = vi.fn();
@@ -24,6 +25,7 @@ vi.mock("@/lib/db/prisma", () => ({
   getPrisma: () => ({
     customer: { findUnique: customerFindUnique, update: customerUpdate },
     order: { findMany: orderFindMany, updateMany: orderUpdateMany },
+    workshopBooking: { findMany: workshopBookingFindMany },
     $transaction: async (fn: (t: typeof tx) => Promise<unknown>) => fn(tx),
   }),
 }));
@@ -114,6 +116,8 @@ beforeEach(() => {
   identityDeleteMany.mockReset();
   orderEventCreate.mockReset();
   outboxCreate.mockReset();
+  workshopBookingFindMany.mockReset();
+  workshopBookingFindMany.mockResolvedValue([]);
 });
 
 describe("exportCustomerData", () => {

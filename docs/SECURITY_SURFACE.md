@@ -13,6 +13,8 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | Server Actions `app/(storefront)/konto/address-actions.ts` | Kunden-Session (`getCustomerSession`) + verifizierte E-Mail in der Application-Schicht | Adressen anlegen, ändern, löschen, Standard setzen |
 | Seite `/konto/bestellungen/zuordnen` | Kunden-Session + verifizierte E-Mail | Vorschau zuordenbarer Gastbestellungen (nur eigene, verifizierte E-Mail) |
 | Server Actions `app/(storefront)/konto/guest-order-actions.ts` | Kunden-Session + verifizierte E-Mail; Bestätigungsfeld serverseitig geprüft | Gastbestellungen zuordnen; idempotent über `customerId: null`, Audit `order.customer_linked` |
+| Seiten `/konto/termine`, `/konto/termine/[bookingId]` | Kunden-Session + verifizierte E-Mail; Buchungen nur via `customerId` | Terminbuchungen; fremde Buchung → **404** ohne Existenz-Leak |
+| Server Actions `app/(storefront)/konto/workshop-booking-actions.ts` | Kunden-Session + verifizierte E-Mail; Bestätigungsfeld serverseitig | Selbststornierung; Frist serverseitig; idempotent; Audit `workshop.booking.self_cancelled` |
 | Seite `/konto/datenschutz` | Kunden-Session + verifizierte E-Mail | Auskunft, Berichtigung, Konto-Löschung (Art. 15/16/17 DSGVO) |
 | `GET /konto/datenschutz/export` | Kunden-Session + verifizierte E-Mail; **kein** Parameter für fremde Konten | Datenauskunft als JSON-Download; ohne Passwort-Hash und Token; **Rate-Limit** pro IP (`lib/security/customer-privacy-rate-limit.ts`) |
 | Server Actions `app/(storefront)/konto/privacy-actions.ts` | Kunden-Session + verifizierte E-Mail; Löschung nur mit serverseitig geprüftem Bestätigungswort | Namen berichtigen, Konto anonymisieren (Audit `order.customer_unlinked`, danach Sign-out) |
