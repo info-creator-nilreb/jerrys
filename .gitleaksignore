@@ -1,0 +1,7 @@
+# Bekannte Fehlalarme (Fingerprint aus dem Gitleaks-Report: commit:datei:regel:zeile).
+# Nur für nachweislich unkritische Treffer — echte Secrets gehören in Vercel-/GitHub-Secrets.
+
+# Beispiel-UUID als `idempotencyKey` in einem Unit-Test. Kein Secret; die Regel
+# `generic-api-key` greift allein wegen der Zeichen-Entropie. Der Wert ist inzwischen durch
+# `randomUUID()` ersetzt, bleibt aber in der Commit-Historie des Branches sichtbar.
+6e1c83e09bdfcceed7a5d57e0841100f36a2f30b:tests/unit/address-text.test.ts:generic-api-key:46
