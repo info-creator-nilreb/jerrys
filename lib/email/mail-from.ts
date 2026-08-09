@@ -1,7 +1,10 @@
 /**
  * Bereitet MAIL_FROM für die Resend-API auf.
- * Resend erwartet `Name <email@domain>` (UTF-8 oder quoted display name), kein RFC2047 encoded-word.
+ * @see https://resend.com/docs/api-reference/emails/send-email
+ * Erlaubt: `email@example.com` oder `Name <email@example.com>` (Name ohne Anführungszeichen).
  */
+
+const DEFAULT_DISPLAY_NAME = "Jerrys";
 
 const RFC2047_Q = /^=\?UTF-8\?Q\?(.+)\?=$/i;
 
@@ -14,23 +17,51 @@ function decodeRfc2047QuotedPrintable(encoded: string): string {
 }
 
 function decodeDisplayName(name: string): string {
-  const trimmed = name.trim().replace(/^"|"$/g, "");
+  let trimmed = name.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    trimmed = trimmed.slice(1, -1);
+  }
   const m = trimmed.match(RFC2047_Q);
   if (m?.[1]) return decodeRfc2047QuotedPrintable(m[1]);
   return trimmed;
 }
 
-function needsQuotedDisplayName(name: string): boolean {
-  return /[\u0080-\uFFFF'"]/.test(name) || /^\s|\s$/.test(name);
+/** Resend-kompatibler Anzeigename: ASCII, keine Quotes/Apostrophe im Output. */
+export function resendSafeDisplayName(raw: string | undefined): string {
+  const decoded = decodeDisplayName(raw?.trim() ?? "");
+  const ascii = decoded
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[''`´]/g, "")
+    .replace(/[^A-Za-z0-9 .-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (ascii.length >= 1 && ascii.length <= 64) {
+    return ascii
+      .split(" ")
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(" ");
+  }
+  return DEFAULT_DISPLAY_NAME;
 }
 
-function formatDisplayName(name: string): string {
-  const decoded = decodeDisplayName(name);
-  if (!decoded) return "jerry's";
-  if (needsQuotedDisplayName(decoded)) {
-    return `"${decoded.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
-  }
-  return decoded;
+const EMAIL_RE = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
+
+function extractEmailAddress(value: string): string | null {
+  const bracket = value.match(/<([^<>]+)>/);
+  const candidate = bracket?.[1]?.trim() ?? value.trim();
+  return EMAIL_RE.test(candidate) ? candidate : null;
+}
+
+function formatResendFrom(email: string, displayRaw?: string): string {
+  const display = displayRaw?.trim()
+    ? resendSafeDisplayName(displayRaw)
+    : DEFAULT_DISPLAY_NAME;
+  return `${display} <${email}>`;
 }
 
 /**
@@ -40,21 +71,18 @@ export function resolveMailFromForResend(raw: string | undefined | null): string
   const trimmed = raw?.trim();
   if (!trimmed) return null;
 
-  const value = trimmed.replace(/\\"/g, '"');
-  const bracket = value.match(/<([^>]+)>/);
-  const email = bracket?.[1]?.trim();
-  const displayPart = bracket ? value.slice(0, bracket.index).trim() : "";
+  const value = trimmed.replace(/\\"/g, '"').replace(/\r?\n/g, "");
+  const email = extractEmailAddress(value);
+  if (!email) return null;
 
-  if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    const display = displayPart ? formatDisplayName(displayPart) : "jerry's";
-    return `${display} <${email}>`;
+  const bracketIndex = value.indexOf("<");
+  const displayPart = bracketIndex > 0 ? value.slice(0, bracketIndex).trim() : "";
+
+  if (!displayPart) {
+    return email;
   }
 
-  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-    return `${formatDisplayName("jerry's")} <${value}>`;
-  }
-
-  return value;
+  return formatResendFrom(email, displayPart);
 }
 
 export type ResendErrorBody = {
