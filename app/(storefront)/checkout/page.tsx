@@ -3,7 +3,11 @@ import { redirect } from "next/navigation";
 import { CheckoutForm } from "@/components/storefront/checkout-form";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import type { CheckoutSummaryLine } from "@/components/storefront/checkout-summary-aside";
-import { getCheckoutAddressPrefillForCustomer } from "@/features/customers";
+import {
+  getCheckoutAddressPrefillForCustomer,
+  getVerifiedActiveCustomerId,
+  listCustomerAddresses,
+} from "@/features/customers";
 import { getCustomerSession } from "@/lib/auth/customer-session";
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { cartLineCommerceRules, getCartWithLines } from "@/lib/cart/cart-queries";
@@ -78,9 +82,16 @@ export default async function CheckoutPage({
   const prefillPaypal = sp.payment === "paypal";
 
   const session = await getCustomerSession();
-  const addressPrefill = session
-    ? await getCheckoutAddressPrefillForCustomer(session.customerId)
+  // Adressbuch gilt nur für verifizierte, aktive Konten — sonst bleibt der Checkout wie für Gäste.
+  const verifiedCustomerId = session
+    ? await getVerifiedActiveCustomerId(session.customerId)
     : null;
+  const [addressPrefill, savedAddresses] = verifiedCustomerId
+    ? await Promise.all([
+        getCheckoutAddressPrefillForCustomer(verifiedCustomerId),
+        listCustomerAddresses(verifiedCustomerId),
+      ])
+    : [null, []];
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-24 md:py-28">
@@ -121,6 +132,8 @@ export default async function CheckoutPage({
           payPalClientId={process.env.PAYPAL_CLIENT_ID?.trim() ?? ""}
           prefillPaypal={prefillPaypal}
           addressPrefill={addressPrefill}
+          savedAddresses={savedAddresses}
+          canSaveAddressToAccount={Boolean(verifiedCustomerId)}
         />
       </div>
     </div>

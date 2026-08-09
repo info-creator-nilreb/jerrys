@@ -2,7 +2,7 @@ import { InsufficientStockError, reserveStockForOrder } from "@/features/invento
 import { revalidatePath } from "next/cache";
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { getCartWithLines, cartLineCommerceRules } from "@/lib/cart/cart-queries";
-import { checkoutFormSchema } from "@/lib/checkout/schemas";
+import { checkoutFormSchema, type CheckoutFormInput } from "@/lib/checkout/schemas";
 import { generateOrderNumber } from "@/lib/checkout/order-number";
 import { netCentsFromGross } from "@/lib/catalog/pricing";
 import { sendOrderConfirmationIfNeeded } from "@/lib/email/order-confirmation";
@@ -94,7 +94,61 @@ export function checkoutRawFromFormData(formData: FormData): Record<string, unkn
     idempotencyKey: fd(formData, "idempotencyKey"),
     checkoutPromotionCode: fd(formData, "checkoutPromotionCode"),
     checkoutDeclineAutomatic: fd(formData, "checkoutDeclineAutomatic"),
+    saveShippingAddress: fd(formData, "saveShippingAddress"),
+    saveBillingAddress: fd(formData, "saveBillingAddress"),
   };
+}
+
+/**
+ * Optionales Ablegen der Checkout-Adresse im Adressbuch. Bewusst nach der Bestellung und
+ * ohne Einfluss auf deren Ergebnis: Ein Fehler hier darf keine bezahlte Bestellung gefährden.
+ */
+async function saveCheckoutAddressesToAccountIfRequested(
+  customerId: string | null,
+  d: CheckoutFormInput,
+): Promise<void> {
+  if (!customerId) return;
+  if (!d.saveShippingAddress && !d.saveBillingAddress) return;
+
+  try {
+    const { createCustomerAddress } = await import("@/features/customers");
+
+    if (d.saveShippingAddress) {
+      const result = await createCustomerAddress(customerId, {
+        kind: "shipping",
+        firstName: d.shippingFirstName,
+        lastName: d.shippingLastName,
+        company: d.shippingCompany,
+        line1: d.shippingLine1,
+        line2: d.shippingLine2,
+        zip: d.shippingZip,
+        city: d.shippingCity,
+        country: d.shippingCountry,
+      });
+      if (!result.ok) {
+        log.warn("checkout_address_save_rejected", { kind: "shipping", message: result.message });
+      }
+    }
+
+    if (d.saveBillingAddress) {
+      const result = await createCustomerAddress(customerId, {
+        kind: "billing",
+        firstName: d.billingFirstName,
+        lastName: d.billingLastName,
+        company: d.billingCompany,
+        line1: d.billingLine1,
+        line2: d.billingLine2,
+        zip: d.billingZip,
+        city: d.billingCity,
+        country: d.billingCountry,
+      });
+      if (!result.ok) {
+        log.warn("checkout_address_save_rejected", { kind: "billing", message: result.message });
+      }
+    }
+  } catch (e) {
+    log.warn("checkout_address_save_failed", { ...errorMeta(e) });
+  }
 }
 
 export async function createPendingPayPalOrderFromFormData(
@@ -461,6 +515,8 @@ async function createPendingPayPalOrderFromParsedRaw(
     lineCount: activeLines.length,
     paymentFlow: "paypal_hosted",
   });
+
+  await saveCheckoutAddressesToAccountIfRequested(customerId, d);
 
   try {
     const { paypalOrderId, approvalUrl: approvalUrlRaw } = await createPayPalCheckoutOrder({
