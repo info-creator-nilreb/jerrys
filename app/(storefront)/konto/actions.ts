@@ -125,8 +125,13 @@ export async function confirmPasswordResetAction(
   return { ok: true, message: result.message };
 }
 
-export async function verifyEmailAction(token: string): Promise<CustomerAuthActionState> {
-  const result = await verifyCustomerEmail({ token });
+export async function verifyEmailAction(
+  _prev: CustomerAuthActionState,
+  formData: FormData,
+): Promise<CustomerAuthActionState> {
+  const result = await verifyCustomerEmail({
+    token: formData.get("token"),
+  });
   if (!result.ok) return { ok: false, message: result.message };
   return {
     ok: true,

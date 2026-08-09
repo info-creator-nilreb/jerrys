@@ -17,6 +17,7 @@ export {
   hashCustomerAuthToken,
   customerAuthTokenExpiresAt,
   isCustomerAuthTokenUsable,
+  normalizeCustomerAuthTokenFromClient,
   type CustomerAuthTokenPurpose,
   type CustomerIdentityProvider,
 } from "@/features/customers/domain/auth-token";

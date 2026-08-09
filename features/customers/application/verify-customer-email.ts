@@ -3,6 +3,7 @@ import { createLogger } from "@/lib/logging/logger";
 import {
   hashCustomerAuthToken,
   isCustomerAuthTokenUsable,
+  normalizeCustomerAuthTokenFromClient,
 } from "@/features/customers/domain/auth-token";
 import { customerAuthTokenSchema } from "@/features/customers/application/customer-auth-schemas";
 
@@ -13,8 +14,14 @@ export type VerifyCustomerEmailResult =
   | { ok: false; message: string };
 
 export async function verifyCustomerEmail(input: unknown): Promise<VerifyCustomerEmailResult> {
-  const parsed = customerAuthTokenSchema.safeParse(input);
+  const raw =
+    input && typeof input === "object" && "token" in input
+      ? String((input as { token: unknown }).token)
+      : "";
+  const normalized = normalizeCustomerAuthTokenFromClient(raw);
+  const parsed = customerAuthTokenSchema.safeParse({ token: normalized });
   if (!parsed.success) {
+    log.warn("verify_email_invalid_token_input", { hasToken: normalized.length > 0 });
     return { ok: false, message: "Ungültiger Bestätigungslink." };
   }
 
@@ -26,9 +33,15 @@ export async function verifyCustomerEmail(input: unknown): Promise<VerifyCustome
   });
 
   if (!row || row.purpose !== "email_verify") {
+    log.warn("verify_email_token_not_found", { purpose: row?.purpose ?? null });
     return { ok: false, message: "Ungültiger oder abgelaufener Bestätigungslink." };
   }
   if (!isCustomerAuthTokenUsable({ expiresAt: row.expiresAt, consumedAt: row.consumedAt })) {
+    log.warn("verify_email_token_not_usable", {
+      customerId: row.customerId,
+      consumed: Boolean(row.consumedAt),
+      expired: row.expiresAt.getTime() <= Date.now(),
+    });
     return { ok: false, message: "Ungültiger oder abgelaufener Bestätigungslink." };
   }
   if (!row.customer.isActive) {

@@ -6,6 +6,7 @@ import {
   hashCustomerAuthToken,
   isCustomerAuthTokenUsable,
   normalizeCustomerEmail,
+  normalizeCustomerAuthTokenFromClient,
   resolveAuthSubjectKind,
   validateCustomerPassword,
   getCustomerPasswordCriteria,
@@ -81,6 +82,10 @@ describe("customer auth domain", () => {
     expect(customerAuthTokenExpiresAt(now).getTime() - now.getTime()).toBe(
       CUSTOMER_AUTH_TOKEN_TTL_MS,
     );
+  });
+
+  it("normalisiert URL-encodierte Auth-Tokens", () => {
+    expect(normalizeCustomerAuthTokenFromClient("abc%2Bdef")).toBe("abc+def");
   });
 
   it("löst subjectKind inkl. Legacy-Admin", () => {
