@@ -8,6 +8,21 @@ const DEFAULT_DISPLAY_NAME = "Jerrys";
 
 const RFC2047_Q = /^=\?UTF-8\?Q\?(.+)\?=$/i;
 
+export type MailFromResolveSource = "mail_from_email" | "mail_from" | "none";
+
+export type MailFromResolveResult = {
+  from: string | null;
+  source: MailFromResolveSource;
+};
+
+function normalizeEnvValue(value: string): string {
+  return value
+    .replace(/[\u201C\u201D\u201E\u00AB\u00BB]/g, '"')
+    .replace(/[\u2018\u2019`´]/g, "'")
+    .replace(/\r?\n/g, "")
+    .trim();
+}
+
 function decodeRfc2047QuotedPrintable(encoded: string): string {
   return encoded
     .replace(/_/g, " ")
@@ -75,6 +90,18 @@ function stripOuterQuotes(value: string): string {
   return v;
 }
 
+/** Erzwingt gültiges Resend-Format; bei Zweifel nur die nackte E-Mail-Adresse. */
+export function coerceResendFromFormat(from: string): string | null {
+  const trimmed = from.trim();
+  if (EMAIL_RE.test(trimmed)) return trimmed;
+
+  const match = trimmed.match(/^(.+?)\s*<([^<>]+)>$/);
+  if (!match) return null;
+  const email = match[2]?.trim();
+  if (!email || !EMAIL_RE.test(email)) return null;
+  return formatResendFrom(email, match[1]?.trim());
+}
+
 /**
  * @returns Absender-String für Resend oder null bei ungültiger Konfiguration
  */
@@ -82,7 +109,7 @@ export function resolveMailFromForResend(raw: string | undefined | null): string
   const trimmed = raw?.trim();
   if (!trimmed) return null;
 
-  const value = stripOuterQuotes(trimmed.replace(/\\"/g, '"').replace(/\r?\n/g, ""));
+  const value = stripOuterQuotes(normalizeEnvValue(trimmed).replace(/\\"/g, '"'));
   const email = extractEmailAddress(value);
   if (!email) return null;
 
@@ -94,6 +121,29 @@ export function resolveMailFromForResend(raw: string | undefined | null): string
   }
 
   return formatResendFrom(email, displayPart);
+}
+
+/**
+ * Bevorzugt getrennte Vercel-Variablen (ohne Parsing-Probleme), sonst `MAIL_FROM`.
+ */
+export function resolveTransactionalMailFrom(env?: {
+  MAIL_FROM?: string;
+  MAIL_FROM_EMAIL?: string;
+  MAIL_FROM_NAME?: string;
+}): MailFromResolveResult {
+  const e = env ?? process.env;
+  const emailSplit = e.MAIL_FROM_EMAIL?.trim();
+  if (emailSplit && EMAIL_RE.test(emailSplit)) {
+    const nameSplit = e.MAIL_FROM_NAME?.trim();
+    const from = coerceResendFromFormat(
+      nameSplit ? formatResendFrom(emailSplit, nameSplit) : emailSplit,
+    );
+    return { from, source: "mail_from_email" };
+  }
+
+  const parsed = resolveMailFromForResend(e.MAIL_FROM);
+  const from = parsed ? coerceResendFromFormat(parsed) : null;
+  return { from, source: from ? "mail_from" : "none" };
 }
 
 export type ResendErrorBody = {

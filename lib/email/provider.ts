@@ -1,7 +1,7 @@
 import { createLogger } from "@/lib/logging/logger";
 import {
   parseResendErrorBody,
-  resolveMailFromForResend,
+  resolveTransactionalMailFrom,
 } from "@/lib/email/mail-from";
 
 const log = createLogger("email.provider");
@@ -35,7 +35,7 @@ export async function sendTransactionalEmail(params: {
   attachments?: TransactionalAttachment[];
 }): Promise<SendTransactionalResult> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
-  const fromResolved = resolveMailFromForResend(process.env.MAIL_FROM);
+  const { from: fromResolved, source: mailFromSource } = resolveTransactionalMailFrom();
 
   if (!apiKey) {
     log.info("transactional_skipped", {
@@ -48,11 +48,19 @@ export async function sendTransactionalEmail(params: {
   if (!fromResolved) {
     log.warn("transactional_skipped", {
       reason: "mail_from_unset_or_invalid",
+      mailFromSource,
       subject: params.subject,
       recipientDomain: recipientDomain(params.to),
     });
     return { status: "skipped_no_provider", errorMessage: "MAIL_FROM unset or invalid" };
   }
+
+  log.info("transactional_send_attempt", {
+    mailFromSource,
+    resolvedFrom: fromResolved,
+    subject: params.subject,
+    recipientDomain: recipientDomain(params.to),
+  });
 
   const payload: Record<string, unknown> = {
     from: fromResolved,
@@ -86,6 +94,7 @@ export async function sendTransactionalEmail(params: {
       subject: params.subject,
       recipientDomain: recipientDomain(params.to),
       resolvedFrom: fromResolved,
+      mailFromSource,
       fromDomain: fromResolved.includes("@")
         ? fromResolved.slice(fromResolved.lastIndexOf("@") + 1).replace(/>\s*$/, "")
         : "unknown",

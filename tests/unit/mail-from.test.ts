@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  coerceResendFromFormat,
   resolveMailFromForResend,
+  resolveTransactionalMailFrom,
   resendSafeDisplayName,
 } from "@/lib/email/mail-from";
 
@@ -37,6 +39,18 @@ describe("resolveMailFromForResend", () => {
   it("liefert null bei ungültigem Wert", () => {
     expect(resolveMailFromForResend("")).toBeNull();
     expect(resolveMailFromForResend("not-an-email")).toBeNull();
+  });
+});
+
+describe("resolveTransactionalMailFrom", () => {
+  it("bevorzugt MAIL_FROM_EMAIL und MAIL_FROM_NAME", () => {
+    const result = resolveTransactionalMailFrom({
+      MAIL_FROM: "invalid",
+      MAIL_FROM_EMAIL: "shop@example.com",
+      MAIL_FROM_NAME: "jerry's",
+    });
+    expect(result.source).toBe("mail_from_email");
+    expect(result.from).toBe("Jerrys <shop@example.com>");
   });
 });
 
