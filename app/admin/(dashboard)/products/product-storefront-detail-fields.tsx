@@ -5,6 +5,7 @@ import type { ProductFormState } from "@/app/admin/(dashboard)/products/actions"
 type Defaults = {
   categoryTag: string;
   isBestseller: boolean;
+  showWorkshopCalendar: boolean;
   leadText: string;
   dimensionsText: string;
   weightText: string;
@@ -40,6 +41,22 @@ export function ProductStorefrontDetailFields({ state, defaults }: Props) {
             <span className="text-sm font-medium text-[#1f2937]">Bestseller-Badge</span>
             <span className="mt-0.5 block text-xs text-[#6b7280]">
               Zeigt ein „Bestseller“-Label auf der Produktseite und optional auf Karten.
+            </span>
+          </span>
+        </label>
+
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            name="showWorkshopCalendar"
+            value="on"
+            defaultChecked={defaults.showWorkshopCalendar}
+            className="mt-1 size-4 checkbox-primary"
+          />
+          <span>
+            <span className="text-sm font-medium text-[#1f2937]">Termin-Kalender auf Produktseite</span>
+            <span className="mt-0.5 block text-xs text-[#6b7280]">
+              Zeigt kommende Gruppentermine unterhalb des Produkts (gleiche Liste wie unter /termine).
             </span>
           </span>
         </label>

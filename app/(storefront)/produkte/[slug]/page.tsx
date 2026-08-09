@@ -13,6 +13,7 @@ import { ProductJsonLd } from "@/components/storefront/product-json-ld";
 import { ProductPdpPurchasePanel } from "@/components/storefront/product-pdp-purchase-panel";
 import { ProductPdpSpecsPanel } from "@/components/storefront/product-pdp-specs-panel";
 import { ProductPdpTrustFooterBar, ProductPdpUspRow } from "@/components/storefront/product-pdp-trust-blocks";
+import { WorkshopSessionList } from "@/components/storefront/workshop-session-list";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
 import { absoluteUrl } from "@/lib/site/canonical-origin";
@@ -196,6 +197,12 @@ export default async function ProduktDetailPage({
           </div>
         </div>
       </div>
+
+      {product.showWorkshopCalendar ? (
+        <div className="mx-auto max-w-6xl px-4 pb-12">
+          <WorkshopSessionList showHeader limit={8} />
+        </div>
+      ) : null}
 
       <ProductPdpTrustFooterBar
         freeShippingFromSubtotalGrossCents={shopShip.freeShippingFromSubtotalGrossCents}

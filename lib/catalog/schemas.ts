@@ -111,6 +111,7 @@ const sharedProductFields = {
   maxOrderQty: z.preprocess(optionalPositiveIntMin1Nullable, z.number().int().min(1).nullable()),
   isActive: z.boolean(),
   isBestseller: z.boolean(),
+  showWorkshopCalendar: z.boolean(),
   categoryTag: optionalText,
   leadText: optionalText,
   dimensionsText: optionalText,

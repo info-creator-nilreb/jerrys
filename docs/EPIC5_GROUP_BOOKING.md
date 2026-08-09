@@ -34,12 +34,7 @@ Der Kalender kann als Block auf einer CMS-Seite (Epic 12) und optional auf ausge
 
 **Status:** umgesetzt (Admin). `/admin/termine`: Entwurf anlegen/bearbeiten, veröffentlichen, absagen, abschließen; shopweite Storno-Frist (Std. 48h); Audit `workshop_session_events` + Outbox. Storefront-Kalender und Checkout folgen in Slice 2–3.
 
-### Slice 2 — Storefront-Kalender und Einbettung
-
-- Kalender/Liste mit freien Plätzen und Status
-- Einbettung auf CMS-Seiten und ausgewählten PDPs
-- Serverautoritativ: ausgebucht, buchbar, abgesagt, Mindestteilnehmer noch offen
-- WCAG 2.2 AA, Keyboard und mobile Darstellung
+**Status:** umgesetzt. Öffentliche Seite `/termine` und Detail `/termine/[sessionId]`; wiederverwendbare Komponente `WorkshopSessionList` (PDP per Produktflag `showWorkshopCalendar`, CMS-Block folgt Epic 12). Verfügbarkeit serverseitig: buchbar, ausgebucht, Mindestteilnehmer offen. Checkout-CTA folgt Slice 3.
 
 ### Slice 3 — Kapazität und Checkout
 

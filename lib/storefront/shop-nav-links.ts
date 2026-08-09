@@ -11,7 +11,10 @@ export function buildStorefrontShopNavLinks(
   options?: { maxTopLevel?: number },
 ): StorefrontShopNavLink[] {
   const max = options?.maxTopLevel ?? DEFAULT_MAX_TOP_CATEGORIES;
-  const links: StorefrontShopNavLink[] = [{ href: "/produkte", label: "Alle Produkte" }];
+  const links: StorefrontShopNavLink[] = [
+    { href: "/produkte", label: "Alle Produkte" },
+    { href: "/termine", label: "Termine" },
+  ];
   for (const c of categories.slice(0, max)) {
     links.push({ href: `/kategorien/${c.slug}`, label: c.title });
   }
@@ -52,6 +55,9 @@ export function resolveFooterMerchandisingLinks(
 export function isStorefrontShopNavLinkActive(pathname: string, href: string): boolean {
   if (href === "/produkte") {
     return pathname === "/produkte" || pathname.startsWith("/produkte/");
+  }
+  if (href === "/termine") {
+    return pathname === "/termine" || pathname.startsWith("/termine/");
   }
   if (href.startsWith("/kategorien/")) {
     return pathname === href || pathname.startsWith(`${href}/`);
