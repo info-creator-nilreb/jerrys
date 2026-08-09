@@ -1,12 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
-import {
-  startWorkshopCheckoutAction,
-  type WorkshopBookSeatsActionState,
-} from "@/app/(storefront)/termine/[sessionId]/actions";
-
-const initial: WorkshopBookSeatsActionState = null;
+import { useFormStatus } from "react-dom";
+import { startWorkshopCheckoutFormAction } from "@/app/(storefront)/termine/[sessionId]/actions";
 
 type Props = {
   sessionId: string;
@@ -14,7 +9,21 @@ type Props = {
   maxSeatsPerBooking: number | null;
   capacity: number;
   disabled?: boolean;
+  bookingErrorMessage?: string | null;
 };
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="inline-flex min-h-11 items-center rounded-md bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-(--primary-hover) disabled:opacity-60"
+    >
+      {pending ? "Reserviere …" : "Weiter zur Kasse"}
+    </button>
+  );
+}
 
 export function WorkshopBookSeatsPanel({
   sessionId,
@@ -22,9 +31,8 @@ export function WorkshopBookSeatsPanel({
   maxSeatsPerBooking,
   capacity,
   disabled = false,
+  bookingErrorMessage,
 }: Props) {
-  const [state, formAction, pending] = useActionState(startWorkshopCheckoutAction, initial);
-
   const maxSelectable = Math.min(
     seatsRemaining,
     maxSeatsPerBooking ?? capacity,
@@ -44,16 +52,16 @@ export function WorkshopBookSeatsPanel({
         Plätze buchen
       </h2>
       <p className="mt-1 text-sm text-(--foreground-muted)">
-        Reservierung für 30 Minuten — danach Checkout abschließen.
+        Reservierung für 30 Minuten — danach Checkout abschließen. (Kein Warenkorb — direkt zur Kasse.)
       </p>
 
-      {state?.ok === false ? (
+      {bookingErrorMessage ? (
         <p className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900" role="alert">
-          {state.message}
+          {bookingErrorMessage}
         </p>
       ) : null}
 
-      <form action={formAction} className="mt-4 flex flex-wrap items-end gap-3">
+      <form action={startWorkshopCheckoutFormAction} className="mt-4 flex flex-wrap items-end gap-3">
         <input type="hidden" name="sessionId" value={sessionId} />
         <div>
           <label htmlFor="workshop-seat-count" className="block text-sm font-medium text-(--foreground-heading)">
@@ -70,13 +78,7 @@ export function WorkshopBookSeatsPanel({
             className="mt-1 w-28 rounded-md border border-(--surface-muted) px-3 py-2 text-sm"
           />
         </div>
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex min-h-11 items-center rounded-md bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-(--primary-hover) disabled:opacity-60"
-        >
-          {pending ? "Reserviere …" : "Weiter zur Kasse"}
-        </button>
+        <SubmitButton />
       </form>
     </section>
   );

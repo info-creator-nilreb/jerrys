@@ -9,7 +9,6 @@ import {
   listCustomerAddresses,
 } from "@/features/customers";
 import { getWorkshopHoldForCheckout } from "@/features/workshops";
-import { submitWorkshopCheckout } from "@/app/(storefront)/checkout/termine/actions";
 import { getCustomerSession } from "@/lib/auth/customer-session";
 import { getWorkshopBookingHoldIdFromCookie } from "@/lib/workshop/workshop-booking-cookie";
 import { getShippingCountriesForStorefront } from "@/lib/shop/shipping-countries-for-storefront";
@@ -102,7 +101,6 @@ export default async function WorkshopCheckoutPage() {
           addressPrefill={addressPrefill}
           savedAddresses={savedAddresses}
           canSaveAddressToAccount={Boolean(verifiedCustomerId)}
-          submitCheckoutAction={submitWorkshopCheckout}
           workshopBookingId={hold.bookingId}
           hidePromotionPanel
           checkoutTitle="Termin-Checkout"
