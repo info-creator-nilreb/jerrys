@@ -65,6 +65,7 @@ describe("Nav aus eligible Kategorien", () => {
       .map(({ slug, title }) => ({ slug, title }));
     expect(buildStorefrontShopNavLinks(forNav)).toEqual([
       { href: "/produkte", label: "Alle Produkte" },
+      { href: "/termine", label: "Termine" },
       { href: "/kategorien/hund", label: "Hund" },
     ]);
   });

@@ -38,6 +38,7 @@ export function adminProductForEditForm(product: AdminProductRecord) {
     amazonReviewUrl: product.amazonReviewUrl,
     categoryTag: product.categoryTag,
     isBestseller: product.isBestseller,
+    showWorkshopCalendar: product.showWorkshopCalendar,
     leadText: product.leadText,
     dimensionsText: product.dimensionsText,
     weightText: product.weightText,

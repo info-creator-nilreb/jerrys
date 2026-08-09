@@ -58,6 +58,7 @@ type Product = {
   amazonReviewUrl: string | null;
   categoryTag: string | null;
   isBestseller: boolean;
+  showWorkshopCalendar: boolean;
   leadText: string | null;
   dimensionsText: string | null;
   weightText: string | null;
@@ -148,6 +149,7 @@ export function EditProductForm({
           defaults={{
             categoryTag: product.categoryTag ?? "",
             isBestseller: product.isBestseller,
+            showWorkshopCalendar: product.showWorkshopCalendar,
             leadText: product.leadText ?? "",
             dimensionsText: product.dimensionsText ?? "",
             weightText: product.weightText ?? "",

@@ -39,6 +39,7 @@ export function ProductFormFields({ state, manufacturers }: Props) {
         defaults={{
           categoryTag: "",
           isBestseller: false,
+          showWorkshopCalendar: false,
           leadText: "",
           dimensionsText: "",
           weightText: "",

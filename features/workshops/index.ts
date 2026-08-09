@@ -55,3 +55,24 @@ export {
   type MutateWorkshopSessionResult,
   type AdminShopWorkshopSettingsForm,
 } from "@/features/workshops/application/admin-workshop-sessions";
+
+export {
+  listPublishedWorkshopSessionsForStorefront,
+  getPublishedWorkshopSessionForStorefront,
+  selfCancelDeadlineForStorefrontSession,
+  type StorefrontWorkshopSessionListItem,
+  type StorefrontWorkshopSessionDetail,
+} from "@/features/workshops/application/storefront-workshop-sessions";
+
+export {
+  computeStorefrontWorkshopSessionView,
+  storefrontWorkshopAvailabilityLabel,
+  formatWorkshopDurationMinutes,
+  formatDurationLabel,
+  type StorefrontWorkshopAvailability,
+} from "@/features/workshops/domain/storefront-session-availability";
+
+export {
+  isWorkshopSchemaAvailable,
+  WORKSHOP_SCHEMA_MISSING_ADMIN_MESSAGE,
+} from "@/features/workshops/application/workshop-schema-guard";

@@ -148,6 +148,8 @@ model Product {
   weightText       String? @map("weight_text")
   materialText     String? @map("material_text")
   featureBullets     String[] @default([]) @map("feature_bullets")
+  /// Epic 5: Gruppentermin-Kalender auf der Produktdetailseite einblenden.
+  showWorkshopCalendar Boolean @default(false) @map("show_workshop_calendar")
 
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")

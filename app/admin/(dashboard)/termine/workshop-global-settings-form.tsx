@@ -10,8 +10,10 @@ const initial: WorkshopSessionActionState = null;
 
 export function WorkshopGlobalSettingsForm({
   defaults,
+  disabled = false,
 }: {
   defaults: { selfCancelHoursBeforeStart: number };
+  disabled?: boolean;
 }) {
   const [state, action, pending] = useActionState(saveShopWorkshopSettingsAction, initial);
 
@@ -32,11 +34,12 @@ export function WorkshopGlobalSettingsForm({
             defaultValue={defaults.selfCancelHoursBeforeStart}
             className="w-28 rounded-md border border-[#d1d5db] px-3 py-2 text-sm"
             required
+            disabled={disabled}
           />
         </label>
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || disabled}
           className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-(--primary-hover) disabled:opacity-60"
         >
           {pending ? "Speichern …" : "Speichern"}

@@ -1,8 +1,13 @@
 import Link from "next/link";
-import { getWorkshopSettingsForAdminForm } from "@/app/admin/(dashboard)/termine/actions";
+import {
+  getShopWorkshopSettingsForAdmin,
+  isWorkshopSchemaAvailable,
+  listWorkshopSessionsForAdmin,
+  WORKSHOP_SCHEMA_MISSING_ADMIN_MESSAGE,
+} from "@/features/workshops";
 import { WorkshopGlobalSettingsForm } from "@/app/admin/(dashboard)/termine/workshop-global-settings-form";
+import { AdminWorkshopSchemaBanner } from "@/components/admin/workshops/admin-workshop-schema-banner";
 import { WorkshopSessionStatusBadge } from "@/components/admin/workshops/workshop-session-status-badge";
-import { listWorkshopSessionsForAdmin } from "@/features/workshops";
 import { formatWorkshopSessionDateTime } from "@/lib/workshop/format-session-datetime";
 
 export const dynamic = "force-dynamic";
@@ -12,13 +17,17 @@ export const metadata = {
 };
 
 export default async function AdminWorkshopSessionsPage() {
+  const schemaReady = await isWorkshopSchemaAvailable();
   const [sessions, settings] = await Promise.all([
     listWorkshopSessionsForAdmin(),
-    getWorkshopSettingsForAdminForm(),
+    getShopWorkshopSettingsForAdmin(),
   ]);
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 pb-12">
+      {!schemaReady ? (
+        <AdminWorkshopSchemaBanner message={WORKSHOP_SCHEMA_MISSING_ADMIN_MESSAGE} />
+      ) : null}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-[#1f2937]">Termine</h1>
@@ -29,13 +38,18 @@ export default async function AdminWorkshopSessionsPage() {
         </div>
         <Link
           href="/admin/termine/neu"
-          className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-(--primary-hover)"
+          aria-disabled={!schemaReady}
+          className={
+            schemaReady
+              ? "inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-(--primary-hover)"
+              : "pointer-events-none inline-flex min-h-11 cursor-not-allowed items-center rounded-md bg-primary/40 px-4 py-2 text-sm font-semibold text-white"
+          }
         >
           Termin anlegen
         </Link>
       </div>
 
-      <WorkshopGlobalSettingsForm defaults={settings} />
+      <WorkshopGlobalSettingsForm defaults={settings} disabled={!schemaReady} />
 
       {sessions.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[#e5e7eb] bg-[#fafbfc] px-6 py-12 text-center">
