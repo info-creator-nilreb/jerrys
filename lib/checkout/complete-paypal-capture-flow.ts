@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { sendOrderConfirmationIfNeeded } from "@/lib/email/order-confirmation";
+import { sendWorkshopBookingConfirmationIfNeeded } from "@/lib/email/workshop-booking-emails";
 import { getPrisma } from "@/lib/db/prisma";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 import { finalizeOrderAfterPendingPaymentCapture } from "@/lib/orders/finalize-pending-payment";
@@ -115,6 +116,7 @@ export async function completePayPalCaptureFlow(
   }
 
   await sendOrderConfirmationIfNeeded(order.id);
+  await sendWorkshopBookingConfirmationIfNeeded(order.id);
   revalidatePath("/warenkorb");
   revalidatePath("/checkout");
   revalidatePath("/admin/orders");

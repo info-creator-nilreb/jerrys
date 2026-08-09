@@ -1,3 +1,4 @@
+import { sendWorkshopBookingCancelledForBookingId } from "@/lib/email/workshop-booking-emails";
 import { getPrisma } from "@/lib/db/prisma";
 import { isMissingSchemaError } from "@/lib/db/prisma-error";
 import { createLogger } from "@/lib/logging/logger";
@@ -325,6 +326,7 @@ export async function selfCancelWorkshopBookingForCustomer(input: {
   }
 
   log.info("workshop_self_cancelled", { bookingId: booking.id, customerId: verified });
+  await sendWorkshopBookingCancelledForBookingId(booking.id);
   return { ok: true, alreadyCancelled: false };
 }
 
