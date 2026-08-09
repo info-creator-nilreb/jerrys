@@ -1,33 +1,6 @@
-"use client";
-
-import { useFormStatus } from "react-dom";
-import { startWorkshopCheckoutFormAction } from "@/app/(storefront)/termine/[sessionId]/actions";
-
-type Props = {
-  sessionId: string;
-  seatsRemaining: number;
-  maxSeatsPerBooking: number | null;
-  capacity: number;
-  disabled?: boolean;
-  bookingErrorMessage?: string | null;
-};
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="inline-flex min-h-11 items-center rounded-md bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-(--primary-hover) disabled:opacity-60"
-    >
-      {pending ? "Reserviere …" : "Weiter zur Kasse"}
-    </button>
-  );
-}
-
 /**
- * Native `<form action={…}>` — kein preventDefault / useActionState.
- * Sonst suspendiert die Server Action bei synchronem Submit → React #441 in Production.
+ * Klassisches HTML-Form (MPA): POST an Route Handler, HTTP 303 zum Checkout.
+ * Kein Server Action / kein useActionState — vermeidet React #441 in Production.
  */
 export function WorkshopBookSeatsPanel({
   sessionId,
@@ -36,7 +9,14 @@ export function WorkshopBookSeatsPanel({
   capacity,
   disabled = false,
   bookingErrorMessage,
-}: Props) {
+}: {
+  sessionId: string;
+  seatsRemaining: number;
+  maxSeatsPerBooking: number | null;
+  capacity: number;
+  disabled?: boolean;
+  bookingErrorMessage?: string | null;
+}) {
   const maxSelectable = Math.min(
     seatsRemaining,
     maxSeatsPerBooking ?? capacity,
@@ -65,7 +45,11 @@ export function WorkshopBookSeatsPanel({
         </p>
       ) : null}
 
-      <form action={startWorkshopCheckoutFormAction} className="mt-4 flex flex-wrap items-end gap-3">
+      <form
+        action="/api/workshop/start-checkout"
+        method="post"
+        className="mt-4 flex flex-wrap items-end gap-3"
+      >
         <input type="hidden" name="sessionId" value={sessionId} />
         <div>
           <label htmlFor="workshop-seat-count" className="block text-sm font-medium text-(--foreground-heading)">
@@ -82,7 +66,12 @@ export function WorkshopBookSeatsPanel({
             className="mt-1 w-28 rounded-md border border-(--surface-muted) px-3 py-2 text-sm"
           />
         </div>
-        <SubmitButton />
+        <button
+          type="submit"
+          className="inline-flex min-h-11 items-center rounded-md bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-(--primary-hover)"
+        >
+          Weiter zur Kasse
+        </button>
       </form>
     </section>
   );
