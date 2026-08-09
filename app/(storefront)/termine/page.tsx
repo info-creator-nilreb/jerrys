@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { WorkshopSessionList } from "@/components/storefront/workshop-session-list";
+import { storefrontMainPagePaddingClass } from "@/lib/storefront/page-below-header-padding";
 
 export const metadata = {
   title: "Termine & Workshops",
@@ -8,7 +9,7 @@ export const metadata = {
 
 export default function StorefrontWorkshopSessionsPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10 sm:py-14">
+    <div className={`mx-auto max-w-3xl px-4 ${storefrontMainPagePaddingClass}`}>
       <header className="mb-10">
         <h1 className="text-3xl font-semibold tracking-tight text-(--foreground-heading)">
           Termine & Workshops
