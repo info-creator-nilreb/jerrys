@@ -36,6 +36,8 @@ Kunden können sich per **E-Mail/Passwort oder Magic Link** anmelden und ihre Be
 - Nur Bestellungen der verifizierten Identität
 - Leere, ladende, fehlgeschlagene und mobile Zustände
 
+**Status:** umgesetzt. `orders.customer_id` (optional) verknüpft Bestellungen mit dem Konto; Checkout setzt die ID bei angemeldetem, verifiziertem Kunden. Portal listet/zeigt nur über `customerId` — nie über E-Mail allein. Fremde Bestellnummern → 404. Gast-Checkout bleibt ohne Konto möglich; historische Gastbestellungen folgen in Slice 4.
+
 ### Slice 3 — Adressbuch
 
 - Rechnungs- und Lieferadressen anlegen, bearbeiten, löschen, Standard wählen
