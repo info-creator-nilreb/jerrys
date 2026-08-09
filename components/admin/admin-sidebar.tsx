@@ -18,6 +18,7 @@ import {
   IconPromotions,
   IconShipping,
   IconStorefront,
+  IconWorkshops,
 } from "@/components/admin/admin-nav-icons";
 
 const STORAGE_KEY = "jerrys-admin-sidebar-collapsed";
@@ -39,6 +40,7 @@ const mainNav: NavItem[] = [
   { href: "/admin/bestand", label: "Bestand", icon: IconInventory },
   { href: "/admin/promotions", label: "Promotions", icon: IconPromotions },
   { href: "/admin/versand", label: "Versand", icon: IconShipping },
+  { href: "/admin/termine", label: "Termine", icon: IconWorkshops },
   { href: "/admin/orders", label: "Bestellungen", icon: IconOrders },
   { href: "/admin/customers", label: "Kunden", icon: IconCustomers },
 ];

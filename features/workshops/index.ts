@@ -1,11 +1,16 @@
 export {
   WORKSHOP_BOOKING_STATUSES,
-  WORKSHOP_SESSION_STATUSES,
   workshopBookingStatusLabel,
   isWorkshopBookingSelfCancellableStatus,
   type WorkshopBookingStatus,
-  type WorkshopSessionStatus,
 } from "@/features/workshops/domain/booking-status";
+
+export {
+  WORKSHOP_SESSION_STATUSES,
+  workshopSessionStatusLabel,
+  isWorkshopSessionPubliclyListed,
+  type WorkshopSessionStatus,
+} from "@/features/workshops/domain/session-status";
 
 export {
   resolveSelfCancelDeadline,
@@ -35,3 +40,18 @@ export {
   type CustomerWorkshopBookingDetail,
   type SelfCancelWorkshopBookingResult,
 } from "@/features/workshops/application/customer-workshop-bookings";
+
+export {
+  listWorkshopSessionsForAdmin,
+  getWorkshopSessionForAdmin,
+  upsertWorkshopSessionDraft,
+  publishWorkshopSession,
+  cancelWorkshopSession,
+  completeWorkshopSession,
+  getShopWorkshopSettingsForAdmin,
+  updateShopWorkshopSettings,
+  type AdminWorkshopSessionListItem,
+  type AdminWorkshopSessionDetail,
+  type MutateWorkshopSessionResult,
+  type AdminShopWorkshopSettingsForm,
+} from "@/features/workshops/application/admin-workshop-sessions";

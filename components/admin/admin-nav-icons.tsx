@@ -1,4 +1,5 @@
 import {
+  CalendarDays,
   Bell,
   ChevronLeft,
   ChevronUp,
@@ -76,4 +77,8 @@ export function IconBell({ className }: { className?: string }) {
 
 export function IconStorefront({ className }: { className?: string }) {
   return <Store className={className} aria-hidden strokeWidth={stroke} />;
+}
+
+export function IconWorkshops({ className }: { className?: string }) {
+  return <CalendarDays className={className} aria-hidden strokeWidth={stroke} />;
 }
