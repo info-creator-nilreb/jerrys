@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useId } from "react";
+import { useActionState, useCallback, useId, useState } from "react";
 import {
   confirmPasswordResetAction,
   requestPasswordResetAction,
@@ -11,6 +11,7 @@ import {
   customerAuthPrimaryButtonClass,
 } from "@/components/storefront/customer-auth-shell";
 import { CustomerPasswordWithCriteriaField } from "@/components/storefront/customer-password-with-criteria-field";
+import { useResetPasswordFieldsOnServerError } from "@/components/storefront/use-reset-password-fields-on-server-error";
 import { CUSTOMER_PASSWORD_MIN_LENGTH } from "@/features/customers/password";
 
 const initial: CustomerAuthActionState = null;
@@ -55,6 +56,15 @@ export function CustomerPasswordForgotForm() {
 export function CustomerPasswordResetForm({ token }: { token: string }) {
   const formId = useId();
   const [state, action, pending] = useActionState(confirmPasswordResetAction, initial);
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+
+  const resetPasswordFields = useCallback(() => {
+    setPassword("");
+    setPasswordConfirm("");
+  }, []);
+
+  useResetPasswordFieldsOnServerError(state, resetPasswordFields);
 
   return (
     <form action={action} className="space-y-4" noValidate>
@@ -67,6 +77,8 @@ export function CustomerPasswordResetForm({ token }: { token: string }) {
           </>
         }
         serverError={state?.fieldErrors?.password?.[0]}
+        password={password}
+        onPasswordChange={setPassword}
       />
       <div>
         <label
@@ -82,6 +94,8 @@ export function CustomerPasswordResetForm({ token }: { token: string }) {
           autoComplete="new-password"
           required
           minLength={CUSTOMER_PASSWORD_MIN_LENGTH}
+          value={passwordConfirm}
+          onChange={(e) => setPasswordConfirm(e.target.value)}
           className={customerAuthInputClass}
           aria-invalid={Boolean(state?.fieldErrors?.passwordConfirm)}
         />

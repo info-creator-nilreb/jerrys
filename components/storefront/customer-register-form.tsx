@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useId } from "react";
+import { useActionState, useCallback, useId, useState } from "react";
 import {
   registerCustomerAction,
   type CustomerAuthActionState,
@@ -10,6 +10,7 @@ import {
   customerAuthPrimaryButtonClass,
 } from "@/components/storefront/customer-auth-shell";
 import { CustomerPasswordWithCriteriaField } from "@/components/storefront/customer-password-with-criteria-field";
+import { useResetPasswordFieldsOnServerError } from "@/components/storefront/use-reset-password-fields-on-server-error";
 import { CUSTOMER_PASSWORD_MIN_LENGTH } from "@/features/customers/password";
 
 const initial: CustomerAuthActionState = null;
@@ -17,6 +18,19 @@ const initial: CustomerAuthActionState = null;
 export function CustomerRegisterForm() {
   const formId = useId();
   const [state, action, pending] = useActionState(registerCustomerAction, initial);
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+
+  const resetPasswordFields = useCallback(() => {
+    setPassword("");
+    setPasswordConfirm("");
+  }, []);
+
+  useResetPasswordFieldsOnServerError(state, resetPasswordFields);
 
   return (
     <form action={action} className="space-y-4" noValidate>
@@ -33,6 +47,8 @@ export function CustomerRegisterForm() {
             name="firstName"
             type="text"
             autoComplete="given-name"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
             className={customerAuthInputClass}
           />
         </div>
@@ -48,6 +64,8 @@ export function CustomerRegisterForm() {
             name="lastName"
             type="text"
             autoComplete="family-name"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
             className={customerAuthInputClass}
           />
         </div>
@@ -65,6 +83,8 @@ export function CustomerRegisterForm() {
           type="email"
           autoComplete="email"
           required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className={customerAuthInputClass}
           aria-invalid={Boolean(state?.fieldErrors?.email)}
         />
@@ -82,6 +102,8 @@ export function CustomerRegisterForm() {
           </>
         }
         serverError={state?.fieldErrors?.password?.[0]}
+        password={password}
+        onPasswordChange={setPassword}
       />
       <div>
         <label
@@ -97,6 +119,8 @@ export function CustomerRegisterForm() {
           autoComplete="new-password"
           required
           minLength={CUSTOMER_PASSWORD_MIN_LENGTH}
+          value={passwordConfirm}
+          onChange={(e) => setPasswordConfirm(e.target.value)}
           className={customerAuthInputClass}
           aria-invalid={Boolean(state?.fieldErrors?.passwordConfirm)}
         />

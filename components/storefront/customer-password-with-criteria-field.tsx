@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { CustomerPasswordCriteriaIndicator } from "@/components/storefront/customer-password-criteria-indicator";
 import { customerAuthInputClass } from "@/components/storefront/customer-auth-shell";
 import { CUSTOMER_PASSWORD_MIN_LENGTH } from "@/features/customers/password";
@@ -12,6 +12,8 @@ export function CustomerPasswordWithCriteriaField({
   autoComplete = "new-password",
   serverError,
   required = true,
+  password,
+  onPasswordChange,
 }: {
   formIdPrefix: string;
   label: ReactNode;
@@ -19,11 +21,12 @@ export function CustomerPasswordWithCriteriaField({
   autoComplete?: "new-password" | "current-password";
   serverError?: string;
   required?: boolean;
+  password: string;
+  onPasswordChange: (value: string) => void;
 }) {
   const reactId = useId();
   const inputId = `${formIdPrefix}-password-${reactId}`;
   const hintId = `${formIdPrefix}-password-criteria-${reactId}`;
-  const [password, setPassword] = useState("");
 
   return (
     <div>
@@ -38,7 +41,7 @@ export function CustomerPasswordWithCriteriaField({
         required={required}
         minLength={CUSTOMER_PASSWORD_MIN_LENGTH}
         value={password}
-        onChange={(e) => setPassword(e.target.value)}
+        onChange={(e) => onPasswordChange(e.target.value)}
         className={customerAuthInputClass}
         aria-invalid={Boolean(serverError)}
         aria-describedby={hintId}
