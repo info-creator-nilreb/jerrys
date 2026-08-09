@@ -19,6 +19,11 @@ export default function StorefrontWorkshopSessionsPage() {
           kommt direkt vom Server — nicht aus dem Browser geraten.
         </p>
         <p className="mt-2 text-sm text-(--foreground-muted)">
+          Kein passender Slot?{" "}
+          <Link href="/termine/wunschtermin" className="font-medium text-primary hover:underline">
+            Wunschtermin anfragen
+          </Link>
+          {" · "}
           Bereits gebucht?{" "}
           <Link href="/konto/termine" className="font-medium text-primary hover:underline">
             Deine Buchungen im Konto

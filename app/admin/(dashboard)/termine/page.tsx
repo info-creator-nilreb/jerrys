@@ -4,6 +4,7 @@ import {
   isWorkshopSchemaAvailable,
   listWorkshopSessionsForAdmin,
   countDraftWorkshopSessionsBySeriesBatch,
+  countPendingWorkshopDateRequestsForAdmin,
   WORKSHOP_SCHEMA_MISSING_ADMIN_HINT,
   WORKSHOP_SCHEMA_MISSING_ADMIN_MESSAGE,
 } from "@/features/workshops";
@@ -29,12 +30,13 @@ export default async function AdminWorkshopSessionsPage({
   const publishedCount = sp.veroeffentlicht ? Number.parseInt(sp.veroeffentlicht, 10) : 0;
   const serieBatchId = sp.serieBatch?.trim() || null;
 
-  const [sessions, settings, draftInBatch] = await Promise.all([
+  const [sessions, settings, draftInBatch, pendingWunsch] = await Promise.all([
     listWorkshopSessionsForAdmin(),
     getShopWorkshopSettingsForAdmin(),
     serieBatchId && schemaReady
       ? countDraftWorkshopSessionsBySeriesBatch(serieBatchId)
       : Promise.resolve(0),
+    schemaReady ? countPendingWorkshopDateRequestsForAdmin() : Promise.resolve(0),
   ]);
 
   const showSerieBanner =
@@ -74,6 +76,21 @@ export default async function AdminWorkshopSessionsPage({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {schemaReady && pendingWunsch > 0 ? (
+            <Link
+              href="/admin/termine/wunschtermine"
+              className="inline-flex min-h-11 items-center rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-950 hover:bg-amber-100"
+            >
+              Wunschtermine ({pendingWunsch})
+            </Link>
+          ) : schemaReady ? (
+            <Link
+              href="/admin/termine/wunschtermine"
+              className="inline-flex min-h-11 items-center rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-semibold text-[#374151] hover:bg-[#f9fafb]"
+            >
+              Wunschtermine
+            </Link>
+          ) : null}
           <Link
             href="/admin/termine/serie"
             aria-disabled={!schemaReady}

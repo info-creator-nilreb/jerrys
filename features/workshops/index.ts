@@ -82,3 +82,21 @@ export {
   WORKSHOP_SCHEMA_MISSING_ADMIN_MESSAGE,
   WORKSHOP_SCHEMA_MISSING_ADMIN_HINT,
 } from "@/features/workshops/application/workshop-schema-guard";
+
+export {
+  WORKSHOP_DATE_REQUEST_STATUSES,
+  workshopDateRequestStatusLabel,
+  isWorkshopDateRequestPending,
+  type WorkshopDateRequestStatus,
+} from "@/features/workshops/domain/date-request-status";
+
+export {
+  createWorkshopDateRequestForStorefront,
+  listWorkshopDateRequestsForAdmin,
+  countPendingWorkshopDateRequestsForAdmin,
+  rejectWorkshopDateRequestForAdmin,
+  approveWorkshopDateRequestForAdmin,
+  type AdminWorkshopDateRequestListItem,
+  type StorefrontCreateWorkshopDateRequestResult,
+  type MutateWorkshopDateRequestResult,
+} from "@/features/workshops/application/workshop-date-requests";

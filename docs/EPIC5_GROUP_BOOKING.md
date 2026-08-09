@@ -48,6 +48,7 @@ Der Kalender kann als Block auf einer CMS-Seite (Epic 12) und optional auf ausge
 - Bestätigungs-/Storno-E-Mail und Kalendereintrag
 - Gastbuchung über verifizierte Kontaktadresse
 - Kundenkonto zeigt Termine; Selbststornierung nur innerhalb konfigurierter Frist
+- **Wunschtermin (MVP):** Storefront `/termine/wunschtermin` → Status `pending` ohne Zahlung; Admin `/admin/termine/wunschtermine` bestätigt (Entwurf-Termin) oder lehnt ab
 
 ### Slice 5 — Admin-Teilnehmerverwaltung
 
