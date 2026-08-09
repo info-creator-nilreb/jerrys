@@ -6,6 +6,8 @@ type Props = {
   showHeader?: boolean;
   limit?: number;
   emptyMessage?: string;
+  /** Zusätzlicher Inhalt unter leerer Liste (z. B. Wunschtermin). */
+  emptyStateAddon?: React.ReactNode;
 };
 
 /**
@@ -15,6 +17,7 @@ export async function WorkshopSessionList({
   showHeader = true,
   limit = 50,
   emptyMessage = "Derzeit sind keine Termine buchbar.",
+  emptyStateAddon,
 }: Props) {
   const sessions = await listPublishedWorkshopSessionsForStorefront({ limit });
 
@@ -35,9 +38,10 @@ export async function WorkshopSessionList({
       ) : null}
 
       {sessions.length === 0 ? (
-        <p className="rounded-md border border-(--surface-muted) bg-(--surface-soft) px-4 py-8 text-center text-sm text-(--foreground-muted)">
-          {emptyMessage}
-        </p>
+        <div className="rounded-md border border-(--surface-muted) bg-(--surface-soft) px-4 py-8 text-center text-sm text-(--foreground-muted)">
+          <p>{emptyMessage}</p>
+          {emptyStateAddon ? <div className="not-prose">{emptyStateAddon}</div> : null}
+        </div>
       ) : (
         <ul className="space-y-4">
           {sessions.map((s) => (
