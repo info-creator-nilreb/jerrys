@@ -4,6 +4,7 @@ import {
   isWorkshopSchemaAvailable,
   listWorkshopSessionsForAdmin,
   countDraftWorkshopSessionsBySeriesBatch,
+  WORKSHOP_SCHEMA_MISSING_ADMIN_HINT,
   WORKSHOP_SCHEMA_MISSING_ADMIN_MESSAGE,
 } from "@/features/workshops";
 import { WorkshopGlobalSettingsForm } from "@/app/admin/(dashboard)/termine/workshop-global-settings-form";
@@ -48,7 +49,10 @@ export default async function AdminWorkshopSessionsPage({
   return (
     <div className="mx-auto max-w-6xl space-y-8 pb-12">
       {!schemaReady ? (
-        <AdminWorkshopSchemaBanner message={WORKSHOP_SCHEMA_MISSING_ADMIN_MESSAGE} />
+        <AdminWorkshopSchemaBanner
+          message={WORKSHOP_SCHEMA_MISSING_ADMIN_MESSAGE}
+          hint={WORKSHOP_SCHEMA_MISSING_ADMIN_HINT}
+        />
       ) : null}
       {showPublishedBanner ? (
         <p className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900" role="status">
