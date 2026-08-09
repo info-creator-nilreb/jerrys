@@ -31,20 +31,20 @@ export default async function AdminEditWorkshopSessionPage({
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-12">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <Link href="/admin/termine" className="text-sm font-medium text-primary hover:underline">
-            ← Termine
-          </Link>
-          <h1 className="mt-2 text-2xl font-semibold text-[#1f2937]">{session.title}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <WorkshopSessionStatusBadge status={session.status} label={session.statusLabel} />
-            <span className="text-sm text-[#6b7280]">
-              Plätze: {session.confirmedSeatCount + session.heldSeatCount}/{session.capacity}
-            </span>
-          </div>
+      <div className="space-y-3">
+        <Link href="/admin/termine" className="text-sm font-medium text-primary hover:underline">
+          ← Termine
+        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+          <h1 className="min-w-0 text-2xl font-semibold text-[#1f2937]">{session.title}</h1>
+          <WorkshopSessionLifecycleButtons sessionId={session.id} status={session.status} />
         </div>
-        <WorkshopSessionLifecycleButtons sessionId={session.id} status={session.status} />
+        <div className="flex flex-wrap items-center gap-2">
+          <WorkshopSessionStatusBadge status={session.status} label={session.statusLabel} />
+          <span className="text-sm text-[#6b7280]">
+            Plätze: {session.confirmedSeatCount + session.heldSeatCount}/{session.capacity}
+          </span>
+        </div>
       </div>
 
       {sp.gespeichert === "1" ? (
