@@ -9,9 +9,10 @@ import {
   customerAuthInputClass,
   customerAuthPrimaryButtonClass,
 } from "@/components/storefront/customer-auth-shell";
-
-/** Keep in sync with `CUSTOMER_PASSWORD_MIN_LENGTH` in features/customers. */
-const PASSWORD_MIN_LENGTH = 8;
+import {
+  CUSTOMER_PASSWORD_MIN_LENGTH,
+  CUSTOMER_PASSWORD_REQUIREMENTS_HINT,
+} from "@/features/customers";
 
 const initial: CustomerAuthActionState = null;
 
@@ -88,19 +89,43 @@ export function CustomerRegisterForm() {
           type="password"
           autoComplete="new-password"
           required
-          minLength={PASSWORD_MIN_LENGTH}
+          minLength={CUSTOMER_PASSWORD_MIN_LENGTH}
           className={customerAuthInputClass}
           aria-invalid={Boolean(state?.fieldErrors?.password)}
+          aria-describedby={`${formId}-password-hint`}
         />
         {state?.fieldErrors?.password ? (
           <p className="mt-1 text-sm text-red-600" role="alert">
             {state.fieldErrors.password[0]}
           </p>
         ) : (
-          <p className="mt-1 text-xs text-(--foreground-muted)">
-            Mindestens {PASSWORD_MIN_LENGTH} Zeichen.
+          <p id={`${formId}-password-hint`} className="mt-1 text-xs text-(--foreground-muted)">
+            {CUSTOMER_PASSWORD_REQUIREMENTS_HINT}
           </p>
         )}
+      </div>
+      <div>
+        <label
+          htmlFor={`${formId}-password-confirm`}
+          className="mb-1.5 block text-sm font-medium text-(--foreground-heading)"
+        >
+          Passwort wiederholen <span className="text-primary">*</span>
+        </label>
+        <input
+          id={`${formId}-password-confirm`}
+          name="passwordConfirm"
+          type="password"
+          autoComplete="new-password"
+          required
+          minLength={CUSTOMER_PASSWORD_MIN_LENGTH}
+          className={customerAuthInputClass}
+          aria-invalid={Boolean(state?.fieldErrors?.passwordConfirm)}
+        />
+        {state?.fieldErrors?.passwordConfirm ? (
+          <p className="mt-1 text-sm text-red-600" role="alert">
+            {state.fieldErrors.passwordConfirm[0]}
+          </p>
+        ) : null}
       </div>
       {state ? (
         <p

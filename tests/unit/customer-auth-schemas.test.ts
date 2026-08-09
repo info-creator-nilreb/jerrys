@@ -5,11 +5,14 @@ import {
   customerRegisterSchema,
 } from "@/features/customers";
 
+const validPassword = "SecurePass1";
+
 describe("customer auth schemas", () => {
   it("akzeptiert gültige Registrierung und normalisiert E-Mail", () => {
     const parsed = customerRegisterSchema.safeParse({
       email: "Ada@Example.com",
-      password: "secure-pass",
+      password: validPassword,
+      passwordConfirm: validPassword,
       firstName: "Ada",
       lastName: "",
     });
@@ -24,6 +27,16 @@ describe("customer auth schemas", () => {
     const parsed = customerRegisterSchema.safeParse({
       email: "a@b.co",
       password: "short",
+      passwordConfirm: "short",
+    });
+    expect(parsed.success).toBe(false);
+  });
+
+  it("lehnt nicht übereinstimmende Passwörter ab", () => {
+    const parsed = customerRegisterSchema.safeParse({
+      email: "a@b.co",
+      password: validPassword,
+      passwordConfirm: "SecurePass2",
     });
     expect(parsed.success).toBe(false);
   });

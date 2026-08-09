@@ -15,9 +15,10 @@ describe("customer auth domain", () => {
     expect(normalizeCustomerEmail("  Ada@Example.COM ")).toBe("ada@example.com");
   });
 
-  it("validiert Passwortlänge", () => {
+  it("validiert Passwortregeln", () => {
     expect(validateCustomerPassword("short").ok).toBe(false);
-    expect(validateCustomerPassword("long-enough").ok).toBe(true);
+    expect(validateCustomerPassword("nouppercase1").ok).toBe(false);
+    expect(validateCustomerPassword("SecurePass1").ok).toBe(true);
   });
 
   it("hasht Tokens deterministisch und nicht im Klartext", () => {

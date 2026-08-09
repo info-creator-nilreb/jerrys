@@ -6,7 +6,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
   return (
     <>
       <SiteHeader />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 [--storefront-header-height:3.25rem] md:[--storefront-header-height:3.75rem]">{children}</main>
       <SiteFooter />
       <CookieConsentBanner />
     </>

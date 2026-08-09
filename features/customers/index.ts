@@ -2,6 +2,7 @@ export { normalizeCustomerEmail, isValidCustomerEmailShape } from "@/features/cu
 export {
   CUSTOMER_PASSWORD_MIN_LENGTH,
   CUSTOMER_PASSWORD_MAX_LENGTH,
+  CUSTOMER_PASSWORD_REQUIREMENTS_HINT,
   validateCustomerPassword,
 } from "@/features/customers/domain/password";
 export {

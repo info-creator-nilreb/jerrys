@@ -12,6 +12,19 @@ import { customerRegisterSchema } from "@/features/customers/application/custome
 
 const log = createLogger("customers.register");
 
+const VERIFY_EMAIL_SEND_FAILED_MESSAGE =
+  "Die Bestätigungs-E-Mail konnte nicht versendet werden. Bitte später erneut versuchen.";
+
+const VERIFY_EMAIL_NOT_CONFIGURED_MESSAGE =
+  "E-Mail-Versand ist derzeit nicht eingerichtet. Bitte wende dich an den Shop-Betreiber.";
+
+function messageForVerifyEmailSendFailure(
+  reason: "missing_site_url" | "provider_unconfigured" | "provider_error",
+): string {
+  if (reason === "provider_unconfigured") return VERIFY_EMAIL_NOT_CONFIGURED_MESSAGE;
+  return VERIFY_EMAIL_SEND_FAILED_MESSAGE;
+}
+
 export type RegisterCustomerResult =
   | { ok: true; message: string }
   | { ok: false; message: string; fieldErrors?: Record<string, string[]> };
@@ -49,11 +62,18 @@ export async function registerCustomer(input: unknown): Promise<RegisterCustomer
       return genericOk;
     }
     if (!existing.emailVerifiedAt) {
-      await issueAndSendToken({
+      const sent = await issueAndSendToken({
         customerId: existing.id,
         email: existing.email,
         purpose: "email_verify",
       });
+      if (!sent.ok) {
+        log.warn("register_verify_email_send_failed", {
+          customerId: existing.id,
+          reason: sent.reason,
+        });
+        return { ok: false, message: messageForVerifyEmailSendFailure(sent.reason) };
+      }
     }
     // Verified existing account: do not reveal; no email.
     return genericOk;
@@ -74,11 +94,18 @@ export async function registerCustomer(input: unknown): Promise<RegisterCustomer
     },
   });
 
-  await issueAndSendToken({
+  const sent = await issueAndSendToken({
     customerId: customer.id,
     email: customer.email,
     purpose: "email_verify",
   });
+  if (!sent.ok) {
+    log.error("register_verify_email_send_failed", {
+      customerId: customer.id,
+      reason: sent.reason,
+    });
+    return { ok: false, message: messageForVerifyEmailSendFailure(sent.reason) };
+  }
 
   log.info("customer_registered", { customerId: customer.id });
   return genericOk;
@@ -88,7 +115,13 @@ async function issueAndSendToken(params: {
   customerId: string;
   email: string;
   purpose: "email_verify";
-}): Promise<void> {
+}): Promise<
+  | { ok: true }
+  | {
+      ok: false;
+      reason: "missing_site_url" | "provider_unconfigured" | "provider_error";
+    }
+> {
   const prisma = getPrisma();
   const rawToken = generateCustomerAuthTokenSecret();
   const tokenHash = hashCustomerAuthToken(rawToken);
@@ -100,7 +133,7 @@ async function issueAndSendToken(params: {
       expiresAt: customerAuthTokenExpiresAt(),
     },
   });
-  await sendCustomerAuthEmail({
+  return sendCustomerAuthEmail({
     kind: params.purpose,
     to: params.email,
     rawToken,

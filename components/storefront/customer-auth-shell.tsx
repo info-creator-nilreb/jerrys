@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 export function CustomerAuthShell({
@@ -13,14 +12,9 @@ export function CustomerAuthShell({
   footer?: ReactNode;
 }) {
   return (
-    <div className="mx-auto w-full max-w-md px-4 py-10 md:py-14">
+    <div className="mx-auto w-full max-w-md px-4 pt-[calc(var(--storefront-header-height,3.25rem)+2rem)] pb-10 md:pb-14">
       <div className="mb-8">
-        <p className="text-sm font-medium text-primary">
-          <Link href="/" className="hover:underline">
-            jerry&apos;s
-          </Link>
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-(--foreground-heading) md:text-[1.75rem]">
+        <h1 className="text-2xl font-semibold tracking-tight text-(--foreground-heading) md:text-[1.75rem]">
           {title}
         </h1>
         {description ? (
