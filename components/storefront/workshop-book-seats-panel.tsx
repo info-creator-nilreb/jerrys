@@ -1,9 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useActionState, useEffect, type FormEvent } from "react";
 import { useFormStatus } from "react-dom";
-import { startWorkshopCheckoutAction } from "@/app/(storefront)/termine/[sessionId]/actions";
+import { startWorkshopCheckoutFormAction } from "@/app/(storefront)/termine/[sessionId]/actions";
 
 type Props = {
   sessionId: string;
@@ -27,6 +25,10 @@ function SubmitButton() {
   );
 }
 
+/**
+ * Native `<form action={…}>` — kein preventDefault / useActionState.
+ * Sonst suspendiert die Server Action bei synchronem Submit → React #441 in Production.
+ */
 export function WorkshopBookSeatsPanel({
   sessionId,
   seatsRemaining,
@@ -35,15 +37,6 @@ export function WorkshopBookSeatsPanel({
   disabled = false,
   bookingErrorMessage,
 }: Props) {
-  const router = useRouter();
-  const [state, formAction, pending] = useActionState(startWorkshopCheckoutAction, null);
-
-  useEffect(() => {
-    if (state?.ok && "redirectTo" in state && state.redirectTo) {
-      router.push(state.redirectTo);
-    }
-  }, [state, router]);
-
   const maxSelectable = Math.min(
     seatsRemaining,
     maxSeatsPerBooking ?? capacity,
@@ -53,14 +46,6 @@ export function WorkshopBookSeatsPanel({
   if (maxSelectable < 1 || disabled) {
     return null;
   }
-
-  const inlineError =
-    state && !state.ok ? state.message : bookingErrorMessage;
-
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    formAction(new FormData(e.currentTarget));
-  };
 
   return (
     <section
@@ -74,13 +59,13 @@ export function WorkshopBookSeatsPanel({
         Reservierung für 30 Minuten — danach Checkout abschließen. (Kein Warenkorb — direkt zur Kasse.)
       </p>
 
-      {inlineError ? (
+      {bookingErrorMessage ? (
         <p className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900" role="alert">
-          {inlineError}
+          {bookingErrorMessage}
         </p>
       ) : null}
 
-      <form onSubmit={onSubmit} className="mt-4 flex flex-wrap items-end gap-3">
+      <form action={startWorkshopCheckoutFormAction} className="mt-4 flex flex-wrap items-end gap-3">
         <input type="hidden" name="sessionId" value={sessionId} />
         <div>
           <label htmlFor="workshop-seat-count" className="block text-sm font-medium text-(--foreground-heading)">
@@ -94,7 +79,6 @@ export function WorkshopBookSeatsPanel({
             max={maxSelectable}
             defaultValue={1}
             required
-            disabled={pending}
             className="mt-1 w-28 rounded-md border border-(--surface-muted) px-3 py-2 text-sm"
           />
         </div>
