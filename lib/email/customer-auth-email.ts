@@ -103,6 +103,7 @@ export async function sendCustomerAuthEmail(params: {
   log.error("customer_auth_email_failed", {
     kind: params.kind,
     error: result.errorMessage ?? "unknown",
+    httpHint: result.errorMessage?.includes("domain") ? "check_resend_domain" : undefined,
   });
   return { ok: false, reason: "provider_error" };
 }

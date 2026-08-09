@@ -15,6 +15,9 @@ const log = createLogger("customers.register");
 const VERIFY_EMAIL_SEND_FAILED_MESSAGE =
   "Die Bestätigungs-E-Mail konnte nicht versendet werden. Bitte später erneut versuchen.";
 
+const VERIFY_EMAIL_MISSING_SITE_URL_MESSAGE =
+  "Die Bestätigungs-E-Mail konnte nicht erstellt werden (Shop-URL fehlt in der Server-Konfiguration). Bitte den Betreiber informieren.";
+
 const VERIFY_EMAIL_NOT_CONFIGURED_MESSAGE =
   "E-Mail-Versand ist derzeit nicht eingerichtet. Bitte wende dich an den Shop-Betreiber.";
 
@@ -22,6 +25,7 @@ function messageForVerifyEmailSendFailure(
   reason: "missing_site_url" | "provider_unconfigured" | "provider_error",
 ): string {
   if (reason === "provider_unconfigured") return VERIFY_EMAIL_NOT_CONFIGURED_MESSAGE;
+  if (reason === "missing_site_url") return VERIFY_EMAIL_MISSING_SITE_URL_MESSAGE;
   return VERIFY_EMAIL_SEND_FAILED_MESSAGE;
 }
 

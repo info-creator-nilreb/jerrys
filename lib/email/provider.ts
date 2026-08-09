@@ -1,4 +1,8 @@
 import { createLogger } from "@/lib/logging/logger";
+import {
+  parseResendErrorBody,
+  resolveMailFromForResend,
+} from "@/lib/email/mail-from";
 
 const log = createLogger("email.provider");
 
@@ -30,8 +34,8 @@ export async function sendTransactionalEmail(params: {
   html: string;
   attachments?: TransactionalAttachment[];
 }): Promise<SendTransactionalResult> {
-  const from = process.env.MAIL_FROM?.trim();
   const apiKey = process.env.RESEND_API_KEY?.trim();
+  const fromResolved = resolveMailFromForResend(process.env.MAIL_FROM);
 
   if (!apiKey) {
     log.info("transactional_skipped", {
@@ -41,13 +45,28 @@ export async function sendTransactionalEmail(params: {
     });
     return { status: "skipped_no_provider", errorMessage: null };
   }
-  if (!from) {
+  if (!fromResolved) {
     log.warn("transactional_skipped", {
-      reason: "mail_from_unset",
+      reason: "mail_from_unset_or_invalid",
       subject: params.subject,
       recipientDomain: recipientDomain(params.to),
     });
-    return { status: "skipped_no_provider", errorMessage: "MAIL_FROM unset" };
+    return { status: "skipped_no_provider", errorMessage: "MAIL_FROM unset or invalid" };
+  }
+
+  const payload: Record<string, unknown> = {
+    from: fromResolved,
+    to: [params.to],
+    subject: params.subject,
+    text: params.text,
+    html: params.html,
+  };
+  if (params.attachments?.length) {
+    payload.attachments = params.attachments.map((a) => ({
+      filename: a.filename,
+      content: a.content.toString("base64"),
+      content_type: a.contentType ?? "application/octet-stream",
+    }));
   }
 
   const res = await fetch("https://api.resend.com/emails", {
@@ -56,30 +75,19 @@ export async function sendTransactionalEmail(params: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      from,
-      to: [params.to],
-      subject: params.subject,
-      text: params.text,
-      html: params.html,
-      attachments: params.attachments?.map((a) => ({
-        filename: a.filename,
-        content: a.content.toString("base64"),
-        content_type: a.contentType ?? "application/octet-stream",
-      })),
-    }),
+    body: JSON.stringify(payload),
   });
 
   const json: unknown = await res.json().catch(() => null);
   if (!res.ok) {
-    const msg =
-      json && typeof json === "object" && "message" in json
-        ? String((json as { message: unknown }).message)
-        : `${res.status} ${res.statusText}`;
+    const msg = parseResendErrorBody(json, res.status);
     log.error("transactional_send_failed", {
       httpStatus: res.status,
       subject: params.subject,
       recipientDomain: recipientDomain(params.to),
+      fromDomain: fromResolved.includes("@")
+        ? fromResolved.slice(fromResolved.lastIndexOf("@") + 1).replace(/>\s*$/, "")
+        : "unknown",
       providerMessage: msg.slice(0, 500),
     });
     return { status: "failed", errorMessage: msg.slice(0, 4000) };
@@ -87,5 +95,10 @@ export async function sendTransactionalEmail(params: {
 
   const id =
     json && typeof json === "object" && "id" in json ? String((json as { id: unknown }).id) : undefined;
+  log.info("transactional_sent", {
+    subject: params.subject,
+    recipientDomain: recipientDomain(params.to),
+    providerId: id,
+  });
   return { status: "sent", providerId: id, errorMessage: null };
 }
