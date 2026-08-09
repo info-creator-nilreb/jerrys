@@ -7,7 +7,7 @@ import path from "path";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { auth } from "@/auth";
+import { getAdminSession } from "@/lib/auth/admin-session";
 import { syncDefaultVariantFromProduct } from "@/features/catalog";
 import { replaceProductCategoryMemberships } from "@/lib/catalog/category-membership";
 import { productCategoryAssignmentSchema } from "@/lib/catalog/category-schemas";
@@ -95,7 +95,7 @@ export async function createProduct(
   _prev: ProductFormState,
   formData: FormData,
 ): Promise<ProductFormState> {
-  const session = await auth();
+  const session = await getAdminSession();
   if (!session?.user) {
     return { error: "Nicht angemeldet." };
   }
@@ -222,7 +222,7 @@ export async function updateProduct(
   _prev: ProductFormState,
   formData: FormData,
 ): Promise<ProductFormState> {
-  const session = await auth();
+  const session = await getAdminSession();
   if (!session?.user) {
     return { error: "Nicht angemeldet." };
   }
@@ -376,7 +376,7 @@ export async function addProductImage(
   _prev: ProductFormState,
   formData: FormData,
 ): Promise<ProductFormState> {
-  const session = await auth();
+  const session = await getAdminSession();
   if (!session?.user) {
     return { error: "Nicht angemeldet." };
   }
@@ -503,7 +503,7 @@ export async function productImageMediaAction(
   _prev: ProductFormState,
   formData: FormData,
 ): Promise<ProductFormState> {
-  const session = await auth();
+  const session = await getAdminSession();
   if (!session?.user) {
     return { error: "Nicht angemeldet." };
   }
@@ -527,7 +527,7 @@ export async function uploadProductImages(
   productId: string,
   formData: FormData,
 ): Promise<ProductFormState> {
-  const session = await auth();
+  const session = await getAdminSession();
   if (!session?.user) {
     return { error: "Nicht angemeldet." };
   }

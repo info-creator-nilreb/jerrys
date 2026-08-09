@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { getAdminSession } from "@/lib/auth/admin-session";
 import type { ShippingCarrier } from "@/app/generated/prisma/client";
 import { resendOrderEmailFromAdmin } from "@/lib/email/resend-order-email-from-admin";
 import { applyOrderStatusTransition } from "@/lib/orders/apply-order-status-transition";
@@ -28,7 +28,7 @@ export async function updateOrderStatus(
   _prev: OrderStatusActionState,
   formData: FormData,
 ): Promise<OrderStatusActionState> {
-  const session = await auth();
+  const session = await getAdminSession();
   if (!session?.user) {
     redirect("/admin/login");
   }
@@ -77,7 +77,7 @@ export async function markOrderShippedWithDetails(
   _prev: MarkOrderShippedState,
   formData: FormData,
 ): Promise<MarkOrderShippedState> {
-  const session = await auth();
+  const session = await getAdminSession();
   if (!session?.user) {
     redirect("/admin/login");
   }
@@ -125,7 +125,7 @@ export async function generateOrderInvoiceDocument(
   _prev: GenerateInvoiceState,
   formData: FormData,
 ): Promise<GenerateInvoiceState> {
-  const session = await auth();
+  const session = await getAdminSession();
   if (!session?.user) {
     redirect("/admin/login");
   }
@@ -155,7 +155,7 @@ export async function resendOrderEmail(
   _prev: ResendOrderEmailState,
   formData: FormData,
 ): Promise<ResendOrderEmailState> {
-  const session = await auth();
+  const session = await getAdminSession();
   if (!session?.user) {
     redirect("/admin/login");
   }

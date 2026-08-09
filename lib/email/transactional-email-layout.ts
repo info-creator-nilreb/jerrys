@@ -27,7 +27,7 @@ export const TRANSACTIONAL_EMAIL_DESIGN = {
 /** Instagram laut Vorgabe (nur dieser Link in transaktionalen Mails). */
 const TRANSACTIONAL_EMAIL_INSTAGRAM_URL = "https://www.instagram.com/jerrys.design/";
 
-export type TransactionalHeroVariant = "order" | "shipping" | "refund";
+export type TransactionalHeroVariant = "order" | "shipping" | "refund" | "account";
 
 export function transactionalPaymentLabel(method: string): string {
   switch (method) {
@@ -65,7 +65,15 @@ function heroCircleBg(): string {
 /** Gmail entfernt Inline-SVG oft; Emoji sind zuverlässiger (Semantik wie Order/Versand/Erstattung). */
 function heroIconHtml(variant: TransactionalHeroVariant): string {
   const emoji =
-    variant === "order" ? "🛒" : variant === "shipping" ? "🚚" : variant === "refund" ? "💵" : "•";
+    variant === "order"
+      ? "🛒"
+      : variant === "shipping"
+        ? "🚚"
+        : variant === "refund"
+          ? "💵"
+          : variant === "account"
+            ? "🔑"
+            : "•";
   return `<span style="font-size:36px;line-height:1;display:inline-block" aria-hidden="true">${emoji}</span>`;
 }
 

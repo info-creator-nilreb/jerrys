@@ -9,7 +9,7 @@ Build a **modular monolith** using a single Next.js application.
 - TypeScript
 - PostgreSQL
 - Prisma ORM
-- Auth.js for admin authentication
+- Auth.js for admin and customer authentication (see [ADR-0005](./adr/0005-customer-authentication.md))
 - Zod for runtime validation
 - React Hook Form for admin and checkout forms if needed
 - Email provider abstraction with an initial provider such as Resend
@@ -53,6 +53,7 @@ app/
   api/
 features/
   catalog/
+  customers/
   cart/
   checkout/
   orders/
@@ -220,6 +221,14 @@ Suggested fields:
 - updatedAt
 - lastLoginAt nullable
 
+### Customer / CustomerIdentity / CustomerAuthToken
+Purpose: storefront customer identity (Epic 3). Not derived from order emails.
+
+Implemented fields (Slice 1):
+- Customer: email (normalized unique), emailVerifiedAt, optional names/passwordHash, isActive, lastLoginAt
+- CustomerIdentity: provider (`password` | `magic_link`) + providerSubject
+- CustomerAuthToken: purpose (`email_verify` | `magic_link` | `password_reset`), tokenHash, expiresAt, consumedAt
+
 ### IdempotencyKey
 Purpose: deduplicate critical requests.
 
@@ -284,10 +293,11 @@ Rules:
 - keep orchestration in application layer
 
 ## Authentication and Authorization
-- Admin uses Auth.js
-- public customers do not need accounts in V1
-- admin authorization is enforced on the server
-- route protection and action protection are both required
+- Admin and customers use Auth.js JWT sessions with explicit `subjectKind` (`admin` | `customer`); see [ADR-0005](./adr/0005-customer-authentication.md)
+- Customer identities live in `Customer` / `CustomerIdentity`; one-time tokens in `CustomerAuthToken` (hashed)
+- Guest checkout remains available without an account; order attachment is a later Epic 3 slice
+- Admin authorization is enforced on the server (`getAdminSession`); customer routes use `getCustomerSession`
+- Route protection and action protection are both required
 
 ## Persistence Rules
 - Prisma is the only ORM

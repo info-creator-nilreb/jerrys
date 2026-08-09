@@ -7,7 +7,7 @@ import path from "path";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { auth } from "@/auth";
+import { getAdminSession } from "@/lib/auth/admin-session";
 import { ALLOWED_IMAGE_TYPES, extFromMime, MAX_UPLOAD_BYTES } from "@/lib/admin/upload-image";
 import { getPrisma } from "@/lib/db/prisma";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
@@ -17,7 +17,7 @@ const log = createLogger("admin.startseite");
 export type StartseiteFormState = { error?: string; ok?: boolean } | null;
 
 async function requireAdminOrRedirect(): Promise<void> {
-  const session = await auth();
+  const session = await getAdminSession();
   if (!session?.user) {
     redirect("/admin/login");
   }

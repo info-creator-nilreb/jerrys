@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { auth } from "@/auth";
+import { getAdminSession } from "@/lib/auth/admin-session";
 import { parseEuroInputToCents } from "@/lib/catalog/format";
 import { isShopShippingCountryCode } from "@/lib/catalog/shipping-countries-catalog";
 import { getPrisma } from "@/lib/db/prisma";
@@ -27,7 +27,7 @@ function fieldErrorsFromZod(err: z.ZodError): Record<string, string> {
 }
 
 async function requireAdminSession(): Promise<void> {
-  const session = await auth();
+  const session = await getAdminSession();
   if (!session?.user) {
     redirect("/admin/login");
   }

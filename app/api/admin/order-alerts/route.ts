@@ -1,9 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { auth } from "@/auth";
+import { getAdminSession } from "@/lib/auth/admin-session";
 import { listOrdersCreatedAfter } from "@/lib/admin/order-alerts";
 
 export async function GET(req: NextRequest) {
-  const session = await auth();
+  const session = await getAdminSession();
   if (!session?.user) {
     return NextResponse.json({ error: "Nicht angemeldet" }, { status: 401 });
   }

@@ -2,14 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { getAdminSession } from "@/lib/auth/admin-session";
 import { getPrisma } from "@/lib/db/prisma";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
 import { generateRandomPromotionCode } from "@/lib/promotions/code-generate";
 import { z } from "zod";
 
 async function requireSession() {
-  const session = await auth();
+  const session = await getAdminSession();
   if (!session?.user) {
     redirect("/admin/login");
   }

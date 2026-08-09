@@ -38,3 +38,4 @@ ADRs record material decisions that constrain future implementation.
 - [ADR-0002: Vercel deployment and durable infrastructure](./0002-vercel-runtime.md)
 - [ADR-0003: Catalog variants and collections](./0003-catalog-variants-and-collections.md)
 - [ADR-0004: Product categories (browse taxonomy)](./0004-product-categories.md)
+- [ADR-0005: Customer authentication (Auth.js + first-party identity)](./0005-customer-authentication.md)

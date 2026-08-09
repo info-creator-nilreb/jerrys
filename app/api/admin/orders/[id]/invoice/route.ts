@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getAdminSession } from "@/lib/auth/admin-session";
 import { buildInvoicePdfBuffer } from "@/lib/invoice/build-invoice-pdf";
 import { getPrisma } from "@/lib/db/prisma";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth();
+  const session = await getAdminSession();
   if (!session?.user) {
     return NextResponse.json({ error: "Nicht angemeldet" }, { status: 401 });
   }

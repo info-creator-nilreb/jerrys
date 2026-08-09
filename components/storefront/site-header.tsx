@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { HeaderAccountLink } from "@/components/storefront/header-account-link";
 import { HeaderCartFlyout } from "@/components/storefront/header-cart-flyout";
 import { StorefrontHeaderSearch } from "@/components/storefront/storefront-header-search";
 import { StorefrontShopNav } from "@/components/storefront/storefront-shop-nav";
@@ -47,6 +48,7 @@ export async function SiteHeader() {
         </Link>
         <div className="flex min-w-0 flex-1 items-center justify-end gap-0.5 sm:gap-1">
           <StorefrontHeaderSearch />
+          <HeaderAccountLink />
           <HeaderCartFlyout cartBadgeCount={cartCount} />
         </div>
       </div>

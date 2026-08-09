@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { OrderTableRowLink } from "@/app/admin/(dashboard)/orders/order-table-row-link";
 import { OrderTriplePill } from "@/app/admin/(dashboard)/orders/order-triple-pill";
-import { auth } from "@/auth";
+import { getAdminSession } from "@/lib/auth/admin-session";
 import { formatPrice } from "@/lib/catalog/format";
 import { getAdminDashboardOrdersSnapshot } from "@/lib/orders/admin-queries";
 import { deriveTripleFromOrder } from "@/lib/orders/order-admin-triple";
@@ -32,7 +32,7 @@ const dateFmt = new Intl.DateTimeFormat("de-DE", {
 });
 
 export default async function AdminHomePage() {
-  const session = await auth();
+  const session = await getAdminSession();
   const email = session?.user?.email ?? "";
   const name = session?.user?.name ?? "";
   const first = firstNameFromSession(name, email);
