@@ -7,6 +7,7 @@ import {
   formatDurationLabel,
 } from "@/features/workshops";
 import { WorkshopSessionLocationBlock } from "@/components/storefront/workshop-session-location-block";
+import { WorkshopBookSeatsPanel } from "@/components/storefront/workshop-book-seats-panel";
 import { formatPrice } from "@/lib/catalog/format";
 import {
   formatSelfCancelDeadline,
@@ -96,14 +97,13 @@ export default async function StorefrontWorkshopSessionDetailPage({
           </div>
         </dl>
 
-        {session.availability !== "sold_out" ? (
-          <p
-            className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
-            role="status"
-          >
-            Die Online-Buchung im Checkout wird im nächsten Schritt freigeschaltet. Bis dahin erreichst du uns
-            über die üblichen Kontaktwege, wenn du einen Platz reservieren möchtest.
-          </p>
+        {session.seatsRemaining > 0 && session.availability !== "sold_out" ? (
+          <WorkshopBookSeatsPanel
+            sessionId={session.id}
+            seatsRemaining={session.seatsRemaining}
+            maxSeatsPerBooking={session.maxSeatsPerBooking}
+            capacity={session.capacity}
+          />
         ) : null}
       </div>
     </div>

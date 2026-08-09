@@ -12,6 +12,7 @@ import {
   type FormEvent,
 } from "react";
 import { submitCheckout, type CheckoutActionState } from "@/app/(storefront)/checkout/actions";
+import type { WorkshopCheckoutActionState } from "@/app/(storefront)/checkout/termine/actions";
 import {
   previewCheckoutPromotion,
   type CheckoutPromotionPreview,
@@ -171,6 +172,10 @@ export function CheckoutForm({
   addressPrefill,
   savedAddresses = [],
   canSaveAddressToAccount = false,
+  submitCheckoutAction = submitCheckout,
+  workshopBookingId,
+  hidePromotionPanel = false,
+  checkoutTitle = "Checkout",
 }: {
   idempotencyKey: string;
   lines: CheckoutSummaryLine[];
@@ -186,6 +191,13 @@ export function CheckoutForm({
   /** Adressbuch des angemeldeten, verifizierten Kunden (leer für Gäste). */
   savedAddresses?: CustomerAddressListItem[];
   canSaveAddressToAccount?: boolean;
+  submitCheckoutAction?: (
+    prev: CheckoutActionState | WorkshopCheckoutActionState,
+    formData: FormData,
+  ) => Promise<CheckoutActionState | WorkshopCheckoutActionState>;
+  workshopBookingId?: string;
+  hidePromotionPanel?: boolean;
+  checkoutTitle?: string;
 }) {
   const prefillCountry =
     addressPrefill?.shippingCountry &&
@@ -193,7 +205,7 @@ export function CheckoutForm({
       ? addressPrefill.shippingCountry
       : initialShippingCountry;
 
-  const [state, formAction, pending] = useActionState(submitCheckout, initial);
+  const [state, formAction, pending] = useActionState(submitCheckoutAction, initial);
   const lastServerErrorSigRef = useRef<string | null>(null);
   const [billingDifferent, setBillingDifferent] = useState(
     addressPrefill?.billingUseShipping === "no",
@@ -518,8 +530,11 @@ export function CheckoutForm({
     >
       <div className="order-2 min-w-0 border-b border-(--surface-muted) bg-white px-4 py-10 sm:px-8 lg:order-1 lg:border-b-0 lg:pr-12 lg:pl-0">
         <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
+        {workshopBookingId ? (
+          <input type="hidden" name="workshopBookingId" value={workshopBookingId} />
+        ) : null}
         <input type="hidden" name="paymentMethod" value="paypal" />
-        <h1 className="text-xl font-semibold text-[#1f2937] sm:text-2xl">Checkout</h1>
+        <h1 className="text-xl font-semibold text-[#1f2937] sm:text-2xl">{checkoutTitle}</h1>
 
         {state && !state.ok ? (
           <div
@@ -1075,23 +1090,27 @@ export function CheckoutForm({
         freeShippingFromSubtotalGrossCents={freeShippingFromSubtotalGrossCents}
       >
         <div id="checkout-section-rabatt">
-          <CheckoutDiscountPanel
-            committedCode={committedPromoCode}
-            setCommittedCode={setCommittedPromoCode}
-            declineAutomatic={declineAutomatic}
-            setDeclineAutomatic={setDeclineAutomatic}
-            previewLoading={promoPreview === null}
-            codeError={discountCodeMessage}
-            systemError={promoSystemError}
-          />
-          <AutomaticPromotionDismiss
-            visible={
-              appliedPromotion?.kind === "applied" &&
-              appliedPromotion.source === "automatic" &&
-              committedPromoCode.length === 0
-            }
-            onDismiss={() => setDeclineAutomatic(true)}
-          />
+          {!hidePromotionPanel ? (
+            <>
+              <CheckoutDiscountPanel
+                committedCode={committedPromoCode}
+                setCommittedCode={setCommittedPromoCode}
+                declineAutomatic={declineAutomatic}
+                setDeclineAutomatic={setDeclineAutomatic}
+                previewLoading={promoPreview === null}
+                codeError={discountCodeMessage}
+                systemError={promoSystemError}
+              />
+              <AutomaticPromotionDismiss
+                visible={
+                  appliedPromotion?.kind === "applied" &&
+                  appliedPromotion.source === "automatic" &&
+                  committedPromoCode.length === 0
+                }
+                onDismiss={() => setDeclineAutomatic(true)}
+              />
+            </>
+          ) : null}
         </div>
       </CheckoutSummaryAside>
     </form>

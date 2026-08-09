@@ -2,6 +2,7 @@ import type { PrismaClient } from "@/app/generated/prisma/client";
 import {
   commitStockReservationsForOrder,
 } from "@/features/inventory";
+import { confirmWorkshopBookingAfterOrderPaid } from "@/features/workshops";
 import { createOrderEvent, ORDER_EVENT_STATUS_CHANGED } from "@/lib/orders/order-events";
 
 export type FinalizePendingPaymentResult =
@@ -40,7 +41,14 @@ export async function finalizeOrderAfterPendingPaymentCapture(
         correlationId: params.providerRef,
       });
 
-      if (committedCount === 0) {
+      const hasWorkshopBooking = await tx.workshopBooking.findFirst({
+        where: { orderId: params.orderId },
+        select: { id: true },
+      });
+
+      if (hasWorkshopBooking) {
+        await confirmWorkshopBookingAfterOrderPaid(tx, { orderId: params.orderId });
+      } else if (committedCount === 0) {
         const variantIds: string[] = [];
         for (const line of order.items) {
           let variantId = line.productVariantId;

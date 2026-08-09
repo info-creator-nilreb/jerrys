@@ -100,3 +100,12 @@ export {
   type StorefrontCreateWorkshopDateRequestResult,
   type MutateWorkshopDateRequestResult,
 } from "@/features/workshops/application/workshop-date-requests";
+
+export {
+  createWorkshopSeatHoldForStorefront,
+  getWorkshopHoldForCheckout,
+  releaseWorkshopHoldForBooking,
+  confirmWorkshopBookingAfterOrderPaid,
+  type CreateWorkshopSeatHoldResult,
+  type WorkshopHoldCheckoutView,
+} from "@/features/workshops/application/workshop-seat-holds";

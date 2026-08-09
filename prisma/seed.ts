@@ -466,6 +466,41 @@ async function main() {
         isActive: true,
       },
     });
+
+    const { WORKSHOP_CHECKOUT_PRODUCT_SLUG, WORKSHOP_CHECKOUT_PRODUCT_SKU } = await import(
+      "../lib/workshop/workshop-checkout-catalog"
+    );
+    const workshopCheckoutProduct = await prisma.product.upsert({
+      where: { slug: WORKSHOP_CHECKOUT_PRODUCT_SLUG },
+      create: {
+        slug: WORKSHOP_CHECKOUT_PRODUCT_SLUG,
+        title: "Workshop-Platz (intern)",
+        isActive: false,
+        sortOrder: 9999,
+      },
+      update: { isActive: false },
+    });
+    await prisma.productVariant.upsert({
+      where: { sku: WORKSHOP_CHECKOUT_PRODUCT_SKU },
+      create: {
+        productId: workshopCheckoutProduct.id,
+        sku: WORKSHOP_CHECKOUT_PRODUCT_SKU,
+        title: "Workshop-Platz",
+        priceGrossCents: 0,
+        priceNetCents: 0,
+        taxRatePercent: 19,
+        stockQuantity: 999_999,
+        availableQuantity: 999_999,
+        isDefault: true,
+        isActive: true,
+      },
+      update: {
+        productId: workshopCheckoutProduct.id,
+        availableQuantity: 999_999,
+        stockQuantity: 999_999,
+        isActive: true,
+      },
+    });
   } finally {
     await prisma.$disconnect();
   }
