@@ -1,4 +1,4 @@
-import { absoluteUrlForEmail } from "@/lib/email/email-absolute-url";
+import { customerAuthEmailActionUrl } from "@/lib/email/customer-auth-email-link";
 import { sendTransactionalEmail } from "@/lib/email/provider";
 import {
   grayInfoCard,
@@ -51,7 +51,9 @@ export async function sendCustomerAuthEmail(params: {
   rawToken: string;
 }): Promise<CustomerAuthEmailSendResult> {
   const meta = copy[params.kind];
-  const href = absoluteUrlForEmail(`${meta.pathPrefix}?token=${encodeURIComponent(params.rawToken)}`);
+  const href = customerAuthEmailActionUrl(meta.pathPrefix, params.rawToken, {
+    tokenInHash: params.kind === "email_verify",
+  });
   if (!href) {
     log.warn("customer_auth_email_missing_site_url", { kind: params.kind });
     return { ok: false, reason: "missing_site_url" };
