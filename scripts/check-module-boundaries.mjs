@@ -73,7 +73,7 @@ function isPublicApi(subpath) {
     return true;
   }
   // Reine Domain-Hilfen für Storefront-Client (ohne Application/DB-Barrel).
-  if (/^password(\.[cm]?[jt]sx?)?$/.test(subpath)) {
+  if (/^(password|address|checkout-prefill)(\.[cm]?[jt]sx?)?$/.test(subpath)) {
     return true;
   }
   return false;

@@ -43,6 +43,8 @@ Kunden können sich per **E-Mail/Passwort oder Magic Link** anmelden und ihre Be
 - Rechnungs- und Lieferadressen anlegen, bearbeiten, löschen, Standard wählen
 - Checkout kann Adressen übernehmen; Bestellung behält unveränderliche Snapshots
 
+**Status:** umgesetzt. Tabelle `customer_addresses`; Portal unter `/konto/adressen` (nur verifizierte Konten). Checkout übernimmt Standard-Liefer- und ggf. abweichende Rechnungsadresse per `getCheckoutAddressPrefillForCustomer`. Bestell-Snapshots unverändert.
+
 ### Slice 4 — Gastbestellungen sicher zuordnen
 
 - Nach Registrierung/Magic-Link-Verifikation Zuordnung historischer Gastbestellungen derselben verifizierten E-Mail

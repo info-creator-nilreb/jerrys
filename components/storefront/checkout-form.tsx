@@ -31,6 +31,7 @@ import { addressLine1HouseNumberMessage } from "@/lib/checkout/address-line-vali
 import { postalCodeErrorMessage } from "@/lib/checkout/postal-code-validation";
 import { computeCheckoutOrderTotalsWithDiscount } from "@/lib/promotions/checkout-totals";
 import type { OrderPriceLineInput } from "@/lib/tax/order-price-totals";
+import type { CheckoutAddressPrefill } from "@/features/customers/checkout-prefill";
 import { z } from "zod";
 
 const initial: CheckoutActionState = null;
@@ -132,6 +133,7 @@ export function CheckoutForm({
   payPalConfigured,
   payPalClientId,
   prefillPaypal,
+  addressPrefill,
 }: {
   idempotencyKey: string;
   lines: CheckoutSummaryLine[];
@@ -143,16 +145,26 @@ export function CheckoutForm({
   payPalConfigured: boolean;
   payPalClientId: string;
   prefillPaypal?: boolean;
+  addressPrefill?: CheckoutAddressPrefill | null;
 }) {
+  const prefillCountry =
+    addressPrefill?.shippingCountry &&
+    allowedShippingCountries.some((c) => c.code === addressPrefill.shippingCountry)
+      ? addressPrefill.shippingCountry
+      : initialShippingCountry;
+
   const [state, formAction, pending] = useActionState(submitCheckout, initial);
   const lastServerErrorSigRef = useRef<string | null>(null);
-  const [billingDifferent, setBillingDifferent] = useState(false);
+  const [billingDifferent, setBillingDifferent] = useState(
+    addressPrefill?.billingUseShipping === "no",
+  );
   const [liveErrors, setLiveErrors] = useState<Record<string, string>>({});
   /** Wenn PayPal Advanced Card Fields aktiv sind, ersetzen sie den klassischen Form-Submit. */
   const [payPalCardFieldsPrimary, setPayPalCardFieldsPrimary] = useState(false);
   /** Nur bei „Debit- oder Kreditkarte“ werden die Hosted Card Fields gemountet. */
   const [payPalSurface, setPayPalSurface] = useState<CheckoutPayPalMethodId>("paypal");
-  const [shippingCountry, setShippingCountry] = useState(initialShippingCountry);
+  const [shippingCountry, setShippingCountry] = useState(prefillCountry);
+  const p = addressPrefill;
   const [committedPromoCode, setCommittedPromoCode] = useState("");
   const [declineAutomatic, setDeclineAutomatic] = useState(false);
   const [promoPreview, setPromoPreview] = useState<CheckoutPromotionPreview | { error: string } | null>(
@@ -476,6 +488,7 @@ export function CheckoutForm({
               autoComplete="email"
               placeholder="E-Mail-Adresse oder Mobiltelefonnummer"
               className={inputClass}
+              defaultValue={addressPrefill?.email ?? undefined}
               onBlur={onEmailBlur}
               onChange={() => clearLive("email")}
               {...ariaFieldErr(fe?.email ?? (liveErrors.email || undefined), checkoutErrId.email)}
@@ -547,6 +560,7 @@ export function CheckoutForm({
                   required
                   autoComplete="shipping given-name"
                   className={inputClass}
+                  defaultValue={p?.shippingFirstName}
                   {...ariaFieldErr(fe?.shippingFirstName, checkoutErrId.shippingFirstName)}
                 />
                 {fe?.shippingFirstName ? (
@@ -569,6 +583,7 @@ export function CheckoutForm({
                   required
                   autoComplete="shipping family-name"
                   className={inputClass}
+                  defaultValue={p?.shippingLastName}
                   {...ariaFieldErr(fe?.shippingLastName, checkoutErrId.shippingLastName)}
                 />
                 {fe?.shippingLastName ? (
@@ -591,6 +606,7 @@ export function CheckoutForm({
                 name="shippingCompany"
                 autoComplete="shipping organization"
                 className={inputClass}
+                defaultValue={p?.shippingCompany}
               />
             </div>
             <div>
@@ -604,6 +620,7 @@ export function CheckoutForm({
                 autoComplete="shipping address-line1"
                 placeholder="z. B. Musterstraße 12"
                 className={inputClass}
+                defaultValue={p?.shippingLine1}
                 onBlur={onShippingLine1Blur}
                 onChange={() => clearLive("shippingLine1")}
                 {...ariaFieldErr(
@@ -626,6 +643,7 @@ export function CheckoutForm({
                 name="shippingLine2"
                 autoComplete="shipping address-line2"
                 className={inputClass}
+                defaultValue={p?.shippingLine2}
               />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -640,6 +658,7 @@ export function CheckoutForm({
                   inputMode="text"
                   autoComplete="shipping postal-code"
                   className={inputClass}
+                  defaultValue={p?.shippingZip}
                   onBlur={onShippingZipBlur}
                   onChange={() => clearLive("shippingZip")}
                   {...ariaFieldErr(
@@ -663,6 +682,7 @@ export function CheckoutForm({
                   required
                   autoComplete="shipping address-level2"
                   className={inputClass}
+                  defaultValue={p?.shippingCity}
                   {...ariaFieldErr(fe?.shippingCity, checkoutErrId.shippingCity)}
                 />
                 {fe?.shippingCity ? (
@@ -724,7 +744,7 @@ export function CheckoutForm({
                   name="billingCountry"
                   autoComplete="billing country"
                   className={selectClass}
-                  defaultValue={initialShippingCountry}
+                  defaultValue={p?.billingCountry ?? prefillCountry}
                   onChange={onBillingCountryChange}
                   {...ariaFieldErr(fe?.billingCountry, checkoutErrId.billingCountry)}
                 >
@@ -750,6 +770,7 @@ export function CheckoutForm({
                     name="billingFirstName"
                     autoComplete="billing given-name"
                     className={inputClass}
+                    defaultValue={p?.billingFirstName}
                     {...ariaFieldErr(fe?.billingFirstName, checkoutErrId.billingFirstName)}
                   />
                   {fe?.billingFirstName ? (
@@ -771,6 +792,7 @@ export function CheckoutForm({
                     name="billingLastName"
                     autoComplete="billing family-name"
                     className={inputClass}
+                    defaultValue={p?.billingLastName}
                     {...ariaFieldErr(fe?.billingLastName, checkoutErrId.billingLastName)}
                   />
                   {fe?.billingLastName ? (
@@ -793,6 +815,7 @@ export function CheckoutForm({
                   name="billingCompany"
                   autoComplete="billing organization"
                   className={inputClass}
+                  defaultValue={p?.billingCompany}
                 />
               </div>
               <div>
@@ -805,6 +828,7 @@ export function CheckoutForm({
                   autoComplete="billing address-line1"
                   placeholder="z. B. Musterstraße 12"
                   className={inputClass}
+                  defaultValue={p?.billingLine1}
                   onBlur={onBillingLine1Blur}
                   onChange={() => clearLive("billingLine1")}
                   {...ariaFieldErr(
@@ -827,6 +851,7 @@ export function CheckoutForm({
                   name="billingLine2"
                   autoComplete="billing address-line2"
                   className={inputClass}
+                  defaultValue={p?.billingLine2}
                 />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -840,6 +865,7 @@ export function CheckoutForm({
                     inputMode="text"
                     autoComplete="billing postal-code"
                     className={inputClass}
+                    defaultValue={p?.billingZip}
                     onBlur={onBillingZipBlur}
                     onChange={() => clearLive("billingZip")}
                     {...ariaFieldErr(
@@ -862,6 +888,7 @@ export function CheckoutForm({
                     name="billingCity"
                     autoComplete="billing address-level2"
                     className={inputClass}
+                    defaultValue={p?.billingCity}
                     {...ariaFieldErr(fe?.billingCity, checkoutErrId.billingCity)}
                   />
                   {fe?.billingCity ? (

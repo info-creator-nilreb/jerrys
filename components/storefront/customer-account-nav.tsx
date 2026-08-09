@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const links = [
   { href: "/konto", label: "Übersicht", exact: true },
   { href: "/konto/bestellungen", label: "Bestellungen", exact: false },
+  { href: "/konto/adressen", label: "Adressen", exact: false },
 ] as const;
 
 export function CustomerAccountNav() {
