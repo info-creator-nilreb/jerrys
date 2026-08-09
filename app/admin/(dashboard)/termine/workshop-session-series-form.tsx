@@ -280,6 +280,12 @@ export function WorkshopSessionSeriesForm({ template }: Props) {
       </section>
 
       <AdminFormActionDock>
+        <Link
+          href="/admin/termine"
+          className="rounded-md border border-[#d1d5db] px-4 py-2.5 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
+        >
+          Abbrechen
+        </Link>
         <button
           type="submit"
           disabled={pending}
@@ -287,12 +293,6 @@ export function WorkshopSessionSeriesForm({ template }: Props) {
         >
           {pending ? "Lege Entwürfe an …" : "Serie als Entwürfe anlegen"}
         </button>
-        <Link
-          href="/admin/termine"
-          className="rounded-md border border-[#d1d5db] px-4 py-2.5 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
-        >
-          Abbrechen
-        </Link>
       </AdminFormActionDock>
     </form>
   );

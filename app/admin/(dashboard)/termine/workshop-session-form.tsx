@@ -331,6 +331,12 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
 
       {!readOnly ? (
         <AdminFormActionDock>
+          <Link
+            href="/admin/termine"
+            className="rounded-md border border-[#d1d5db] px-4 py-2.5 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
+          >
+            Abbrechen
+          </Link>
           <button
             type="submit"
             disabled={pending}
@@ -338,12 +344,6 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
           >
             {pending ? "Speichern …" : session ? "Entwurf speichern" : "Entwurf anlegen"}
           </button>
-          <Link
-            href="/admin/termine"
-            className="rounded-md border border-[#d1d5db] px-4 py-2.5 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
-          >
-            Abbrechen
-          </Link>
         </AdminFormActionDock>
       ) : null}
     </form>
