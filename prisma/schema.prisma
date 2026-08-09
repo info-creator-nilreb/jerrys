@@ -46,6 +46,7 @@ model Customer {
   orders           Order[]
   addresses        CustomerAddress[]
   workshopBookings WorkshopBooking[]
+  workshopDateRequests WorkshopDateRequest[]
 
   @@index([isActive, createdAt])
   @@map("customers")
@@ -689,10 +690,35 @@ model WorkshopSession {
   updatedAt              DateTime @updatedAt @map("updated_at")
   bookings               WorkshopBooking[]
   events                   WorkshopSessionEvent[]
+  approvedDateRequest    WorkshopDateRequest? @relation("ApprovedWorkshopDateRequest")
 
   @@index([status, startsAt])
   @@index([seriesBatchId, status])
   @@map("workshop_sessions")
+}
+
+/// Kundenwunsch für einen Termin ohne sofortige Buchung/Zahlung (Epic 5).
+model WorkshopDateRequest {
+  id                 String    @id @default(cuid())
+  customerId         String?   @map("customer_id")
+  customer           Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  contactName        String?   @map("contact_name")
+  contactEmail       String    @map("contact_email")
+  preferredStartsAt  DateTime  @map("preferred_starts_at")
+  seatCount          Int       @default(1) @map("seat_count")
+  message            String?
+  /// pending | approved | rejected
+  status             String    @default("pending")
+  adminNote          String?   @map("admin_note")
+  approvedSessionId  String?   @unique @map("approved_session_id")
+  approvedSession    WorkshopSession? @relation("ApprovedWorkshopDateRequest", fields: [approvedSessionId], references: [id], onDelete: SetNull)
+  resolvedAt         DateTime? @map("resolved_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@index([contactEmail, createdAt])
+  @@map("workshop_date_requests")
 }
 
 /// Buchung eines Kunden oder Gastes für einen Gruppentermin.
