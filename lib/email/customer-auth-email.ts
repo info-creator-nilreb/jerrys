@@ -38,16 +38,23 @@ const copy: Record<
   },
 };
 
+export type CustomerAuthEmailSendResult =
+  | { ok: true }
+  | {
+      ok: false;
+      reason: "missing_site_url" | "provider_unconfigured" | "provider_error";
+    };
+
 export async function sendCustomerAuthEmail(params: {
   kind: CustomerAuthEmailKind;
   to: string;
   rawToken: string;
-}): Promise<{ ok: boolean; skipped?: boolean }> {
+}): Promise<CustomerAuthEmailSendResult> {
   const meta = copy[params.kind];
   const href = absoluteUrlForEmail(`${meta.pathPrefix}?token=${encodeURIComponent(params.rawToken)}`);
   if (!href) {
     log.warn("customer_auth_email_missing_site_url", { kind: params.kind });
-    return { ok: false };
+    return { ok: false, reason: "missing_site_url" };
   }
 
   const bodyHtml = grayInfoCard(
@@ -90,14 +97,15 @@ export async function sendCustomerAuthEmail(params: {
     return { ok: true };
   }
   if (result.status === "skipped_no_provider") {
-    log.info("customer_auth_email_skipped", { kind: params.kind });
-    return { ok: true, skipped: true };
+    log.warn("customer_auth_email_skipped", { kind: params.kind });
+    return { ok: false, reason: "provider_unconfigured" };
   }
   log.error("customer_auth_email_failed", {
     kind: params.kind,
     error: result.errorMessage ?? "unknown",
+    httpHint: result.errorMessage?.includes("domain") ? "check_resend_domain" : undefined,
   });
-  return { ok: false };
+  return { ok: false, reason: "provider_error" };
 }
 
 /** Dev/test helper: never log the raw token in production paths. */

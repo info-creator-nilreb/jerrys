@@ -46,7 +46,9 @@ In Vercel → Project → **Settings → Environment Variables** für **Preview*
 | `NEXT_PUBLIC_SUPABASE_URL` | Falls Supabase-Client genutzt wird |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase Anon/Publishable Key |
 | `RESEND_API_KEY` | Transaktions-E-Mail |
-| `MAIL_FROM` | Absender (RFC-konform, siehe `.env.example`) |
+| `MAIL_FROM_EMAIL` | Absender-Adresse (Resend-verifizierte Domain), z. B. `info@deine-domain.de` |
+| `MAIL_FROM_NAME` | Optional Anzeigename, z. B. `Jerrys` |
+| `MAIL_FROM` | Alternativ eine Zeile `Jerrys <info@deine-domain.de>` — **nicht** nur `jerry's` ohne E-Mail |
 
 Optional je Feature: PayPal (`PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENV`, für Webhooks `PAYPAL_WEBHOOK_ID`), Seed-Admin nur für Staging, siehe [`.env.example`](../.env.example). Webhook-URL in PayPal: `https://<host>/api/webhooks/paypal`.
 

@@ -2,7 +2,12 @@ export { normalizeCustomerEmail, isValidCustomerEmailShape } from "@/features/cu
 export {
   CUSTOMER_PASSWORD_MIN_LENGTH,
   CUSTOMER_PASSWORD_MAX_LENGTH,
+  CUSTOMER_PASSWORD_REQUIREMENTS_HINT,
   validateCustomerPassword,
+  getCustomerPasswordCriteria,
+  getCustomerPasswordStrength,
+  CUSTOMER_PASSWORD_LENGTH_PARTIAL_MIN,
+  CUSTOMER_PASSWORD_STRENGTH_SEGMENT_COUNT,
 } from "@/features/customers/domain/password";
 export {
   CUSTOMER_AUTH_TOKEN_PURPOSES,
@@ -12,6 +17,7 @@ export {
   hashCustomerAuthToken,
   customerAuthTokenExpiresAt,
   isCustomerAuthTokenUsable,
+  normalizeCustomerAuthTokenFromClient,
   type CustomerAuthTokenPurpose,
   type CustomerIdentityProvider,
 } from "@/features/customers/domain/auth-token";

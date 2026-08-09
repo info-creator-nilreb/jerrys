@@ -69,7 +69,14 @@ function featureTarget(importer, specifier) {
 }
 
 function isPublicApi(subpath) {
-  return subpath === "" || /^(index)(\.[cm]?[jt]sx?)?$/.test(subpath);
+  if (subpath === "" || /^(index)(\.[cm]?[jt]sx?)?$/.test(subpath)) {
+    return true;
+  }
+  // Reine Domain-Hilfen für Storefront-Client (ohne Application/DB-Barrel).
+  if (/^password(\.[cm]?[jt]sx?)?$/.test(subpath)) {
+    return true;
+  }
+  return false;
 }
 
 function importedSpecifiers(sourceFile) {

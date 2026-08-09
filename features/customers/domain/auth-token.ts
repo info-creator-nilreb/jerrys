@@ -36,3 +36,14 @@ export function isCustomerAuthTokenUsable(params: {
   if (params.consumedAt) return false;
   return params.expiresAt.getTime() > now.getTime();
 }
+
+/** Token aus Query/Form (URL-decode, trim). */
+export function normalizeCustomerAuthTokenFromClient(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+  try {
+    return decodeURIComponent(trimmed).trim();
+  } catch {
+    return trimmed;
+  }
+}

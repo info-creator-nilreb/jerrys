@@ -45,6 +45,7 @@ export async function registerCustomerAction(
   const result = await registerCustomer({
     email: formData.get("email"),
     password: formData.get("password"),
+    passwordConfirm: formData.get("passwordConfirm"),
     firstName: formData.get("firstName") || undefined,
     lastName: formData.get("lastName") || undefined,
   });
@@ -116,6 +117,7 @@ export async function confirmPasswordResetAction(
   const result = await confirmCustomerPasswordReset({
     token: formData.get("token"),
     password: formData.get("password"),
+    passwordConfirm: formData.get("passwordConfirm"),
   });
   if (!result.ok) {
     return { ok: false, message: result.message, fieldErrors: result.fieldErrors };
@@ -123,8 +125,13 @@ export async function confirmPasswordResetAction(
   return { ok: true, message: result.message };
 }
 
-export async function verifyEmailAction(token: string): Promise<CustomerAuthActionState> {
-  const result = await verifyCustomerEmail({ token });
+export async function verifyEmailAction(
+  _prev: CustomerAuthActionState,
+  formData: FormData,
+): Promise<CustomerAuthActionState> {
+  const result = await verifyCustomerEmail({
+    token: formData.get("token"),
+  });
   if (!result.ok) return { ok: false, message: result.message };
   return {
     ok: true,

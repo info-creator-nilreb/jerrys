@@ -6,8 +6,12 @@ import {
   hashCustomerAuthToken,
   isCustomerAuthTokenUsable,
   normalizeCustomerEmail,
+  normalizeCustomerAuthTokenFromClient,
   resolveAuthSubjectKind,
   validateCustomerPassword,
+  getCustomerPasswordCriteria,
+  getCustomerPasswordStrength,
+  CUSTOMER_PASSWORD_LENGTH_PARTIAL_MIN,
 } from "@/features/customers";
 
 describe("customer auth domain", () => {
@@ -15,9 +19,27 @@ describe("customer auth domain", () => {
     expect(normalizeCustomerEmail("  Ada@Example.COM ")).toBe("ada@example.com");
   });
 
-  it("validiert Passwortlänge", () => {
+  it("validiert Passwortregeln", () => {
     expect(validateCustomerPassword("short").ok).toBe(false);
-    expect(validateCustomerPassword("long-enough").ok).toBe(true);
+    expect(validateCustomerPassword("nouppercase1").ok).toBe(false);
+    expect(validateCustomerPassword("SecurePass1").ok).toBe(true);
+  });
+
+  it("bewertet Passwort-Kriterien für Live-Feedback", () => {
+    expect(getCustomerPasswordCriteria("").every((c) => c.state === "idle")).toBe(true);
+    const weak = getCustomerPasswordCriteria("abc");
+    expect(weak.find((c) => c.id === "length")?.state).toBe("fail");
+    const partial = getCustomerPasswordCriteria("a".repeat(CUSTOMER_PASSWORD_LENGTH_PARTIAL_MIN));
+    expect(partial.find((c) => c.id === "length")?.state).toBe("partial");
+    const strong = getCustomerPasswordCriteria("SecurePass1");
+    expect(strong.every((c) => c.state === "pass")).toBe(true);
+  });
+
+  it("bewertet Gesamt-Passwortstärke für Balken unabhängig von Einzelkriterien", () => {
+    expect(getCustomerPasswordStrength("").filledSegments).toBe(0);
+    expect(getCustomerPasswordStrength("a").tier).toBe("weak");
+    expect(getCustomerPasswordStrength("SecurePass1").tier).toBe("strong");
+    expect(getCustomerPasswordStrength("SecurePass1").filledSegments).toBe(4);
   });
 
   it("hasht Tokens deterministisch und nicht im Klartext", () => {
@@ -60,6 +82,10 @@ describe("customer auth domain", () => {
     expect(customerAuthTokenExpiresAt(now).getTime() - now.getTime()).toBe(
       CUSTOMER_AUTH_TOKEN_TTL_MS,
     );
+  });
+
+  it("normalisiert URL-encodierte Auth-Tokens", () => {
+    expect(normalizeCustomerAuthTokenFromClient("abc%2Bdef")).toBe("abc+def");
   });
 
   it("löst subjectKind inkl. Legacy-Admin", () => {
