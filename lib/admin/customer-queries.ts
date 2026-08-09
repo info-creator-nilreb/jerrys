@@ -151,11 +151,28 @@ export type AdminCustomerAddressBlock = {
   country: string;
 };
 
+/**
+ * Kontostatus zur E-Mail dieser Bestellgruppe. Wichtig für Support: Die Gruppierung erfolgt
+ * über die Bestell-E-Mail und ist **kein** Identitätsnachweis — ein Konto entsteht erst durch
+ * Registrierung und Verifikation (Epic 3).
+ */
+export type AdminCustomerAccountState = {
+  exists: boolean;
+  verified: boolean;
+  active: boolean;
+  anonymized: boolean;
+  createdAt: Date | null;
+  lastLoginAt: Date | null;
+  /** Bestellungen dieser E-Mail, die dem Konto zugeordnet sind. */
+  linkedOrderCount: number;
+};
+
 export type AdminCustomerDetail = {
   customerKey: string;
   customerNumber: string;
   displayName: string;
   email: string;
+  account: AdminCustomerAccountState;
   shipping: AdminCustomerAddressBlock;
   billing: AdminCustomerAddressBlock;
   billingDiffersFromShipping: boolean;
@@ -206,6 +223,44 @@ function addressBlocksEqual(a: AdminCustomerAddressBlock, b: AdminCustomerAddres
   );
 }
 
+async function accountStateForEmail(normalizedEmail: string): Promise<AdminCustomerAccountState> {
+  const prisma = getPrisma();
+  const customer = await prisma.customer.findUnique({
+    where: { email: normalizedEmail },
+    select: {
+      id: true,
+      emailVerifiedAt: true,
+      isActive: true,
+      anonymizedAt: true,
+      createdAt: true,
+      lastLoginAt: true,
+      _count: { select: { orders: true } },
+    },
+  });
+
+  if (!customer) {
+    return {
+      exists: false,
+      verified: false,
+      active: false,
+      anonymized: false,
+      createdAt: null,
+      lastLoginAt: null,
+      linkedOrderCount: 0,
+    };
+  }
+
+  return {
+    exists: true,
+    verified: Boolean(customer.emailVerifiedAt),
+    active: customer.isActive,
+    anonymized: Boolean(customer.anonymizedAt),
+    createdAt: customer.createdAt,
+    lastLoginAt: customer.lastLoginAt,
+    linkedOrderCount: customer._count.orders,
+  };
+}
+
 export async function getCustomerDetailForAdmin(
   customerKey: string,
 ): Promise<AdminCustomerDetail | null> {
@@ -246,6 +301,8 @@ export async function getCustomerDetailForAdmin(
   const firstShip = shippingSnapshot(latest);
   const addressVariesAcrossOrders = orders.some((o) => shippingSnapshot(o) !== firstShip);
 
+  const account = await accountStateForEmail(matchedNorm);
+
   let displayName = [latest.shippingFirstName, latest.shippingLastName].filter(Boolean).join(" ").trim();
   if (!displayName) displayName = latest.email;
 
@@ -254,6 +311,7 @@ export async function getCustomerDetailForAdmin(
     customerNumber: adminCustomerNumberLabel(wanted),
     displayName,
     email: latest.email,
+    account,
     shipping,
     billing,
     billingDiffersFromShipping,

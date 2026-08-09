@@ -35,6 +35,9 @@ model Customer {
   passwordHash    String?   @map("password_hash")
   isActive        Boolean   @default(true) @map("is_active")
   lastLoginAt     DateTime? @map("last_login_at")
+  /// Set when the account was anonymized on customer request (Epic 3 Slice 6).
+  /// Order snapshots stay for statutory retention; the account link is removed.
+  anonymizedAt    DateTime? @map("anonymized_at")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
