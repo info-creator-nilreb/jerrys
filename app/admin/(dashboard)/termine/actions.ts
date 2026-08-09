@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth/admin-session";
 import {
+  bulkPublishWorkshopSessionDrafts,
+  bulkPublishWorkshopSessionDraftsBySeriesBatch,
   cancelWorkshopSession,
   completeWorkshopSession,
   createWorkshopSessionSeriesDrafts,
@@ -76,7 +78,29 @@ export async function createWorkshopSessionSeriesAction(
   }
 
   revalidatePath("/admin/termine");
-  redirect(`/admin/termine?serieAngelegt=${result.count}`);
+  redirect(`/admin/termine?serieAngelegt=${result.count}&serieBatch=${result.batchId}`);
+}
+
+export async function bulkPublishWorkshopSessionsAction(
+  sessionIds: string[],
+): Promise<{ ok: true; publishedCount: number } | { ok: false; message: string }> {
+  await requireAdmin();
+  const result = await bulkPublishWorkshopSessionDrafts(sessionIds);
+  if (!result.ok) return result;
+  revalidatePath("/admin/termine");
+  redirect(`/admin/termine?veroeffentlicht=${result.publishedCount}`);
+}
+
+export async function bulkPublishWorkshopSeriesBatchAction(
+  batchId: string,
+): Promise<{ ok: true; publishedCount: number } | { ok: false; message: string }> {
+  await requireAdmin();
+  const trimmed = batchId.trim();
+  if (!trimmed) return { ok: false, message: "Serie unbekannt." };
+  const result = await bulkPublishWorkshopSessionDraftsBySeriesBatch(trimmed);
+  if (!result.ok) return result;
+  revalidatePath("/admin/termine");
+  redirect(`/admin/termine?veroeffentlicht=${result.publishedCount}`);
 }
 
 export async function publishWorkshopSessionAction(sessionId: string): Promise<WorkshopSessionActionState> {

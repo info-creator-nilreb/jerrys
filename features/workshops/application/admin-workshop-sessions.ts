@@ -25,6 +25,7 @@ import {
   workshopSessionStatusLabel,
   type WorkshopSessionStatus,
 } from "@/features/workshops/domain/session-status";
+import { WORKSHOP_SESSION_SERIES_MAX_DATES } from "@/lib/workshop/workshop-series";
 
 const log = createLogger("workshops.admin-sessions");
 
@@ -63,8 +64,12 @@ export type MutateWorkshopSessionResult =
   | { ok: false; message: string; fieldErrors?: Record<string, string[]> };
 
 export type CreateWorkshopSessionSeriesResult =
-  | { ok: true; ids: string[]; count: number }
+  | { ok: true; ids: string[]; count: number; batchId: string }
   | { ok: false; message: string; fieldErrors?: Record<string, string[]> };
+
+export type BulkPublishWorkshopSessionsResult =
+  | { ok: true; publishedCount: number }
+  | { ok: false; message: string };
 
 function mapListRow(row: {
   id: string;
@@ -378,7 +383,7 @@ export async function createWorkshopSessionSeriesDrafts(
       for (const startsAtLocal of parsed.data.seriesStartsAtLocal) {
         const data = adminWorkshopSessionTemplateToSessionData(parsed.data, startsAtLocal);
         const session = await tx.workshopSession.create({
-          data: { ...data, status: "draft" },
+          data: { ...data, status: "draft", seriesBatchId: batchId },
         });
         await createWorkshopSessionEvent(tx, session.id, WORKSHOP_SESSION_EVENT_CREATED, {
           title: session.title,
@@ -390,7 +395,7 @@ export async function createWorkshopSessionSeriesDrafts(
     });
 
     log.info("workshop_session_series_created", { count: ids.length, batchId });
-    return { ok: true, ids, count: ids.length };
+    return { ok: true, ids, count: ids.length, batchId };
   } catch (e) {
     if (isMissingSchemaError(e)) {
       return {
@@ -400,6 +405,86 @@ export async function createWorkshopSessionSeriesDrafts(
     }
     log.error("workshop_session_series_failed", { error: String(e) });
     return { ok: false, message: "Serie konnte nicht angelegt werden." };
+  }
+}
+
+export async function countDraftWorkshopSessionsBySeriesBatch(batchId: string): Promise<number> {
+  try {
+    return await getPrisma().workshopSession.count({
+      where: { seriesBatchId: batchId, status: "draft" },
+    });
+  } catch (e) {
+    if (isMissingSchemaError(e)) return 0;
+    throw e;
+  }
+}
+
+export async function bulkPublishWorkshopSessionDrafts(
+  sessionIds: string[],
+): Promise<BulkPublishWorkshopSessionsResult> {
+  const uniqueIds = [...new Set(sessionIds.map((id) => id.trim()).filter(Boolean))];
+  if (uniqueIds.length === 0) {
+    return { ok: false, message: "Keine Termine ausgewählt." };
+  }
+  if (uniqueIds.length > WORKSHOP_SESSION_SERIES_MAX_DATES) {
+    return {
+      ok: false,
+      message: `Maximal ${WORKSHOP_SESSION_SERIES_MAX_DATES} Termine auf einmal.`,
+    };
+  }
+
+  const prisma = getPrisma();
+  try {
+    const publishedCount = await prisma.$transaction(async (tx) => {
+      let count = 0;
+      for (const sessionId of uniqueIds) {
+        const result = await tx.workshopSession.updateMany({
+          where: { id: sessionId, status: "draft" },
+          data: { status: "published" },
+        });
+        if (result.count === 0) continue;
+        await createWorkshopSessionEvent(tx, sessionId, WORKSHOP_SESSION_EVENT_PUBLISHED, {
+          bulk: true,
+        });
+        count += 1;
+      }
+      return count;
+    });
+
+    if (publishedCount === 0) {
+      return {
+        ok: false,
+        message: "Keine Entwürfe konnten veröffentlicht werden (bereits veröffentlicht oder unbekannt).",
+      };
+    }
+
+    log.info("workshop_sessions_bulk_published", { publishedCount, requested: uniqueIds.length });
+    return { ok: true, publishedCount };
+  } catch (e) {
+    if (isMissingSchemaError(e)) {
+      return { ok: false, message: "Migration für Termine fehlt." };
+    }
+    return { ok: false, message: "Bulk-Veröffentlichen fehlgeschlagen." };
+  }
+}
+
+export async function bulkPublishWorkshopSessionDraftsBySeriesBatch(
+  batchId: string,
+): Promise<BulkPublishWorkshopSessionsResult> {
+  try {
+    const rows = await getPrisma().workshopSession.findMany({
+      where: { seriesBatchId: batchId, status: "draft" },
+      select: { id: true },
+    });
+    if (rows.length === 0) {
+      return { ok: false, message: "Keine Entwürfe für diese Serie gefunden." };
+    }
+    return bulkPublishWorkshopSessionDrafts(rows.map((r) => r.id));
+  } catch (e) {
+    if (isMissingSchemaError(e)) {
+      return { ok: false, message: "Migration für Termine fehlt." };
+    }
+    throw e;
   }
 }
 

@@ -683,12 +683,15 @@ model WorkshopSession {
   selfCancelHoursBeforeStart Int? @map("self_cancel_hours_before_start")
   confirmedSeatCount     Int      @default(0) @map("confirmed_seat_count")
   heldSeatCount          Int      @default(0) @map("held_seat_count")
+  /// Gruppiert Entwürfe aus „Serie anlegen“ für Bulk-Veröffentlichen.
+  seriesBatchId          String?  @map("series_batch_id")
   createdAt              DateTime @default(now()) @map("created_at")
   updatedAt              DateTime @updatedAt @map("updated_at")
   bookings               WorkshopBooking[]
   events                   WorkshopSessionEvent[]
 
   @@index([status, startsAt])
+  @@index([seriesBatchId, status])
   @@map("workshop_sessions")
 }
 
