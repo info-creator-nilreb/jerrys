@@ -16,6 +16,7 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | Seiten `/konto/termine`, `/konto/termine/[bookingId]` | Kunden-Session + verifizierte E-Mail; Buchungen nur via `customerId` | Terminbuchungen; fremde Buchung → **404** ohne Existenz-Leak |
 | Server Actions `app/(storefront)/konto/workshop-booking-actions.ts` | Kunden-Session + verifizierte E-Mail; Bestätigungsfeld serverseitig | Selbststornierung; Frist serverseitig; idempotent; Audit `workshop.booking.self_cancelled` |
 | Seiten `/termine`, `/termine/[sessionId]` | Öffentlich | Veröffentlichte kommende Gruppentermine; Verfügbarkeit serverseitig |
+| `POST /api/workshop/start-checkout` | Öffentlich (Form-POST von Termin-Detail) | Platz-Hold anlegen, Cookie setzen, **HTTP 303** → `/checkout/termine` (MPA, kein Server-Action-Redirect — vermeidet React #441) |
 | Seite `/konto/datenschutz` | Kunden-Session + verifizierte E-Mail | Auskunft, Berichtigung, Konto-Löschung (Art. 15/16/17 DSGVO) |
 | `GET /konto/datenschutz/export` | Kunden-Session + verifizierte E-Mail; **kein** Parameter für fremde Konten | Datenauskunft als JSON-Download; ohne Passwort-Hash und Token; **Rate-Limit** pro IP (`lib/security/customer-privacy-rate-limit.ts`) |
 | Server Actions `app/(storefront)/konto/privacy-actions.ts` | Kunden-Session + verifizierte E-Mail; Löschung nur mit serverseitig geprüftem Bestätigungswort | Namen berichtigen, Konto anonymisieren (Audit `order.customer_unlinked`, danach Sign-out) |
