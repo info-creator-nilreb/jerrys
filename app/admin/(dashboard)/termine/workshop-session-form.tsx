@@ -8,12 +8,27 @@ import {
 } from "@/app/admin/(dashboard)/termine/actions";
 import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
 import type { AdminWorkshopSessionDetail } from "@/features/workshops";
+import { formatDurationLabel } from "@/features/workshops";
+import {
+  durationMinutesFromSessionRange,
+  workshopSessionDurationOptions,
+} from "@/lib/workshop/admin-session-duration";
 import {
   WORKSHOP_TIMEZONE_OPTIONS,
   formatLocalDateTimeInTimeZone,
 } from "@/lib/workshop/admin-datetime";
 
 const initial: WorkshopSessionActionState = null;
+
+const DEFAULT_NEW_SESSION_DURATION_MINUTES = 120;
+
+function formatSessionDateTime(date: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("de-DE", {
+    timeZone,
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
 
 function eurosFromCents(cents: number): string {
   if (cents === 0) return "0";
@@ -33,7 +48,10 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
   const startsDefault = session
     ? formatLocalDateTimeInTimeZone(session.startsAt, timezone)
     : "";
-  const endsDefault = session ? formatLocalDateTimeInTimeZone(session.endsAt, timezone) : "";
+  const durationDefault = session
+    ? durationMinutesFromSessionRange(session.startsAt, session.endsAt)
+    : DEFAULT_NEW_SESSION_DURATION_MINUTES;
+  const durationOptions = workshopSessionDurationOptions();
 
   return (
     <form action={formAction} className="space-y-8 pb-24">
@@ -103,30 +121,51 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
         <div />
         <label className="block text-sm">
           <span className="mb-1 block font-medium text-[#374151]">Beginn *</span>
-          <input
-            type="datetime-local"
-            name="startsAtLocal"
-            defaultValue={startsDefault}
-            readOnly={readOnly}
-            required
-            className="w-full rounded-md border border-[#d1d5db] px-3 py-2 disabled:bg-[#f3f4f6]"
-          />
+          {readOnly && session ? (
+            <p className="text-[#1f2937]">{formatSessionDateTime(session.startsAt, timezone)}</p>
+          ) : (
+            <input
+              type="datetime-local"
+              name="startsAtLocal"
+              defaultValue={startsDefault}
+              required
+              className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+            />
+          )}
           {fe?.startsAtLocal ? (
             <span className="mt-1 block text-xs text-red-600">{fe.startsAtLocal[0]}</span>
           ) : null}
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium text-[#374151]">Ende *</span>
-          <input
-            type="datetime-local"
-            name="endsAtLocal"
-            defaultValue={endsDefault}
-            readOnly={readOnly}
-            required
-            className="w-full rounded-md border border-[#d1d5db] px-3 py-2 disabled:bg-[#f3f4f6]"
-          />
-          {fe?.endsAtLocal ? (
-            <span className="mt-1 block text-xs text-red-600">{fe.endsAtLocal[0]}</span>
+          <span className="mb-1 block font-medium text-[#374151]">Dauer *</span>
+          {readOnly && session ? (
+            <p className="text-[#1f2937]">
+              {formatDurationLabel(durationDefault)}
+              <span className="mt-1 block text-sm text-[#6b7280]">
+                Ende: {formatSessionDateTime(session.endsAt, timezone)}
+              </span>
+            </p>
+          ) : (
+            <>
+              <select
+                name="durationMinutes"
+                defaultValue={durationDefault}
+                required
+                className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+              >
+                {durationOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-1 block text-xs text-[#6b7280]">
+                Ende wird aus Beginn und Dauer berechnet (30-Min-Schritte).
+              </span>
+            </>
+          )}
+          {fe?.durationMinutes ? (
+            <span className="mt-1 block text-xs text-red-600">{fe.durationMinutes[0]}</span>
           ) : null}
         </label>
       </section>

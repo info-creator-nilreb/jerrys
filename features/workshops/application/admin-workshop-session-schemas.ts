@@ -1,5 +1,12 @@
 import { z } from "zod";
 import {
+  addWorkshopDurationMinutes,
+  snapWorkshopSessionDurationMinutes,
+  WORKSHOP_SESSION_DURATION_MAX_MINUTES,
+  WORKSHOP_SESSION_DURATION_MIN_MINUTES,
+  WORKSHOP_SESSION_DURATION_STEP_MINUTES,
+} from "@/lib/workshop/admin-session-duration";
+import {
   parseLocalDateTimeInTimeZone,
   WORKSHOP_TIMEZONE_OPTIONS,
 } from "@/lib/workshop/admin-datetime";
@@ -25,7 +32,11 @@ const sessionCoreSchema = z
       .transform((v) => (v === "" ? undefined : v)),
     timezone: z.enum(timezoneValues),
     startsAtLocal: z.string().trim().min(1, "Beginn erforderlich."),
-    endsAtLocal: z.string().trim().min(1, "Ende erforderlich."),
+    durationMinutes: z.coerce
+      .number()
+      .int("Dauer in Minuten erforderlich.")
+      .min(WORKSHOP_SESSION_DURATION_MIN_MINUTES, "Mindestens 30 Minuten.")
+      .max(WORKSHOP_SESSION_DURATION_MAX_MINUTES, "Maximal 8 Stunden."),
     locationLabel: z.string().trim().min(1, "Ort erforderlich.").max(300),
     priceEuro: z.string().trim().optional(),
     currency: z.literal("EUR").default("EUR"),
@@ -46,18 +57,14 @@ const sessionCoreSchema = z
   })
   .superRefine((val, ctx) => {
     const startsAt = parseLocalDateTimeInTimeZone(val.startsAtLocal, val.timezone);
-    const endsAt = parseLocalDateTimeInTimeZone(val.endsAtLocal, val.timezone);
     if (!startsAt) {
       ctx.addIssue({ code: "custom", path: ["startsAtLocal"], message: "Ungültiges Beginn-Datum." });
     }
-    if (!endsAt) {
-      ctx.addIssue({ code: "custom", path: ["endsAtLocal"], message: "Ungültiges End-Datum." });
-    }
-    if (startsAt && endsAt && endsAt <= startsAt) {
+    if (val.durationMinutes % WORKSHOP_SESSION_DURATION_STEP_MINUTES !== 0) {
       ctx.addIssue({
         code: "custom",
-        path: ["endsAtLocal"],
-        message: "Ende muss nach dem Beginn liegen.",
+        path: ["durationMinutes"],
+        message: "Dauer in 30-Minuten-Schritten wählen.",
       });
     }
     if (val.capacity < val.minimumParticipants) {
@@ -91,7 +98,8 @@ export type AdminWorkshopSessionUpsertInput = z.infer<typeof adminWorkshopSessio
 
 export function adminWorkshopSessionUpsertToData(input: AdminWorkshopSessionUpsertInput) {
   const startsAt = parseLocalDateTimeInTimeZone(input.startsAtLocal, input.timezone)!;
-  const endsAt = parseLocalDateTimeInTimeZone(input.endsAtLocal, input.timezone)!;
+  const durationMinutes = snapWorkshopSessionDurationMinutes(input.durationMinutes);
+  const endsAt = addWorkshopDurationMinutes(startsAt, durationMinutes);
   const priceCentsPerSeat = parseEuroToCents(input.priceEuro ?? "0") ?? 0;
 
   return {

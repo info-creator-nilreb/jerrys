@@ -1,14 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { adminWorkshopSessionUpsertSchema } from "@/features/workshops/application/admin-workshop-session-schemas";
+import {
+  adminWorkshopSessionUpsertSchema,
+  adminWorkshopSessionUpsertToData,
+} from "@/features/workshops/application/admin-workshop-session-schemas";
 import { parseLocalDateTimeInTimeZone } from "@/lib/workshop/admin-datetime";
+import { addWorkshopDurationMinutes } from "@/lib/workshop/admin-session-duration";
 
 describe("adminWorkshopSessionUpsertSchema", () => {
-  it("akzeptiert gültige Termindaten", () => {
+  it("akzeptiert gültige Termindaten mit Dauer", () => {
     const result = adminWorkshopSessionUpsertSchema.safeParse({
       title: "Keramik-Workshop",
       timezone: "Europe/Berlin",
       startsAtLocal: "2026-09-01T14:00",
-      endsAtLocal: "2026-09-01T17:00",
+      durationMinutes: 180,
       locationLabel: "Berlin",
       priceEuro: "49,00",
       currency: "EUR",
@@ -20,17 +24,33 @@ describe("adminWorkshopSessionUpsertSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  it("lehnt Ende vor Beginn ab", () => {
+  it("lehnt Dauer außerhalb 30-Min-Raster ab", () => {
     const result = adminWorkshopSessionUpsertSchema.safeParse({
       title: "Test",
       timezone: "Europe/Berlin",
-      startsAtLocal: "2026-09-01T17:00",
-      endsAtLocal: "2026-09-01T14:00",
+      startsAtLocal: "2026-09-01T14:00",
+      durationMinutes: 95,
       locationLabel: "Berlin",
       minimumParticipants: 1,
       capacity: 5,
     });
     expect(result.success).toBe(false);
+  });
+
+  it("berechnet endsAt aus Beginn und Dauer", () => {
+    const parsed = adminWorkshopSessionUpsertSchema.parse({
+      title: "Test",
+      timezone: "Europe/Berlin",
+      startsAtLocal: "2026-09-01T14:00",
+      durationMinutes: 120,
+      locationLabel: "Berlin",
+      minimumParticipants: 1,
+      capacity: 5,
+    });
+    const data = adminWorkshopSessionUpsertToData(parsed);
+    const startsAt = parseLocalDateTimeInTimeZone("2026-09-01T14:00", "Europe/Berlin")!;
+    expect(data.startsAt.getTime()).toBe(startsAt.getTime());
+    expect(data.endsAt.getTime()).toBe(addWorkshopDurationMinutes(startsAt, 120).getTime());
   });
 });
 
