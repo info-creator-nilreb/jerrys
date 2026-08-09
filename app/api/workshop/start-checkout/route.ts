@@ -10,20 +10,13 @@ const log = createLogger("api.workshop.start-checkout");
 
 const COOKIE_MAX_AGE_SEC = 60 * 60;
 
-function siteOriginFromRequest(request: Request): URL {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (configured) {
-    try {
-      return new URL(configured);
-    } catch {
-      /* fall through */
-    }
-  }
+/** Immer Request-Host — nicht NEXT_PUBLIC_SITE_URL (Preview vs. Prod sonst Cookie/Redirect-Mismatch). */
+function requestOrigin(request: Request): URL {
   return new URL(request.url);
 }
 
 function errorRedirect(request: Request, sessionId: string, message: string) {
-  const base = siteOriginFromRequest(request);
+  const base = requestOrigin(request);
   const target = sessionId
     ? new URL(
         `/termine/${encodeURIComponent(sessionId)}?buchung=fehler&msg=${encodeURIComponent(message)}`,
@@ -69,7 +62,7 @@ export async function POST(request: Request) {
       return errorRedirect(request, sessionId, result.message);
     }
 
-    const base = siteOriginFromRequest(request);
+    const base = requestOrigin(request);
     const response = NextResponse.redirect(new URL("/checkout/termine", base), 303);
     response.cookies.set(WORKSHOP_BOOKING_HOLD_COOKIE, result.bookingId, {
       httpOnly: true,

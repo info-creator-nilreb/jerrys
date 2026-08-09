@@ -297,6 +297,10 @@ export function CheckoutForm({
   );
 
   useEffect(() => {
+    if (hidePromotionPanel) {
+      setPromoPreview(null);
+      return;
+    }
     let cancelled = false;
     void previewCheckoutPromotion({
       shippingCountry,
@@ -309,7 +313,7 @@ export function CheckoutForm({
     return () => {
       cancelled = true;
     };
-  }, [shippingCountry, committedPromoCode, declineAutomatic]);
+  }, [shippingCountry, committedPromoCode, declineAutomatic, hidePromotionPanel]);
 
   const displayTotals =
     promoPreview && !("error" in promoPreview) ? promoPreview.totals : baseTotalsFallback;
@@ -510,13 +514,17 @@ export function CheckoutForm({
   /**
    * Ohne `preventDefault` setzt React 19 nach jeder abgeschlossenen Server Action das Formular zurück
    * (auch bei `{ ok: false }`) — unkontrollierte Felder wie die E-Mail werden geleert.
+   * Termin-Checkout: natives Form-POST (MPA) — kein preventDefault / useActionState.
    */
   const onFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    if (workshopBookingId) return;
     e.preventDefault();
     startTransition(() => {
       formAction(new FormData(e.currentTarget));
     });
   };
+
+  const workshopMpa = Boolean(workshopBookingId);
 
   const clearLive = (key: string) => {
     setLiveErrors((prev) => {
@@ -543,7 +551,9 @@ export function CheckoutForm({
   return (
     <form
       id={STOREFRONT_CHECKOUT_FORM_ID}
-      onSubmit={onFormSubmit}
+      action={workshopMpa ? "/api/workshop/complete-checkout" : undefined}
+      method={workshopMpa ? "post" : undefined}
+      onSubmit={workshopMpa ? undefined : onFormSubmit}
       className="grid grid-cols-1 gap-0 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] lg:items-start"
     >
       <div className="order-2 min-w-0 border-b border-(--surface-muted) bg-white px-4 py-10 sm:px-8 lg:order-1 lg:border-b-0 lg:pr-12 lg:pl-0">
@@ -1007,14 +1017,18 @@ export function CheckoutForm({
 
         <section id="checkout-section-zahlung" className="mt-12 scroll-mt-24">
           <h2 className="text-lg font-semibold text-[#1f2937]">Zahlung</h2>
-          {payPalConfigured ? (
+          {payPalConfigured && !workshopMpa ? (
             <CheckoutPaymentMethods value={payPalSurface} onChange={onPayPalSurfaceChange} />
+          ) : workshopMpa && displayTotals.totalCents === 0 ? (
+            <p className="mt-2 text-sm text-[#6b7280]">Kostenlos — keine Zahlung nötig.</p>
+          ) : workshopMpa ? (
+            <p className="mt-2 text-sm text-[#6b7280]">Zahlung per PayPal nach dem Absenden.</p>
           ) : null}
         </section>
 
         {legalConsentBlock}
 
-        {payPalConfigured && payPalSurface === "card" ? (
+        {payPalConfigured && !workshopMpa && payPalSurface === "card" ? (
           <div className="mt-6 max-w-lg">
             <PayPalCardFieldsCheckout
               formId={STOREFRONT_CHECKOUT_FORM_ID}
@@ -1025,14 +1039,20 @@ export function CheckoutForm({
           </div>
         ) : null}
 
-        {(!payPalConfigured || payPalSurface !== "card" || !payPalCardFieldsPrimary) && (
+        {(!payPalConfigured || workshopMpa || payPalSurface !== "card" || !payPalCardFieldsPrimary) && (
           <button
             type="submit"
-            disabled={pending}
-            aria-busy={pending}
+            disabled={workshopMpa ? false : pending}
+            aria-busy={workshopMpa ? undefined : pending}
             className="mt-8 w-full rounded-md bg-primary py-3.5 text-sm font-semibold uppercase tracking-wide text-white shadow-sm transition-colors hover:bg-(--primary-hover) disabled:opacity-50 lg:max-w-md"
           >
-            {pending ? "Wird gesendet…" : "Jetzt kostenpflichtig bestellen"}
+            {workshopMpa
+              ? displayTotals.totalCents === 0
+                ? "Jetzt verbindlich buchen"
+                : "Weiter zur Zahlung"
+              : pending
+                ? "Wird gesendet…"
+                : "Jetzt kostenpflichtig bestellen"}
           </button>
         )}
 
