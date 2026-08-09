@@ -16,8 +16,19 @@ export const metadata = {
   title: "Termine",
 };
 
-export default async function AdminWorkshopSessionsPage() {
+export default async function AdminWorkshopSessionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ serieAngelegt?: string }>;
+}) {
   const schemaReady = await isWorkshopSchemaAvailable();
+  const sp = await searchParams;
+  const serieCount = sp.serieAngelegt ? Number.parseInt(sp.serieAngelegt, 10) : 0;
+  const serieBanner =
+    Number.isFinite(serieCount) && serieCount > 0
+      ? `${serieCount} Entwürfe aus der Serie angelegt. Bearbeite Beginn und veröffentliche die Termine einzeln.`
+      : null;
+
   const [sessions, settings] = await Promise.all([
     listWorkshopSessionsForAdmin(),
     getShopWorkshopSettingsForAdmin(),
@@ -28,6 +39,11 @@ export default async function AdminWorkshopSessionsPage() {
       {!schemaReady ? (
         <AdminWorkshopSchemaBanner message={WORKSHOP_SCHEMA_MISSING_ADMIN_MESSAGE} />
       ) : null}
+      {serieBanner ? (
+        <p className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900" role="status">
+          {serieBanner}
+        </p>
+      ) : null}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-[#1f2937]">Termine</h1>
@@ -36,17 +52,30 @@ export default async function AdminWorkshopSessionsPage() {
             Shop sichtbar.
           </p>
         </div>
-        <Link
-          href="/admin/termine/neu"
-          aria-disabled={!schemaReady}
-          className={
-            schemaReady
-              ? "inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-(--primary-hover)"
-              : "pointer-events-none inline-flex min-h-11 cursor-not-allowed items-center rounded-md bg-primary/40 px-4 py-2 text-sm font-semibold text-white"
-          }
-        >
-          Termin anlegen
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/termine/serie"
+            aria-disabled={!schemaReady}
+            className={
+              schemaReady
+                ? "inline-flex min-h-11 items-center rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-semibold text-[#374151] hover:bg-[#f9fafb]"
+                : "pointer-events-none inline-flex min-h-11 cursor-not-allowed items-center rounded-md border border-[#e5e7eb] px-4 py-2 text-sm font-semibold text-[#9ca3af]"
+            }
+          >
+            Serie anlegen
+          </Link>
+          <Link
+            href="/admin/termine/neu"
+            aria-disabled={!schemaReady}
+            className={
+              schemaReady
+                ? "inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-(--primary-hover)"
+                : "pointer-events-none inline-flex min-h-11 cursor-not-allowed items-center rounded-md bg-primary/40 px-4 py-2 text-sm font-semibold text-white"
+            }
+          >
+            Termin anlegen
+          </Link>
+        </div>
       </div>
 
       <WorkshopGlobalSettingsForm defaults={settings} disabled={!schemaReady} />

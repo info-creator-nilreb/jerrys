@@ -4,6 +4,8 @@ import { isMissingSchemaError } from "@/lib/db/prisma-error";
 import { createLogger } from "@/lib/logging/logger";
 import {
   adminShopWorkshopSettingsSchema,
+  adminWorkshopSessionSeriesSchema,
+  adminWorkshopSessionTemplateToSessionData,
   adminWorkshopSessionUpsertSchema,
   adminWorkshopSessionUpsertToData,
 } from "@/features/workshops/application/admin-workshop-session-schemas";
@@ -58,6 +60,10 @@ export type AdminWorkshopSessionDetail = AdminWorkshopSessionListItem & {
 
 export type MutateWorkshopSessionResult =
   | { ok: true; id: string }
+  | { ok: false; message: string; fieldErrors?: Record<string, string[]> };
+
+export type CreateWorkshopSessionSeriesResult =
+  | { ok: true; ids: string[]; count: number }
   | { ok: false; message: string; fieldErrors?: Record<string, string[]> };
 
 function mapListRow(row: {
@@ -348,6 +354,52 @@ export async function duplicateWorkshopSessionAsDraft(
       return { ok: false, message: "Migration für Termine fehlt." };
     }
     return { ok: false, message: "Duplizieren fehlgeschlagen." };
+  }
+}
+
+export async function createWorkshopSessionSeriesDrafts(
+  input: unknown,
+): Promise<CreateWorkshopSessionSeriesResult> {
+  const parsed = adminWorkshopSessionSeriesSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: "Bitte Eingaben prüfen.",
+      fieldErrors: fieldErrorsFromZod(parsed.error),
+    };
+  }
+
+  const prisma = getPrisma();
+  const batchId = crypto.randomUUID();
+
+  try {
+    const ids = await prisma.$transaction(async (tx) => {
+      const createdIds: string[] = [];
+      for (const startsAtLocal of parsed.data.seriesStartsAtLocal) {
+        const data = adminWorkshopSessionTemplateToSessionData(parsed.data, startsAtLocal);
+        const session = await tx.workshopSession.create({
+          data: { ...data, status: "draft" },
+        });
+        await createWorkshopSessionEvent(tx, session.id, WORKSHOP_SESSION_EVENT_CREATED, {
+          title: session.title,
+          seriesBatchId: batchId,
+        });
+        createdIds.push(session.id);
+      }
+      return createdIds;
+    });
+
+    log.info("workshop_session_series_created", { count: ids.length, batchId });
+    return { ok: true, ids, count: ids.length };
+  } catch (e) {
+    if (isMissingSchemaError(e)) {
+      return {
+        ok: false,
+        message: "Termin-Tabellen fehlen — bitte Migration deployen (npm run db:migrate:deploy).",
+      };
+    }
+    log.error("workshop_session_series_failed", { error: String(e) });
+    return { ok: false, message: "Serie konnte nicht angelegt werden." };
   }
 }
 

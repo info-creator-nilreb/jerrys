@@ -6,6 +6,7 @@ import { getAdminSession } from "@/lib/auth/admin-session";
 import {
   cancelWorkshopSession,
   completeWorkshopSession,
+  createWorkshopSessionSeriesDrafts,
   duplicateWorkshopSessionAsDraft,
   getShopWorkshopSettingsForAdmin,
   publishWorkshopSession,
@@ -27,6 +28,16 @@ export type WorkshopSessionActionState =
   | { ok: true; id?: string; message?: string }
   | { ok: false; message: string; fieldErrors?: Record<string, string[]> }
   | null;
+
+function formDataToSeriesPayload(formData: FormData) {
+  const raw = Object.fromEntries(formData.entries());
+  return {
+    ...raw,
+    maxSeatsPerBooking: formData.get("maxSeatsPerBooking"),
+    selfCancelHoursBeforeStart: formData.get("selfCancelHoursBeforeStart"),
+    seriesStartsAtLocal: formData.getAll("seriesStartsAtLocal").map(String),
+  };
+}
 
 export async function saveWorkshopSessionDraftAction(
   _prev: WorkshopSessionActionState,
@@ -51,6 +62,21 @@ export async function saveWorkshopSessionDraftAction(
   revalidatePath("/admin/termine");
   revalidatePath(`/admin/termine/${result.id}/edit`);
   redirect(`/admin/termine/${result.id}/edit?gespeichert=1`);
+}
+
+export async function createWorkshopSessionSeriesAction(
+  _prev: WorkshopSessionActionState,
+  formData: FormData,
+): Promise<WorkshopSessionActionState> {
+  await requireAdmin();
+
+  const result = await createWorkshopSessionSeriesDrafts(formDataToSeriesPayload(formData));
+  if (!result.ok) {
+    return result;
+  }
+
+  revalidatePath("/admin/termine");
+  redirect(`/admin/termine?serieAngelegt=${result.count}`);
 }
 
 export async function publishWorkshopSessionAction(sessionId: string): Promise<WorkshopSessionActionState> {

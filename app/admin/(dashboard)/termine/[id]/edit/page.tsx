@@ -39,6 +39,12 @@ export default async function AdminEditWorkshopSessionPage({
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
           <h1 className="min-w-0 text-2xl font-semibold text-[#1f2937]">{session.title}</h1>
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+            <Link
+              href={`/admin/termine/serie?vorlage=${session.id}`}
+              className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
+            >
+              Serie aus Vorlage
+            </Link>
             <WorkshopSessionDuplicateButton sessionId={session.id} />
             <WorkshopSessionLifecycleButtons sessionId={session.id} status={session.status} />
           </div>

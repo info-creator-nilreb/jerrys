@@ -48,6 +48,7 @@ export {
   publishWorkshopSession,
   cancelWorkshopSession,
   completeWorkshopSession,
+  createWorkshopSessionSeriesDrafts,
   duplicateWorkshopSessionAsDraft,
   getShopWorkshopSettingsForAdmin,
   updateShopWorkshopSettings,
