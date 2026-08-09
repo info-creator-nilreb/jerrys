@@ -26,6 +26,7 @@ import {
   type WorkshopSessionStatus,
 } from "@/features/workshops/domain/session-status";
 import { WORKSHOP_SESSION_SERIES_MAX_DATES } from "@/lib/workshop/workshop-series";
+import { cancelConfirmedBookingsAfterSessionCancelled } from "@/features/workshops/application/admin-workshop-bookings";
 
 const log = createLogger("workshops.admin-sessions");
 
@@ -278,6 +279,7 @@ export async function cancelWorkshopSession(sessionId: string): Promise<MutateWo
     if (updated === 0) {
       return { ok: false, message: "Nur veröffentlichte Termine können abgesagt werden." };
     }
+    await cancelConfirmedBookingsAfterSessionCancelled(sessionId);
     return { ok: true, id: sessionId };
   } catch {
     return { ok: false, message: "Absage fehlgeschlagen." };

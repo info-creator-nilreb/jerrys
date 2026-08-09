@@ -109,3 +109,13 @@ export {
   type CreateWorkshopSeatHoldResult,
   type WorkshopHoldCheckoutView,
 } from "@/features/workshops/application/workshop-seat-holds";
+
+export {
+  listWorkshopBookingsForAdminSession,
+  getWorkshopSessionParticipationSummaryForAdmin,
+  setWorkshopBookingAttendanceForAdmin,
+  adminCancelWorkshopBooking,
+  type AdminWorkshopBookingListItem,
+  type AdminWorkshopSessionParticipationSummary,
+  type AdminMutateWorkshopBookingResult,
+} from "@/features/workshops/application/admin-workshop-bookings";
