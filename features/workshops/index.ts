@@ -75,4 +75,5 @@ export {
 export {
   isWorkshopSchemaAvailable,
   WORKSHOP_SCHEMA_MISSING_ADMIN_MESSAGE,
+  WORKSHOP_SCHEMA_MISSING_ADMIN_HINT,
 } from "@/features/workshops/application/workshop-schema-guard";

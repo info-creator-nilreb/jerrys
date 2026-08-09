@@ -11,6 +11,7 @@ import {
   formatSelfCancelDeadline,
   formatWorkshopSessionDateTime,
 } from "@/lib/workshop/format-session-datetime";
+import { storefrontMainPagePaddingClass } from "@/lib/storefront/page-below-header-padding";
 
 export async function generateMetadata({
   params,
@@ -43,7 +44,7 @@ export default async function StorefrontWorkshopSessionDetailPage({
   );
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10 sm:py-14">
+    <div className={`mx-auto max-w-3xl px-4 ${storefrontMainPagePaddingClass}`}>
       <Link href="/termine" className="text-sm font-medium text-primary hover:underline">
         ← Alle Termine
       </Link>

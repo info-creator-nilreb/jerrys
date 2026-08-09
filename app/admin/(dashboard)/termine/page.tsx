@@ -3,6 +3,7 @@ import {
   getShopWorkshopSettingsForAdmin,
   isWorkshopSchemaAvailable,
   listWorkshopSessionsForAdmin,
+  WORKSHOP_SCHEMA_MISSING_ADMIN_HINT,
   WORKSHOP_SCHEMA_MISSING_ADMIN_MESSAGE,
 } from "@/features/workshops";
 import { WorkshopGlobalSettingsForm } from "@/app/admin/(dashboard)/termine/workshop-global-settings-form";
@@ -26,7 +27,10 @@ export default async function AdminWorkshopSessionsPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-8 pb-12">
       {!schemaReady ? (
-        <AdminWorkshopSchemaBanner message={WORKSHOP_SCHEMA_MISSING_ADMIN_MESSAGE} />
+        <AdminWorkshopSchemaBanner
+          message={WORKSHOP_SCHEMA_MISSING_ADMIN_MESSAGE}
+          hint={WORKSHOP_SCHEMA_MISSING_ADMIN_HINT}
+        />
       ) : null}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
