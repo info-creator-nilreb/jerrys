@@ -2,6 +2,7 @@ import { getPrisma } from "@/lib/db/prisma";
 import { createLogger } from "@/lib/logging/logger";
 import { createOrderEvent } from "@/lib/orders/order-events";
 import { getVerifiedActiveCustomerId } from "@/features/customers/application/get-verified-active-customer-id";
+import { cancelConfirmedWorkshopBookingsForAnonymizedCustomer } from "@/features/workshops";
 import { customerProfileUpdateSchema } from "@/features/customers/application/customer-privacy-schemas";
 
 const log = createLogger("customers.privacy");
@@ -315,6 +316,8 @@ export async function anonymizeCustomerAccount(
       where: { customerId: verified },
       select: { id: true, orderNumber: true },
     });
+
+    await cancelConfirmedWorkshopBookingsForAnonymizedCustomer(verified);
 
     await prisma.$transaction(async (tx) => {
       for (const order of orders) {

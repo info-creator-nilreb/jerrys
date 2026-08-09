@@ -72,6 +72,8 @@ Zuordnung je Bestellung über `updateMany` mit Bedingung `customerId: null` — 
 - Autoritativer Serverstatus; Storno, Platzfreigabe und ggf. Refund transaktional/idempotent
 - Umbuchung ist zunächst nicht enthalten
 
+**Status:** umgesetzt (Kundenportal; Domänengrundlage Epic 5). Datenmodell `workshop_sessions`, `workshop_bookings`, `shop_workshop_settings` (globaler Default 48 h Selbststorno). Portal unter `/konto/termine` und Detail mit Storno bis Fristende (`features/workshops/domain/self-cancel-policy.ts`). Storno über `updateMany` mit `status = confirmed` — idempotent; `confirmed_seat_count` wird atomar dekrementiert; Audit `workshop.booking.self_cancelled` + Outbox (`refundDue` bei kostenpflichtigen Plätzen, Erstattung folgt Epic 4). Bei Konto-Löschung (Slice 6) werden bestätigte Buchungen ohne Fristprüfung storniert und Plätze freigegeben. Admin-Termine, Storefront-Kalender und Checkout-Buchung folgen in Epic 5 Slices 1–3.
+
 ### Slice 6 — Datenschutz und Admin-Support
 
 - Datenexport, Berichtigung, Lösch-/Anonymisierungsworkflow und Aufbewahrungsregeln
