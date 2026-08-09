@@ -58,6 +58,17 @@ export {
   type CustomerOrderListItem,
   type CustomerOrderDetail,
 } from "@/features/customers/application/customer-orders";
+export { customerProfileUpdateSchema } from "@/features/customers/application/customer-privacy-schemas";
+export {
+  ORDER_EVENT_CUSTOMER_UNLINKED,
+  CUSTOMER_DELETE_CONFIRMATION,
+  exportCustomerData,
+  updateCustomerProfile,
+  anonymizeCustomerAccount,
+  type CustomerDataExport,
+  type UpdateCustomerProfileResult,
+  type AnonymizeCustomerResult,
+} from "@/features/customers/application/customer-privacy";
 export {
   ORDER_EVENT_CUSTOMER_LINKED,
   listClaimableGuestOrders,

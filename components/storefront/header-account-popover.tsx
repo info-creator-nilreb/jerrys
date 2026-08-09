@@ -40,6 +40,10 @@ const MAGIC_MESSAGES: Record<string, { ok: boolean; text: string }> = {
     ok: true,
     text: "Melde dich mit Passwort oder Magic Link an.",
   },
+  geloescht: {
+    ok: true,
+    text: "Dein Konto wurde gelöscht. Bereits ausgelöste Bestellungen bleiben aus gesetzlichen Aufbewahrungsfristen in der Buchhaltung gespeichert.",
+  },
 };
 
 type Props = {
@@ -71,7 +75,9 @@ export function HeaderAccountPopover({ isLoggedIn, email }: Props) {
     callbackUrlParam && callbackUrlParam.startsWith("/") ? callbackUrlParam : null;
   const wantsQueryOpen =
     !isLoggedIn &&
-    (kontoParam === "anmelden" || Boolean(kontoParam?.startsWith("magic-")));
+    (kontoParam === "anmelden" ||
+      kontoParam === "geloescht" ||
+      Boolean(kontoParam?.startsWith("magic-")));
   const open = userOpen || (wantsQueryOpen && !queryDismissed);
 
   const clearKontoQuery = useCallback(() => {

@@ -13,6 +13,9 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | Server Actions `app/(storefront)/konto/address-actions.ts` | Kunden-Session (`getCustomerSession`) + verifizierte E-Mail in der Application-Schicht | Adressen anlegen, ändern, löschen, Standard setzen |
 | Seite `/konto/bestellungen/zuordnen` | Kunden-Session + verifizierte E-Mail | Vorschau zuordenbarer Gastbestellungen (nur eigene, verifizierte E-Mail) |
 | Server Actions `app/(storefront)/konto/guest-order-actions.ts` | Kunden-Session + verifizierte E-Mail; Bestätigungsfeld serverseitig geprüft | Gastbestellungen zuordnen; idempotent über `customerId: null`, Audit `order.customer_linked` |
+| Seite `/konto/datenschutz` | Kunden-Session + verifizierte E-Mail | Auskunft, Berichtigung, Konto-Löschung (Art. 15/16/17 DSGVO) |
+| `GET /konto/datenschutz/export` | Kunden-Session + verifizierte E-Mail; **kein** Parameter für fremde Konten | Datenauskunft als JSON-Download; ohne Passwort-Hash und Token; **Rate-Limit** pro IP (`lib/security/customer-privacy-rate-limit.ts`) |
+| Server Actions `app/(storefront)/konto/privacy-actions.ts` | Kunden-Session + verifizierte E-Mail; Löschung nur mit serverseitig geprüftem Bestätigungswort | Namen berichtigen, Konto anonymisieren (Audit `order.customer_unlinked`, danach Sign-out) |
 | `GET /api/admin/search` | Admin-Session (`auth()`) | Globale Suche |
 | `GET /api/storefront/product-suggest` | Öffentlich | Typeahead-Produktvorschläge (`q`, min. 2 Zeichen); **Rate-Limit** pro IP (`lib/security/storefront-search-api-rate-limit.ts`) |
 | `GET /api/storefront/address-suggest` | Öffentlich | Adressvorschläge für Checkout und Adressbuch (`land`, `plz`, `ort`, `strasse`); ausschließlich Proxy auf OpenPLZ API (DE/AT/CH/LI), keine Shop-Daten; **Rate-Limit** pro IP (`lib/security/address-suggest-api-rate-limit.ts`) |

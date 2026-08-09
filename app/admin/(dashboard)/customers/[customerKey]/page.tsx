@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { AdminCustomerAddressBlock } from "@/lib/admin/customer-queries";
+import type {
+  AdminCustomerAccountState,
+  AdminCustomerAddressBlock,
+} from "@/lib/admin/customer-queries";
 import { getCustomerDetailForAdmin } from "@/lib/admin/customer-queries";
 import { formatPrice } from "@/lib/catalog/format";
 import { orderStatusLabel } from "@/lib/orders/order-status-label";
@@ -31,6 +34,71 @@ function AddressCard({
       ))}
       <p className="text-sm text-[#374151]">{block.cityLine}</p>
       <p className="text-sm text-[#374151]">{block.country}</p>
+    </div>
+  );
+}
+
+function StatusPill({ label, tone }: { label: string; tone: "ok" | "warn" | "neutral" }) {
+  const cls =
+    tone === "ok"
+      ? "bg-[#ecfdf5] text-emerald-800"
+      : tone === "warn"
+        ? "bg-amber-50 text-amber-900"
+        : "bg-[#f3f4f6] text-[#374151]";
+  return <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${cls}`}>{label}</span>;
+}
+
+/**
+ * Support-Hinweis: Die Kundenliste gruppiert Bestellungen nach E-Mail. Ein Kundenkonto entsteht
+ * erst durch Registrierung und Verifikation — beides darf nicht verwechselt werden, und aus dieser
+ * Ansicht heraus wird bewusst nichts zusammengeführt.
+ */
+function AccountStateCard({ state }: { state: AdminCustomerAccountState }) {
+  return (
+    <div className="mt-6 rounded-lg border border-[#e8eaed] bg-[#f9fafb] p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="text-xs font-semibold tracking-wide text-[#6b7280] uppercase">
+          Kundenkonto
+        </h2>
+        {!state.exists ? (
+          <StatusPill label="Kein Konto (Gastbestellungen)" tone="neutral" />
+        ) : (
+          <>
+            <StatusPill
+              label={state.verified ? "E-Mail bestätigt" : "E-Mail nicht bestätigt"}
+              tone={state.verified ? "ok" : "warn"}
+            />
+            <StatusPill
+              label={state.active ? "aktiv" : "deaktiviert"}
+              tone={state.active ? "ok" : "warn"}
+            />
+            {state.anonymized ? <StatusPill label="anonymisiert" tone="warn" /> : null}
+          </>
+        )}
+      </div>
+
+      {state.exists ? (
+        <dl className="mt-3 grid gap-x-6 gap-y-1 text-sm text-[#374151] sm:grid-cols-2">
+          <div className="flex gap-2">
+            <dt className="text-[#6b7280]">Konto seit</dt>
+            <dd>{state.createdAt ? dateFmt.format(state.createdAt) : "—"}</dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="text-[#6b7280]">Letzte Anmeldung</dt>
+            <dd>{state.lastLoginAt ? dateFmt.format(state.lastLoginAt) : "—"}</dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="text-[#6b7280]">Dem Konto zugeordnete Bestellungen</dt>
+            <dd>{state.linkedOrderCount}</dd>
+          </div>
+        </dl>
+      ) : null}
+
+      <p className="mt-3 text-sm text-[#6b7280]">
+        Diese Ansicht gruppiert Bestellungen anhand der Bestell-E-Mail. Das ist kein
+        Identitätsnachweis: Bestellungen werden einem Konto ausschließlich durch die Kundin oder den
+        Kunden selbst zugeordnet — nach Bestätigung und nur bei verifizierter E-Mail-Adresse.
+      </p>
     </div>
   );
 }
@@ -73,6 +141,8 @@ export default async function AdminCustomerDetailPage({
           <p className="mt-2 font-mono text-xs text-[#374151]">{detail.customerNumber}</p>
         </div>
       </div>
+
+      <AccountStateCard state={detail.account} />
 
       {detail.addressVariesAcrossOrders ? (
         <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">

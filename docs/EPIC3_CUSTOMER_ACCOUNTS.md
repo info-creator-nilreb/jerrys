@@ -78,6 +78,27 @@ Zuordnung je Bestellung über `updateMany` mit Bedingung `customerId: null` — 
 - Admin-Suche und Support ohne unberechtigte Kontozusammenführung
 - AuthZ-Negativtests und Audit-Historie
 
+**Status:** umgesetzt. Portalseite `/konto/datenschutz` (nur bei bestätigter E-Mail) mit drei Bereichen:
+
+| Recht | Umsetzung |
+|---|---|
+| Auskunft (Art. 15) | `GET /konto/datenschutz/export` liefert Konto, Anmeldeverfahren, Adressen und Bestellungen inkl. Positionen als JSON-Download. Kein Passwort-Hash, keine Auth-Token — beides sind Sicherheitsmerkmale, keine Auskunftsdaten. Rate-Limit pro IP. |
+| Berichtigung (Art. 16) | Namensfelder im Portal; Adressen über das Adressbuch. Ein E-Mail-Wechsel erfordert erneute Verifikation und läuft deshalb über den Support. |
+| Löschung (Art. 17) | `anonymizeCustomerAccount`: Bestätigungswort „LÖSCHEN“ (serverseitig geprüft), dann Entkopplung der Bestellungen, Löschung von Adressbuch, Tokens und Identitäten, Platzhalter-E-Mail, `isActive = false`, `anonymized_at`. Danach ist keine Anmeldung möglich (Passwort-Login und Magic Link prüfen `isActive`). |
+
+**Aufbewahrung:**
+
+| Daten | Regel |
+|---|---|
+| Bestellungen, Positionen, Adress-Snapshots, Belege | bleiben erhalten — handels- und steuerrechtliche Aufbewahrungspflicht (in der Regel zehn Jahre). Nach der Löschung ohne Kontoverknüpfung, nur noch in der Buchhaltung. |
+| Konto, Name, Adressbuch, Anmeldeverfahren | werden bei der Löschung entfernt bzw. anonymisiert. |
+| One-Time-Token (Verify, Magic Link, Reset) | TTL 60 Minuten, bei Löschung sofort entfernt. |
+| `order_events` inkl. `order.customer_linked` / `order.customer_unlinked` | bleiben als Audit-Historie erhalten und enthalten keine Klardaten außer Bestellnummer und Konto-ID. |
+
+**Entkopplung statt Konto-Ghost:** Bestellungen erhalten bei der Löschung `customerId = null`. Folge: Wer später dieselbe E-Mail-Adresse **verifiziert** besitzt, kann diese Bestellungen über Slice 4 erneut zuordnen — dieselbe Schwelle wie bei jeder Gastbestellung. Alternative wäre ein dauerhaft verknüpftes, anonymisiertes Konto; dagegen spricht, dass die Kontoentität dann weiter auf personenbezogene Snapshots zeigt.
+
+**Admin-Support:** Die Kundenansicht im Admin gruppiert Bestellungen weiterhin nach Bestell-E-Mail. Sie zeigt jetzt zusätzlich den **Kontostatus** (kein Konto / E-Mail bestätigt / aktiv / anonymisiert, Konto seit, letzte Anmeldung, zugeordnete Bestellungen) und benennt ausdrücklich, dass die Gruppierung kein Identitätsnachweis ist. Es gibt bewusst **keine** Admin-Aktion zum Zusammenführen oder Zuordnen von Bestellungen — das geschieht ausschließlich durch die Kundin oder den Kunden nach Bestätigung.
+
 ## Exit-Kriterien
 
 1. Passwort und Magic Link funktionieren mit verifizierter E-Mail.
