@@ -298,7 +298,6 @@ export function CheckoutForm({
 
   useEffect(() => {
     if (hidePromotionPanel) {
-      setPromoPreview(null);
       return;
     }
     let cancelled = false;
