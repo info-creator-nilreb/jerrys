@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { normalizeAddressText } from "@/lib/checkout/address-text";
 import { customerAddressCreateSchema } from "@/features/customers/application/customer-address-schemas";
@@ -43,7 +44,7 @@ describe("Adress-Schemas normalisieren Leerzeichen", () => {
       billingUseShipping: "yes",
       paymentMethod: "paypal",
       rechtlicheKenntnis: "on",
-      idempotencyKey: "3f1a2b7c-9d4e-4f6a-8b1c-2d3e4f5a6b7c",
+      idempotencyKey: randomUUID(),
     });
     expect(parsed.success).toBe(true);
     if (parsed.success) {
