@@ -17,6 +17,11 @@ export type StorefrontWorkshopSessionListItem = {
   startsAt: Date;
   endsAt: Date;
   locationLabel: string;
+  locationLine1: string | null;
+  locationLine2: string | null;
+  locationZip: string | null;
+  locationCity: string | null;
+  locationCountry: string | null;
   priceCentsPerSeat: number;
   currency: string;
   capacity: number;
@@ -43,6 +48,11 @@ function mapRow(
     startsAt: Date;
     endsAt: Date;
     locationLabel: string;
+    locationLine1: string | null;
+    locationLine2: string | null;
+    locationZip: string | null;
+    locationCity: string | null;
+    locationCountry: string | null;
     priceCentsPerSeat: number;
     currency: string;
     capacity: number;
@@ -75,6 +85,11 @@ function mapRow(
     startsAt: row.startsAt,
     endsAt: row.endsAt,
     locationLabel: row.locationLabel,
+    locationLine1: row.locationLine1,
+    locationLine2: row.locationLine2,
+    locationZip: row.locationZip,
+    locationCity: row.locationCity,
+    locationCountry: row.locationCountry,
     priceCentsPerSeat: row.priceCentsPerSeat,
     currency: row.currency,
     capacity: row.capacity,
@@ -99,6 +114,11 @@ const publicSessionSelect = {
   startsAt: true,
   endsAt: true,
   locationLabel: true,
+  locationLine1: true,
+  locationLine2: true,
+  locationZip: true,
+  locationCity: true,
+  locationCountry: true,
   priceCentsPerSeat: true,
   currency: true,
   capacity: true,

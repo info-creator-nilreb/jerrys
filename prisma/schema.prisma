@@ -667,6 +667,11 @@ model WorkshopSession {
   startsAt               DateTime @map("starts_at")
   endsAt                 DateTime @map("ends_at")
   locationLabel          String   @map("location_label")
+  locationLine1          String?  @map("location_line1")
+  locationLine2          String?  @map("location_line2")
+  locationZip            String?  @map("location_zip")
+  locationCity           String?  @map("location_city")
+  locationCountry        String?  @default("DE") @map("location_country")
   priceCentsPerSeat      Int      @default(0) @map("price_cents_per_seat")
   currency               String   @default("EUR")
   /// draft | published | cancelled | completed
@@ -678,12 +683,15 @@ model WorkshopSession {
   selfCancelHoursBeforeStart Int? @map("self_cancel_hours_before_start")
   confirmedSeatCount     Int      @default(0) @map("confirmed_seat_count")
   heldSeatCount          Int      @default(0) @map("held_seat_count")
+  /// Gruppiert Entwürfe aus „Serie anlegen“ für Bulk-Veröffentlichen.
+  seriesBatchId          String?  @map("series_batch_id")
   createdAt              DateTime @default(now()) @map("created_at")
   updatedAt              DateTime @updatedAt @map("updated_at")
   bookings               WorkshopBooking[]
   events                   WorkshopSessionEvent[]
 
   @@index([status, startsAt])
+  @@index([seriesBatchId, status])
   @@map("workshop_sessions")
 }
 
