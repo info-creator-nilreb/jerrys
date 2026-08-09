@@ -1,13 +1,16 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { createWorkshopOrderFromFormData } from "@/lib/checkout/create-workshop-order-from-form";
 
 export type WorkshopCheckoutActionState =
-  | { ok: true; orderNumber: string; paymentRedirectUrl?: string }
+  | { ok: true; orderNumber: string; paymentRedirectUrl: string }
   | { ok: false; error: string; fieldErrors?: Record<string, string> }
   | null;
 
+/**
+ * Termin-Checkout über `useActionState` — kein `redirect()` (React #441 in Production).
+ * Erfolg: Client navigiert zu `paymentRedirectUrl`.
+ */
 export async function submitWorkshopCheckout(
   _prev: WorkshopCheckoutActionState,
   formData: FormData,
@@ -21,13 +24,13 @@ export async function submitWorkshopCheckout(
   const erfolgPath = `/checkout/erfolg?nr=${encodeURIComponent(r.orderNumber)}`;
 
   if (!r.paymentReady) {
-    redirect(erfolgPath);
+    return { ok: true, orderNumber: r.orderNumber, paymentRedirectUrl: erfolgPath };
   }
 
   const approval = r.approvalUrl?.trim();
   if (approval) {
-    redirect(approval);
+    return { ok: true, orderNumber: r.orderNumber, paymentRedirectUrl: approval };
   }
 
-  redirect(erfolgPath);
+  return { ok: true, orderNumber: r.orderNumber, paymentRedirectUrl: erfolgPath };
 }
