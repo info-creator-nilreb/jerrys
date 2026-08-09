@@ -9,10 +9,8 @@ import {
   customerAuthInputClass,
   customerAuthPrimaryButtonClass,
 } from "@/components/storefront/customer-auth-shell";
-import {
-  CUSTOMER_PASSWORD_MIN_LENGTH,
-  CUSTOMER_PASSWORD_REQUIREMENTS_HINT,
-} from "@/features/customers/domain/password";
+import { CustomerPasswordWithCriteriaField } from "@/components/storefront/customer-password-with-criteria-field";
+import { CUSTOMER_PASSWORD_MIN_LENGTH } from "@/features/customers/password";
 
 const initial: CustomerAuthActionState = null;
 
@@ -76,34 +74,15 @@ export function CustomerRegisterForm() {
           </p>
         ) : null}
       </div>
-      <div>
-        <label
-          htmlFor={`${formId}-password`}
-          className="mb-1.5 block text-sm font-medium text-(--foreground-heading)"
-        >
-          Passwort <span className="text-primary">*</span>
-        </label>
-        <input
-          id={`${formId}-password`}
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={CUSTOMER_PASSWORD_MIN_LENGTH}
-          className={customerAuthInputClass}
-          aria-invalid={Boolean(state?.fieldErrors?.password)}
-          aria-describedby={`${formId}-password-hint`}
-        />
-        {state?.fieldErrors?.password ? (
-          <p className="mt-1 text-sm text-red-600" role="alert">
-            {state.fieldErrors.password[0]}
-          </p>
-        ) : (
-          <p id={`${formId}-password-hint`} className="mt-1 text-xs text-(--foreground-muted)">
-            {CUSTOMER_PASSWORD_REQUIREMENTS_HINT}
-          </p>
-        )}
-      </div>
+      <CustomerPasswordWithCriteriaField
+        formIdPrefix={formId}
+        label={
+          <>
+            Passwort <span className="text-primary">*</span>
+          </>
+        }
+        serverError={state?.fieldErrors?.password?.[0]}
+      />
       <div>
         <label
           htmlFor={`${formId}-password-confirm`}

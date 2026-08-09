@@ -8,6 +8,8 @@ import {
   normalizeCustomerEmail,
   resolveAuthSubjectKind,
   validateCustomerPassword,
+  getCustomerPasswordCriteria,
+  CUSTOMER_PASSWORD_LENGTH_PARTIAL_MIN,
 } from "@/features/customers";
 
 describe("customer auth domain", () => {
@@ -19,6 +21,16 @@ describe("customer auth domain", () => {
     expect(validateCustomerPassword("short").ok).toBe(false);
     expect(validateCustomerPassword("nouppercase1").ok).toBe(false);
     expect(validateCustomerPassword("SecurePass1").ok).toBe(true);
+  });
+
+  it("bewertet Passwort-Kriterien für Live-Feedback", () => {
+    expect(getCustomerPasswordCriteria("").every((c) => c.state === "idle")).toBe(true);
+    const weak = getCustomerPasswordCriteria("abc");
+    expect(weak.find((c) => c.id === "length")?.state).toBe("fail");
+    const partial = getCustomerPasswordCriteria("a".repeat(CUSTOMER_PASSWORD_LENGTH_PARTIAL_MIN));
+    expect(partial.find((c) => c.id === "length")?.state).toBe("partial");
+    const strong = getCustomerPasswordCriteria("SecurePass1");
+    expect(strong.every((c) => c.state === "pass")).toBe(true);
   });
 
   it("hasht Tokens deterministisch und nicht im Klartext", () => {

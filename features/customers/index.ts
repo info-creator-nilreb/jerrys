@@ -4,6 +4,8 @@ export {
   CUSTOMER_PASSWORD_MAX_LENGTH,
   CUSTOMER_PASSWORD_REQUIREMENTS_HINT,
   validateCustomerPassword,
+  getCustomerPasswordCriteria,
+  CUSTOMER_PASSWORD_LENGTH_PARTIAL_MIN,
 } from "@/features/customers/domain/password";
 export {
   CUSTOMER_AUTH_TOKEN_PURPOSES,
