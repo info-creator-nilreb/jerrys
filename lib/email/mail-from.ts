@@ -64,6 +64,17 @@ function formatResendFrom(email: string, displayRaw?: string): string {
   return `${display} <${email}>`;
 }
 
+function stripOuterQuotes(value: string): string {
+  let v = value.trim();
+  while (
+    (v.startsWith('"') && v.endsWith('"')) ||
+    (v.startsWith("'") && v.endsWith("'"))
+  ) {
+    v = v.slice(1, -1).trim();
+  }
+  return v;
+}
+
 /**
  * @returns Absender-String für Resend oder null bei ungültiger Konfiguration
  */
@@ -71,7 +82,7 @@ export function resolveMailFromForResend(raw: string | undefined | null): string
   const trimmed = raw?.trim();
   if (!trimmed) return null;
 
-  const value = trimmed.replace(/\\"/g, '"').replace(/\r?\n/g, "");
+  const value = stripOuterQuotes(trimmed.replace(/\\"/g, '"').replace(/\r?\n/g, ""));
   const email = extractEmailAddress(value);
   if (!email) return null;
 

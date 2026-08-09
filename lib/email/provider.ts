@@ -85,6 +85,7 @@ export async function sendTransactionalEmail(params: {
       httpStatus: res.status,
       subject: params.subject,
       recipientDomain: recipientDomain(params.to),
+      resolvedFrom: fromResolved,
       fromDomain: fromResolved.includes("@")
         ? fromResolved.slice(fromResolved.lastIndexOf("@") + 1).replace(/>\s*$/, "")
         : "unknown",

@@ -28,6 +28,12 @@ describe("resolveMailFromForResend", () => {
     expect(resolveMailFromForResend("noreply@example.com")).toBe("noreply@example.com");
   });
 
+  it("entfernt äußere Anführungszeichen um den gesamten Wert (Vercel)", () => {
+    expect(resolveMailFromForResend('"Jerrys <shop@example.com>"')).toBe(
+      "Jerrys <shop@example.com>",
+    );
+  });
+
   it("liefert null bei ungültigem Wert", () => {
     expect(resolveMailFromForResend("")).toBeNull();
     expect(resolveMailFromForResend("not-an-email")).toBeNull();
