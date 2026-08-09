@@ -71,3 +71,8 @@ export {
   formatDurationLabel,
   type StorefrontWorkshopAvailability,
 } from "@/features/workshops/domain/storefront-session-availability";
+
+export {
+  isWorkshopSchemaAvailable,
+  WORKSHOP_SCHEMA_MISSING_ADMIN_MESSAGE,
+} from "@/features/workshops/application/workshop-schema-guard";

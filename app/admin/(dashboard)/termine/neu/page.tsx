@@ -1,13 +1,23 @@
 import Link from "next/link";
 import { WorkshopSessionForm } from "@/app/admin/(dashboard)/termine/workshop-session-form";
+import { AdminWorkshopSchemaBanner } from "@/components/admin/workshops/admin-workshop-schema-banner";
+import {
+  isWorkshopSchemaAvailable,
+  WORKSHOP_SCHEMA_MISSING_ADMIN_MESSAGE,
+} from "@/features/workshops";
 
 export const metadata = {
   title: "Termin anlegen",
 };
 
-export default function AdminNewWorkshopSessionPage() {
+export default async function AdminNewWorkshopSessionPage() {
+  const schemaReady = await isWorkshopSchemaAvailable();
+
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-12">
+      {!schemaReady ? (
+        <AdminWorkshopSchemaBanner message={WORKSHOP_SCHEMA_MISSING_ADMIN_MESSAGE} />
+      ) : null}
       <div>
         <Link href="/admin/termine" className="text-sm font-medium text-primary hover:underline">
           ← Termine
@@ -17,7 +27,7 @@ export default function AdminNewWorkshopSessionPage() {
           Der Termin wird als Entwurf gespeichert und kann danach veröffentlicht werden.
         </p>
       </div>
-      <WorkshopSessionForm />
+      {schemaReady ? <WorkshopSessionForm /> : null}
     </div>
   );
 }
