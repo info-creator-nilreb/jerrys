@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { randomUUID } from "crypto";
-import { CheckoutForm } from "@/components/storefront/checkout-form";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import type { CheckoutSummaryLine } from "@/components/storefront/checkout-summary-aside";
+import { WorkshopCheckoutForm } from "@/components/storefront/workshop-checkout-form";
 import {
   getCheckoutAddressPrefillForCustomer,
   getVerifiedActiveCustomerId,
@@ -14,7 +14,9 @@ import { getWorkshopBookingHoldIdFromCookie } from "@/lib/workshop/workshop-book
 import { getShippingCountriesForStorefront } from "@/lib/shop/shipping-countries-for-storefront";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
+import { computeCheckoutOrderTotals } from "@/lib/tax/order-price-totals";
 import { formatWorkshopSessionDateTime } from "@/lib/workshop/format-session-datetime";
+import { getWorkshopCheckoutCatalogLine } from "@/lib/workshop/workshop-checkout-catalog-query";
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +25,8 @@ export const metadata = {
 };
 
 /**
- * Kein `redirect()` in dieser Page — NEXT_REDIRECT während RSC kann in Production
- * als Minified React error #441 in der Error Boundary landen.
+ * Kein `redirect()` und kein CheckoutForm/useActionState —
+ * beides hat in Production React #441 ausgelöst.
  */
 export default async function WorkshopCheckoutPage({
   searchParams,
@@ -90,6 +92,8 @@ export default async function WorkshopCheckoutPage({
   const shopShip = await getShopShippingSettings();
   const { countries: allowedShippingCountries, preferredCountry } =
     await getShippingCountriesForStorefront();
+  const catalog = await getWorkshopCheckoutCatalogLine();
+  const taxRatePercent = catalog?.taxRatePercent ?? 19;
 
   const when = formatWorkshopSessionDateTime(hold.startsAt, hold.timezone);
   const lineTotal = hold.unitPriceCents * hold.seatCount;
@@ -101,13 +105,12 @@ export default async function WorkshopCheckoutPage({
       product: {
         title: `${hold.title} (${when})`,
         priceGrossCents: hold.unitPriceCents,
-        taxRatePercent: 19,
+        taxRatePercent,
         images: [],
       },
     },
   ];
 
-  const idempotencyKey = randomUUID();
   const session = await getCustomerSession();
   const verifiedCustomerId = session
     ? await getVerifiedActiveCustomerId(session.customerId)
@@ -119,7 +122,28 @@ export default async function WorkshopCheckoutPage({
       ])
     : [null, []];
 
+  const initialShippingCountry =
+    addressPrefill?.shippingCountry &&
+    allowedShippingCountries.some((c) => c.code === addressPrefill.shippingCountry)
+      ? addressPrefill.shippingCountry
+      : preferredCountry;
+
+  const orderTotals = computeCheckoutOrderTotals({
+    lines: [
+      {
+        quantity: hold.seatCount,
+        priceGrossCents: hold.unitPriceCents,
+        taxRatePercent,
+      },
+    ],
+    shippingCountryCode: initialShippingCountry,
+    shippingRatesCentsByCountry: shopShip.shippingRatesCentsByCountry,
+    freeShippingFromSubtotalGrossCents: shopShip.freeShippingFromSubtotalGrossCents,
+  });
+
   const holdDeadlineLabel = formatWorkshopSessionDateTime(hold.holdExpiresAt, hold.timezone);
+  const submitLabel =
+    orderTotals.totalCents === 0 ? "Jetzt verbindlich buchen" : "Weiter zur Zahlung";
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-24 md:py-28">
@@ -138,28 +162,33 @@ export default async function WorkshopCheckoutPage({
       </p>
 
       {checkoutError ? (
-        <p className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert">
+        <p
+          className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
+          role="alert"
+        >
           {checkoutError}
         </p>
       ) : null}
 
       <div className="mt-4">
-        <CheckoutForm
-          idempotencyKey={idempotencyKey}
+        <WorkshopCheckoutForm
+          idempotencyKey={randomUUID()}
+          workshopBookingId={hold.bookingId}
           lines={summaryLines}
-          shippingRatesByCountry={shopShip.shippingRatesCentsByCountry}
-          freeShippingFromSubtotalGrossCents={shopShip.freeShippingFromSubtotalGrossCents}
-          initialShippingCountry={preferredCountry}
+          totals={{
+            shippingCents: orderTotals.shippingCents,
+            taxAmountCents: orderTotals.taxAmountCents,
+            totalCents: orderTotals.totalCents,
+            vatApplies: orderTotals.vatApplies,
+            catalogSubtotalBeforeDiscountCents: lineTotal,
+          }}
           currency={hold.currency}
           allowedShippingCountries={allowedShippingCountries}
-          payPalConfigured={isPayPalConfigured()}
-          payPalClientId={process.env.PAYPAL_CLIENT_ID?.trim() ?? ""}
+          initialShippingCountry={initialShippingCountry}
           addressPrefill={addressPrefill}
           savedAddresses={savedAddresses}
           canSaveAddressToAccount={Boolean(verifiedCustomerId)}
-          workshopBookingId={hold.bookingId}
-          hidePromotionPanel
-          checkoutTitle="Termin-Checkout"
+          submitLabel={submitLabel}
         />
       </div>
     </div>
