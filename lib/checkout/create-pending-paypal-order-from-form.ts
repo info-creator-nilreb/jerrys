@@ -317,6 +317,21 @@ async function createPendingPayPalOrderFromParsedRaw(
 
   const orderStatus = "pending_payment";
 
+  // Epic 3: attach order to verified customer session when present; guests stay null.
+  // Dynamic import keeps Auth.js out of the module graph for public checkout API tests.
+  let customerId: string | null = null;
+  try {
+    const { getCustomerSession } = await import("@/lib/auth/customer-session");
+    const { getVerifiedActiveCustomerId } = await import("@/features/customers");
+    const session = await getCustomerSession();
+    customerId = session
+      ? await getVerifiedActiveCustomerId(session.customerId)
+      : null;
+  } catch (e) {
+    log.warn("checkout_customer_link_skipped", { error: String(e) });
+    customerId = null;
+  }
+
   try {
     await getPrisma().$transaction(async (tx) => {
       const created = await tx.order.create({
@@ -324,6 +339,7 @@ async function createPendingPayPalOrderFromParsedRaw(
           orderNumber,
           email: d.email,
           phone: d.phone,
+          customerId,
           paymentMethod: d.paymentMethod,
           status: orderStatus,
           currency: orderCurrency,

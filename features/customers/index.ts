@@ -45,3 +45,10 @@ export {
   requestCustomerPasswordReset,
   confirmCustomerPasswordReset,
 } from "@/features/customers/application/password-reset";
+export { getVerifiedActiveCustomerId } from "@/features/customers/application/get-verified-active-customer-id";
+export {
+  listOrdersForCustomer,
+  getOrderForCustomer,
+  type CustomerOrderListItem,
+  type CustomerOrderDetail,
+} from "@/features/customers/application/customer-orders";

@@ -40,6 +40,7 @@ model Customer {
 
   identities CustomerIdentity[]
   authTokens CustomerAuthToken[]
+  orders     Order[]
 
   @@index([isActive, createdAt])
   @@map("customers")
@@ -354,6 +355,9 @@ model Order {
   orderNumber         String      @unique @map("order_number")
   email               String
   phone               String?     @map("phone")
+  /// Optional link to a verified customer account (Epic 3). Guest orders stay null until Slice 4 attach.
+  customerId          String?     @map("customer_id")
+  customer            Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
   paymentMethod       String      @map("payment_method")
   status              String      @default("bestaetigt") @map("status")
   fulfillmentStatus   FulfillmentStatus @default(unfulfilled) @map("fulfillment_status")
@@ -400,6 +404,7 @@ model Order {
   payments            OrderPayment[]
   stockReservations   StockReservation[]
 
+  @@index([customerId, createdAt])
   @@map("orders")
 }
 

@@ -224,10 +224,11 @@ Suggested fields:
 ### Customer / CustomerIdentity / CustomerAuthToken
 Purpose: storefront customer identity (Epic 3). Not derived from order emails.
 
-Implemented fields (Slice 1):
+Implemented fields (Slice 1–2):
 - Customer: email (normalized unique), emailVerifiedAt, optional names/passwordHash, isActive, lastLoginAt
 - CustomerIdentity: provider (`password` | `magic_link`) + providerSubject
 - CustomerAuthToken: purpose (`email_verify` | `magic_link` | `password_reset`), tokenHash, expiresAt, consumedAt
+- Order.customerId (optional): set at checkout for verified sessions; portal queries filter by this FK only
 
 ### IdempotencyKey
 Purpose: deduplicate critical requests.
