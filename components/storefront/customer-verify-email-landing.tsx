@@ -1,6 +1,6 @@
 "use client";
 
-import { normalizeCustomerAuthTokenFromClient } from "@/features/customers";
+import { normalizeCustomerAuthTokenFromClient } from "@/features/customers/password";
 import { useSearchParams } from "next/navigation";
 import { useSyncExternalStore } from "react";
 import { CustomerVerifyEmailForm } from "@/components/storefront/customer-verify-email-form";
