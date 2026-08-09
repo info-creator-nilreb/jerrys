@@ -9,6 +9,7 @@ import {
   resolveAuthSubjectKind,
   validateCustomerPassword,
   getCustomerPasswordCriteria,
+  getCustomerPasswordStrength,
   CUSTOMER_PASSWORD_LENGTH_PARTIAL_MIN,
 } from "@/features/customers";
 
@@ -31,6 +32,13 @@ describe("customer auth domain", () => {
     expect(partial.find((c) => c.id === "length")?.state).toBe("partial");
     const strong = getCustomerPasswordCriteria("SecurePass1");
     expect(strong.every((c) => c.state === "pass")).toBe(true);
+  });
+
+  it("bewertet Gesamt-Passwortstärke für Balken unabhängig von Einzelkriterien", () => {
+    expect(getCustomerPasswordStrength("").filledSegments).toBe(0);
+    expect(getCustomerPasswordStrength("a").tier).toBe("weak");
+    expect(getCustomerPasswordStrength("SecurePass1").tier).toBe("strong");
+    expect(getCustomerPasswordStrength("SecurePass1").filledSegments).toBe(4);
   });
 
   it("hasht Tokens deterministisch und nicht im Klartext", () => {

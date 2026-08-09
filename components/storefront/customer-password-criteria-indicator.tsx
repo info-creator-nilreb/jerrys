@@ -3,17 +3,23 @@
 import { useMemo } from "react";
 import {
   CUSTOMER_PASSWORD_REQUIREMENTS_HINT,
+  CUSTOMER_PASSWORD_STRENGTH_SEGMENT_COUNT,
   getCustomerPasswordCriteria,
+  getCustomerPasswordStrength,
   type CustomerPasswordCriterionState,
+  type CustomerPasswordStrengthTier,
 } from "@/features/customers/password";
 
-function segmentClass(state: CustomerPasswordCriterionState): string {
-  switch (state) {
-    case "pass":
+function strengthBarClass(tier: CustomerPasswordStrengthTier, filled: boolean): string {
+  if (!filled) return "bg-[#e5e7eb]";
+  switch (tier) {
+    case "strong":
       return "bg-(--semantic-success,#008060)";
-    case "partial":
+    case "good":
       return "bg-amber-500";
-    case "fail":
+    case "fair":
+      return "bg-amber-500";
+    case "weak":
       return "bg-red-500";
     default:
       return "bg-[#e5e7eb]";
@@ -58,6 +64,7 @@ export function CustomerPasswordCriteriaIndicator({
   showWhenEmpty?: boolean;
 }) {
   const criteria = useMemo(() => getCustomerPasswordCriteria(password), [password]);
+  const strength = useMemo(() => getCustomerPasswordStrength(password), [password]);
   const hasInput = password.length > 0;
 
   if (!hasInput && !showWhenEmpty) {
@@ -73,16 +80,21 @@ export function CustomerPasswordCriteriaIndicator({
       <div
         className="flex gap-1"
         role="img"
-        aria-label="Passwort-Anforderungen: farbige Balken pro Kriterium"
+        aria-label={`Passwortstärke: ${strength.label}`}
       >
-        {criteria.map((criterion) => (
-          <div
-            key={criterion.id}
-            className={`h-1.5 min-w-0 flex-1 rounded-full transition-colors duration-200 ${segmentClass(criterion.state)}`}
-            title={criterion.label}
-          />
-        ))}
+        {Array.from({ length: CUSTOMER_PASSWORD_STRENGTH_SEGMENT_COUNT }, (_, index) => {
+          const filled = index < strength.filledSegments;
+          return (
+            <div
+              key={index}
+              className={`h-1.5 min-w-0 flex-1 rounded-full transition-colors duration-200 ${strengthBarClass(strength.tier, filled)}`}
+            />
+          );
+        })}
       </div>
+      <p className="sr-only" aria-live="polite">
+        {strength.label}
+      </p>
       <ul className="mt-2 space-y-1" aria-live="polite">
         {criteria.map((criterion) => (
           <li
