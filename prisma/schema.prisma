@@ -667,6 +667,11 @@ model WorkshopSession {
   startsAt               DateTime @map("starts_at")
   endsAt                 DateTime @map("ends_at")
   locationLabel          String   @map("location_label")
+  locationLine1          String?  @map("location_line1")
+  locationLine2          String?  @map("location_line2")
+  locationZip            String?  @map("location_zip")
+  locationCity           String?  @map("location_city")
+  locationCountry        String?  @default("DE") @map("location_country")
   priceCentsPerSeat      Int      @default(0) @map("price_cents_per_seat")
   currency               String   @default("EUR")
   /// draft | published | cancelled | completed

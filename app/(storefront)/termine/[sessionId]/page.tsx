@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { MapPin, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import {
   getPublishedWorkshopSessionForStorefront,
   selfCancelDeadlineForStorefrontSession,
   formatDurationLabel,
 } from "@/features/workshops";
+import { WorkshopSessionLocationBlock } from "@/components/storefront/workshop-session-location-block";
 import { formatPrice } from "@/lib/catalog/format";
 import {
   formatSelfCancelDeadline,
@@ -66,12 +67,8 @@ export default async function StorefrontWorkshopSessionDetailPage({
         ) : null}
 
         <dl className="grid gap-4 rounded-lg border border-(--surface-muted) bg-white p-5 text-sm sm:grid-cols-2">
-          <div className="flex gap-2 sm:col-span-2">
-            <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden />
-            <div>
-              <dt className="font-medium text-(--foreground-heading)">Ort</dt>
-              <dd className="text-(--foreground-muted)">{session.locationLabel}</dd>
-            </div>
+          <div className="sm:col-span-2">
+            <WorkshopSessionLocationBlock location={session} />
           </div>
           <div className="flex gap-2">
             <Users className="mt-0.5 size-4 shrink-0" aria-hidden />

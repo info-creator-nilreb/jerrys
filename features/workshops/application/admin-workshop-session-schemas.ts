@@ -38,6 +38,18 @@ const sessionCoreSchema = z
       .min(WORKSHOP_SESSION_DURATION_MIN_MINUTES, "Mindestens 30 Minuten.")
       .max(WORKSHOP_SESSION_DURATION_MAX_MINUTES, "Maximal 8 Stunden."),
     locationLabel: z.string().trim().min(1, "Ort erforderlich.").max(300),
+    locationLine1: z.string().trim().min(1, "Straße und Hausnummer erforderlich.").max(200),
+    locationLine2: z
+      .string()
+      .trim()
+      .max(200)
+      .optional()
+      .transform((v) => (v === "" ? undefined : v)),
+    locationZip: z.string().trim().min(1, "PLZ erforderlich.").max(20),
+    locationCity: z.string().trim().min(1, "Ort/Stadt erforderlich.").max(120),
+    locationCountry: z
+      .enum(["DE", "AT", "CH"])
+      .default("DE"),
     priceEuro: z.string().trim().optional(),
     currency: z.literal("EUR").default("EUR"),
     minimumParticipants: z.coerce.number().int().min(1, "Mindestens 1."),
@@ -109,6 +121,11 @@ export function adminWorkshopSessionUpsertToData(input: AdminWorkshopSessionUpse
     startsAt,
     endsAt,
     locationLabel: input.locationLabel,
+    locationLine1: input.locationLine1,
+    locationLine2: input.locationLine2 ?? null,
+    locationZip: input.locationZip,
+    locationCity: input.locationCity,
+    locationCountry: input.locationCountry,
     priceCentsPerSeat,
     currency: input.currency,
     minimumParticipants: input.minimumParticipants,

@@ -45,6 +45,11 @@ export type AdminWorkshopSessionListItem = {
 
 export type AdminWorkshopSessionDetail = AdminWorkshopSessionListItem & {
   description: string | null;
+  locationLine1: string | null;
+  locationLine2: string | null;
+  locationZip: string | null;
+  locationCity: string | null;
+  locationCountry: string | null;
   maxSeatsPerBooking: number | null;
   selfCancelHoursBeforeStart: number | null;
   createdAt: Date;
@@ -118,6 +123,11 @@ export async function getWorkshopSessionForAdmin(
         endsAt: true,
         timezone: true,
         locationLabel: true,
+        locationLine1: true,
+        locationLine2: true,
+        locationZip: true,
+        locationCity: true,
+        locationCountry: true,
         capacity: true,
         confirmedSeatCount: true,
         heldSeatCount: true,
@@ -281,6 +291,63 @@ export async function completeWorkshopSession(sessionId: string): Promise<Mutate
     return { ok: true, id: sessionId };
   } catch {
     return { ok: false, message: "Abschließen fehlgeschlagen." };
+  }
+}
+
+export async function duplicateWorkshopSessionAsDraft(
+  sourceSessionId: string,
+): Promise<MutateWorkshopSessionResult> {
+  const prisma = getPrisma();
+  try {
+    const source = await prisma.workshopSession.findUnique({
+      where: { id: sourceSessionId },
+    });
+    if (!source) {
+      return { ok: false, message: "Termin nicht gefunden." };
+    }
+
+    const created = await prisma.$transaction(async (tx) => {
+      const session = await tx.workshopSession.create({
+        data: {
+          title: source.title,
+          description: source.description,
+          timezone: source.timezone,
+          startsAt: source.startsAt,
+          endsAt: source.endsAt,
+          locationLabel: source.locationLabel,
+          locationLine1: source.locationLine1,
+          locationLine2: source.locationLine2,
+          locationZip: source.locationZip,
+          locationCity: source.locationCity,
+          locationCountry: source.locationCountry,
+          priceCentsPerSeat: source.priceCentsPerSeat,
+          currency: source.currency,
+          minimumParticipants: source.minimumParticipants,
+          capacity: source.capacity,
+          maxSeatsPerBooking: source.maxSeatsPerBooking,
+          selfCancelHoursBeforeStart: source.selfCancelHoursBeforeStart,
+          status: "draft",
+          confirmedSeatCount: 0,
+          heldSeatCount: 0,
+        },
+      });
+      await createWorkshopSessionEvent(tx, session.id, WORKSHOP_SESSION_EVENT_CREATED, {
+        title: session.title,
+        duplicatedFromSessionId: sourceSessionId,
+      });
+      return session;
+    });
+
+    log.info("workshop_session_duplicated", {
+      sessionId: created.id,
+      sourceSessionId,
+    });
+    return { ok: true, id: created.id };
+  } catch (e) {
+    if (isMissingSchemaError(e)) {
+      return { ok: false, message: "Migration für Termine fehlt." };
+    }
+    return { ok: false, message: "Duplizieren fehlgeschlagen." };
   }
 }
 

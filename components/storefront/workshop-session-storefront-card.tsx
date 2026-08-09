@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { MapPin, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import type { StorefrontWorkshopSessionListItem } from "@/features/workshops";
 import {
   formatDurationLabel,
   selfCancelDeadlineForStorefrontSession,
 } from "@/features/workshops";
+import { WorkshopSessionLocationBlock } from "@/components/storefront/workshop-session-location-block";
 import { formatPrice } from "@/lib/catalog/format";
 import {
   formatSelfCancelDeadline,
@@ -62,9 +63,8 @@ export function WorkshopSessionStorefrontCard({
       </p>
 
       <dl className={`mt-4 grid gap-2 text-sm text-(--foreground-muted) ${compact ? "" : "sm:grid-cols-2"}`}>
-        <div className="flex items-start gap-2">
-          <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden />
-          <span>{session.locationLabel}</span>
+        <div className={compact ? "" : "sm:col-span-2"}>
+          <WorkshopSessionLocationBlock location={session} />
         </div>
         <div className="flex items-start gap-2">
           <Users className="mt-0.5 size-4 shrink-0" aria-hidden />

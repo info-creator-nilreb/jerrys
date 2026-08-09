@@ -6,6 +6,7 @@ import { getAdminSession } from "@/lib/auth/admin-session";
 import {
   cancelWorkshopSession,
   completeWorkshopSession,
+  duplicateWorkshopSessionAsDraft,
   getShopWorkshopSettingsForAdmin,
   publishWorkshopSession,
   updateShopWorkshopSettings,
@@ -77,6 +78,18 @@ export async function completeWorkshopSessionAction(sessionId: string): Promise<
   revalidatePath("/admin/termine");
   revalidatePath(`/admin/termine/${sessionId}/edit`);
   return { ok: true, id: sessionId, message: "Termin abgeschlossen." };
+}
+
+export async function duplicateWorkshopSessionAction(
+  sessionId: string,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  await requireAdmin();
+  const result = await duplicateWorkshopSessionAsDraft(sessionId);
+  if (!result.ok) {
+    return { ok: false, message: result.message };
+  }
+  revalidatePath("/admin/termine");
+  redirect(`/admin/termine/${result.id}/edit`);
 }
 
 export async function saveShopWorkshopSettingsAction(

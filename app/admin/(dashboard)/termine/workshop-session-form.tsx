@@ -10,6 +10,9 @@ import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
 import type { AdminWorkshopSessionDetail } from "@/features/workshops";
 import { formatDurationLabel } from "@/lib/workshop/duration-format";
 import {
+  formatWorkshopSessionLocationBlock,
+} from "@/lib/workshop/workshop-location";
+import {
   durationMinutesFromSessionRange,
   workshopSessionDurationOptions,
 } from "@/lib/workshop/admin-session-duration";
@@ -87,7 +90,7 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium text-[#374151]">Ort *</span>
+          <span className="mb-1 block font-medium text-[#374151]">Bezeichnung Ort *</span>
           <input
             name="locationLabel"
             defaultValue={session?.locationLabel ?? ""}
@@ -96,10 +99,100 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
             placeholder="z. B. Werkstatt Berlin-Mitte"
             className="w-full max-w-xl rounded-md border border-[#d1d5db] px-3 py-2 disabled:bg-[#f3f4f6]"
           />
+          <span className="mt-1 block text-xs text-[#6b7280]">Kurzname für Listen — Adresse siehe unten.</span>
           {fe?.locationLabel ? (
             <span className="mt-1 block text-xs text-red-600">{fe.locationLabel[0]}</span>
           ) : null}
         </label>
+      </section>
+
+      <section className="space-y-4 lg:max-w-3xl">
+        <h2 className="text-sm font-semibold text-[#1f2937]">Adresse</h2>
+        {readOnly && session ? (
+          <div className="text-sm text-[#374151]">
+            {(() => {
+              const block = formatWorkshopSessionLocationBlock({
+                locationLabel: session.locationLabel,
+                locationLine1: session.locationLine1,
+                locationLine2: session.locationLine2,
+                locationZip: session.locationZip,
+                locationCity: session.locationCity,
+                locationCountry: session.locationCountry,
+              });
+              return block.addressLines.length > 0 ? (
+                <address className="not-italic">
+                  {block.addressLines.map((line) => (
+                    <span key={line} className="block">
+                      {line}
+                    </span>
+                  ))}
+                </address>
+              ) : (
+                <p className="text-[#6b7280]">Keine Straßenadresse hinterlegt.</p>
+              );
+            })()}
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block text-sm sm:col-span-2">
+              <span className="mb-1 block font-medium text-[#374151]">Straße und Hausnummer *</span>
+              <input
+                name="locationLine1"
+                defaultValue={session?.locationLine1 ?? ""}
+                required
+                className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+              />
+              {fe?.locationLine1 ? (
+                <span className="mt-1 block text-xs text-red-600">{fe.locationLine1[0]}</span>
+              ) : null}
+            </label>
+            <label className="block text-sm sm:col-span-2">
+              <span className="mb-1 block font-medium text-[#374151]">Adresszusatz</span>
+              <input
+                name="locationLine2"
+                defaultValue={session?.locationLine2 ?? ""}
+                placeholder="Optional"
+                className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-[#374151]">PLZ *</span>
+              <input
+                name="locationZip"
+                defaultValue={session?.locationZip ?? ""}
+                required
+                className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+              />
+              {fe?.locationZip ? (
+                <span className="mt-1 block text-xs text-red-600">{fe.locationZip[0]}</span>
+              ) : null}
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-[#374151]">Ort *</span>
+              <input
+                name="locationCity"
+                defaultValue={session?.locationCity ?? ""}
+                required
+                className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+              />
+              {fe?.locationCity ? (
+                <span className="mt-1 block text-xs text-red-600">{fe.locationCity[0]}</span>
+              ) : null}
+            </label>
+            <label className="block text-sm sm:col-span-2">
+              <span className="mb-1 block font-medium text-[#374151]">Land</span>
+              <select
+                name="locationCountry"
+                defaultValue={session?.locationCountry ?? "DE"}
+                className="w-full max-w-xs rounded-md border border-[#d1d5db] px-3 py-2"
+              >
+                <option value="DE">Deutschland</option>
+                <option value="AT">Österreich</option>
+                <option value="CH">Schweiz</option>
+              </select>
+            </label>
+          </div>
+        )}
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:max-w-3xl">
