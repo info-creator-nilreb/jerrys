@@ -74,8 +74,8 @@ export default function StorefrontError({
           Zur Startseite
         </Link>
       </div>
-      {process.env.NODE_ENV === "development" && error.digest ? (
-        <p className="mt-8 font-mono text-xs text-[#9ca3af]">digest: {error.digest}</p>
+      {error.digest ? (
+        <p className="mt-8 font-mono text-xs text-[#9ca3af]">Referenz: {error.digest}</p>
       ) : null}
     </div>
   );
