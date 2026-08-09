@@ -41,9 +41,35 @@ model Customer {
   identities CustomerIdentity[]
   authTokens CustomerAuthToken[]
   orders     Order[]
+  addresses  CustomerAddress[]
 
   @@index([isActive, createdAt])
   @@map("customers")
+}
+
+/// Saved shipping/billing address for a customer (Epic 3 Slice 3). Orders keep immutable snapshots.
+model CustomerAddress {
+  id         String   @id @default(cuid())
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  /// shipping | billing
+  kind       String
+  label      String?  @map("label")
+  firstName  String   @map("first_name")
+  lastName   String   @map("last_name")
+  company    String?  @map("company")
+  line1      String   @map("line1")
+  line2      String?  @map("line2")
+  zip        String   @map("zip")
+  city       String   @map("city")
+  country    String   @default("DE") @map("country")
+  isDefault  Boolean  @default(false) @map("is_default")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([customerId, kind])
+  @@index([customerId, kind, isDefault])
+  @@map("customer_addresses")
 }
 
 /// Auth provider binding for a customer (password, magic_link, …).

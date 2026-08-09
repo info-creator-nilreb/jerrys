@@ -51,6 +51,7 @@ export function HeaderAccountPopover({ isLoggedIn, email }: Props) {
   const panelId = useId();
   const [userOpen, setUserOpen] = useState(false);
   const [queryDismissed, setQueryDismissed] = useState(false);
+  const [justSignedIn, setJustSignedIn] = useState(false);
   const mounted = useClientMounted();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -61,24 +62,41 @@ export function HeaderAccountPopover({ isLoggedIn, email }: Props) {
   const kontoParam = searchParams.get("konto");
   const flash =
     kontoParam && MAGIC_MESSAGES[kontoParam] ? MAGIC_MESSAGES[kontoParam] : null;
+  /**
+   * Ziel nach dem Login hängt am Einstiegspunkt: Wer eine geschützte Seite angefordert hat
+   * (`callbackUrl`), soll dort landen. Wer selbst im Header anmeldet, bleibt im Kontext.
+   */
+  const callbackUrlParam = searchParams.get("callbackUrl");
+  const callbackUrl =
+    callbackUrlParam && callbackUrlParam.startsWith("/") ? callbackUrlParam : null;
   const wantsQueryOpen =
     !isLoggedIn &&
     (kontoParam === "anmelden" || Boolean(kontoParam?.startsWith("magic-")));
   const open = userOpen || (wantsQueryOpen && !queryDismissed);
 
   const clearKontoQuery = useCallback(() => {
-    if (!kontoParam) return;
+    if (!kontoParam && !callbackUrlParam) return;
     const params = new URLSearchParams(searchParams.toString());
     params.delete("konto");
+    params.delete("callbackUrl");
     const q = params.toString();
     router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
-  }, [kontoParam, searchParams, pathname, router]);
+  }, [kontoParam, callbackUrlParam, searchParams, pathname, router]);
 
   const close = useCallback(() => {
     setUserOpen(false);
+    setJustSignedIn(false);
     if (wantsQueryOpen) setQueryDismissed(true);
     clearKontoQuery();
   }, [wantsQueryOpen, clearKontoQuery]);
+
+  // Anmeldung im Popover: Kontext bleibt erhalten, das Panel wechselt in den Konto-Zustand.
+  const onSignedIn = useCallback(() => {
+    setJustSignedIn(true);
+    setUserOpen(true);
+    setQueryDismissed(false);
+    clearKontoQuery();
+  }, [clearKontoQuery]);
 
   useEffect(() => {
     if (!open) return;
@@ -148,6 +166,11 @@ export function HeaderAccountPopover({ isLoggedIn, email }: Props) {
 
           {isLoggedIn ? (
             <div className="space-y-4">
+              {justSignedIn ? (
+                <p className="text-sm font-medium text-primary" role="status">
+                  Anmeldung erfolgreich.
+                </p>
+              ) : null}
               <p className="text-sm text-(--foreground-muted)">
                 Angemeldet als{" "}
                 <span className="font-medium text-(--foreground-heading)">
@@ -172,7 +195,12 @@ export function HeaderAccountPopover({ isLoggedIn, email }: Props) {
             </div>
           ) : (
             <div className="space-y-4">
-              <CustomerLoginForm callbackUrl="/konto" compact />
+              <CustomerLoginForm
+                compact
+                stayOnPage={!callbackUrl}
+                callbackUrl={callbackUrl ?? "/konto"}
+                onSignedIn={onSignedIn}
+              />
               <p className="text-sm text-(--foreground-muted)">
                 Neu hier?{" "}
                 <Link

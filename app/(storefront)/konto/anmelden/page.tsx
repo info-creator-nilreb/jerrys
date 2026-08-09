@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCustomerSession } from "@/lib/auth/customer-session";
+import { safeInternalPath } from "@/lib/http/request-pathname";
 
 export const metadata = {
   title: "Anmelden",
@@ -16,13 +17,9 @@ export default async function CustomerLoginPage({
   if (session) redirect("/konto");
 
   const sp = await searchParams;
-  const callbackUrl =
-    typeof sp.callbackUrl === "string" && sp.callbackUrl.startsWith("/")
-      ? sp.callbackUrl
-      : "";
+  const callbackUrl = safeInternalPath(sp.callbackUrl, "");
   const qs = new URLSearchParams({ konto: "anmelden" });
-  if (callbackUrl && callbackUrl !== "/konto") {
-    qs.set("callbackUrl", callbackUrl);
-  }
+  // Ziel mitnehmen: Das Popover leitet nach dem Login genau dorthin weiter.
+  if (callbackUrl) qs.set("callbackUrl", callbackUrl);
   redirect(`/?${qs.toString()}`);
 }

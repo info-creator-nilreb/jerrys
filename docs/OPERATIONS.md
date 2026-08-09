@@ -52,6 +52,28 @@ Selection criteria include Vercel compatibility, EU data options, data-processin
 5. Risky features remain disabled behind an owned feature flag until operational validation completes.
 6. Rollback reverts application code without requiring an immediate destructive database rollback.
 
+### Migrationen ausführen
+
+Das Prisma-CLI liegt in `node_modules` und ist **nicht** global installiert — ein direkter Aufruf
+scheitert mit `bash: prisma: command not found`. Immer über npm oder `npx` starten:
+
+```bash
+npm run db:migrate:status          # welche Migrationen fehlen?
+npm run db:migrate:deploy          # ausstehende Migrationen anwenden
+npx prisma migrate deploy          # gleichwertig
+```
+
+`prisma.config.ts` lädt `.env` und `.env.local` mit Vorrang. Für eine andere Ziel-Datenbank die URL
+explizit übergeben (Supabase Pooler kann bei `migrate` mit `P1002` hängen — dann Direktverbindung
+`db.PROJECT_REF.supabase.co:5432` verwenden):
+
+```bash
+PRISMA_MIGRATE_DATABASE_URL="postgresql://…" npx prisma migrate deploy
+```
+
+Neue Tabellen erst nach dem Deploy nutzbar: Die App zeigt bei fehlender Migration eine
+verständliche Meldung (`P2021`) statt einer Fehlerseite, speichert aber nichts.
+
 ## Secrets and Access
 
 - Separate credentials for preview, staging, and production.

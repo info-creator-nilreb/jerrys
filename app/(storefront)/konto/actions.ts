@@ -10,6 +10,7 @@ import {
   requestCustomerPasswordReset,
   verifyCustomerEmail,
 } from "@/features/customers";
+import { safeInternalPath } from "@/lib/http/request-pathname";
 import { clientIpFromHeaders } from "@/lib/security/client-ip";
 import {
   touchCustomerMagicLinkAttempt,
@@ -61,14 +62,16 @@ export async function customerPasswordLoginAction(
 ): Promise<CustomerAuthActionState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const callbackUrl = String(formData.get("callbackUrl") ?? "/konto");
+  const callbackUrl = safeInternalPath(String(formData.get("callbackUrl") ?? ""), "/konto");
+  // Header-Popover meldet im Kontext an: keine Navigation, nur Zustandswechsel.
+  const stayOnPage = formData.get("stayOnPage") === "1";
 
   try {
-    await signIn("customer-credentials", {
-      email,
-      password,
-      redirectTo: callbackUrl.startsWith("/") ? callbackUrl : "/konto",
-    });
+    if (stayOnPage) {
+      await signIn("customer-credentials", { email, password, redirect: false });
+    } else {
+      await signIn("customer-credentials", { email, password, redirectTo: callbackUrl });
+    }
     return { ok: true, message: "Angemeldet." };
   } catch (e) {
     // Auth.js wirft bei Erfolg NEXT_REDIRECT — muss durchgereicht werden.

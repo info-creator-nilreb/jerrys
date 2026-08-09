@@ -28,6 +28,8 @@
     "lighthouse:ci": "npx --yes @lhci/cli@0.14.0 autorun",
     "load:k6": "k6 run scripts/load/k6-smoke.js",
     "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:status": "prisma migrate status",
     "db:seed": "prisma db seed"
   },
   "prisma": {

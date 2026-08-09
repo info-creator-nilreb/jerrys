@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useId, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useId, useRef, useState } from "react";
 import {
   customerPasswordLoginAction,
   requestMagicLinkAction,
@@ -18,17 +19,32 @@ const initial: CustomerAuthActionState = null;
 export function CustomerLoginForm({
   callbackUrl = "/konto",
   compact = false,
+  stayOnPage = false,
+  onSignedIn,
 }: {
   callbackUrl?: string;
   compact?: boolean;
+  /** Kein Seitenwechsel nach dem Login (Header-Popover): nur Server-Zustand neu laden. */
+  stayOnPage?: boolean;
+  onSignedIn?: () => void;
 }) {
   const formId = useId();
+  const router = useRouter();
   const [mode, setMode] = useState<"password" | "magic">("password");
   const [passwordState, passwordAction, passwordPending] = useActionState(
     customerPasswordLoginAction,
     initial,
   );
   const [magicState, magicAction, magicPending] = useActionState(requestMagicLinkAction, initial);
+  const signedInHandledRef = useRef(false);
+
+  useEffect(() => {
+    if (!stayOnPage) return;
+    if (!passwordState?.ok || signedInHandledRef.current) return;
+    signedInHandledRef.current = true;
+    router.refresh();
+    onSignedIn?.();
+  }, [stayOnPage, passwordState, router, onSignedIn]);
 
   return (
     <div className={compact ? "space-y-4" : "space-y-6"}>
@@ -65,6 +81,7 @@ export function CustomerLoginForm({
       {mode === "password" ? (
         <form action={passwordAction} className="space-y-4" noValidate>
           <input type="hidden" name="callbackUrl" value={callbackUrl} />
+          {stayOnPage ? <input type="hidden" name="stayOnPage" value="1" /> : null}
           <div>
             <label htmlFor={`${formId}-email`} className="mb-1.5 block text-sm font-medium text-(--foreground-heading)">
               E-Mail <span className="text-primary">*</span>

@@ -1,4 +1,5 @@
-import { type NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { REQUEST_PATHNAME_HEADER } from "@/lib/http/request-pathname";
 import {
   browseContextCookieOptions,
   browseContextFromPathname,
@@ -13,6 +14,9 @@ import { updateSession } from "@/utils/supabase/middleware";
  * Admin-Schutz: `app/admin/(dashboard)/layout.tsx` (`auth()`).
  */
 export async function middleware(request: NextRequest) {
+  // Layouts kennen den angefragten Pfad nicht; das Kundenportal braucht ihn für `callbackUrl`.
+  request.headers.set(REQUEST_PATHNAME_HEADER, request.nextUrl.pathname);
+
   const response = await updateSession(request);
   const ctx = browseContextFromPathname(request.nextUrl.pathname);
   if (ctx) {

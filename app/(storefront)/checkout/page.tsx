@@ -3,9 +3,11 @@ import { redirect } from "next/navigation";
 import { CheckoutForm } from "@/components/storefront/checkout-form";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import type { CheckoutSummaryLine } from "@/components/storefront/checkout-summary-aside";
+import { getCheckoutAddressPrefillForCustomer } from "@/features/customers";
+import { getCustomerSession } from "@/lib/auth/customer-session";
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { cartLineCommerceRules, getCartWithLines } from "@/lib/cart/cart-queries";
-import { labelForShippingCountryCode } from "@/lib/catalog/shipping-countries-catalog";
+import { getShippingCountriesForStorefront } from "@/lib/shop/shipping-countries-for-storefront";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 
@@ -66,16 +68,19 @@ export default async function CheckoutPage({
   });
 
   const shopShip = await getShopShippingSettings();
-  const allowedShippingCountries = shopShip.shippingCountryCodes.map((code) => ({
-    code,
-    label: labelForShippingCountryCode(code),
-  }));
+  const { countries: allowedShippingCountries, preferredCountry } =
+    await getShippingCountriesForStorefront();
   if (!allowedShippingCountries.length) {
     redirect("/warenkorb?grund=versand_nicht_konfiguriert");
   }
-  const initialShippingCountry = allowedShippingCountries[0]!.code;
+  const initialShippingCountry = preferredCountry;
 
   const prefillPaypal = sp.payment === "paypal";
+
+  const session = await getCustomerSession();
+  const addressPrefill = session
+    ? await getCheckoutAddressPrefillForCustomer(session.customerId)
+    : null;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-24 md:py-28">
@@ -115,6 +120,7 @@ export default async function CheckoutPage({
           payPalConfigured={isPayPalConfigured()}
           payPalClientId={process.env.PAYPAL_CLIENT_ID?.trim() ?? ""}
           prefillPaypal={prefillPaypal}
+          addressPrefill={addressPrefill}
         />
       </div>
     </div>

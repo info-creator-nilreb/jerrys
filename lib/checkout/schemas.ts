@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { nonEmptyString } from "@/lib/validation/form";
 import { addressLine1HouseNumberMessage } from "@/lib/checkout/address-line-validation";
+import { normalizeAddressText } from "@/lib/checkout/address-text";
 import { postalCodeErrorMessage } from "@/lib/checkout/postal-code-validation";
 
 export const paymentMethodSchema = z.enum(["paypal"]);
@@ -10,27 +11,39 @@ const nullToUndef = (v: unknown) => (v === null ? undefined : v);
 
 const emptyToUndef = z.preprocess(
   nullToUndef,
-  z.string().trim().optional().transform((s) => (s === "" ? undefined : s)),
+  z
+    .string()
+    .transform(normalizeAddressText)
+    .optional()
+    .transform((s) => (s === "" ? undefined : s)),
+);
+
+/** Straße/Ort: Mehrfach-Leerzeichen aus Vorschlag + getippter Hausnummer zusammenfassen. */
+const requiredAddressText = z.string().transform(normalizeAddressText).pipe(nonEmptyString);
+
+const optionalAddressText = z.preprocess(
+  nullToUndef,
+  z.string().transform(normalizeAddressText).optional(),
 );
 
 const checkoutBase = z.object({
   email: z.string().trim().email({ message: "Gültige E-Mail erforderlich." }),
-  shippingFirstName: nonEmptyString,
-  shippingLastName: nonEmptyString,
+  shippingFirstName: requiredAddressText,
+  shippingLastName: requiredAddressText,
   shippingCompany: emptyToUndef,
-  shippingLine1: nonEmptyString,
+  shippingLine1: requiredAddressText,
   shippingLine2: emptyToUndef,
-  shippingZip: z.string().trim(),
-  shippingCity: nonEmptyString,
+  shippingZip: z.string().transform(normalizeAddressText),
+  shippingCity: requiredAddressText,
   shippingCountry: z.string().trim().min(2).max(2).default("DE"),
   billingUseShipping: z.preprocess((v) => (v === "no" ? "no" : "yes"), z.enum(["yes", "no"])),
-  billingFirstName: z.preprocess(nullToUndef, z.string().optional()),
-  billingLastName: z.preprocess(nullToUndef, z.string().optional()),
+  billingFirstName: optionalAddressText,
+  billingLastName: optionalAddressText,
   billingCompany: emptyToUndef,
-  billingLine1: z.preprocess(nullToUndef, z.string().optional()),
+  billingLine1: optionalAddressText,
   billingLine2: emptyToUndef,
-  billingZip: z.preprocess(nullToUndef, z.string().optional()),
-  billingCity: z.preprocess(nullToUndef, z.string().optional()),
+  billingZip: optionalAddressText,
+  billingCity: optionalAddressText,
   billingCountry: z.preprocess(nullToUndef, z.string().optional()),
   phone: emptyToUndef,
   paymentMethod: paymentMethodSchema,

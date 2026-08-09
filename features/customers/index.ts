@@ -58,3 +58,22 @@ export {
   type CustomerOrderListItem,
   type CustomerOrderDetail,
 } from "@/features/customers/application/customer-orders";
+export {
+  CUSTOMER_ADDRESS_KINDS,
+  customerAddressKindLabel,
+  isCustomerAddressKind,
+  type CustomerAddressKind,
+} from "@/features/customers/domain/customer-address";
+export {
+  listCustomerAddresses,
+  getCustomerAddressForCustomer,
+  createCustomerAddress,
+  updateCustomerAddress,
+  deleteCustomerAddress,
+  setDefaultCustomerAddress,
+  getCheckoutAddressPrefillForCustomer,
+  type CustomerAddressListItem,
+  type CustomerAddressDetail,
+  type CheckoutAddressPrefill,
+  type MutateCustomerAddressResult,
+} from "@/features/customers/application/customer-addresses";
