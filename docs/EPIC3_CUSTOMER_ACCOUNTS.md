@@ -59,6 +59,12 @@ Kunden können sich per **E-Mail/Passwort oder Magic Link** anmelden und ihre Be
 - Vorschau und Bestätigung vor Zuordnung
 - Audit-Event; keine automatische Zusammenführung nur anhand einer unbestätigten E-Mail
 
+**Status:** umgesetzt. `features/customers/application/guest-order-claim.ts` findet Bestellungen mit `customerId = null` und der **verifizierten** Konto-E-Mail (Vergleich ohne Groß-/Kleinschreibung, weil Checkout-E-Mails nicht normalisiert werden). Die E-Mail stammt immer aus dem Konto, nie aus Nutzereingabe.
+
+Ablauf: Hinweis auf `/konto` und `/konto/bestellungen` → Vorschau unter `/konto/bestellungen/zuordnen` mit Bestellnummer, Datum, Status, Betrag und Lieferort → Bestätigung. Die Server Action verlangt das Bestätigungsfeld zusätzlich serverseitig; ohne Bestätigung passiert nichts. Es gibt keine automatische Zuordnung beim Login oder Seitenaufruf.
+
+Zuordnung je Bestellung über `updateMany` mit Bedingung `customerId: null` — dadurch idempotent und rennsicher (parallele Requests wirken höchstens einmal). Jede Zuordnung schreibt `order.customer_linked` in `order_events` und die Integrations-Outbox. Bestell-Snapshots (Adressen, Preise, Belege) bleiben unverändert.
+
 ### Slice 5 — Termine und Selbststornierung
 
 - Kommende/vergangene Buchungen mit Termin, Teilnehmerzahl und Status

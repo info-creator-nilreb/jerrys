@@ -2,9 +2,10 @@ import Link from "next/link";
 import {
   customerAuthPrimaryButtonClass,
 } from "@/components/storefront/customer-auth-shell";
+import { CustomerGuestOrderClaimHint } from "@/components/storefront/customer-guest-order-claim-hint";
 import { CustomerOrderStatusBadge } from "@/components/storefront/customer-order-status-badge";
 import { getCustomerSession } from "@/lib/auth/customer-session";
-import { listOrdersForCustomer } from "@/features/customers";
+import { countClaimableGuestOrders, listOrdersForCustomer } from "@/features/customers";
 import { formatPrice } from "@/lib/catalog/format";
 
 export const metadata = {
@@ -12,9 +13,17 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function CustomerOrdersPage() {
+export default async function CustomerOrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ zugeordnet?: string }>;
+}) {
   const session = await getCustomerSession();
   if (!session) return null;
+
+  const sp = await searchParams;
+  const claimedCount = Number.parseInt(sp.zugeordnet ?? "", 10);
+  const claimedBanner = Number.isFinite(claimedCount) && claimedCount > 0 ? claimedCount : 0;
 
   let ordersError: string | null = null;
   let orders: Awaited<ReturnType<typeof listOrdersForCustomer>> = [];
@@ -22,6 +31,13 @@ export default async function CustomerOrdersPage() {
     orders = await listOrdersForCustomer(session.customerId);
   } catch {
     ordersError = "Bestellungen konnten gerade nicht geladen werden. Bitte später erneut versuchen.";
+  }
+
+  let claimableCount = 0;
+  try {
+    claimableCount = await countClaimableGuestOrders(session.customerId);
+  } catch {
+    claimableCount = 0;
   }
 
   return (
@@ -34,6 +50,16 @@ export default async function CustomerOrdersPage() {
           Nur Bestellungen, die mit deinem verifizierten Konto verknüpft sind.
         </p>
       </header>
+
+      {claimedBanner > 0 ? (
+        <p className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900" role="status">
+          {claimedBanner === 1
+            ? "1 frühere Bestellung wurde deinem Konto zugeordnet."
+            : `${claimedBanner} frühere Bestellungen wurden deinem Konto zugeordnet.`}
+        </p>
+      ) : null}
+
+      <CustomerGuestOrderClaimHint orderCount={claimableCount} />
 
       {ordersError ? (
         <p className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
