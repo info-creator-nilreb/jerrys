@@ -30,7 +30,10 @@ import { PayPalCardFieldsCheckout } from "@/components/storefront/paypal-card-fi
 import { SmartAddressFields } from "@/components/storefront/smart-address-fields";
 import { computeCheckoutOrderTotalsWithDiscount } from "@/lib/promotions/checkout-totals";
 import type { OrderPriceLineInput } from "@/lib/tax/order-price-totals";
-import type { CheckoutAddressPrefill } from "@/features/customers/checkout-prefill";
+import type {
+  CheckoutAddressPrefill,
+  CustomerAddressListItem,
+} from "@/features/customers/checkout-prefill";
 import { z } from "zod";
 
 const initial: CheckoutActionState = null;
@@ -47,6 +50,37 @@ const inputClass = `${formControlBase} py-[10px]`;
 const selectClass = `${formControlBase} py-[10px] appearance-none`;
 
 const checkoutLabelClass = "mb-1 block text-sm text-[#6b7280]";
+
+/** Wert im Adress-Auswahlfeld für „neue Adresse eingeben“. */
+const NEW_ADDRESS_OPTION = "";
+
+/** Einzeiler für das Auswahlfeld: Bezeichnung, Name und Ort reichen zum Unterscheiden. */
+function savedAddressOptionLabel(address: CustomerAddressListItem): string {
+  const parts = [
+    address.label,
+    `${address.firstName} ${address.lastName}`.trim(),
+    address.line1,
+    `${address.zip} ${address.city}`.trim(),
+  ].filter((p): p is string => Boolean(p && p.length));
+  const text = parts.join(" · ");
+  return address.isDefault ? `${text} (Standard)` : text;
+}
+
+type AddressPersonFields = {
+  firstName: string;
+  lastName: string;
+  company: string;
+};
+
+const EMPTY_PERSON: AddressPersonFields = { firstName: "", lastName: "", company: "" };
+
+function personFromAddress(address: CustomerAddressListItem): AddressPersonFields {
+  return {
+    firstName: address.firstName,
+    lastName: address.lastName,
+    company: address.company ?? "",
+  };
+}
 
 /** Stabile IDs für `aria-describedby` / Fehlermeldungen (eine Checkout-Seite pro Dokument). */
 const checkoutErrId = {
@@ -135,6 +169,8 @@ export function CheckoutForm({
   payPalClientId,
   prefillPaypal,
   addressPrefill,
+  savedAddresses = [],
+  canSaveAddressToAccount = false,
 }: {
   idempotencyKey: string;
   lines: CheckoutSummaryLine[];
@@ -147,6 +183,9 @@ export function CheckoutForm({
   payPalClientId: string;
   prefillPaypal?: boolean;
   addressPrefill?: CheckoutAddressPrefill | null;
+  /** Adressbuch des angemeldeten, verifizierten Kunden (leer für Gäste). */
+  savedAddresses?: CustomerAddressListItem[];
+  canSaveAddressToAccount?: boolean;
 }) {
   const prefillCountry =
     addressPrefill?.shippingCountry &&
@@ -168,7 +207,48 @@ export function CheckoutForm({
   const [billingCountry, setBillingCountry] = useState(
     addressPrefill?.billingCountry ?? prefillCountry,
   );
-  const p = addressPrefill;
+  const savedShippingAddresses = useMemo(
+    () => savedAddresses.filter((a) => a.kind === "shipping"),
+    [savedAddresses],
+  );
+  const savedBillingAddresses = useMemo(
+    () => savedAddresses.filter((a) => a.kind === "billing"),
+    [savedAddresses],
+  );
+
+  /** Startauswahl = Standardadresse, aus der auch das Prefill stammt. */
+  const [shippingAddressId, setShippingAddressId] = useState(
+    () => savedAddresses.find((a) => a.kind === "shipping" && a.isDefault)?.id ?? NEW_ADDRESS_OPTION,
+  );
+  const [billingAddressId, setBillingAddressId] = useState(
+    () => savedAddresses.find((a) => a.kind === "billing" && a.isDefault)?.id ?? NEW_ADDRESS_OPTION,
+  );
+
+  const [shippingPerson, setShippingPerson] = useState<AddressPersonFields>(() => ({
+    firstName: addressPrefill?.shippingFirstName ?? "",
+    lastName: addressPrefill?.shippingLastName ?? "",
+    company: addressPrefill?.shippingCompany ?? "",
+  }));
+  const [billingPerson, setBillingPerson] = useState<AddressPersonFields>(() => ({
+    firstName: addressPrefill?.billingFirstName ?? "",
+    lastName: addressPrefill?.billingLastName ?? "",
+    company: addressPrefill?.billingCompany ?? "",
+  }));
+
+  /** Adressfelder sind in `SmartAddressFields` gekapselt — Auswahl remountet sie über `key`. */
+  const [shippingAddressValues, setShippingAddressValues] = useState(() => ({
+    zip: addressPrefill?.shippingZip ?? "",
+    city: addressPrefill?.shippingCity ?? "",
+    line1: addressPrefill?.shippingLine1 ?? "",
+    line2: addressPrefill?.shippingLine2 ?? "",
+  }));
+  const [billingAddressValues, setBillingAddressValues] = useState(() => ({
+    zip: addressPrefill?.billingZip ?? "",
+    city: addressPrefill?.billingCity ?? "",
+    line1: addressPrefill?.billingLine1 ?? "",
+    line2: addressPrefill?.billingLine2 ?? "",
+  }));
+
   const [committedPromoCode, setCommittedPromoCode] = useState("");
   const [declineAutomatic, setDeclineAutomatic] = useState(false);
   const [promoPreview, setPromoPreview] = useState<CheckoutPromotionPreview | { error: string } | null>(
@@ -233,6 +313,48 @@ export function CheckoutForm({
     appliedPromotion?.kind === "applied" && appliedPromotion.promotionType === "free_shipping"
       ? appliedPromotion.title
       : null;
+
+  const applySavedShippingAddress = (id: string) => {
+    setShippingAddressId(id);
+    const address = savedShippingAddresses.find((a) => a.id === id);
+    if (!address) {
+      setShippingPerson(EMPTY_PERSON);
+      setShippingAddressValues({ zip: "", city: "", line1: "", line2: "" });
+      setShippingCountry(initialShippingCountry);
+      return;
+    }
+    setShippingPerson(personFromAddress(address));
+    setShippingAddressValues({
+      zip: address.zip,
+      city: address.city,
+      line1: address.line1,
+      line2: address.line2 ?? "",
+    });
+    if (allowedShippingCountries.some((c) => c.code === address.country)) {
+      setShippingCountry(address.country);
+    }
+  };
+
+  const applySavedBillingAddress = (id: string) => {
+    setBillingAddressId(id);
+    const address = savedBillingAddresses.find((a) => a.id === id);
+    if (!address) {
+      setBillingPerson(EMPTY_PERSON);
+      setBillingAddressValues({ zip: "", city: "", line1: "", line2: "" });
+      setBillingCountry(shippingCountry);
+      return;
+    }
+    setBillingPerson(personFromAddress(address));
+    setBillingAddressValues({
+      zip: address.zip,
+      city: address.city,
+      line1: address.line1,
+      line2: address.line2 ?? "",
+    });
+    if (allowedShippingCountries.some((c) => c.code === address.country)) {
+      setBillingCountry(address.country);
+    }
+  };
 
   const onPayPalSurfaceChange = (id: CheckoutPayPalMethodId) => {
     setPayPalSurface(id);
@@ -484,6 +606,34 @@ export function CheckoutForm({
           </div>
 
           <div className="mt-8 space-y-4">
+            {savedShippingAddresses.length > 0 ? (
+              <div>
+                <label htmlFor="shippingSavedAddress" className={checkoutLabelClass}>
+                  Gespeicherte Lieferadresse
+                </label>
+                <select
+                  id="shippingSavedAddress"
+                  className={selectClass}
+                  value={shippingAddressId}
+                  onChange={(e) => applySavedShippingAddress(e.target.value)}
+                >
+                  {savedShippingAddresses.map((address) => (
+                    <option key={address.id} value={address.id}>
+                      {savedAddressOptionLabel(address)}
+                    </option>
+                  ))}
+                  <option value={NEW_ADDRESS_OPTION}>Neue Adresse eingeben …</option>
+                </select>
+                <p className="mt-1 text-sm text-[#6b7280]">
+                  <Link
+                    href="/konto/adressen"
+                    className="font-medium text-primary underline-offset-2 hover:underline"
+                  >
+                    Adressen verwalten
+                  </Link>
+                </p>
+              </div>
+            ) : null}
             <div>
               <label htmlFor="shippingCountry" className="mb-1 block text-sm text-[#6b7280]">
                 Land / Region
@@ -520,7 +670,10 @@ export function CheckoutForm({
                   required
                   autoComplete="shipping given-name"
                   className={inputClass}
-                  defaultValue={p?.shippingFirstName}
+                  value={shippingPerson.firstName}
+                  onChange={(e) =>
+                    setShippingPerson((prev) => ({ ...prev, firstName: e.target.value }))
+                  }
                   {...ariaFieldErr(fe?.shippingFirstName, checkoutErrId.shippingFirstName)}
                 />
                 {fe?.shippingFirstName ? (
@@ -543,7 +696,10 @@ export function CheckoutForm({
                   required
                   autoComplete="shipping family-name"
                   className={inputClass}
-                  defaultValue={p?.shippingLastName}
+                  value={shippingPerson.lastName}
+                  onChange={(e) =>
+                    setShippingPerson((prev) => ({ ...prev, lastName: e.target.value }))
+                  }
                   {...ariaFieldErr(fe?.shippingLastName, checkoutErrId.shippingLastName)}
                 />
                 {fe?.shippingLastName ? (
@@ -566,10 +722,14 @@ export function CheckoutForm({
                 name="shippingCompany"
                 autoComplete="shipping organization"
                 className={inputClass}
-                defaultValue={p?.shippingCompany}
+                value={shippingPerson.company}
+                onChange={(e) =>
+                  setShippingPerson((prev) => ({ ...prev, company: e.target.value }))
+                }
               />
             </div>
             <SmartAddressFields
+              key={`shipping-${shippingAddressId || "neu"}`}
               country={shippingCountry}
               names={{
                 zip: "shippingZip",
@@ -583,12 +743,7 @@ export function CheckoutForm({
                 line1: "Straße und Hausnummer",
                 line2: "Wohnung, Zimmer, usw. (optional)",
               }}
-              defaultValues={{
-                zip: p?.shippingZip,
-                city: p?.shippingCity,
-                line1: p?.shippingLine1,
-                line2: p?.shippingLine2,
-              }}
+              defaultValues={shippingAddressValues}
               serverErrors={{
                 zip: fe?.shippingZip,
                 city: fe?.shippingCity,
@@ -604,6 +759,18 @@ export function CheckoutForm({
               inputClass={inputClass}
               labelClass={checkoutLabelClass}
             />
+            {canSaveAddressToAccount && shippingAddressId === NEW_ADDRESS_OPTION ? (
+              <label className="flex cursor-pointer items-start gap-3 text-sm text-[#374151]">
+                <input
+                  type="checkbox"
+                  name="saveShippingAddress"
+                  value="1"
+                  defaultChecked={savedShippingAddresses.length === 0}
+                  className="mt-0.5 size-4 checkbox-primary"
+                />
+                <span>Diese Lieferadresse in meinem Konto speichern</span>
+              </label>
+            ) : null}
             <div>
               <label
                 htmlFor="phone"
@@ -647,6 +814,26 @@ export function CheckoutForm({
           </div>
           {billingDifferent ? (
             <div className="mt-6 space-y-4">
+              {savedBillingAddresses.length > 0 ? (
+                <div>
+                  <label htmlFor="billingSavedAddress" className={checkoutLabelClass}>
+                    Gespeicherte Rechnungsadresse
+                  </label>
+                  <select
+                    id="billingSavedAddress"
+                    className={selectClass}
+                    value={billingAddressId}
+                    onChange={(e) => applySavedBillingAddress(e.target.value)}
+                  >
+                    {savedBillingAddresses.map((address) => (
+                      <option key={address.id} value={address.id}>
+                        {savedAddressOptionLabel(address)}
+                      </option>
+                    ))}
+                    <option value={NEW_ADDRESS_OPTION}>Neue Adresse eingeben …</option>
+                  </select>
+                </div>
+              ) : null}
               <div>
                 <label htmlFor="billingCountry" className="mb-1 block text-sm text-[#6b7280]">
                   Land / Region (Rechnung)
@@ -682,7 +869,10 @@ export function CheckoutForm({
                     name="billingFirstName"
                     autoComplete="billing given-name"
                     className={inputClass}
-                    defaultValue={p?.billingFirstName}
+                    value={billingPerson.firstName}
+                    onChange={(e) =>
+                      setBillingPerson((prev) => ({ ...prev, firstName: e.target.value }))
+                    }
                     {...ariaFieldErr(fe?.billingFirstName, checkoutErrId.billingFirstName)}
                   />
                   {fe?.billingFirstName ? (
@@ -704,7 +894,10 @@ export function CheckoutForm({
                     name="billingLastName"
                     autoComplete="billing family-name"
                     className={inputClass}
-                    defaultValue={p?.billingLastName}
+                    value={billingPerson.lastName}
+                    onChange={(e) =>
+                      setBillingPerson((prev) => ({ ...prev, lastName: e.target.value }))
+                    }
                     {...ariaFieldErr(fe?.billingLastName, checkoutErrId.billingLastName)}
                   />
                   {fe?.billingLastName ? (
@@ -727,10 +920,14 @@ export function CheckoutForm({
                   name="billingCompany"
                   autoComplete="billing organization"
                   className={inputClass}
-                  defaultValue={p?.billingCompany}
+                  value={billingPerson.company}
+                  onChange={(e) =>
+                    setBillingPerson((prev) => ({ ...prev, company: e.target.value }))
+                  }
                 />
               </div>
               <SmartAddressFields
+                key={`billing-${billingAddressId || "neu"}`}
                 country={billingCountry}
                 names={{
                   zip: "billingZip",
@@ -744,12 +941,7 @@ export function CheckoutForm({
                   line1: "Straße und Hausnummer",
                   line2: "Adresszusatz (optional)",
                 }}
-                defaultValues={{
-                  zip: p?.billingZip,
-                  city: p?.billingCity,
-                  line1: p?.billingLine1,
-                  line2: p?.billingLine2,
-                }}
+                defaultValues={billingAddressValues}
                 serverErrors={{
                   zip: fe?.billingZip,
                   city: fe?.billingCity,
@@ -764,6 +956,18 @@ export function CheckoutForm({
                 inputClass={inputClass}
                 labelClass={checkoutLabelClass}
               />
+              {canSaveAddressToAccount && billingAddressId === NEW_ADDRESS_OPTION ? (
+                <label className="flex cursor-pointer items-start gap-3 text-sm text-[#374151]">
+                  <input
+                    type="checkbox"
+                    name="saveBillingAddress"
+                    value="1"
+                    defaultChecked={savedBillingAddresses.length === 0}
+                    className="mt-0.5 size-4 checkbox-primary"
+                  />
+                  <span>Diese Rechnungsadresse in meinem Konto speichern</span>
+                </label>
+              ) : null}
             </div>
           ) : null}
         </section>

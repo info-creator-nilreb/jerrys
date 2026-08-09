@@ -49,6 +49,8 @@ Kunden können sich per **E-Mail/Passwort oder Magic Link** anmelden und ihre Be
 
 **Länder-Vorauswahl:** `lib/shop/preferred-shipping-country.ts` — Geo-Land des CDN (`x-vercel-ip-country`, nur wenn belieferbar), sonst `DE`, sonst erstes Versandland. Vorher gewann die alphabetische Sortierung der Versandländer (z. B. „AT“).
 
+**Adressauswahl im Checkout:** Verifizierte Kunden mit gespeicherten Adressen wählen im Checkout über „Gespeicherte Lieferadresse“ bzw. „Gespeicherte Rechnungsadresse“; die Standardadresse ist vorausgewählt, „Neue Adresse eingeben …“ leert die Felder. Bei einer neuen Adresse kann sie über eine Checkbox nach der Bestellung im Adressbuch abgelegt werden — bewusst **nach** der Bestellung und ohne Einfluss auf deren Ergebnis.
+
 **Migration:** `npm run db:migrate:deploy` (siehe [OPERATIONS.md](./OPERATIONS.md#migrationen-ausführen)). Ohne angewandte Migration meldet das Formular verständlich, dass das Adressbuch noch nicht eingerichtet ist.
 
 ### Slice 4 — Gastbestellungen sicher zuordnen

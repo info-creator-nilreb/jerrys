@@ -60,6 +60,15 @@ const checkoutBase = z.object({
     (v) => v === "1" || v === "on",
     z.boolean().optional().default(false),
   ),
+  /** Adresse nach der Bestellung im Adressbuch ablegen (nur verifizierte Kunden). */
+  saveShippingAddress: z.preprocess(
+    (v) => v === "1" || v === "on" || v === true,
+    z.boolean().optional().default(false),
+  ),
+  saveBillingAddress: z.preprocess(
+    (v) => v === "1" || v === "on" || v === true,
+    z.boolean().optional().default(false),
+  ),
 });
 
 export const checkoutFormSchema = checkoutBase
@@ -136,6 +145,8 @@ export const checkoutFormSchema = checkoutBase
       phone: val.phone,
       paymentMethod: val.paymentMethod,
       idempotencyKey: val.idempotencyKey,
+      saveShippingAddress: val.saveShippingAddress ?? false,
+      saveBillingAddress: val.saveBillingAddress ?? false,
     };
   });
 

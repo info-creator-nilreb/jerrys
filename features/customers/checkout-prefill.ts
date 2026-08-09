@@ -1,4 +1,8 @@
 /**
- * Checkout-Prefill-Typ für Storefront-Client (kein Prisma-Barrel).
+ * Client-sichere Typen für Checkout und Adressauswahl (kein Prisma-Barrel).
+ * Reine Typ-Exporte — zur Laufzeit bleibt nichts übrig.
  */
-export type { CheckoutAddressPrefill } from "@/features/customers/application/customer-addresses";
+export type {
+  CheckoutAddressPrefill,
+  CustomerAddressListItem,
+} from "@/features/customers/application/customer-addresses";
