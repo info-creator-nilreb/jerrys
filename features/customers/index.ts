@@ -59,6 +59,14 @@ export {
   type CustomerOrderDetail,
 } from "@/features/customers/application/customer-orders";
 export {
+  ORDER_EVENT_CUSTOMER_LINKED,
+  listClaimableGuestOrders,
+  countClaimableGuestOrders,
+  claimGuestOrdersForCustomer,
+  type ClaimableGuestOrder,
+  type ClaimGuestOrdersResult,
+} from "@/features/customers/application/guest-order-claim";
+export {
   CUSTOMER_ADDRESS_KINDS,
   customerAddressKindLabel,
   isCustomerAddressKind,

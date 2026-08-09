@@ -11,6 +11,8 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | Seiten `/konto`, `/konto/bestellungen`, `/konto/bestellungen/[orderNumber]` | Kunden-Session (`getCustomerSession`); Daten nur via `customerId` | Kundenportal; fremde Bestellung → **404** ohne Existenz-Leak |
 | Seiten `/konto/adressen`, `/konto/adressen/neu`, `/konto/adressen/[addressId]` | Kunden-Session + verifizierte E-Mail | Adressbuch; fremde Adresse → **404** ohne Existenz-Leak |
 | Server Actions `app/(storefront)/konto/address-actions.ts` | Kunden-Session (`getCustomerSession`) + verifizierte E-Mail in der Application-Schicht | Adressen anlegen, ändern, löschen, Standard setzen |
+| Seite `/konto/bestellungen/zuordnen` | Kunden-Session + verifizierte E-Mail | Vorschau zuordenbarer Gastbestellungen (nur eigene, verifizierte E-Mail) |
+| Server Actions `app/(storefront)/konto/guest-order-actions.ts` | Kunden-Session + verifizierte E-Mail; Bestätigungsfeld serverseitig geprüft | Gastbestellungen zuordnen; idempotent über `customerId: null`, Audit `order.customer_linked` |
 | `GET /api/admin/search` | Admin-Session (`auth()`) | Globale Suche |
 | `GET /api/storefront/product-suggest` | Öffentlich | Typeahead-Produktvorschläge (`q`, min. 2 Zeichen); **Rate-Limit** pro IP (`lib/security/storefront-search-api-rate-limit.ts`) |
 | `GET /api/storefront/address-suggest` | Öffentlich | Adressvorschläge für Checkout und Adressbuch (`land`, `plz`, `ort`, `strasse`); ausschließlich Proxy auf OpenPLZ API (DE/AT/CH/LI), keine Shop-Daten; **Rate-Limit** pro IP (`lib/security/address-suggest-api-rate-limit.ts`) |

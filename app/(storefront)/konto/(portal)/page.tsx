@@ -4,8 +4,9 @@ import {
   customerAuthPrimaryButtonClass,
   customerAuthSecondaryLinkClass,
 } from "@/components/storefront/customer-auth-shell";
+import { CustomerGuestOrderClaimHint } from "@/components/storefront/customer-guest-order-claim-hint";
 import { getCustomerSession } from "@/lib/auth/customer-session";
-import { listOrdersForCustomer } from "@/features/customers";
+import { countClaimableGuestOrders, listOrdersForCustomer } from "@/features/customers";
 import { formatPrice } from "@/lib/catalog/format";
 import { orderStatusLabel } from "@/lib/orders/order-status-label";
 
@@ -27,6 +28,13 @@ export default async function CustomerAccountPage() {
     ordersError = "Bestellungen konnten gerade nicht geladen werden.";
   }
 
+  let claimableCount = 0;
+  try {
+    claimableCount = await countClaimableGuestOrders(session.customerId);
+  } catch {
+    claimableCount = 0;
+  }
+
   return (
     <div className="space-y-8">
       <header>
@@ -37,6 +45,8 @@ export default async function CustomerAccountPage() {
           Angemeldet als {session.email ?? "Kunde"}.
         </p>
       </header>
+
+      <CustomerGuestOrderClaimHint orderCount={claimableCount} />
 
       <section aria-labelledby="recent-orders-heading" className="space-y-3">
         <div className="flex items-end justify-between gap-3">
