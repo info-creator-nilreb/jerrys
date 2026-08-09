@@ -12,7 +12,9 @@ import {
   type FormEvent,
 } from "react";
 import { submitCheckout, type CheckoutActionState } from "@/app/(storefront)/checkout/actions";
-import type { WorkshopCheckoutActionState } from "@/app/(storefront)/checkout/termine/actions";
+import {
+  submitWorkshopCheckout,
+} from "@/app/(storefront)/checkout/termine/actions";
 import {
   previewCheckoutPromotion,
   type CheckoutPromotionPreview,
@@ -172,7 +174,6 @@ export function CheckoutForm({
   addressPrefill,
   savedAddresses = [],
   canSaveAddressToAccount = false,
-  submitCheckoutAction = submitCheckout,
   workshopBookingId,
   hidePromotionPanel = false,
   checkoutTitle = "Checkout",
@@ -191,21 +192,20 @@ export function CheckoutForm({
   /** Adressbuch des angemeldeten, verifizierten Kunden (leer für Gäste). */
   savedAddresses?: CustomerAddressListItem[];
   canSaveAddressToAccount?: boolean;
-  submitCheckoutAction?: (
-    prev: CheckoutActionState | WorkshopCheckoutActionState,
-    formData: FormData,
-  ) => Promise<CheckoutActionState | WorkshopCheckoutActionState>;
+  /** Gesetzt bei /checkout/termine — bindet Workshop-Server-Action direkt (kein Prop an useActionState). */
   workshopBookingId?: string;
   hidePromotionPanel?: boolean;
   checkoutTitle?: string;
 }) {
+  const checkoutServerAction = workshopBookingId ? submitWorkshopCheckout : submitCheckout;
+
   const prefillCountry =
     addressPrefill?.shippingCountry &&
     allowedShippingCountries.some((c) => c.code === addressPrefill.shippingCountry)
       ? addressPrefill.shippingCountry
       : initialShippingCountry;
 
-  const [state, formAction, pending] = useActionState(submitCheckoutAction, initial);
+  const [state, formAction, pending] = useActionState(checkoutServerAction, initial);
   const lastServerErrorSigRef = useRef<string | null>(null);
   const [billingDifferent, setBillingDifferent] = useState(
     addressPrefill?.billingUseShipping === "no",

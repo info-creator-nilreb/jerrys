@@ -31,10 +31,15 @@ export async function generateMetadata({
 
 export default async function StorefrontWorkshopSessionDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ sessionId: string }>;
+  searchParams: Promise<{ buchung?: string; msg?: string }>;
 }) {
   const { sessionId } = await params;
+  const sp = await searchParams;
+  const bookingErrorMessage =
+    sp.buchung === "fehler" && sp.msg?.trim() ? sp.msg.trim() : null;
   const session = await getPublishedWorkshopSessionForStorefront(sessionId);
   if (!session) notFound();
 
@@ -103,6 +108,7 @@ export default async function StorefrontWorkshopSessionDetailPage({
             seatsRemaining={session.seatsRemaining}
             maxSeatsPerBooking={session.maxSeatsPerBooking}
             capacity={session.capacity}
+            bookingErrorMessage={bookingErrorMessage}
           />
         ) : null}
       </div>

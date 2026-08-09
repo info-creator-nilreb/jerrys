@@ -10,17 +10,7 @@ export type WorkshopBookSeatsActionState =
   | { ok: false; message: string; fieldErrors?: Record<string, string[]> }
   | null;
 
-export async function startWorkshopCheckoutAction(
-  _prev: WorkshopBookSeatsActionState,
-  formData: FormData,
-): Promise<WorkshopBookSeatsActionState> {
-  const sessionId = String(formData.get("sessionId") ?? "").trim();
-  if (!sessionId) {
-    return { ok: false, message: "Termin fehlt." };
-  }
-  const seatCountRaw = formData.get("seatCount");
-  const seatCount = Number.parseInt(String(seatCountRaw ?? ""), 10);
-
+async function createHoldAndRedirect(sessionId: string, seatCount: number): Promise<never> {
   const session = await getCustomerSession();
 
   const result = await createWorkshopSeatHoldForStorefront({
@@ -30,9 +20,24 @@ export async function startWorkshopCheckoutAction(
   });
 
   if (!result.ok) {
-    return { ok: false, message: result.message };
+    redirect(
+      `/termine/${encodeURIComponent(sessionId)}?buchung=fehler&msg=${encodeURIComponent(result.message)}`,
+    );
   }
 
   await setWorkshopBookingHoldCookie(result.bookingId);
   redirect("/checkout/termine");
+}
+
+/**
+ * Direkte Form-Action (ohne useActionState). redirect() darf hier nicht in useActionState laufen —
+ * das führt in Production zu React #441 / Error-Boundary.
+ */
+export async function startWorkshopCheckoutFormAction(formData: FormData): Promise<void> {
+  const sessionId = String(formData.get("sessionId") ?? "").trim();
+  if (!sessionId) {
+    redirect("/termine?buchung=fehler&msg=" + encodeURIComponent("Termin fehlt."));
+  }
+  const seatCount = Number.parseInt(String(formData.get("seatCount") ?? ""), 10);
+  await createHoldAndRedirect(sessionId, seatCount);
 }
