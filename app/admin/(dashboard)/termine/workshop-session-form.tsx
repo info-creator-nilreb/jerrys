@@ -20,6 +20,13 @@ import {
   WORKSHOP_TIMEZONE_OPTIONS,
   formatLocalDateTimeInTimeZone,
 } from "@/lib/workshop/admin-datetime";
+import {
+  WORKSHOP_ADMIN_FIELD,
+  WORKSHOP_ADMIN_FIELD_GRID,
+  WORKSHOP_ADMIN_FIELD_READ_ONLY,
+  WORKSHOP_ADMIN_FORM_SINGLE_COL,
+  WORKSHOP_ADMIN_FORM_TWO_COL,
+} from "@/lib/workshop/admin-form-fields";
 
 const initial: WorkshopSessionActionState = null;
 
@@ -66,7 +73,7 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
         </p>
       ) : null}
 
-      <section className="space-y-4">
+      <section className={`space-y-4 ${WORKSHOP_ADMIN_FORM_SINGLE_COL}`}>
         <h2 className="text-sm font-semibold text-[#1f2937]">Termin</h2>
         <label className="block text-sm">
           <span className="mb-1 block font-medium text-[#374151]">Titel *</span>
@@ -75,7 +82,7 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
             defaultValue={session?.title ?? ""}
             readOnly={readOnly}
             required
-            className="w-full max-w-xl rounded-md border border-[#d1d5db] px-3 py-2 disabled:bg-[#f3f4f6]"
+            className={readOnly ? WORKSHOP_ADMIN_FIELD_READ_ONLY : WORKSHOP_ADMIN_FIELD}
           />
           {fe?.title ? <span className="mt-1 block text-xs text-red-600">{fe.title[0]}</span> : null}
         </label>
@@ -86,9 +93,13 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
             rows={4}
             defaultValue={session?.description ?? ""}
             readOnly={readOnly}
-            className="w-full max-w-2xl rounded-md border border-[#d1d5db] px-3 py-2 disabled:bg-[#f3f4f6]"
+            className={readOnly ? WORKSHOP_ADMIN_FIELD_READ_ONLY : WORKSHOP_ADMIN_FIELD}
           />
         </label>
+      </section>
+
+      <section className={`space-y-4 ${WORKSHOP_ADMIN_FORM_SINGLE_COL}`}>
+        <h2 className="text-sm font-semibold text-[#1f2937]">Ort & Adresse</h2>
         <label className="block text-sm">
           <span className="mb-1 block font-medium text-[#374151]">Bezeichnung Ort *</span>
           <input
@@ -97,17 +108,13 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
             readOnly={readOnly}
             required
             placeholder="z. B. Werkstatt Berlin-Mitte"
-            className="w-full max-w-xl rounded-md border border-[#d1d5db] px-3 py-2 disabled:bg-[#f3f4f6]"
+            className={readOnly ? WORKSHOP_ADMIN_FIELD_READ_ONLY : WORKSHOP_ADMIN_FIELD}
           />
-          <span className="mt-1 block text-xs text-[#6b7280]">Kurzname für Listen — Adresse siehe unten.</span>
+          <span className="mt-1 block text-xs text-[#6b7280]">Kurzname für Listen.</span>
           {fe?.locationLabel ? (
             <span className="mt-1 block text-xs text-red-600">{fe.locationLabel[0]}</span>
           ) : null}
         </label>
-      </section>
-
-      <section className="space-y-4 lg:max-w-3xl">
-        <h2 className="text-sm font-semibold text-[#1f2937]">Adresse</h2>
         {readOnly && session ? (
           <div className="text-sm text-[#374151]">
             {(() => {
@@ -133,14 +140,14 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
             })()}
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className={`${WORKSHOP_ADMIN_FIELD_GRID}`}>
             <label className="block text-sm sm:col-span-2">
               <span className="mb-1 block font-medium text-[#374151]">Straße und Hausnummer *</span>
               <input
                 name="locationLine1"
                 defaultValue={session?.locationLine1 ?? ""}
                 required
-                className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+                className={WORKSHOP_ADMIN_FIELD}
               />
               {fe?.locationLine1 ? (
                 <span className="mt-1 block text-xs text-red-600">{fe.locationLine1[0]}</span>
@@ -152,7 +159,7 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
                 name="locationLine2"
                 defaultValue={session?.locationLine2 ?? ""}
                 placeholder="Optional"
-                className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+                className={WORKSHOP_ADMIN_FIELD}
               />
             </label>
             <label className="block text-sm">
@@ -161,7 +168,7 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
                 name="locationZip"
                 defaultValue={session?.locationZip ?? ""}
                 required
-                className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+                className={WORKSHOP_ADMIN_FIELD}
               />
               {fe?.locationZip ? (
                 <span className="mt-1 block text-xs text-red-600">{fe.locationZip[0]}</span>
@@ -173,7 +180,7 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
                 name="locationCity"
                 defaultValue={session?.locationCity ?? ""}
                 required
-                className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+                className={WORKSHOP_ADMIN_FIELD}
               />
               {fe?.locationCity ? (
                 <span className="mt-1 block text-xs text-red-600">{fe.locationCity[0]}</span>
@@ -184,7 +191,7 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
               <select
                 name="locationCountry"
                 defaultValue={session?.locationCountry ?? "DE"}
-                className="w-full max-w-xs rounded-md border border-[#d1d5db] px-3 py-2"
+                className={WORKSHOP_ADMIN_FIELD}
               >
                 <option value="DE">Deutschland</option>
                 <option value="AT">Österreich</option>
@@ -195,14 +202,14 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
         )}
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:max-w-3xl">
-        <label className="block text-sm">
+      <section className={`${WORKSHOP_ADMIN_FIELD_GRID} ${WORKSHOP_ADMIN_FORM_TWO_COL}`}>
+        <label className="block text-sm sm:col-span-2">
           <span className="mb-1 block font-medium text-[#374151]">Zeitzone</span>
           <select
             name="timezone"
             defaultValue={timezone}
             disabled={readOnly}
-            className="w-full rounded-md border border-[#d1d5db] px-3 py-2 disabled:bg-[#f3f4f6]"
+            className={readOnly ? WORKSHOP_ADMIN_FIELD_READ_ONLY : WORKSHOP_ADMIN_FIELD}
           >
             {WORKSHOP_TIMEZONE_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -211,7 +218,6 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
             ))}
           </select>
         </label>
-        <div />
         <label className="block text-sm">
           <span className="mb-1 block font-medium text-[#374151]">Beginn *</span>
           {readOnly && session ? (
@@ -222,7 +228,7 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
               name="startsAtLocal"
               defaultValue={startsDefault}
               required
-              className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+              className={WORKSHOP_ADMIN_FIELD}
             />
           )}
           {fe?.startsAtLocal ? (
@@ -244,7 +250,7 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
                 name="durationMinutes"
                 defaultValue={durationDefault}
                 required
-                className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+                className={WORKSHOP_ADMIN_FIELD}
               >
                 {durationOptions.map((o) => (
                   <option key={o.value} value={o.value}>
@@ -263,7 +269,7 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
         </label>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:max-w-3xl">
+      <section className={`${WORKSHOP_ADMIN_FIELD_GRID} ${WORKSHOP_ADMIN_FORM_TWO_COL}`}>
         <label className="block text-sm">
           <span className="mb-1 block font-medium text-[#374151]">Preis pro Platz (EUR)</span>
           <input
@@ -271,7 +277,7 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
             defaultValue={session ? eurosFromCents(session.priceCentsPerSeat) : "0"}
             readOnly={readOnly}
             inputMode="decimal"
-            className="w-full rounded-md border border-[#d1d5db] px-3 py-2 disabled:bg-[#f3f4f6]"
+            className={readOnly ? WORKSHOP_ADMIN_FIELD_READ_ONLY : WORKSHOP_ADMIN_FIELD}
           />
           <input type="hidden" name="currency" value="EUR" />
           {fe?.priceEuro ? <span className="mt-1 block text-xs text-red-600">{fe.priceEuro[0]}</span> : null}
@@ -285,7 +291,7 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
             defaultValue={session?.minimumParticipants ?? 1}
             readOnly={readOnly}
             required
-            className="w-full rounded-md border border-[#d1d5db] px-3 py-2 disabled:bg-[#f3f4f6]"
+            className={readOnly ? WORKSHOP_ADMIN_FIELD_READ_ONLY : WORKSHOP_ADMIN_FIELD}
           />
         </label>
         <label className="block text-sm">
@@ -297,7 +303,7 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
             defaultValue={session?.capacity ?? 10}
             readOnly={readOnly}
             required
-            className="w-full rounded-md border border-[#d1d5db] px-3 py-2 disabled:bg-[#f3f4f6]"
+            className={readOnly ? WORKSHOP_ADMIN_FIELD_READ_ONLY : WORKSHOP_ADMIN_FIELD}
           />
           {fe?.capacity ? <span className="mt-1 block text-xs text-red-600">{fe.capacity[0]}</span> : null}
         </label>
@@ -310,7 +316,7 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
             defaultValue={session?.maxSeatsPerBooking ?? ""}
             readOnly={readOnly}
             placeholder="Optional"
-            className="w-full rounded-md border border-[#d1d5db] px-3 py-2 disabled:bg-[#f3f4f6]"
+            className={readOnly ? WORKSHOP_ADMIN_FIELD_READ_ONLY : WORKSHOP_ADMIN_FIELD}
           />
         </label>
         <label className="block text-sm sm:col-span-2">
@@ -324,7 +330,7 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
             defaultValue={session?.selfCancelHoursBeforeStart ?? ""}
             readOnly={readOnly}
             placeholder="Leer = Shop-Default"
-            className="w-full max-w-xs rounded-md border border-[#d1d5db] px-3 py-2 disabled:bg-[#f3f4f6]"
+            className={readOnly ? WORKSHOP_ADMIN_FIELD_READ_ONLY : WORKSHOP_ADMIN_FIELD}
           />
         </label>
       </section>

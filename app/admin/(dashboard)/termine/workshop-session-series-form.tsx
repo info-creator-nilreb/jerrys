@@ -16,6 +16,12 @@ import {
 } from "@/lib/workshop/admin-session-duration";
 import { WORKSHOP_TIMEZONE_OPTIONS } from "@/lib/workshop/admin-datetime";
 import {
+  WORKSHOP_ADMIN_FIELD,
+  WORKSHOP_ADMIN_FIELD_GRID,
+  WORKSHOP_ADMIN_FORM_SINGLE_COL,
+  WORKSHOP_ADMIN_FORM_TWO_COL,
+} from "@/lib/workshop/admin-form-fields";
+import {
   WORKSHOP_SESSION_SERIES_DEFAULT_ROW_COUNT,
   WORKSHOP_SESSION_SERIES_MAX_DATES,
 } from "@/lib/workshop/workshop-series";
@@ -66,7 +72,7 @@ export function WorkshopSessionSeriesForm({ template }: Props) {
         </p>
       ) : null}
 
-      <section className="space-y-4">
+      <section className={`space-y-4 ${WORKSHOP_ADMIN_FORM_SINGLE_COL}`}>
         <h2 className="text-sm font-semibold text-[#1f2937]">Workshop-Vorlage</h2>
         <p className="text-sm text-[#6b7280]">
           Titel, Ort, Preis und Kapazität gelten für alle Termine der Serie. Jeder Termin wird als eigener Entwurf
@@ -78,7 +84,7 @@ export function WorkshopSessionSeriesForm({ template }: Props) {
             name="title"
             defaultValue={template?.title ?? ""}
             required
-            className="w-full max-w-xl rounded-md border border-[#d1d5db] px-3 py-2"
+            className={WORKSHOP_ADMIN_FIELD}
           />
           {fe?.title ? <span className="mt-1 block text-xs text-red-600">{fe.title[0]}</span> : null}
         </label>
@@ -88,12 +94,12 @@ export function WorkshopSessionSeriesForm({ template }: Props) {
             name="description"
             rows={3}
             defaultValue={template?.description ?? ""}
-            className="w-full max-w-2xl rounded-md border border-[#d1d5db] px-3 py-2"
+            className={WORKSHOP_ADMIN_FIELD}
           />
         </label>
       </section>
 
-      <section className="space-y-4 lg:max-w-3xl">
+      <section className={`space-y-4 ${WORKSHOP_ADMIN_FORM_SINGLE_COL}`}>
         <h2 className="text-sm font-semibold text-[#1f2937]">Ort & Adresse</h2>
         <label className="block text-sm">
           <span className="mb-1 block font-medium text-[#374151]">Bezeichnung Ort *</span>
@@ -101,17 +107,17 @@ export function WorkshopSessionSeriesForm({ template }: Props) {
             name="locationLabel"
             defaultValue={template?.locationLabel ?? ""}
             required
-            className="w-full max-w-xl rounded-md border border-[#d1d5db] px-3 py-2"
+            className={WORKSHOP_ADMIN_FIELD}
           />
         </label>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className={WORKSHOP_ADMIN_FIELD_GRID}>
           <label className="block text-sm sm:col-span-2">
             <span className="mb-1 block font-medium text-[#374151]">Straße und Hausnummer *</span>
             <input
               name="locationLine1"
               defaultValue={template?.locationLine1 ?? ""}
               required
-              className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+              className={WORKSHOP_ADMIN_FIELD}
             />
           </label>
           <label className="block text-sm sm:col-span-2">
@@ -119,7 +125,7 @@ export function WorkshopSessionSeriesForm({ template }: Props) {
             <input
               name="locationLine2"
               defaultValue={template?.locationLine2 ?? ""}
-              className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+              className={WORKSHOP_ADMIN_FIELD}
             />
           </label>
           <label className="block text-sm">
@@ -128,7 +134,7 @@ export function WorkshopSessionSeriesForm({ template }: Props) {
               name="locationZip"
               defaultValue={template?.locationZip ?? ""}
               required
-              className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+              className={WORKSHOP_ADMIN_FIELD}
             />
           </label>
           <label className="block text-sm">
@@ -137,7 +143,7 @@ export function WorkshopSessionSeriesForm({ template }: Props) {
               name="locationCity"
               defaultValue={template?.locationCity ?? ""}
               required
-              className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+              className={WORKSHOP_ADMIN_FIELD}
             />
           </label>
           <label className="block text-sm sm:col-span-2">
@@ -145,7 +151,7 @@ export function WorkshopSessionSeriesForm({ template }: Props) {
             <select
               name="locationCountry"
               defaultValue={template?.locationCountry ?? "DE"}
-              className="w-full max-w-xs rounded-md border border-[#d1d5db] px-3 py-2"
+              className={WORKSHOP_ADMIN_FIELD}
             >
               <option value="DE">Deutschland</option>
               <option value="AT">Österreich</option>
@@ -155,14 +161,10 @@ export function WorkshopSessionSeriesForm({ template }: Props) {
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:max-w-3xl">
-        <label className="block text-sm">
+      <section className={`${WORKSHOP_ADMIN_FIELD_GRID} ${WORKSHOP_ADMIN_FORM_TWO_COL}`}>
+        <label className="block text-sm sm:col-span-2">
           <span className="mb-1 block font-medium text-[#374151]">Zeitzone</span>
-          <select
-            name="timezone"
-            defaultValue={timezone}
-            className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
-          >
+          <select name="timezone" defaultValue={timezone} className={WORKSHOP_ADMIN_FIELD}>
             {WORKSHOP_TIMEZONE_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
@@ -176,7 +178,7 @@ export function WorkshopSessionSeriesForm({ template }: Props) {
             name="durationMinutes"
             defaultValue={durationDefault}
             required
-            className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+            className={WORKSHOP_ADMIN_FIELD}
           >
             {durationOptions.map((o) => (
               <option key={o.value} value={o.value}>
@@ -191,7 +193,7 @@ export function WorkshopSessionSeriesForm({ template }: Props) {
             name="priceEuro"
             defaultValue={template ? eurosFromCents(template.priceCentsPerSeat) : "0"}
             inputMode="decimal"
-            className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+            className={WORKSHOP_ADMIN_FIELD}
           />
           <input type="hidden" name="currency" value="EUR" />
         </label>
@@ -203,7 +205,7 @@ export function WorkshopSessionSeriesForm({ template }: Props) {
             min={1}
             defaultValue={template?.minimumParticipants ?? 1}
             required
-            className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+            className={WORKSHOP_ADMIN_FIELD}
           />
         </label>
         <label className="block text-sm">
@@ -214,7 +216,7 @@ export function WorkshopSessionSeriesForm({ template }: Props) {
             min={1}
             defaultValue={template?.capacity ?? 10}
             required
-            className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+            className={WORKSHOP_ADMIN_FIELD}
           />
         </label>
         <label className="block text-sm">
@@ -225,12 +227,12 @@ export function WorkshopSessionSeriesForm({ template }: Props) {
             min={1}
             defaultValue={template?.maxSeatsPerBooking ?? ""}
             placeholder="Optional"
-            className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+            className={WORKSHOP_ADMIN_FIELD}
           />
         </label>
       </section>
 
-      <section className="space-y-4 lg:max-w-3xl">
+      <section className={`space-y-4 ${WORKSHOP_ADMIN_FORM_SINGLE_COL}`}>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold text-[#1f2937]">Termine in der Serie</h2>
@@ -261,7 +263,7 @@ export function WorkshopSessionSeriesForm({ template }: Props) {
                 <input
                   type="datetime-local"
                   name="seriesStartsAtLocal"
-                  className="w-full rounded-md border border-[#d1d5db] px-3 py-2"
+                  className={WORKSHOP_ADMIN_FIELD}
                 />
               </label>
               {rowIds.length > 1 ? (
