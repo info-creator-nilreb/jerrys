@@ -52,6 +52,13 @@ describe("resolveTransactionalMailFrom", () => {
     expect(result.source).toBe("mail_from_email");
     expect(result.from).toBe("Jerrys <shop@example.com>");
   });
+
+  it("lehnt MAIL_FROM ohne E-Mail-Adresse ab (nur Markenname)", () => {
+    expect(resolveTransactionalMailFrom({ MAIL_FROM: "jerry's" })).toEqual({
+      from: null,
+      source: "none",
+    });
+  });
 });
 
 describe("resendSafeDisplayName", () => {
