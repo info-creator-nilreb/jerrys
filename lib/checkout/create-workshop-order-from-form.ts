@@ -9,6 +9,7 @@ import { checkoutRawFromFormData } from "@/lib/checkout/create-pending-paypal-or
 import { generateOrderNumber } from "@/lib/checkout/order-number";
 import { netCentsFromGross } from "@/lib/catalog/pricing";
 import { sendOrderConfirmationIfNeeded } from "@/lib/email/order-confirmation";
+import { sendWorkshopBookingConfirmationIfNeeded } from "@/lib/email/workshop-booking-emails";
 import { getPrisma } from "@/lib/db/prisma";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 import { createPayPalCheckoutOrder } from "@/lib/payments/paypal-orders";
@@ -126,6 +127,7 @@ export async function createWorkshopOrderFromFormData(
     }
 
     await sendOrderConfirmationIfNeeded(existing.id);
+    await sendWorkshopBookingConfirmationIfNeeded(existing.id);
     return { ok: true, paymentReady: false, orderNumber: existing.orderNumber };
   }
 
@@ -302,6 +304,7 @@ export async function createWorkshopOrderFromFormData(
 
   if (isFree) {
     await sendOrderConfirmationIfNeeded(newOrderId);
+    await sendWorkshopBookingConfirmationIfNeeded(newOrderId);
     return { ok: true, paymentReady: false, orderNumber };
   }
 

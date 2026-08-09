@@ -1,16 +1,32 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { createWorkshopSeatHoldForStorefront } from "@/features/workshops";
 import { getCustomerSession } from "@/lib/auth/customer-session";
 import { setWorkshopBookingHoldCookie } from "@/lib/workshop/workshop-booking-cookie";
 
 export type WorkshopBookSeatsActionState =
-  | { ok: true }
+  | { ok: true; redirectTo: string }
   | { ok: false; message: string; fieldErrors?: Record<string, string[]> }
   | null;
 
-async function createHoldAndRedirect(sessionId: string, seatCount: number): Promise<never> {
+/**
+ * Hold anlegen — kein `redirect()` (React #441 mit `useActionState` / Client-Form).
+ * Erfolg: Client navigiert zu `redirectTo`.
+ */
+export async function startWorkshopCheckoutAction(
+  _prev: WorkshopBookSeatsActionState,
+  formData: FormData,
+): Promise<WorkshopBookSeatsActionState> {
+  const sessionId = String(formData.get("sessionId") ?? "").trim();
+  if (!sessionId) {
+    return { ok: false, message: "Termin fehlt." };
+  }
+
+  const seatCount = Number.parseInt(String(formData.get("seatCount") ?? ""), 10);
+  if (!Number.isFinite(seatCount) || seatCount < 1) {
+    return { ok: false, message: "Bitte gültige Platzanzahl wählen." };
+  }
+
   const session = await getCustomerSession();
 
   const result = await createWorkshopSeatHoldForStorefront({
@@ -20,24 +36,9 @@ async function createHoldAndRedirect(sessionId: string, seatCount: number): Prom
   });
 
   if (!result.ok) {
-    redirect(
-      `/termine/${encodeURIComponent(sessionId)}?buchung=fehler&msg=${encodeURIComponent(result.message)}`,
-    );
+    return { ok: false, message: result.message };
   }
 
   await setWorkshopBookingHoldCookie(result.bookingId);
-  redirect("/checkout/termine");
-}
-
-/**
- * Direkte Form-Action (ohne useActionState). redirect() darf hier nicht in useActionState laufen —
- * das führt in Production zu React #441 / Error-Boundary.
- */
-export async function startWorkshopCheckoutFormAction(formData: FormData): Promise<void> {
-  const sessionId = String(formData.get("sessionId") ?? "").trim();
-  if (!sessionId) {
-    redirect("/termine?buchung=fehler&msg=" + encodeURIComponent("Termin fehlt."));
-  }
-  const seatCount = Number.parseInt(String(formData.get("seatCount") ?? ""), 10);
-  await createHoldAndRedirect(sessionId, seatCount);
+  return { ok: true, redirectTo: "/checkout/termine" };
 }

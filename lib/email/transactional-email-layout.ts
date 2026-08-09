@@ -27,7 +27,7 @@ export const TRANSACTIONAL_EMAIL_DESIGN = {
 /** Instagram laut Vorgabe (nur dieser Link in transaktionalen Mails). */
 const TRANSACTIONAL_EMAIL_INSTAGRAM_URL = "https://www.instagram.com/jerrys.design/";
 
-export type TransactionalHeroVariant = "order" | "shipping" | "refund" | "account";
+export type TransactionalHeroVariant = "order" | "shipping" | "refund" | "account" | "workshop";
 
 export function transactionalPaymentLabel(method: string): string {
   switch (method) {
@@ -73,7 +73,9 @@ function heroIconHtml(variant: TransactionalHeroVariant): string {
           ? "💵"
           : variant === "account"
             ? "🔑"
-            : "•";
+            : variant === "workshop"
+              ? "📅"
+              : "•";
   return `<span style="font-size:36px;line-height:1;display:inline-block" aria-hidden="true">${emoji}</span>`;
 }
 

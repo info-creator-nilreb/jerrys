@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { MapPin, Users } from "lucide-react";
+import { CalendarPlus, MapPin, Users } from "lucide-react";
 import { notFound } from "next/navigation";
 import { CustomerWorkshopBookingCancelForm } from "@/components/storefront/customer-workshop-booking-cancel-form";
 import { customerAuthSecondaryLinkClass } from "@/components/storefront/customer-auth-shell";
 import { getCustomerSession } from "@/lib/auth/customer-session";
 import { getWorkshopBookingForCustomer, workshopBookingStatusLabel } from "@/features/workshops";
 import { formatPrice } from "@/lib/catalog/format";
+import { calendarDownloadPath } from "@/lib/email/workshop-booking-emails";
 import {
   formatSelfCancelDeadline,
   formatWorkshopSessionDateTime,
@@ -103,6 +104,17 @@ export default async function CustomerWorkshopBookingDetailPage({
             </dd>
           </div>
         </dl>
+        {booking.status === "confirmed" ? (
+          <p className="mt-5 border-t border-(--surface-muted) pt-4">
+            <Link
+              href={calendarDownloadPath(booking.id)}
+              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-(--primary-hover)"
+            >
+              <CalendarPlus className="size-4 shrink-0" aria-hidden />
+              Kalender speichern (.ics)
+            </Link>
+          </p>
+        ) : null}
       </section>
 
       {booking.canSelfCancel ? (

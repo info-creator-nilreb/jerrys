@@ -197,7 +197,15 @@ export function CheckoutForm({
   hidePromotionPanel?: boolean;
   checkoutTitle?: string;
 }) {
-  const checkoutServerAction = workshopBookingId ? submitWorkshopCheckout : submitCheckout;
+  const [cartState, cartFormAction, cartPending] = useActionState(submitCheckout, initial);
+  const [workshopState, workshopFormAction, workshopPending] = useActionState(
+    submitWorkshopCheckout,
+    null,
+  );
+
+  const state = workshopBookingId ? workshopState : cartState;
+  const formAction = workshopBookingId ? workshopFormAction : cartFormAction;
+  const pending = workshopBookingId ? workshopPending : cartPending;
 
   const prefillCountry =
     addressPrefill?.shippingCountry &&
@@ -205,7 +213,6 @@ export function CheckoutForm({
       ? addressPrefill.shippingCountry
       : initialShippingCountry;
 
-  const [state, formAction, pending] = useActionState(checkoutServerAction, initial);
   const lastServerErrorSigRef = useRef<string | null>(null);
   const [billingDifferent, setBillingDifferent] = useState(
     addressPrefill?.billingUseShipping === "no",
@@ -380,6 +387,17 @@ export function CheckoutForm({
     }, 100);
     return () => window.clearTimeout(t);
   }, [prefillPaypal]);
+
+  /** Termin-Checkout: kein `redirect()` in der Server Action (React #441) — Navigation clientseitig. */
+  useEffect(() => {
+    if (!workshopBookingId || !state?.ok) return;
+    const url =
+      "paymentRedirectUrl" in state && typeof state.paymentRedirectUrl === "string"
+        ? state.paymentRedirectUrl.trim()
+        : "";
+    if (!url) return;
+    window.location.assign(url);
+  }, [state, workshopBookingId]);
 
   const fe = state && "fieldErrors" in state ? state.fieldErrors : undefined;
 

@@ -16,6 +16,10 @@ import {
   workshopDateRequestStatusLabel,
 } from "@/features/workshops/domain/date-request-status";
 import { addWorkshopDurationMinutes } from "@/lib/workshop/admin-session-duration";
+import {
+  sendWorkshopDateRequestApprovedEmail,
+  sendWorkshopDateRequestRejectedEmail,
+} from "@/lib/email/workshop-date-request-emails";
 import type { ZodError } from "zod";
 
 const log = createLogger("workshops.date-requests");
@@ -147,7 +151,12 @@ export async function rejectWorkshopDateRequestForAdmin(
   try {
     const existing = await prisma.workshopDateRequest.findUnique({
       where: { id: parsed.data.id },
-      select: { status: true },
+      select: {
+        status: true,
+        contactEmail: true,
+        contactName: true,
+        preferredStartsAt: true,
+      },
     });
     if (!existing) {
       return { ok: false, message: "Anfrage nicht gefunden." };
@@ -166,6 +175,12 @@ export async function rejectWorkshopDateRequestForAdmin(
     });
 
     log.info("workshop_date_request_rejected", { id: parsed.data.id });
+    await sendWorkshopDateRequestRejectedEmail({
+      contactEmail: existing.contactEmail,
+      contactName: existing.contactName,
+      preferredStartsAt: existing.preferredStartsAt,
+      adminNote: parsed.data.adminNote ?? null,
+    });
     return { ok: true };
   } catch (e) {
     if (isMissingSchemaError(e)) {
@@ -244,6 +259,13 @@ export async function approveWorkshopDateRequestForAdmin(
     });
 
     log.info("workshop_date_request_approved", { id: request.id, sessionId });
+    await sendWorkshopDateRequestApprovedEmail({
+      contactEmail: request.contactEmail,
+      contactName: request.contactName,
+      preferredStartsAt: request.preferredStartsAt,
+      seatCount: request.seatCount,
+      sessionId,
+    });
     return { ok: true, sessionId };
   } catch (e) {
     if (isMissingSchemaError(e)) {

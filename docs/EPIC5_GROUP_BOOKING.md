@@ -45,6 +45,8 @@ Der Kalender kann als Block auf einer CMS-Seite (Epic 12) und optional auf ausge
 
 **Status (MVP):** Hold 30 Min (`held` + `hold_expires_at`), `/termine/[id]` → `/checkout/termine`, Order + PayPal oder sofort `paid` bei 0 €; Bestätigung nach Capture. Cron für abgelaufene Holds folgt Slice 6.
 
+**Status (Slice 4):** Terminbestätigung und Storno per E-Mail (iCal-Anhang bei Bestätigung), Portal-Link „Kalender speichern“, Wunschtermin approve/reject informiert per Mail. Dedupe Workshop-Mails über `email_logs` (`orderId` + `emailType`).
+
 ### Slice 4 — Bestätigung und Kundenkonto
 
 - Bestätigungs-/Storno-E-Mail und Kalendereintrag
