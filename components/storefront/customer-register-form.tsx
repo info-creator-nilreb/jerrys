@@ -12,7 +12,7 @@ import {
 import {
   CUSTOMER_PASSWORD_MIN_LENGTH,
   CUSTOMER_PASSWORD_REQUIREMENTS_HINT,
-} from "@/features/customers";
+} from "@/features/customers/domain/password";
 
 const initial: CustomerAuthActionState = null;
 
