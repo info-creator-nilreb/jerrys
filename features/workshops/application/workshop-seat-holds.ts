@@ -1,7 +1,7 @@
-import type { Prisma } from "@/app/generated/prisma/client";
+import type { Prisma, PrismaClient } from "@/app/generated/prisma/client";
 import { getPrisma } from "@/lib/db/prisma";
 import { isMissingSchemaError } from "@/lib/db/prisma-error";
-import { createLogger } from "@/lib/logging/logger";
+import { createLogger, errorMeta } from "@/lib/logging/logger";
 import {
   WORKSHOP_BOOKING_EVENT_HELD,
   WORKSHOP_BOOKING_EVENT_HOLD_EXPIRED,
@@ -22,13 +22,27 @@ export class WorkshopInsufficientSeatsError extends Error {
   }
 }
 
+type WorkshopSeatHoldDb = Prisma.TransactionClient | PrismaClient;
+
+function assertWorkshopBookingDelegate(db: WorkshopSeatHoldDb): void {
+  const bookingDelegate = (db as { workshopBooking?: { findMany?: unknown } }).workshopBooking;
+  if (bookingDelegate == null || typeof bookingDelegate.findMany !== "function") {
+    // Stale Prisma-Client nach generate/HMR — klarer Fehler statt undefined.findMany.
+    throw new Error(
+      "Prisma workshopBooking delegate missing — run `npx prisma generate` and restart the server.",
+    );
+  }
+}
+
 /** Gibt abgelaufene Holds frei (held → expired, Zähler). */
 export async function releaseExpiredWorkshopSeatHolds(
-  tx: Prisma.TransactionClient,
+  db: WorkshopSeatHoldDb,
   sessionId?: string,
 ): Promise<number> {
+  assertWorkshopBookingDelegate(db);
+
   const now = new Date();
-  const expired = await tx.workshopBooking.findMany({
+  const expired = await db.workshopBooking.findMany({
     where: {
       status: "held",
       holdExpiresAt: { lt: now },
@@ -38,18 +52,18 @@ export async function releaseExpiredWorkshopSeatHolds(
   });
 
   for (const row of expired) {
-    const updated = await tx.workshopBooking.updateMany({
+    const updated = await db.workshopBooking.updateMany({
       where: { id: row.id, status: "held" },
       data: { status: "expired" },
     });
     if (updated.count !== 1) continue;
 
-    await tx.workshopSession.update({
+    await db.workshopSession.update({
       where: { id: row.sessionId },
       data: { heldSeatCount: { decrement: row.seatCount } },
     });
 
-    await createWorkshopBookingEvent(tx, row.id, WORKSHOP_BOOKING_EVENT_HOLD_EXPIRED, {
+    await createWorkshopBookingEvent(db, row.id, WORKSHOP_BOOKING_EVENT_HOLD_EXPIRED, {
       seatCount: row.seatCount,
     });
   }
@@ -195,9 +209,13 @@ export async function getWorkshopHoldForCheckout(
 ): Promise<WorkshopHoldCheckoutView | null> {
   const prisma = getPrisma();
   try {
-    await prisma.$transaction(async (tx) => {
-      await releaseExpiredWorkshopSeatHolds(tx);
-    });
+    // Kein interactive `$transaction` auf dem Read-Pfad: bei HMR/Pooler (P2028) sonst
+    // RSC-Crash → Production „Minified React error #441“. Expire best-effort.
+    try {
+      await releaseExpiredWorkshopSeatHolds(prisma);
+    } catch (expireErr) {
+      log.warn("workshop_expire_holds_on_checkout_skipped", errorMeta(expireErr));
+    }
 
     const booking = await prisma.workshopBooking.findUnique({
       where: { id: bookingId },

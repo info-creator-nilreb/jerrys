@@ -15,9 +15,43 @@ const globalForPrisma = globalThis as unknown as {
   pgPoolConfigVersion: number | undefined;
 };
 
-function prismaDelegateShopShippingReady(client: PrismaClient): boolean {
-  const d = (client as unknown as { shopShippingSettings?: { findUnique?: unknown } }).shopShippingSettings;
-  return d != null && typeof d.findUnique === "function";
+type DelegateBag = {
+  findUnique?: unknown;
+  findMany?: unknown;
+};
+
+function prismaDelegateReady(client: object, name: string, method: keyof DelegateBag): boolean {
+  const d = (client as Record<string, DelegateBag | undefined>)[name];
+  return d != null && typeof d[method] === "function";
+}
+
+/**
+ * Nach `prisma generate` / HMR kann `globalThis.prisma` eine alte Instanz sein
+ * (einzelne Model-Delegates fehlen → `undefined.findMany` / React #441 in Prod).
+ * Mindestens Shipping + Workshop-Modelle müssen vorhanden sein.
+ *
+ * Wichtig: Duck-Typing statt `instanceof` — bei HMR gibt es oft zwei PrismaClient-Klassen;
+ * `instanceof` schlägt fehl und ein `$disconnect()` killt laufende Transactions (P2028).
+ */
+function prismaClientDelegatesReady(client: object): boolean {
+  return (
+    prismaDelegateReady(client, "shopShippingSettings", "findUnique") &&
+    prismaDelegateReady(client, "workshopSession", "findMany") &&
+    prismaDelegateReady(client, "workshopBooking", "findMany")
+  );
+}
+
+function discardCachedPrisma(reason: string): void {
+  const prev = globalForPrisma.prisma;
+  globalForPrisma.prisma = undefined;
+  if (prev != null && typeof (prev as PrismaClient).$disconnect === "function") {
+    void (prev as PrismaClient).$disconnect().catch(() => {
+      /* ignore — Client ggf. schon tot */
+    });
+  }
+  if (process.env.NODE_ENV === "development") {
+    console.warn(`[prisma] discarding cached client (${reason})`);
+  }
 }
 
 /**
@@ -36,31 +70,20 @@ export function getPrisma(): PrismaClient {
     (globalForPrisma.pgPoolSslRelaxed !== sslRelaxed ||
       globalForPrisma.pgPoolConfigVersion !== PG_POOL_CONFIG_VERSION)
   ) {
-    const stalePrisma: unknown = globalForPrisma.prisma;
-    if (stalePrisma instanceof PrismaClient) {
-      void stalePrisma.$disconnect();
-    }
-    globalForPrisma.prisma = undefined;
+    discardCachedPrisma("pool-config-changed");
     void globalForPrisma.pgPool.end();
     globalForPrisma.pgPool = undefined;
     globalForPrisma.pgPoolSslRelaxed = undefined;
     globalForPrisma.pgPoolConfigVersion = undefined;
   }
 
-  const raw: unknown = globalForPrisma.prisma;
+  const raw = globalForPrisma.prisma;
   if (raw != null) {
-    // Nach `prisma generate` oder HMR zeigt `globalThis` oft noch eine alte Instanz
-    // (ohne neue Model-Delegates → undefined.findMany / 500er).
-    if (raw instanceof PrismaClient) {
-      if (prismaDelegateShopShippingReady(raw)) {
-        return raw;
-      }
-      void raw.$disconnect();
-      globalForPrisma.prisma = undefined;
-    } else {
-      void (raw as PrismaClient).$disconnect();
-      globalForPrisma.prisma = undefined;
+    // Duck-Typing: gesunden Cache behalten (auch wenn `instanceof` nach HMR fehlschlägt).
+    if (prismaClientDelegatesReady(raw)) {
+      return raw;
     }
+    discardCachedPrisma("stale-delegates");
   }
 
   const pool =
@@ -79,6 +102,14 @@ export function getPrisma(): PrismaClient {
     adapter: new PrismaPg(pool),
     log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
   });
+
+  if (!prismaClientDelegatesReady(client)) {
+    void client.$disconnect();
+    globalForPrisma.prisma = undefined;
+    throw new Error(
+      "Prisma client missing workshop delegates — run `npx prisma generate` and restart the server.",
+    );
+  }
 
   globalForPrisma.prisma = client;
   return client;
