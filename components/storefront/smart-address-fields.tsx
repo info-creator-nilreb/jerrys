@@ -40,8 +40,6 @@ export type SmartAddressFieldsProps = {
   inputClass: string;
   labelClass: string;
   requiredMarker?: ReactNode;
-  /** Lokale Feldfehler nach außen melden (z. B. für die Checkout-Fehlerliste). */
-  onLiveErrorChange?: (field: SmartField, message: string) => void;
   /** PLZ und Ort nebeneinander (Checkout) oder gestapelt. */
   zipCityLayout?: "grid" | "stack";
 };
@@ -135,7 +133,6 @@ export function SmartAddressFields({
   inputClass,
   labelClass,
   requiredMarker,
-  onLiveErrorChange,
   zipCityLayout = "grid",
 }: SmartAddressFieldsProps) {
   const uid = useId();
@@ -165,12 +162,15 @@ export function SmartAddressFields({
   const streetTimerRef = useRef<number | null>(null);
   const zipAbortRef = useRef<AbortController | null>(null);
   const streetAbortRef = useRef<AbortController | null>(null);
-  const liveErrorListenerRef = useRef(onLiveErrorChange);
-  useEffect(() => {
-    liveErrorListenerRef.current = onLiveErrorChange;
-  }, [onLiveErrorChange]);
-
   const supported = isAddressSuggestCountry(country);
+
+  // Landwechsel: Formatmeldungen des alten Landes gelten nicht mehr (React-Muster für Prop-Wechsel).
+  const [errorCountry, setErrorCountry] = useState(country);
+  if (errorCountry !== country) {
+    setErrorCountry(country);
+    setLiveErrors({});
+    setNeedsHouseNumber(false);
+  }
 
   // Vorschläge gelten nur für das Land, für das sie geladen wurden.
   const localities =
@@ -215,7 +215,6 @@ export function SmartAddressFields({
       if ((prev[field] ?? "") === message) return prev;
       return { ...prev, [field]: message };
     });
-    liveErrorListenerRef.current?.(field, message);
   };
 
   async function requestSuggestions(

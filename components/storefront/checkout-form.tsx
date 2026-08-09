@@ -48,19 +48,6 @@ const selectClass = `${formControlBase} py-[10px] appearance-none`;
 
 const checkoutLabelClass = "mb-1 block text-sm text-[#6b7280]";
 
-/** Feldnamen der Adressgruppen — `SmartAddressFields` meldet neutrale Schlüssel. */
-const SHIPPING_FIELD_KEYS = {
-  zip: "shippingZip",
-  city: "shippingCity",
-  line1: "shippingLine1",
-} as const;
-
-const BILLING_FIELD_KEYS = {
-  zip: "billingZip",
-  city: "billingCity",
-  line1: "billingLine1",
-} as const;
-
 /** Stabile IDs für `aria-describedby` / Fehlermeldungen (eine Checkout-Seite pro Dokument). */
 const checkoutErrId = {
   email: "checkout-err-email",
@@ -401,14 +388,6 @@ export function CheckoutForm({
     }));
   };
 
-  /** Feldfehler aus `SmartAddressFields` in die Checkout-Fehlerliste spiegeln. */
-  const setLiveError = (key: string, message: string) => {
-    setLiveErrors((prev) => {
-      if ((prev[key] ?? "") === message) return prev;
-      return { ...prev, [key]: message };
-    });
-  };
-
   return (
     <form
       id={STOREFRONT_CHECKOUT_FORM_ID}
@@ -624,9 +603,6 @@ export function CheckoutForm({
               autoCompleteScope="shipping"
               inputClass={inputClass}
               labelClass={checkoutLabelClass}
-              onLiveErrorChange={(field, message) =>
-                setLiveError(SHIPPING_FIELD_KEYS[field], message)
-              }
             />
             <div>
               <label
@@ -787,9 +763,6 @@ export function CheckoutForm({
                 autoCompleteScope="billing"
                 inputClass={inputClass}
                 labelClass={checkoutLabelClass}
-                onLiveErrorChange={(field, message) =>
-                  setLiveError(BILLING_FIELD_KEYS[field], message)
-                }
               />
             </div>
           ) : null}
