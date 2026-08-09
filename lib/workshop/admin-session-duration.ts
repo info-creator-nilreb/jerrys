@@ -1,7 +1,7 @@
 import {
   formatDurationLabel,
   formatWorkshopDurationMinutes,
-} from "@/features/workshops";
+} from "@/lib/workshop/duration-format";
 
 export const WORKSHOP_SESSION_DURATION_STEP_MINUTES = 30;
 export const WORKSHOP_SESSION_DURATION_MIN_MINUTES = 30;

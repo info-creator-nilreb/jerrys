@@ -8,7 +8,7 @@ import {
 } from "@/app/admin/(dashboard)/termine/actions";
 import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
 import type { AdminWorkshopSessionDetail } from "@/features/workshops";
-import { formatDurationLabel } from "@/features/workshops";
+import { formatDurationLabel } from "@/lib/workshop/duration-format";
 import {
   durationMinutesFromSessionRange,
   workshopSessionDurationOptions,
