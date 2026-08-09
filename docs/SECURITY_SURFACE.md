@@ -30,6 +30,8 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | Server Actions `app/admin/.../categories/actions.ts` | `auth()` in Action | Kategorie-CRUD, Produktzuordnung |
 | Server Actions `app/admin/.../startseite/actions.ts` | `auth()` in Action | Startseite Marketing (Amazon-/Social-Inhalte) |
 | Server Actions `app/admin/.../versand/actions.ts` | `auth()` in Action | Shopweite Versandländer und -kosten |
+| Seiten `/admin/termine`, `/admin/termine/neu`, `/admin/termine/[id]/edit` | Admin-Session | Gruppentermine (Entwurf, Veröffentlichen, Absage); globale Storno-Frist |
+| Server Actions `app/admin/(dashboard)/termine/actions.ts` | `auth()` in Action | Termin-CRUD (nur Entwürfe), Lifecycle, Shop-Workshop-Einstellungen; Audit `workshop.session.*` |
 | `GET /llms.txt` | Öffentlich | KI-/Agenten-Hinweis (nur statischer Text, keine personenbezogenen Daten) |
 | `GET /sitemap.xml` | Öffentlich | SEO-Sitemap (Produkt-URLs u. a.) |
 | `GET /robots.txt` | Öffentlich | Crawler-Regeln inkl. Sitemap-Verweis |

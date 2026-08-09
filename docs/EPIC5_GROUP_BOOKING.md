@@ -32,6 +32,8 @@ Der Kalender kann als Block auf einer CMS-Seite (Epic 12) und optional auf ausge
 - globale und terminbezogene Selbststornierungsfrist
 - Admin-Liste, Formular, Freigabe und Audit
 
+**Status:** umgesetzt (Admin). `/admin/termine`: Entwurf anlegen/bearbeiten, veröffentlichen, absagen, abschließen; shopweite Storno-Frist (Std. 48h); Audit `workshop_session_events` + Outbox. Storefront-Kalender und Checkout folgen in Slice 2–3.
+
 ### Slice 2 — Storefront-Kalender und Einbettung
 
 - Kalender/Liste mit freien Plätzen und Status
