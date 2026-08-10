@@ -60,3 +60,5 @@ Keine freie React-, HTML-, CSS- oder JavaScript-Ausführung.
 - Versionierung oder kollaborative Bearbeitung
 - mehrsprachige Inhalte in v1
 - freie Templates, Plugins oder Drittanbieter-Blöcke
+
+**Agent-Handoff (Slices/Copy-Paste):** [EPIC12_AGENT_HANDOFF.md](./EPIC12_AGENT_HANDOFF.md)
