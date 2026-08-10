@@ -81,7 +81,7 @@ describe("issueOrderRefund", () => {
     const result = await issueOrderRefund(prisma, {
       orderId: "ord-1",
       amountCents: 1000,
-      idempotencyKey: "test-key-partial-001",
+      idempotencyKey: "idem-partial-001",
       actor: "admin",
     });
 
@@ -116,7 +116,7 @@ describe("issueOrderRefund", () => {
               {
                 id: "REF-1",
                 amountCents: 1000,
-                idempotencyKey: "same-key",
+                idempotencyKey: "idem-same-001",
                 at: "2026-08-10T12:00:00.000Z",
               },
             ],
@@ -149,7 +149,7 @@ describe("issueOrderRefund", () => {
 
     const result = await issueOrderRefund(makePrisma(order), {
       orderId: "ord-2",
-      idempotencyKey: "manual-key-0001",
+      idempotencyKey: "idem-manual-0001",
       actor: "admin",
       manualOnly: true,
     });
