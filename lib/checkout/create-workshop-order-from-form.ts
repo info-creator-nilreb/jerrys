@@ -17,8 +17,8 @@ import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 import { usesPaypalHostedCheckout } from "@/lib/payments/online-payment-method";
 import { ORDER_EVENT_PLACED } from "@/lib/orders/order-events";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
-import { computeCheckoutOrderTotals } from "@/lib/tax/order-price-totals";
 import type { OrderPriceLineInput } from "@/lib/tax/order-price-totals";
+import { computeWorkshopCheckoutOrderTotals } from "@/lib/workshop/workshop-checkout-totals";
 import { getWorkshopCheckoutCatalogLine } from "@/lib/workshop/workshop-checkout-catalog-query";
 import { clearWorkshopBookingHoldCookie } from "@/lib/workshop/workshop-booking-cookie";
 import type { CreatePendingPayPalOrderResult } from "@/lib/checkout/create-pending-paypal-order-from-form";
@@ -160,11 +160,9 @@ export async function createWorkshopOrderFromFormData(
     },
   ];
 
-  const totals = computeCheckoutOrderTotals({
+  const totals = computeWorkshopCheckoutOrderTotals({
     lines: lineInputs,
     shippingCountryCode: d.shippingCountry,
-    shippingRatesCentsByCountry: shopShip.shippingRatesCentsByCountry,
-    freeShippingFromSubtotalGrossCents: shopShip.freeShippingFromSubtotalGrossCents,
   });
 
   const orderNumber = generateOrderNumber();
