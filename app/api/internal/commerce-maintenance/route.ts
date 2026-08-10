@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { publishIntegrationOutboxBatch } from "@/features/integrations";
 import { expireStaleStockReservations } from "@/features/inventory";
-import { runWorkshopMaintenance } from "@/features/workshops/application/workshop-maintenance";
+import { runWorkshopMaintenance } from "@/features/workshops";
 import { getPrisma } from "@/lib/db/prisma";
 
 function bearerToken(req: NextRequest): string | null {
