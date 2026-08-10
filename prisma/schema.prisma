@@ -297,6 +297,7 @@ enum OrderPaymentStatus {
   pending
   processing
   succeeded
+  partially_refunded
   failed
   canceled
   refunded

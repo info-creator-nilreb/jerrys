@@ -411,7 +411,20 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
       <section className="border-t border-[#e8eaed] pt-6">
         <h2 className="text-sm font-semibold text-[#374151]">Rückerstattung</h2>
         <div className="mt-3">
-          <OrderRefundButton orderId={order.id} order={order} />
+          <OrderRefundButton
+            orderId={order.id}
+            orderStatus={order.status}
+            currency={order.currency}
+            totalGrossCents={order.totalGrossCents}
+            payments={order.payments.map((p) => ({
+              id: p.id,
+              provider: p.provider,
+              status: p.status,
+              amountGrossCents: p.amountGrossCents,
+              currency: p.currency,
+              metadata: p.metadata,
+            }))}
+          />
         </div>
       </section>
     </div>

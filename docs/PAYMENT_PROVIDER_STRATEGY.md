@@ -23,4 +23,5 @@ Alternativen (nicht im Code): Stripe, Adyen, Mollie – jeweils eigene Vertrags-
 ## Nächste sinnvolle Schritte
 
 1. PayPal-Live-Credentials und `PAYPAL_ENV=live` für Produktion; Webhook-URL + `PAYPAL_WEBHOOK_ID` in Preview/Production setzen.
-2. Teilzahlungen / Refunds im Admin (separates Epic).
+2. ~~Teilzahlungen / Refunds im Admin (separates Epic).~~ → MVP: [EPIC4_REFUNDS.md](./EPIC4_REFUNDS.md) (PayPal voll/teilweise + manueller Fallback; Workshops über denselben Order-Pfad).
+3. Stripe / Reconciliation-Reports (Folge von Epic 4).

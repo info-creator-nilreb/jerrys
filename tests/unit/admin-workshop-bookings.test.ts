@@ -10,6 +10,7 @@ const orderFindMany = vi.fn();
 const workshopBookingEventCreate = vi.fn();
 const outboxCreate = vi.fn();
 const sendCancelled = vi.fn();
+const tryRefund = vi.fn();
 
 const tx = {
   workshopBooking: {
@@ -42,6 +43,10 @@ vi.mock("@/lib/email/workshop-booking-emails", () => ({
   sendWorkshopBookingCancelledForBookingId: (...args: unknown[]) => sendCancelled(...args),
 }));
 
+vi.mock("@/features/workshops/application/workshop-booking-refund", () => ({
+  tryRefundWorkshopBookingOrder: (...args: unknown[]) => tryRefund(...args),
+}));
+
 beforeEach(() => {
   bookingFindMany.mockReset();
   bookingFindUnique.mockReset();
@@ -53,7 +58,9 @@ beforeEach(() => {
   workshopBookingEventCreate.mockReset();
   outboxCreate.mockReset();
   sendCancelled.mockReset();
+  tryRefund.mockReset();
   sendCancelled.mockResolvedValue(undefined);
+  tryRefund.mockResolvedValue({ attempted: true, ok: true });
   workshopBookingEventCreate.mockResolvedValue({});
   outboxCreate.mockResolvedValue({});
 });
@@ -88,6 +95,13 @@ describe("adminCancelWorkshopBooking", () => {
       }),
     );
     expect(sendCancelled).toHaveBeenCalledWith("b1");
+    expect(tryRefund).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bookingId: "b1",
+        orderId: "o1",
+        actor: "workshop_admin_cancel",
+      }),
+    );
   });
 
   it("lehnt nicht-bestätigte Buchungen ab", async () => {
@@ -105,13 +119,21 @@ describe("adminCancelWorkshopBooking", () => {
     const result = await adminCancelWorkshopBooking({ bookingId: "b1" });
     expect(result.ok).toBe(false);
     expect(sendCancelled).not.toHaveBeenCalled();
+    expect(tryRefund).not.toHaveBeenCalled();
   });
 });
 
 describe("cancelConfirmedBookingsAfterSessionCancelled", () => {
   it("storniert confirmed und gibt held frei", async () => {
     bookingFindMany
-      .mockResolvedValueOnce([{ id: "c1", seatCount: 2 }])
+      .mockResolvedValueOnce([
+        {
+          id: "c1",
+          seatCount: 2,
+          orderId: "o1",
+          unitPriceCentsSnapshot: 1000,
+        },
+      ])
       .mockResolvedValueOnce([{ id: "h1", seatCount: 1 }]);
     bookingUpdateMany.mockResolvedValue({ count: 1 });
     sessionUpdateMany.mockResolvedValue({ count: 1 });
@@ -124,6 +146,12 @@ describe("cancelConfirmedBookingsAfterSessionCancelled", () => {
     expect(result.releasedHoldIds).toEqual(["h1"]);
     expect(sendCancelled).toHaveBeenCalledWith("c1");
     expect(sendCancelled).toHaveBeenCalledTimes(1);
+    expect(tryRefund).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bookingId: "c1",
+        actor: "workshop_session_cancel",
+      }),
+    );
   });
 });
 

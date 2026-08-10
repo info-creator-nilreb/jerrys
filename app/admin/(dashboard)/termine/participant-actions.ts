@@ -35,5 +35,6 @@ export async function adminCancelWorkshopBookingAction(
   if (!result.ok) return result;
   revalidatePath("/admin/termine");
   revalidatePath(`/admin/termine/${sessionId}/edit`);
-  return { ok: true };
+  revalidatePath("/admin/orders");
+  return { ok: true, message: result.message };
 }

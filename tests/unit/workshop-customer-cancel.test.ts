@@ -52,6 +52,14 @@ vi.mock("@/features/customers/application/get-verified-active-customer-id", () =
   },
 }));
 
+vi.mock("@/lib/email/workshop-booking-emails", () => ({
+  sendWorkshopBookingCancelledForBookingId: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("@/features/workshops/application/workshop-booking-refund", () => ({
+  tryRefundWorkshopBookingOrder: vi.fn().mockResolvedValue({ attempted: false, ok: true }),
+}));
+
 beforeEach(() => {
   bookingFindMany.mockReset();
   bookingFindFirst.mockReset();
@@ -75,6 +83,7 @@ describe("selfCancelWorkshopBookingForCustomer", () => {
       unitPriceCentsSnapshot: 0,
       currencySnapshot: "EUR",
       sessionId: "s1",
+      orderId: null,
       sessionStartsAtSnapshot: new Date("2026-08-20T14:00:00.000Z"),
       session: { status: "published", selfCancelHoursBeforeStart: null, confirmedSeatCount: 2 },
     });
@@ -99,12 +108,16 @@ describe("selfCancelWorkshopBookingForCustomer", () => {
       unitPriceCentsSnapshot: 1500,
       currencySnapshot: "EUR",
       sessionId: "s1",
+      orderId: "o1",
       sessionStartsAtSnapshot: new Date("2099-08-20T14:00:00.000Z"),
       session: { status: "published", selfCancelHoursBeforeStart: null, confirmedSeatCount: 4 },
     });
     bookingUpdateMany.mockResolvedValue({ count: 1 });
     sessionUpdateMany.mockResolvedValue({ count: 1 });
 
+    const { tryRefundWorkshopBookingOrder } = await import(
+      "@/features/workshops/application/workshop-booking-refund"
+    );
     const { selfCancelWorkshopBookingForCustomer } = await import("@/features/workshops");
     const result = await selfCancelWorkshopBookingForCustomer({
       customerId: "cust-a",
@@ -119,5 +132,12 @@ describe("selfCancelWorkshopBookingForCustomer", () => {
       }),
     );
     expect(workshopBookingEventCreate).toHaveBeenCalled();
+    expect(tryRefundWorkshopBookingOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bookingId: "b1",
+        orderId: "o1",
+        actor: "workshop_self_cancel",
+      }),
+    );
   });
 });

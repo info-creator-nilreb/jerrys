@@ -1,9 +1,11 @@
 import type { PrismaClient } from "@/app/generated/prisma/client";
+import type { Prisma } from "@/app/generated/prisma/client";
 import {
   commitStockReservationsForOrder,
 } from "@/features/inventory";
 import { confirmWorkshopBookingAfterOrderPaid } from "@/features/workshops";
 import { createOrderEvent, ORDER_EVENT_STATUS_CHANGED } from "@/lib/orders/order-events";
+import { mergeOrderPaymentRefundMeta } from "@/lib/payments/order-payment-refund-meta";
 
 export type FinalizePendingPaymentResult =
   | { ok: true }
@@ -21,6 +23,8 @@ export async function finalizeOrderAfterPendingPaymentCapture(
     provider: string;
     providerRef: string;
     eventSource: string;
+    /** PayPal Capture-ID für spätere Refunds (optional). */
+    providerCaptureId?: string | null;
   },
 ): Promise<FinalizePendingPaymentResult> {
   try {
@@ -30,7 +34,28 @@ export async function finalizeOrderAfterPendingPaymentCapture(
         include: { items: true },
       });
       if (!order) return { ok: false, error: "not_found" };
-      if (order.status === "paid") return { ok: true };
+      if (order.status === "paid") {
+        if (params.providerCaptureId) {
+          const payments = await tx.orderPayment.findMany({
+            where: {
+              orderId: params.orderId,
+              provider: params.provider,
+              providerRef: params.providerRef,
+            },
+          });
+          for (const payment of payments) {
+            await tx.orderPayment.update({
+              where: { id: payment.id },
+              data: {
+                metadata: mergeOrderPaymentRefundMeta(payment.metadata, {
+                  paypalCaptureId: params.providerCaptureId,
+                }) as Prisma.InputJsonValue,
+              },
+            });
+          }
+        }
+        return { ok: true };
+      }
 
       if (order.status !== "pending_payment") {
         return { ok: false, error: "invalid_status" };
@@ -96,14 +121,29 @@ export async function finalizeOrderAfterPendingPaymentCapture(
         toStatus: "paid",
         source: params.eventSource,
       });
-      await tx.orderPayment.updateMany({
+
+      const payments = await tx.orderPayment.findMany({
         where: {
           orderId: params.orderId,
           provider: params.provider,
           providerRef: params.providerRef,
         },
-        data: { status: "succeeded" },
       });
+      for (const payment of payments) {
+        await tx.orderPayment.update({
+          where: { id: payment.id },
+          data: {
+            status: "succeeded",
+            ...(params.providerCaptureId
+              ? {
+                  metadata: mergeOrderPaymentRefundMeta(payment.metadata, {
+                    paypalCaptureId: params.providerCaptureId,
+                  }) as Prisma.InputJsonValue,
+                }
+              : {}),
+          },
+        });
+      }
 
       return { ok: true };
     });

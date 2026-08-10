@@ -37,6 +37,9 @@ export function WorkshopSessionParticipantsPanel({
         setMessage(result.message ?? "Aktion fehlgeschlagen.");
         return;
       }
+      if (result.message) {
+        setMessage(result.message);
+      }
       router.refresh();
     });
   }
@@ -69,7 +72,14 @@ export function WorkshopSessionParticipantsPanel({
       </div>
 
       {message ? (
-        <p className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+        <p
+          className={`mt-3 rounded-md border px-3 py-2 text-sm ${
+            message.includes("fehlgeschlagen") || message.includes("fehlschlag")
+              ? "border-red-200 bg-red-50 text-red-800"
+              : "border-amber-200 bg-amber-50 text-amber-900"
+          }`}
+          role="alert"
+        >
           {message}
         </p>
       ) : null}
@@ -156,7 +166,7 @@ export function WorkshopSessionParticipantsPanel({
                           onClick={() => {
                             if (
                               !window.confirm(
-                                "Buchung wirklich stornieren? Plätze werden freigegeben. Erstattungen erfolgen ggf. manuell über die Bestellung.",
+                                "Buchung wirklich stornieren? Plätze werden freigegeben. Bei bezahlten Terminen wird eine PayPal-Erstattung versucht.",
                               )
                             ) {
                               return;

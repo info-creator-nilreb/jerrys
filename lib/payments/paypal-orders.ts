@@ -1,6 +1,10 @@
 import { canonicalSiteOrigin } from "@/lib/site/canonical-origin";
 import { getPayPalAccessToken } from "@/lib/payments/paypal-access-token";
 import { paypalApiBaseUrl } from "@/lib/payments/paypal-config";
+import {
+  fetchPayPalOrder,
+  parseCapturedPayPalOrder,
+} from "@/lib/payments/paypal-refunds";
 
 function moneyStringFromGrossCents(cents: number): string {
   return (cents / 100).toFixed(2);
@@ -88,58 +92,8 @@ export async function createPayPalCheckoutOrder(params: {
   return { paypalOrderId, approvalUrl: approvalUrl ?? null };
 }
 
-type PurchaseUnit = {
-  custom_id?: string;
-  amount?: { currency_code?: string; value?: string };
-  payments?: {
-    captures?: Array<{ amount?: { currency_code?: string; value?: string } }>;
-  };
-};
-
-function parseCapturedOrder(json: {
-  id?: string;
-  status?: string;
-  purchase_units?: PurchaseUnit[];
-}): { paypalOrderId: string; internalOrderId: string; amountValue: string; currencyCode: string } | null {
-  const paypalOrderId = json.id;
-  const pu = json.purchase_units?.[0];
-  if (!paypalOrderId || !pu) return null;
-
-  const internalOrderId =
-    typeof pu.custom_id === "string" && pu.custom_id.length > 0 ? pu.custom_id : null;
-  if (!internalOrderId) return null;
-
-  const cap = pu.payments?.captures?.[0];
-  const amount = cap?.amount ?? pu.amount;
-  const value = amount?.value;
-  const currencyCode = amount?.currency_code;
-  if (!value || !currencyCode) return null;
-
-  if (json.status !== "COMPLETED") return null;
-
-  return { paypalOrderId, internalOrderId, amountValue: value, currencyCode };
-}
-
-async function fetchPayPalOrder(paypalOrderId: string, accessToken: string) {
-  const res = await fetch(`${paypalApiBaseUrl()}/v2/checkout/orders/${paypalOrderId}`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`PayPal Order GET fehlgeschlagen (${res.status}): ${text.slice(0, 200)}`);
-  }
-  return (await res.json()) as {
-    id?: string;
-    status?: string;
-    purchase_units?: PurchaseUnit[];
-  };
-}
-
 /**
- * Order capturen; liefert interne Order-ID und Betrag zur serverseitigen Prüfung.
+ * Order capturen; liefert interne Order-ID, Capture-ID und Betrag zur serverseitigen Prüfung.
  * Bei bereits captureter Order: GET + Parse (idempotent).
  */
 export async function capturePayPalCheckoutOrder(paypalOrderId: string): Promise<{
@@ -147,6 +101,7 @@ export async function capturePayPalCheckoutOrder(paypalOrderId: string): Promise
   internalOrderId: string;
   amountValue: string;
   currencyCode: string;
+  captureId: string | null;
 }> {
   const accessToken = await getPayPalAccessToken();
 
@@ -162,13 +117,13 @@ export async function capturePayPalCheckoutOrder(paypalOrderId: string): Promise
   const captureJson = (await captureRes.json()) as {
     id?: string;
     status?: string;
-    purchase_units?: PurchaseUnit[];
+    purchase_units?: Parameters<typeof parseCapturedPayPalOrder>[0]["purchase_units"];
     details?: unknown;
     message?: string;
   };
 
   if (captureRes.ok) {
-    const parsed = parseCapturedOrder(captureJson);
+    const parsed = parseCapturedPayPalOrder(captureJson);
     if (!parsed) {
       throw new Error("PayPal Capture: Bestellzuordnung oder Betrag fehlt.");
     }
@@ -178,7 +133,7 @@ export async function capturePayPalCheckoutOrder(paypalOrderId: string): Promise
   // Bereits abgeschlossen / Duplikat-Capture: Order erneut laden
   if (captureRes.status === 422 || captureRes.status === 400) {
     const refreshed = await fetchPayPalOrder(paypalOrderId, accessToken);
-    const parsed = parseCapturedOrder(refreshed);
+    const parsed = parseCapturedPayPalOrder(refreshed);
     if (parsed) return parsed;
   }
 
