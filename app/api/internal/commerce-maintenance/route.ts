@@ -4,6 +4,7 @@ import { publishIntegrationOutboxBatch } from "@/features/integrations";
 import { expireStaleStockReservations } from "@/features/inventory";
 import { runWorkshopMaintenance } from "@/features/workshops";
 import { getPrisma } from "@/lib/db/prisma";
+import { reconcilePendingPayPalPayments } from "@/lib/orders/reconcile-pending-paypal-payments";
 
 function bearerToken(req: NextRequest): string | null {
   const auth = req.headers.get("authorization")?.trim();
@@ -26,12 +27,27 @@ function isAuthorized(req: NextRequest): boolean {
 
 async function runCommerceMaintenance() {
   const prisma = getPrisma();
-  const [expired, outbox, workshops] = await Promise.all([
+  const [expired, outbox, workshops, paypalReconcile] = await Promise.all([
     expireStaleStockReservations(prisma),
     publishIntegrationOutboxBatch(prisma),
     runWorkshopMaintenance(prisma),
+    reconcilePendingPayPalPayments(prisma, {
+      limit: 25,
+      source: "paypal_reconciliation",
+    }),
   ]);
-  return { expiredReservations: expired, outbox, workshops };
+  return {
+    expiredReservations: expired,
+    outbox,
+    workshops,
+    paypalReconcile: {
+      scanned: paypalReconcile.scanned,
+      finalized: paypalReconcile.finalized,
+      stillOpen: paypalReconcile.stillOpen,
+      failed: paypalReconcile.failed,
+      skipped: paypalReconcile.skipped,
+    },
+  };
 }
 
 /**

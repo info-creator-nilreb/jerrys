@@ -41,7 +41,7 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | `GET /checkout/paypal-rueckkehr` | Öffentlich (Redirect von PayPal) | Nach erfolgreichem Capture: Bestellung `paid`, Lager, E-Mail ([PAYMENT_PROVIDER_STRATEGY](./PAYMENT_PROVIDER_STRATEGY.md)) |
 | `POST /api/checkout/paypal/create-order` | Öffentlich (Checkout) | Bestellung anlegen + PayPal-Order; **Rate-Limit** pro IP (`lib/security/paypal-checkout-api-rate-limit.ts`) |
 | `POST /api/checkout/paypal/capture-order` | Öffentlich (Checkout) | Capture nach Karte/Wallet; **gleiches Rate-Limit** wie create-order |
-| `POST /api/webhooks/paypal` | Öffentlich (PayPal) | PayPal-Webhooks; **Signaturpflicht** (`PAYPAL_WEBHOOK_ID` + verify-webhook-signature); Inbox-Idempotenz (`paypal_webhook` / Event-ID); Rate-Limit pro IP (`lib/security/paypal-webhook-api-rate-limit.ts`); ohne Webhook-ID → **503** |
+| `POST /api/webhooks/paypal` | Öffentlich (PayPal) | PayPal-Webhooks; **Signaturpflicht** (`PAYPAL_WEBHOOK_ID` + verify-webhook-signature); Inbox-Idempotenz (`paypal_webhook` / Event-ID); Rate-Limit pro IP (`lib/security/paypal-webhook-api-rate-limit.ts`); ohne Webhook-ID → **503**; Events u. a. Capture-Complete/Approve + `PAYMENT.CAPTURE.REFUNDED` |
 | `GET`/`POST /api/internal/commerce-maintenance` | Bearer `CRON_SECRET` (Vercel Cron), Bearer/`x-commerce-maintenance-secret` (`COMMERCE_MAINTENANCE_SECRET`) | Epic 1: abgelaufene Bestandsreservierungen + Outbox-Publisher (Cron/manuell) |
 | Tabelle `order_payments` | — | PSP-Versuche pro Bestellung (Prisma-Modell `OrderPayment`) |
 | Seiten unter `/admin/*` (außer Login) | Middleware + Layout `auth()` | Admin-UI |

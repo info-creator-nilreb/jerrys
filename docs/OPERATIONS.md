@@ -158,10 +158,14 @@ PayPal zeigt Capture/`COMPLETED`, Shop-Bestellung bleibt `pending_payment`.
    - `orders` / `order_payments` für die interne Bestellung
    - `webhook_inbox_entries` mit `provider IN ('paypal','paypal_webhook')` und Status `failed`/`received`
 3. Erneut finalisieren (idempotent):
+   - Admin Bestelldetail → **„Zahlung bei PayPal nachziehen“** **oder**
+   - Maintenance: `POST /api/internal/commerce-maintenance` (Feld `paypalReconcile.finalized`) **oder**
    - Return-URL simulieren: `GET /checkout/paypal-rueckkehr?token=<PAYPAL_ORDER_ID>` (Staging) **oder**
    - PayPal Webhook erneut senden (Dashboard → Webhooks → Resend) **oder**
    - Capture-API intern nur über bestehende App-Pfade (kein manuelles Doppel-Capture außerhalb der App).
 4. Erwartung: Status `paid`, Capture-Inbox `processed`, Bestätigungsmail (falls noch nicht gesendet). Bei Betrags-Mismatch Logs `paypal_amount_mismatch` — **nicht** manuell auf `paid` setzen ohne Klärung.
+
+Siehe auch [EPIC4_RECONCILIATION.md](./EPIC4_RECONCILIATION.md).
 
 ### Runbook: Webhook- oder Outbox-Backlog
 

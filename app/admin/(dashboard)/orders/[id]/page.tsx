@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { OrderEmailLogResendButton } from "@/app/admin/(dashboard)/orders/order-email-log-resend-button";
 import { OrderRefundButton } from "@/app/admin/(dashboard)/orders/order-refund-button";
+import { OrderPayPalReconcileButton } from "@/app/admin/(dashboard)/orders/order-paypal-reconcile-button";
 import { OrderStatusPanel } from "@/app/admin/(dashboard)/orders/order-status-panel";
 import { CopyTextButton } from "@/app/admin/(dashboard)/orders/copy-text-button";
 import { OrderDetailTabs } from "@/app/admin/(dashboard)/orders/order-detail-tabs";
@@ -406,6 +407,10 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
             })}
           </ul>
         )}
+        {order.status === "pending_payment" &&
+        order.payments.some((p) => p.provider === "paypal") ? (
+          <OrderPayPalReconcileButton orderId={order.id} />
+        ) : null}
       </section>
 
       <section className="border-t border-[#e8eaed] pt-6">
