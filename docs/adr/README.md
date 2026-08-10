@@ -39,3 +39,9 @@ ADRs record material decisions that constrain future implementation.
 - [ADR-0003: Catalog variants and collections](./0003-catalog-variants-and-collections.md)
 - [ADR-0004: Product categories (browse taxonomy)](./0004-product-categories.md)
 - [ADR-0005: Customer authentication (Auth.js + first-party identity)](./0005-customer-authentication.md)
+
+Geplante ADRs (durch Agenten anzulegen):
+
+- **ADR-0006** — ShopSettings / Branding-Singleton ([EPIC11_AGENT_HANDOFF.md](../EPIC11_AGENT_HANDOFF.md))
+- **ADR-0007** — ContentPage / CMS-light Blöcke ([EPIC12_AGENT_HANDOFF.md](../EPIC12_AGENT_HANDOFF.md))
+- Object Storage (falls nicht in 0002/0006 abgedeckt) vor Logo-/CMS-Bild-Uploads

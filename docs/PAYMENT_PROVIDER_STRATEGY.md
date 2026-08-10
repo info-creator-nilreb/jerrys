@@ -26,3 +26,5 @@ Alternativen (nicht im Code): Stripe, Adyen, Mollie – jeweils eigene Vertrags-
 2. ~~Teilzahlungen / Refunds im Admin.~~ → MVP: [EPIC4_REFUNDS.md](./EPIC4_REFUNDS.md) (PayPal voll/teilweise + manueller Fallback; Workshops über denselben Order-Pfad).
 3. ~~Reconciliation.~~ → MVP: [EPIC4_RECONCILIATION.md](./EPIC4_RECONCILIATION.md) (Cron + Admin-Nachziehen + Refund-Webhook Vollrefund).
 4. Stripe (Folge von Epic 4).
+
+**Agent-Handoffs (nächste Produkt-Epics):** [EPIC11_AGENT_HANDOFF.md](./EPIC11_AGENT_HANDOFF.md), [EPIC12_AGENT_HANDOFF.md](./EPIC12_AGENT_HANDOFF.md).
