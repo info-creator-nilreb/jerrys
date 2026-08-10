@@ -19,7 +19,7 @@ import {
   CheckoutPaymentMethods,
   type CheckoutPayPalMethodId,
 } from "@/components/storefront/checkout-payment-methods";
-import { computeCheckoutOrderTotals } from "@/lib/tax/order-price-totals";
+import { computeWorkshopCheckoutOrderTotals } from "@/lib/workshop/workshop-checkout-totals";
 import type {
   CheckoutAddressPrefill,
   CustomerAddressListItem,
@@ -64,8 +64,6 @@ export function WorkshopCheckoutForm({
   idempotencyKey,
   workshopBookingId,
   lines,
-  shippingRatesByCountry,
-  freeShippingFromSubtotalGrossCents,
   currency,
   allowedShippingCountries,
   initialShippingCountry,
@@ -78,8 +76,6 @@ export function WorkshopCheckoutForm({
   idempotencyKey: string;
   workshopBookingId: string;
   lines: CheckoutSummaryLine[];
-  shippingRatesByCountry: Record<string, number>;
-  freeShippingFromSubtotalGrossCents: number | null;
   currency: string;
   allowedShippingCountries: { code: string; label: string }[];
   initialShippingCountry: string;
@@ -161,13 +157,11 @@ export function WorkshopCheckoutForm({
 
   const displayTotals = useMemo(
     () =>
-      computeCheckoutOrderTotals({
+      computeWorkshopCheckoutOrderTotals({
         lines: lineInputs,
         shippingCountryCode: shippingCountry,
-        shippingRatesCentsByCountry: shippingRatesByCountry,
-        freeShippingFromSubtotalGrossCents,
       }),
-    [lineInputs, shippingCountry, shippingRatesByCountry, freeShippingFromSubtotalGrossCents],
+    [lineInputs, shippingCountry],
   );
 
   const shippingCountryLabel =
@@ -730,7 +724,12 @@ export function WorkshopCheckoutForm({
         discountOffSubtotalCents={0}
         shippingSavedByPromotionCents={0}
         shippingCountryLabel={shippingCountryLabel}
-        freeShippingFromSubtotalGrossCents={freeShippingFromSubtotalGrossCents}
+        freeShippingFromSubtotalGrossCents={null}
+        shippingCostHint={
+          <p className="text-xs leading-relaxed text-(--foreground-muted)">
+            Termine sind versandkostenfrei — die Adresse dient der Rechnung und Erreichbarkeit.
+          </p>
+        }
       />
     </form>
   );

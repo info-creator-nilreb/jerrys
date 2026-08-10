@@ -12,7 +12,6 @@ import { getWorkshopHoldForCheckout } from "@/features/workshops";
 import { getCustomerSession } from "@/lib/auth/customer-session";
 import { getWorkshopBookingHoldIdFromCookie } from "@/lib/workshop/workshop-booking-cookie";
 import { getShippingCountriesForStorefront } from "@/lib/shop/shipping-countries-for-storefront";
-import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 import { formatWorkshopSessionDateTime } from "@/lib/workshop/format-session-datetime";
 import { getWorkshopCheckoutCatalogLine } from "@/lib/workshop/workshop-checkout-catalog-query";
@@ -88,7 +87,6 @@ export default async function WorkshopCheckoutPage({
     );
   }
 
-  const shopShip = await getShopShippingSettings();
   const { countries: allowedShippingCountries, preferredCountry } =
     await getShippingCountriesForStorefront();
   const catalog = await getWorkshopCheckoutCatalogLine();
@@ -150,8 +148,6 @@ export default async function WorkshopCheckoutPage({
           idempotencyKey={randomUUID()}
           workshopBookingId={hold.bookingId}
           lines={summaryLines}
-          shippingRatesByCountry={shopShip.shippingRatesCentsByCountry}
-          freeShippingFromSubtotalGrossCents={shopShip.freeShippingFromSubtotalGrossCents}
           currency={hold.currency}
           allowedShippingCountries={allowedShippingCountries}
           initialShippingCountry={initialShippingCountry}

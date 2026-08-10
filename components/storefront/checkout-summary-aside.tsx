@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { formatPrice } from "@/lib/catalog/format";
 import { PriceEUR } from "@/components/storefront/price-eur";
 
@@ -30,6 +31,7 @@ export function CheckoutSummaryAside({
   shippingCountryLabel,
   freeShippingFromSubtotalGrossCents,
   children,
+  shippingCostHint,
 }: {
   lines: CheckoutSummaryLine[];
   shippingCents: number;
@@ -47,7 +49,9 @@ export function CheckoutSummaryAside({
   /** Anzeigename des gewählten Lieferlands (für Versandzeile). */
   shippingCountryLabel?: string | null;
   freeShippingFromSubtotalGrossCents?: number | null;
-  children?: React.ReactNode;
+  children?: ReactNode;
+  /** Optionaler Hinweis unter der Versandzeile (überschreibt den Standardtext). */
+  shippingCostHint?: ReactNode;
 }) {
   const hasDiscount = discountOffSubtotalCents > 0;
   const hasShippingPromotionSave = shippingSavedByPromotionCents > 0;
@@ -140,17 +144,21 @@ export function CheckoutSummaryAside({
             Noch {formatPrice(remainingToFreeShipping, currency)} bis zum versandkostenfreien Versand.
           </p>
         ) : null}
-        <p className="text-xs leading-relaxed text-(--foreground-muted)">
-          Versandkosten werden vor der Zahlung anhand der Lieferadresse berechnet.{" "}
-          <Link
-            href="/versand"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-primary underline-offset-2 hover:underline"
-          >
-            Mehr zu Zahlung &amp; Versand
-          </Link>
-        </p>
+        {shippingCostHint !== undefined ? (
+          shippingCostHint
+        ) : (
+          <p className="text-xs leading-relaxed text-(--foreground-muted)">
+            Versandkosten werden vor der Zahlung anhand der Lieferadresse berechnet.{" "}
+            <Link
+              href="/versand"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-primary underline-offset-2 hover:underline"
+            >
+              Mehr zu Zahlung &amp; Versand
+            </Link>
+          </p>
+        )}
         <div className="flex justify-between gap-4 border-t border-(--surface-muted) pt-3 text-base font-semibold">
           <dt className="text-(--foreground-heading)">Gesamt</dt>
           <dd className="text-(--foreground-heading)">
