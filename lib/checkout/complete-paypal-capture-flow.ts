@@ -26,7 +26,9 @@ export type PayPalCaptureEventSource =
   | "paypal_return"
   | "paypal_smart_buttons"
   | "paypal_card_fields"
-  | "paypal_webhook";
+  | "paypal_webhook"
+  | "paypal_reconciliation"
+  | "paypal_admin_reconcile";
 
 /**
  * Nach PayPal-Zustimmung (Smart Buttons oder Return-URL): Capture, Betrag prüfen, Bestellung finalisieren, E-Mail.

@@ -263,3 +263,66 @@ export async function resendOrderEmail(
     return { error: msg || "Unerwarteter Fehler beim erneuten Senden." };
   }
 }
+
+export type ReconcilePayPalPaymentState =
+  | { error?: string; ok?: boolean; message?: string }
+  | null;
+
+export async function reconcilePayPalPaymentForOrderAction(
+  _prev: ReconcilePayPalPaymentState,
+  formData: FormData,
+): Promise<ReconcilePayPalPaymentState> {
+  const session = await getAdminSession();
+  if (!session?.user) {
+    redirect("/admin/login");
+  }
+
+  const orderId = formData.get("orderId");
+  if (typeof orderId !== "string" || !orderId.trim()) {
+    return { error: "Ungültige Bestellung." };
+  }
+
+  const { reconcilePendingPayPalPayments } = await import(
+    "@/lib/orders/reconcile-pending-paypal-payments"
+  );
+  const result = await reconcilePendingPayPalPayments(getPrisma(), {
+    orderId: orderId.trim(),
+    limit: 1,
+    source: "paypal_admin_reconcile",
+  });
+
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${orderId.trim()}`);
+
+  const detail = result.details[0];
+  if (!detail) {
+    return {
+      error:
+        "Keine offenen PayPal-Zahlungen für diese Bestellung (nur Status „Zahlung ausstehend“).",
+    };
+  }
+
+  if (detail.outcome === "finalized" || detail.outcome === "already_paid") {
+    return {
+      ok: true,
+      message:
+        detail.outcome === "already_paid"
+          ? "Bestellung war bereits bezahlt."
+          : "Zahlung bei PayPal gefunden und Bestellung finalisiert.",
+    };
+  }
+  if (detail.outcome === "still_open") {
+    return {
+      ok: true,
+      message: `PayPal meldet Status „${detail.paypalStatus ?? "offen"}“ — noch nicht abgeschlossen.`,
+    };
+  }
+  if (detail.outcome === "skipped_unconfigured") {
+    return { error: detail.message ?? "PayPal ist nicht konfiguriert." };
+  }
+  return {
+    error: detail.message
+      ? `Abgleich fehlgeschlagen: ${detail.message}`
+      : "Abgleich fehlgeschlagen.",
+  };
+}

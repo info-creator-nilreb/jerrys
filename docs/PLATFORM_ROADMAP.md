@@ -193,7 +193,8 @@ Out of scope for this epic (explicit):
 
 ## Epic 11: Central Shop Settings and Branding
 
-Suggested delivery: [EPIC11_BRANDING_SETTINGS.md](./EPIC11_BRANDING_SETTINGS.md).
+Suggested delivery: [EPIC11_BRANDING_SETTINGS.md](./EPIC11_BRANDING_SETTINGS.md).  
+**Agent-Handoff:** [EPIC11_AGENT_HANDOFF.md](./EPIC11_AGENT_HANDOFF.md).
 
 User stories:
 
@@ -205,7 +206,8 @@ Exit criteria: branding changes require no code deploy; uploads use durable stor
 
 ## Epic 12: Content Pages and CMS Light
 
-Suggested delivery: [EPIC12_CONTENT_PAGES_CMS.md](./EPIC12_CONTENT_PAGES_CMS.md).
+Suggested delivery: [EPIC12_CONTENT_PAGES_CMS.md](./EPIC12_CONTENT_PAGES_CMS.md).  
+**Agent-Handoff:** [EPIC12_AGENT_HANDOFF.md](./EPIC12_AGENT_HANDOFF.md).
 
 User stories:
 

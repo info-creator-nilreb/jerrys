@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { completePayPalCaptureFlow } from "@/lib/checkout/complete-paypal-capture-flow";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
+import { applyPayPalCaptureRefundedWebhook } from "@/lib/orders/apply-paypal-capture-refunded-webhook";
 import {
   extractPayPalOrderIdFromWebhookEvent,
   paypalWebhookIdConfigured,
@@ -21,23 +22,26 @@ import { getPrisma } from "@/lib/db/prisma";
 
 const log = createLogger("webhooks.paypal");
 
-const HANDLED_EVENT_TYPES = new Set([
+const CAPTURE_EVENT_TYPES = new Set([
   "PAYMENT.CAPTURE.COMPLETED",
   "CHECKOUT.ORDER.APPROVED",
 ]);
+
+const REFUND_EVENT_TYPES = new Set(["PAYMENT.CAPTURE.REFUNDED"]);
 
 type PayPalWebhookEvent = {
   id?: string;
   event_type?: string;
   resource?: {
     id?: string;
+    amount?: { value?: string; currency_code?: string };
     supplementary_data?: { related_ids?: { order_id?: string } };
   };
 };
 
 /**
- * PayPal Webhooks (Doppel-Absicherung zur Return-URL).
- * Dashboard: Webhook-URL → `/api/webhooks/paypal`, Event u. a. `PAYMENT.CAPTURE.COMPLETED`.
+ * PayPal Webhooks (Doppel-Absicherung zur Return-URL + Refund-Hinweis).
+ * Dashboard: Webhook-URL → `/api/webhooks/paypal`.
  */
 export async function POST(req: Request) {
   const limited = touchPayPalWebhookApiAttempt(clientIpFromRequest(req));
@@ -110,7 +114,33 @@ export async function POST(req: Request) {
 
   try {
     const eventType = event.event_type ?? "";
-    if (!HANDLED_EVENT_TYPES.has(eventType)) {
+
+    if (REFUND_EVENT_TYPES.has(eventType)) {
+      const paypalOrderId = extractPayPalOrderIdFromWebhookEvent(event);
+      if (!paypalOrderId) {
+        log.warn("paypal_webhook_refund_no_order_id", { eventId, eventType });
+        await markWebhookInboxProcessed(prisma, inbox.entryId);
+        return NextResponse.json({ ok: true, ignored: true });
+      }
+      const refundResult = await applyPayPalCaptureRefundedWebhook(prisma, {
+        paypalOrderId,
+        refundAmountValue: event.resource?.amount?.value,
+        currencyCode: event.resource?.amount?.currency_code,
+      });
+      if (!refundResult.ok) {
+        log.error("paypal_webhook_refund_failed", {
+          eventId,
+          paypalOrderId,
+          error: refundResult.error,
+        });
+        await markWebhookInboxFailed(prisma, inbox.entryId);
+        return NextResponse.json({ error: refundResult.error }, { status: 500 });
+      }
+      await markWebhookInboxProcessed(prisma, inbox.entryId);
+      return NextResponse.json({ ok: true, refund: refundResult.action });
+    }
+
+    if (!CAPTURE_EVENT_TYPES.has(eventType)) {
       await markWebhookInboxProcessed(prisma, inbox.entryId);
       return NextResponse.json({ ok: true, ignored: true });
     }

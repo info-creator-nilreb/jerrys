@@ -93,6 +93,28 @@ export async function createPayPalCheckoutOrder(params: {
 }
 
 /**
+ * Read-only Snapshot einer PayPal-Checkout-Order (für Reconciliation).
+ */
+export async function getPayPalCheckoutOrderSnapshot(paypalOrderId: string): Promise<{
+  paypalOrderId: string;
+  status: string;
+  /** Capture bereits durch; Shop kann finalisieren. */
+  isCompleted: boolean;
+  /** Kunde hat zugestimmt; Capture noch ausstehend oder parallel. */
+  isApproved: boolean;
+}> {
+  const accessToken = await getPayPalAccessToken();
+  const json = await fetchPayPalOrder(paypalOrderId.trim(), accessToken);
+  const status = (json.status ?? "").toUpperCase();
+  return {
+    paypalOrderId: json.id ?? paypalOrderId,
+    status,
+    isCompleted: status === "COMPLETED",
+    isApproved: status === "APPROVED",
+  };
+}
+
+/**
  * Order capturen; liefert interne Order-ID, Capture-ID und Betrag zur serverseitigen Prüfung.
  * Bei bereits captureter Order: GET + Parse (idempotent).
  */

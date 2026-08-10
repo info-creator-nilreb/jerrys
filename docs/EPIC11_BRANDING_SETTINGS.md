@@ -48,3 +48,5 @@ Schriftarten werden nur aus einer kuratierten, lokal bzw. datenschutzkonform ber
 - Multi-Tenant/White-Label-SaaS
 - freie Template-, CSS- oder Komponentenbearbeitung
 - Plugin- oder Theme-Marktplatz
+
+**Agent-Handoff (Slices/Copy-Paste):** [EPIC11_AGENT_HANDOFF.md](./EPIC11_AGENT_HANDOFF.md)
