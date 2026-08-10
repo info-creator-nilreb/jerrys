@@ -30,6 +30,12 @@ describe("order-status-machine", () => {
     expect(allowedNextOrderStatuses("completed")).toEqual(["refunded", "retoure"]);
   });
 
+  it("erlaubt paid/processing/shipped → refunded (Epic 4)", () => {
+    expect(isAllowedOrderStatusTransition("paid", "refunded")).toBe(true);
+    expect(isAllowedOrderStatusTransition("processing", "refunded")).toBe(true);
+    expect(isAllowedOrderStatusTransition("shipped", "refunded")).toBe(true);
+  });
+
   it("erlaubt shipped → retoure und retoure → refunded", () => {
     expect(isAllowedOrderStatusTransition("shipped", "retoure")).toBe(true);
     expect(isAllowedOrderStatusTransition("retoure", "refunded")).toBe(true);

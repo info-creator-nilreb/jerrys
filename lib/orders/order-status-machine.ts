@@ -23,10 +23,10 @@ const TERMINAL = new Set<OrderStatus>(["completed", "cancelled", "refunded"]);
 const EDGES: Partial<Record<string, string[]>> = {
   bestaetigt: ["processing", "cancelled"],
   pending_payment: ["cancelled", "paid"],
-  paid: ["processing", "cancelled"],
+  paid: ["processing", "cancelled", "refunded"],
   draft: ["cancelled", "pending_payment"],
-  processing: ["shipped", "cancelled"],
-  shipped: ["completed", "cancelled", "retoure"],
+  processing: ["shipped", "cancelled", "refunded"],
+  shipped: ["completed", "cancelled", "retoure", "refunded"],
   retoure: ["refunded", "completed", "cancelled"],
   completed: ["refunded", "retoure"],
   cancelled: [],

@@ -5,6 +5,7 @@ import { appendIntegrationOutbox } from "@/features/integrations";
 export const ORDER_EVENT_PLACED = "order.placed" as const;
 export const ORDER_EVENT_STATUS_CHANGED = "order.status_changed" as const;
 export const ORDER_EVENT_EMAIL_DELIVERY = "email.delivery" as const;
+export const ORDER_EVENT_REFUNDED = "order.refunded" as const;
 
 /**
  * Schreibt ein Ereignis in den Bestell-Auditstrom (`order_events`) und die Integrations-Outbox.

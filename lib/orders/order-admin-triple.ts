@@ -36,6 +36,9 @@ export function deriveTripleFromOrder(order: OrderForTriple): AdminTriple {
   const { status, payments } = order;
   const history = order.statusHistory ?? [];
   const hadSucceededPsp = payments.some((p) => p.status === "succeeded");
+  const hadRefundedPsp = payments.some(
+    (p) => p.status === "refunded" || p.status === "partially_refunded",
+  );
 
   switch (status) {
     case "draft":
@@ -43,7 +46,15 @@ export function deriveTripleFromOrder(order: OrderForTriple): AdminTriple {
       return { payment: "offen", shipping: "offen", order: "offen" };
     case "bestaetigt":
     case "paid":
-      return { payment: "bezahlt", shipping: "offen", order: "offen" };
+      return {
+        payment: hadRefundedPsp
+          ? payments.some((p) => p.status === "refunded")
+            ? "erstattet"
+            : "bezahlt"
+          : "bezahlt",
+        shipping: "offen",
+        order: "offen",
+      };
     case "processing":
       return { payment: "bezahlt", shipping: "offen", order: "in_bearbeitung" };
     case "shipped":

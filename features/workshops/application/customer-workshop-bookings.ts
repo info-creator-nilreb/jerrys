@@ -9,6 +9,7 @@ import {
   WORKSHOP_BOOKING_EVENT_SELF_CANCELLED,
   createWorkshopBookingEvent,
 } from "@/features/workshops/application/workshop-booking-events";
+import { tryRefundWorkshopBookingOrder } from "@/features/workshops/application/workshop-booking-refund";
 import { workshopBookingStatusLabel } from "@/features/workshops/domain/booking-status";
 import {
   evaluateSelfCancelPolicy,
@@ -218,6 +219,7 @@ export async function selfCancelWorkshopBookingForCustomer(input: {
       unitPriceCentsSnapshot: true,
       currencySnapshot: true,
       sessionId: true,
+      orderId: true,
       sessionStartsAtSnapshot: true,
       session: {
         select: {
@@ -251,7 +253,9 @@ export async function selfCancelWorkshopBookingForCustomer(input: {
   }
 
   const refundDue =
-    booking.unitPriceCentsSnapshot > 0 && booking.seatCount > 0;
+    booking.unitPriceCentsSnapshot > 0 &&
+    booking.seatCount > 0 &&
+    Boolean(booking.orderId);
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -293,6 +297,7 @@ export async function selfCancelWorkshopBookingForCustomer(input: {
         seatCount: booking.seatCount,
         sessionId: booking.sessionId,
         refundDue,
+        orderId: booking.orderId,
         currency: booking.currencySnapshot,
         unitPriceCents: booking.unitPriceCentsSnapshot,
       });
@@ -327,6 +332,17 @@ export async function selfCancelWorkshopBookingForCustomer(input: {
 
   log.info("workshop_self_cancelled", { bookingId: booking.id, customerId: verified });
   await sendWorkshopBookingCancelledForBookingId(booking.id);
+
+  if (refundDue) {
+    await tryRefundWorkshopBookingOrder({
+      bookingId: booking.id,
+      orderId: booking.orderId,
+      seatCount: booking.seatCount,
+      unitPriceCentsSnapshot: booking.unitPriceCentsSnapshot,
+      actor: "workshop_self_cancel",
+    });
+  }
+
   return { ok: true, alreadyCancelled: false };
 }
 

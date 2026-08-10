@@ -8,6 +8,7 @@ import {
   WORKSHOP_BOOKING_EVENT_SESSION_CANCELLED,
   createWorkshopBookingEvent,
 } from "@/features/workshops/application/workshop-booking-events";
+import { tryRefundWorkshopBookingOrder } from "@/features/workshops/application/workshop-booking-refund";
 import { workshopBookingStatusLabel } from "@/features/workshops/domain/booking-status";
 
 const log = createLogger("workshops.admin-bookings");
@@ -145,7 +146,7 @@ export async function listWorkshopBookingsForAdminSession(
 }
 
 export type AdminMutateWorkshopBookingResult =
-  | { ok: true }
+  | { ok: true; message?: string }
   | { ok: false; message: string };
 
 const ATTENDANCE_STATUSES = new Set(["confirmed", "attended", "no_show"]);
@@ -259,6 +260,24 @@ export async function adminCancelWorkshopBooking(input: {
   }
 
   await sendWorkshopBookingCancelledForBookingId(booking.id);
+
+  if (refundDue) {
+    const refund = await tryRefundWorkshopBookingOrder({
+      bookingId: booking.id,
+      orderId: booking.orderId,
+      seatCount: booking.seatCount,
+      unitPriceCentsSnapshot: booking.unitPriceCentsSnapshot,
+      actor: "workshop_admin_cancel",
+    });
+    if (refund.attempted && !refund.ok) {
+      return {
+        ok: true,
+        message:
+          "Buchung storniert. PayPal-Erstattung fehlgeschlagen — bitte unter Bestellungen manuell nachholen.",
+      };
+    }
+  }
+
   return { ok: true };
 }
 
@@ -269,7 +288,12 @@ export async function cancelConfirmedBookingsAfterSessionCancelled(
   const prisma = getPrisma();
   const confirmed = await prisma.workshopBooking.findMany({
     where: { sessionId, status: "confirmed" },
-    select: { id: true, seatCount: true },
+    select: {
+      id: true,
+      seatCount: true,
+      orderId: true,
+      unitPriceCentsSnapshot: true,
+    },
   });
 
   const cancelledIds: string[] = [];
@@ -297,6 +321,9 @@ export async function cancelConfirmedBookingsAfterSessionCancelled(
 
         await createWorkshopBookingEvent(tx, booking.id, WORKSHOP_BOOKING_EVENT_SESSION_CANCELLED, {
           sessionId,
+          refundDue:
+            booking.unitPriceCentsSnapshot > 0 && Boolean(booking.orderId),
+          orderId: booking.orderId,
         });
       });
       cancelledIds.push(booking.id);
@@ -311,6 +338,18 @@ export async function cancelConfirmedBookingsAfterSessionCancelled(
 
   for (const id of cancelledIds) {
     await sendWorkshopBookingCancelledForBookingId(id);
+  }
+
+  for (const booking of confirmed.filter((b) => cancelledIds.includes(b.id))) {
+    if (booking.unitPriceCentsSnapshot > 0 && booking.orderId) {
+      await tryRefundWorkshopBookingOrder({
+        bookingId: booking.id,
+        orderId: booking.orderId,
+        seatCount: booking.seatCount,
+        unitPriceCentsSnapshot: booking.unitPriceCentsSnapshot,
+        actor: "workshop_session_cancel",
+      });
+    }
   }
 
   const held = await prisma.workshopBooking.findMany({

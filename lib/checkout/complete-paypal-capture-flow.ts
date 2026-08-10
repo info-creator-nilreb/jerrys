@@ -94,6 +94,7 @@ export async function completePayPalCaptureFlow(
     provider: "paypal",
     providerRef: capture.paypalOrderId,
     eventSource,
+    providerCaptureId: capture.captureId,
   });
 
   if (!result.ok) {

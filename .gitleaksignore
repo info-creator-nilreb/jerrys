@@ -5,3 +5,6 @@
 # `generic-api-key` greift allein wegen der Zeichen-Entropie. Der Wert ist inzwischen durch
 # `randomUUID()` ersetzt, bleibt aber in der Commit-Historie des Branches sichtbar.
 6e1c83e09bdfcceed7a5d57e0841100f36a2f30b:tests/unit/address-text.test.ts:generic-api-key:46
+
+# Falscher Treffer auf Test-Idempotenzschlüssel `test-key-partial-001` (kein Secret).
+cad7989079b1a052dd43e560a09d12ae5910d639:tests/unit/issue-order-refund.test.ts:generic-api-key:84
