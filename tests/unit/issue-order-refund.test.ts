@@ -128,7 +128,7 @@ describe("issueOrderRefund", () => {
     const result = await issueOrderRefund(makePrisma(order), {
       orderId: "ord-1",
       amountCents: 1000,
-      idempotencyKey: "same-key",
+      idempotencyKey: "idem-same-001",
       actor: "admin",
     });
 
