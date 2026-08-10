@@ -262,19 +262,19 @@ export async function adminCancelWorkshopBooking(input: {
   return { ok: true };
 }
 
-/** Bei Terminabsage: bestätigte Buchungen stornieren, Plätze freigeben, Storno-Mails. */
+/** Bei Terminabsage: bestätigte Buchungen stornieren, Holds freigeben, Storno-Mails. */
 export async function cancelConfirmedBookingsAfterSessionCancelled(
   sessionId: string,
-): Promise<{ cancelledBookingIds: string[] }> {
+): Promise<{ cancelledBookingIds: string[]; releasedHoldIds: string[] }> {
   const prisma = getPrisma();
-  const bookings = await prisma.workshopBooking.findMany({
+  const confirmed = await prisma.workshopBooking.findMany({
     where: { sessionId, status: "confirmed" },
     select: { id: true, seatCount: true },
   });
 
   const cancelledIds: string[] = [];
 
-  for (const booking of bookings) {
+  for (const booking of confirmed) {
     try {
       await prisma.$transaction(async (tx) => {
         const updated = await tx.workshopBooking.updateMany({
@@ -313,5 +313,47 @@ export async function cancelConfirmedBookingsAfterSessionCancelled(
     await sendWorkshopBookingCancelledForBookingId(id);
   }
 
-  return { cancelledBookingIds: cancelledIds };
+  const held = await prisma.workshopBooking.findMany({
+    where: { sessionId, status: "held" },
+    select: { id: true, seatCount: true },
+  });
+
+  const releasedHoldIds: string[] = [];
+  for (const booking of held) {
+    try {
+      await prisma.$transaction(async (tx) => {
+        const updated = await tx.workshopBooking.updateMany({
+          where: { id: booking.id, status: "held" },
+          data: {
+            status: "expired",
+            holdExpiresAt: null,
+            cancelReason: "session_cancelled",
+          },
+        });
+        if (updated.count === 0) return;
+
+        await tx.workshopSession.updateMany({
+          where: {
+            id: sessionId,
+            heldSeatCount: { gte: booking.seatCount },
+          },
+          data: { heldSeatCount: { decrement: booking.seatCount } },
+        });
+
+        await createWorkshopBookingEvent(tx, booking.id, WORKSHOP_BOOKING_EVENT_SESSION_CANCELLED, {
+          sessionId,
+          previousStatus: "held",
+        });
+      });
+      releasedHoldIds.push(booking.id);
+    } catch (e) {
+      log.error("session_cancel_hold_release_failed", {
+        sessionId,
+        bookingId: booking.id,
+        error: String(e),
+      });
+    }
+  }
+
+  return { cancelledBookingIds: cancelledIds, releasedHoldIds };
 }

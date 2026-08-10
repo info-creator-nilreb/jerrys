@@ -60,7 +60,7 @@ Der Kalender kann als Block auf einer CMS-Seite (Epic 12) und optional auf ausge
 - Gesamtauslastung und Status zur Mindestteilnehmerzahl
 - Terminabsage mit Benachrichtigung und ggf. Refund-Workflow
 
-**Status (MVP):** Teilnehmerliste auf Termin-Bearbeiten, Anwesenheit (Anwesend/No-Show), Admin-Storno mit E-Mail, Terminabsage storniert bestätigte Buchungen + Storno-Mail. Automatische PayPal-Erstattung folgt später.
+**Status (MVP):** Teilnehmerliste auf Termin-Bearbeiten, Anwesenheit (Anwesend/No-Show), Admin-Storno mit E-Mail, Terminabsage storniert bestätigte Buchungen + Storno-Mail und gibt offene Holds frei. Automatische PayPal-Erstattung folgt später (manuell über Bestellung).
 
 ### Slice 6 — Resilience und Betrieb
 

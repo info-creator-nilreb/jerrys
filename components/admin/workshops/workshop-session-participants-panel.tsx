@@ -74,10 +74,13 @@ export function WorkshopSessionParticipantsPanel({
         </p>
       ) : null}
 
-      {activeBookings.length === 0 ? (
-        <p className="mt-4 text-sm text-[#6b7280]">Noch keine aktiven Buchungen für diesen Termin.</p>
+      {bookings.length === 0 ? (
+        <p className="mt-4 text-sm text-[#6b7280]">Noch keine Buchungen für diesen Termin.</p>
       ) : (
         <div className="mt-4 overflow-x-auto">
+          {activeBookings.length === 0 ? (
+            <p className="mb-3 text-sm text-[#6b7280]">Keine aktiven Buchungen — Historie unten.</p>
+          ) : null}
           <table className="min-w-full text-left text-sm">
             <thead>
               <tr className="border-b border-[#e5e7eb] text-xs font-medium uppercase tracking-wide text-[#6b7280]">
@@ -91,7 +94,12 @@ export function WorkshopSessionParticipantsPanel({
             </thead>
             <tbody>
               {bookings.map((row) => (
-                <tr key={row.id} className="border-b border-[#f3f4f6] align-top">
+                <tr
+                  key={row.id}
+                  className={`border-b border-[#f3f4f6] align-top ${
+                    ["cancelled", "expired", "refunded"].includes(row.status) ? "opacity-70" : ""
+                  }`}
+                >
                   <td className="px-2 py-3">
                     <span className="font-medium text-[#1f2937]">{row.contactEmail}</span>
                     {row.customerId ? (
