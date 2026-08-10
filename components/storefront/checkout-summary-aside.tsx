@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { formatPrice } from "@/lib/catalog/format";
 import { PriceEUR } from "@/components/storefront/price-eur";
 
@@ -30,6 +31,7 @@ export function CheckoutSummaryAside({
   shippingCountryLabel,
   freeShippingFromSubtotalGrossCents,
   children,
+  shippingCostHint,
 }: {
   lines: CheckoutSummaryLine[];
   shippingCents: number;
@@ -47,7 +49,9 @@ export function CheckoutSummaryAside({
   /** Anzeigename des gewählten Lieferlands (für Versandzeile). */
   shippingCountryLabel?: string | null;
   freeShippingFromSubtotalGrossCents?: number | null;
-  children?: React.ReactNode;
+  children?: ReactNode;
+  /** Optionaler Hinweis unter der Versandzeile (überschreibt den Standardtext). */
+  shippingCostHint?: ReactNode;
 }) {
   const hasDiscount = discountOffSubtotalCents > 0;
   const hasShippingPromotionSave = shippingSavedByPromotionCents > 0;
@@ -60,7 +64,7 @@ export function CheckoutSummaryAside({
       : null;
 
   return (
-    <aside className="order-1 min-w-0 border-b border-(--surface-muted) bg-(--surface-soft) p-6 lg:order-2 lg:sticky lg:top-[5.5rem] lg:max-h-[calc(100dvh-5.75rem)] lg:overflow-y-auto lg:self-start lg:border-b-0 lg:border-l lg:pl-8">
+    <aside className="order-1 w-full min-w-0 border-b border-(--surface-muted) bg-(--surface-soft) p-6 lg:order-2 lg:sticky lg:top-[5.5rem] lg:max-h-[calc(100dvh-5.75rem)] lg:overflow-y-auto lg:self-start lg:border-b-0 lg:border-l lg:px-8 lg:py-6">
       <h2 className="text-sm font-semibold text-(--foreground-heading)">Bestellübersicht</h2>
       <ul className="mt-6 space-y-4">
         {lines.map((line) => {
@@ -140,17 +144,21 @@ export function CheckoutSummaryAside({
             Noch {formatPrice(remainingToFreeShipping, currency)} bis zum versandkostenfreien Versand.
           </p>
         ) : null}
-        <p className="text-xs leading-relaxed text-(--foreground-muted)">
-          Versandkosten werden vor der Zahlung anhand der Lieferadresse berechnet.{" "}
-          <Link
-            href="/versand"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-primary underline-offset-2 hover:underline"
-          >
-            Mehr zu Zahlung &amp; Versand
-          </Link>
-        </p>
+        {shippingCostHint !== undefined ? (
+          shippingCostHint
+        ) : (
+          <p className="text-xs leading-relaxed text-(--foreground-muted)">
+            Versandkosten werden vor der Zahlung anhand der Lieferadresse berechnet.{" "}
+            <Link
+              href="/versand"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-primary underline-offset-2 hover:underline"
+            >
+              Mehr zu Zahlung &amp; Versand
+            </Link>
+          </p>
+        )}
         <div className="flex justify-between gap-4 border-t border-(--surface-muted) pt-3 text-base font-semibold">
           <dt className="text-(--foreground-heading)">Gesamt</dt>
           <dd className="text-(--foreground-heading)">
