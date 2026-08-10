@@ -60,7 +60,7 @@ export function CheckoutSummaryAside({
       : null;
 
   return (
-    <aside className="order-1 min-w-0 border-b border-(--surface-muted) bg-(--surface-soft) p-6 lg:order-2 lg:sticky lg:top-[5.5rem] lg:max-h-[calc(100dvh-5.75rem)] lg:overflow-y-auto lg:self-start lg:border-b-0 lg:border-l lg:pl-8">
+    <aside className="order-1 w-full min-w-0 border-b border-(--surface-muted) bg-(--surface-soft) p-6 lg:order-2 lg:sticky lg:top-[5.5rem] lg:max-h-[calc(100dvh-5.75rem)] lg:overflow-y-auto lg:self-start lg:border-b-0 lg:border-l lg:px-8 lg:py-6">
       <h2 className="text-sm font-semibold text-(--foreground-heading)">Bestellübersicht</h2>
       <ul className="mt-6 space-y-4">
         {lines.map((line) => {
