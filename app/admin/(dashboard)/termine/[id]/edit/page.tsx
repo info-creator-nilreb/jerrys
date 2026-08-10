@@ -3,11 +3,16 @@ import { notFound } from "next/navigation";
 import { WorkshopSessionDuplicateButton } from "@/app/admin/(dashboard)/termine/workshop-session-duplicate-button";
 import { WorkshopSessionForm } from "@/app/admin/(dashboard)/termine/workshop-session-form";
 import { WorkshopSessionLifecycleButtons } from "@/app/admin/(dashboard)/termine/workshop-session-lifecycle-buttons";
+import { WorkshopSessionParticipantsPanel } from "@/components/admin/workshops/workshop-session-participants-panel";
 import {
   WorkshopSessionStatusBadge,
   workshopSessionReadOnlyHint,
 } from "@/components/admin/workshops/workshop-session-status-badge";
-import { getWorkshopSessionForAdmin } from "@/features/workshops";
+import {
+  getWorkshopSessionForAdmin,
+  getWorkshopSessionParticipationSummaryForAdmin,
+  listWorkshopBookingsForAdminSession,
+} from "@/features/workshops";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +31,11 @@ export default async function AdminEditWorkshopSessionPage({
   const sp = await searchParams;
   const session = await getWorkshopSessionForAdmin(id);
   if (!session) notFound();
+
+  const [bookings, participation] = await Promise.all([
+    listWorkshopBookingsForAdminSession(id),
+    getWorkshopSessionParticipationSummaryForAdmin(id),
+  ]);
 
   const readOnly = session.status !== "draft";
   const hint = workshopSessionReadOnlyHint(session);
@@ -65,6 +75,19 @@ export default async function AdminEditWorkshopSessionPage({
 
       {hint ? (
         <p className="rounded-md border border-[#e5e7eb] bg-[#f9fafb] px-4 py-3 text-sm text-[#374151]">{hint}</p>
+      ) : null}
+
+      {participation ? (
+        <WorkshopSessionParticipantsPanel
+          sessionId={session.id}
+          bookings={bookings}
+          participation={{
+            meetsMinimum: participation.meetsMinimum,
+            minimumParticipants: participation.minimumParticipants,
+            confirmedSeatCount: participation.confirmedSeatCount,
+            capacity: participation.capacity,
+          }}
+        />
       ) : null}
 
       <WorkshopSessionForm session={session} readOnly={readOnly} />
