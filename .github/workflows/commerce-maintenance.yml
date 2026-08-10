@@ -1,5 +1,5 @@
-# Epic 1: Reservierungs-Ablauf + Outbox (alle 30 Min.) — sinnvoll bei Hobby-Plan,
-# weil Vercel Cron dort max. 1×/Tag erlaubt (vercel.json nutzt 1×/Tag als Fallback).
+# Epic 1 + Epic 5: Reservierungs-Ablauf, Workshop-Holds, Outbox (alle 30 Min.) —
+# sinnvoll bei Hobby-Plan, weil Vercel Cron dort max. 1×/Tag erlaubt (vercel.json = Fallback).
 #
 # GitHub Repo → Settings → Secrets → Actions:
 #   COMMERCE_MAINTENANCE_SITE_URL  z. B. https://deine-domain.vercel.app (ohne Slash am Ende)
