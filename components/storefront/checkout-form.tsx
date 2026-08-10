@@ -1016,12 +1016,21 @@ export function CheckoutForm({
 
         <section id="checkout-section-zahlung" className="mt-12 scroll-mt-24">
           <h2 className="text-lg font-semibold text-[#1f2937]">Zahlung</h2>
-          {payPalConfigured && !workshopMpa ? (
-            <CheckoutPaymentMethods value={payPalSurface} onChange={onPayPalSurfaceChange} />
+          {payPalConfigured && !(workshopMpa && displayTotals.totalCents === 0) ? (
+            <CheckoutPaymentMethods
+              value={payPalSurface}
+              onChange={onPayPalSurfaceChange}
+              submitLabel={
+                workshopMpa
+                  ? displayTotals.totalCents === 0
+                    ? "Jetzt verbindlich buchen"
+                    : "Weiter zur Zahlung"
+                  : undefined
+              }
+              cardInline={!workshopMpa}
+            />
           ) : workshopMpa && displayTotals.totalCents === 0 ? (
             <p className="mt-2 text-sm text-[#6b7280]">Kostenlos — keine Zahlung nötig.</p>
-          ) : workshopMpa ? (
-            <p className="mt-2 text-sm text-[#6b7280]">Zahlung per PayPal nach dem Absenden.</p>
           ) : null}
         </section>
 

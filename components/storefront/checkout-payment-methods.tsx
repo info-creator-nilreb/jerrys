@@ -69,23 +69,36 @@ function MethodBrand({ brand }: { brand: (typeof CHECKOUT_PAYPAL_METHOD_ROWS)[nu
 export function CheckoutPaymentMethods({
   value,
   onChange,
+  submitLabel = "Jetzt kostenpflichtig bestellen",
+  cardInline = true,
 }: {
   value: CheckoutPayPalMethodId;
   onChange: (id: CheckoutPayPalMethodId) => void;
+  /** Button-Text in den Hinweiszeilen (z. B. Termin-Checkout). */
+  submitLabel?: string;
+  /**
+   * false = Karte wird nach dem Absenden bei PayPal gewählt (MPA ohne Hosted Card Fields),
+   * true = Kartendaten direkt im Checkout (Advanced Card Fields).
+   */
+  cardInline?: boolean;
 }) {
   const hintId = useId();
 
   const hint =
-    value === "card" ? (
+    value === "card" && cardInline ? (
       <>
         Geben Sie unten Ihre Kartendaten ein (sichere Felder von PayPal) und schließen Sie mit{" "}
-        <span className="font-medium text-[#374151]">„Jetzt kostenpflichtig bestellen“</span> ab.
+        <span className="font-medium text-[#374151]">„{submitLabel}“</span> ab.
+      </>
+    ) : value === "card" ? (
+      <>
+        Nach „{submitLabel}“ leiten wir Sie zu PayPal weiter. Dort können Sie mit Debit- oder Kreditkarte
+        bezahlen.
       </>
     ) : (
       <>
-        Nach „Jetzt kostenpflichtig bestellen“ leiten wir Sie zu PayPal weiter. Dort wählen Sie die für Sie
-        verfügbare Option (je nach Land, Gerät und Konto, u. a. PayPal-Guthaben, Apple Pay, Google Pay, Karte oder
-        SEPA).
+        Nach „{submitLabel}“ leiten wir Sie zu PayPal weiter. Dort wählen Sie die für Sie verfügbare Option
+        (je nach Land, Gerät und Konto, u. a. PayPal-Guthaben, Apple Pay, Google Pay, Karte oder SEPA).
       </>
     );
 
