@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { publishIntegrationOutboxBatch } from "@/features/integrations";
 import { expireStaleStockReservations } from "@/features/inventory";
+import { runWorkshopMaintenance } from "@/features/workshops";
 import { getPrisma } from "@/lib/db/prisma";
 
 function bearerToken(req: NextRequest): string | null {
@@ -25,11 +26,12 @@ function isAuthorized(req: NextRequest): boolean {
 
 async function runCommerceMaintenance() {
   const prisma = getPrisma();
-  const [expired, outbox] = await Promise.all([
+  const [expired, outbox, workshops] = await Promise.all([
     expireStaleStockReservations(prisma),
     publishIntegrationOutboxBatch(prisma),
+    runWorkshopMaintenance(prisma),
   ]);
-  return { expiredReservations: expired, outbox };
+  return { expiredReservations: expired, outbox, workshops };
 }
 
 /**
@@ -45,7 +47,7 @@ export async function GET(req: NextRequest) {
 }
 
 /**
- * POST — Reservierungs-Ablauf + Outbox-Publisher (manuell/Curl).
+ * POST — Reservierungs-Ablauf + Workshop-Holds + Outbox-Publisher (manuell/Curl).
  * Erfordert COMMERCE_MAINTENANCE_SECRET (oder CRON_SECRET als Bearer).
  */
 export async function POST(req: NextRequest) {

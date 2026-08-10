@@ -119,3 +119,9 @@ export {
   type AdminWorkshopSessionParticipationSummary,
   type AdminMutateWorkshopBookingResult,
 } from "@/features/workshops/application/admin-workshop-bookings";
+
+export {
+  runWorkshopMaintenance,
+  type WorkshopMaintenanceResult,
+  type WorkshopCapacityAlert,
+} from "@/features/workshops/application/workshop-maintenance";

@@ -194,7 +194,38 @@ LIMIT 20;
 
 4. Wenn Publisher hängt: Secret/Cron auf Production verifizieren (`vercel.json` + GitHub Action laut Epic-1-Doku), dann einen manuellen Maintenance-Call.
 
-### Runbook: Database restore (Kurz)
+Antwort enthält zusätzlich `workshops` (Epic 5 Slice 6):
+
+- `expiredHoldsReleased` — abgelaufene Termin-Holds freigegeben
+- `capacityAlerts` — Sessions mit negativen Zählern / Counter≠Buchungssumme / Overcapacity
+- `stuckHoldsWithoutExpiry` — `held` ohne `hold_expires_at`
+- `incompleteFinalizationsRepaired` — Order `paid`, Buchung noch `held` (nachgezogen)
+
+### Runbook: Stuck or expired workshop reservations
+
+Symptoms: Checkout „Reservierung abgelaufen“, Admin zeigt Holds trotz TTL, Kapazität „voll“ obwohl keine aktiven Buchungen, Logs `workshop_capacity_inconsistency` / `workshop_stuck_holds_without_expiry`.
+
+1. Maintenance anstoßen: `POST /api/internal/commerce-maintenance` (Bearer `COMMERCE_MAINTENANCE_SECRET` oder `CRON_SECRET`).
+2. Antwort `workshops.expiredHoldsReleased` und `incompleteFinalizationsRepaired` prüfen.
+3. DB-Stichprobe:
+
+```sql
+SELECT id, status, hold_expires_at, session_id, order_id
+FROM workshop_bookings
+WHERE status = 'held'
+ORDER BY created_at DESC
+LIMIT 20;
+
+SELECT id, title, confirmed_seat_count, held_seat_count, capacity
+FROM workshop_sessions
+WHERE confirmed_seat_count < 0
+   OR held_seat_count < 0
+   OR confirmed_seat_count + held_seat_count > capacity;
+```
+
+4. Bei Counter-Mismatch: **nicht** blind Zähler setzen — Buchungen (`status IN ('confirmed','attended','no_show','held')`) summieren und mit Admin vergleichen; bei Bedarf Support-Fix mit Audit.
+5. Cron-Frequenz: Vercel täglich (`vercel.json`) + GitHub Actions alle 30 Min. (Hobby) — Secrets `COMMERCE_MAINTENANCE_*` prüfen.
+
 
 1. Restore **niemals** direkt über Production als ersten Schritt — isolierte Instanz / Branch-DB.
 2. App gegen Restore-DB starten; Stichproben: letzte bezahlte Bestellung, ein Produkt mit Bestand, Admin-Login.
