@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { resolveShopBrandingAssetUrl } from "@/lib/shop/branding-asset-fallbacks";
+import { getShopSettings } from "@/lib/shop/shop-settings";
 import { AdminLoginForm } from "./login-form";
 import { LoginHero } from "./login-hero";
 
@@ -8,22 +10,29 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function AdminLoginPage() {
+export default async function AdminLoginPage() {
+  const settings = await getShopSettings();
+  const logoUrl = resolveShopBrandingAssetUrl(settings, "logoLight");
+  const shopName = settings.shopName;
+
   return (
     <div className="grid min-h-dvh w-full grid-rows-[10rem_1fr] bg-white lg:grid-cols-2 lg:grid-rows-1">
-      <LoginHero className="row-start-1 min-h-0 lg:col-start-1 lg:min-h-dvh" />
+      <LoginHero
+        className="row-start-1 min-h-0 lg:col-start-1 lg:min-h-dvh"
+        shopName={shopName}
+      />
       <div className="row-start-2 flex min-h-0 flex-col justify-center px-6 py-10 sm:px-10 lg:col-start-2 lg:row-start-1 lg:items-center lg:overflow-y-auto lg:px-12 lg:py-14 xl:px-20 2xl:px-24">
         <Suspense
           fallback={
             <div className="w-full max-w-md animate-pulse space-y-4 lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
               <div className="h-10 w-40 rounded bg-zinc-200" />
-              <div className="h-8 w-3/4 rounded bg-zinc-200" />
+              <div className="h-8 w-3/4 rounded bg-zinc-100" />
               <div className="h-12 rounded bg-zinc-100" />
               <div className="h-12 rounded bg-zinc-100" />
             </div>
           }
         >
-          <AdminLoginForm />
+          <AdminLoginForm logoUrl={logoUrl} shopName={shopName} />
         </Suspense>
       </div>
     </div>

@@ -6,37 +6,43 @@ import {
 } from "@/lib/email/transactional-email-layout";
 import { escapeHtmlForEmail } from "@/lib/email/template-utils";
 import { createLogger } from "@/lib/logging/logger";
+import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
 
 const log = createLogger("email.customer-auth");
 
 export type CustomerAuthEmailKind = "email_verify" | "magic_link" | "password_reset";
 
-const copy: Record<
-  CustomerAuthEmailKind,
-  { subject: string; heading: string; intro: string; cta: string; pathPrefix: string }
-> = {
-  email_verify: {
-    subject: "Bitte E-Mail bestätigen — jerry's",
-    heading: "E-Mail bestätigen",
-    intro: "Bitte bestätige deine E-Mail-Adresse, um dein Kundenkonto zu aktivieren.",
-    cta: "E-Mail bestätigen",
-    pathPrefix: "/konto/verifizieren",
-  },
-  magic_link: {
-    subject: "Dein Anmelde-Link — jerry's",
-    heading: "Magic Link",
-    intro: "Mit diesem Link meldest du dich sicher bei jerry's an. Der Link ist eine Stunde gültig.",
-    cta: "Jetzt anmelden",
-    pathPrefix: "/konto/magic-link",
-  },
-  password_reset: {
-    subject: "Passwort zurücksetzen — jerry's",
-    heading: "Passwort zurücksetzen",
-    intro: "Du hast das Zurücksetzen deines Passworts angefordert. Der Link ist eine Stunde gültig.",
-    cta: "Neues Passwort wählen",
-    pathPrefix: "/konto/passwort-zuruecksetzen",
-  },
-};
+function customerAuthCopy(
+  kind: CustomerAuthEmailKind,
+  shopName: string,
+): { subject: string; heading: string; intro: string; cta: string; pathPrefix: string } {
+  switch (kind) {
+    case "email_verify":
+      return {
+        subject: `Bitte E-Mail bestätigen — ${shopName}`,
+        heading: "E-Mail bestätigen",
+        intro: "Bitte bestätige deine E-Mail-Adresse, um dein Kundenkonto zu aktivieren.",
+        cta: "E-Mail bestätigen",
+        pathPrefix: "/konto/verifizieren",
+      };
+    case "magic_link":
+      return {
+        subject: `Dein Anmelde-Link — ${shopName}`,
+        heading: "Magic Link",
+        intro: `Mit diesem Link meldest du dich sicher bei ${shopName} an. Der Link ist eine Stunde gültig.`,
+        cta: "Jetzt anmelden",
+        pathPrefix: "/konto/magic-link",
+      };
+    case "password_reset":
+      return {
+        subject: `Passwort zurücksetzen — ${shopName}`,
+        heading: "Passwort zurücksetzen",
+        intro: "Du hast das Zurücksetzen deines Passworts angefordert. Der Link ist eine Stunde gültig.",
+        cta: "Neues Passwort wählen",
+        pathPrefix: "/konto/passwort-zuruecksetzen",
+      };
+  }
+}
 
 export type CustomerAuthEmailSendResult =
   | { ok: true }
@@ -50,7 +56,8 @@ export async function sendCustomerAuthEmail(params: {
   to: string;
   rawToken: string;
 }): Promise<CustomerAuthEmailSendResult> {
-  const meta = copy[params.kind];
+  const branding = await resolveTransactionalEmailBranding();
+  const meta = customerAuthCopy(params.kind, branding.shopName);
   const href = customerAuthEmailActionUrl(meta.pathPrefix, params.rawToken, {
     tokenInHash: params.kind === "email_verify",
   });
@@ -70,6 +77,7 @@ export async function sendCustomerAuthEmail(params: {
     intro: meta.intro,
     bodyHtml,
     cta: { href, label: meta.cta },
+    branding,
   });
 
   const text = [

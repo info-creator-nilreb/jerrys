@@ -11,7 +11,13 @@ function EyeIcon({ open }: { open: boolean }) {
   return <Cmp className="size-5" aria-hidden strokeWidth={1.75} />;
 }
 
-export function AdminLoginForm() {
+export function AdminLoginForm({
+  logoUrl,
+  shopName,
+}: {
+  logoUrl: string;
+  shopName: string;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/admin";
@@ -91,8 +97,8 @@ export function AdminLoginForm() {
     <div className="flex w-full max-w-md flex-col lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
       <div className="mb-10 flex justify-center lg:mb-12">
         <Image
-          src="/branding/jerrys-wordmark.jpg"
-          alt="jerry's"
+          src={logoUrl}
+          alt={shopName}
           width={220}
           height={110}
           className="h-10 w-auto"

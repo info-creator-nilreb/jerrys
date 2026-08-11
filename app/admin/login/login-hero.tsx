@@ -3,7 +3,13 @@ import Image from "next/image";
 /** Lokales Markenmotiv – vermeidet Remote-Images (kein Unsplash-Zwang, keine `remotePatterns`-Abhängigkeit). */
 const HERO_SRC = "/media/hero-mood.jpg";
 
-export function LoginHero({ className }: { className?: string }) {
+export function LoginHero({
+  className,
+  shopName,
+}: {
+  className?: string;
+  shopName: string;
+}) {
   return (
     <div
       className={`relative overflow-hidden bg-zinc-900 ${className ?? ""}`}
@@ -26,7 +32,7 @@ export function LoginHero({ className }: { className?: string }) {
           Willkommen zurück.
         </p>
         <p className="mt-6 text-[0.7rem] leading-relaxed text-white/60 sm:mt-10 sm:text-xs">
-          jerry&apos;s – Katzenmöbel mit Stil
+          {shopName} – Katzenmöbel mit Stil
         </p>
       </div>
     </div>

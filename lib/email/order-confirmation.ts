@@ -20,6 +20,10 @@ import {
   wrapTransactionalEmailHtml,
 } from "@/lib/email/transactional-email-layout";
 import { escapeHtmlForEmail, publicSiteBaseUrl } from "@/lib/email/template-utils";
+import {
+  resolveTransactionalEmailBranding,
+  type TransactionalEmailBranding,
+} from "@/lib/shop/email-branding";
 
 type OrderForEmail = {
   orderNumber: string;
@@ -33,10 +37,14 @@ type OrderForEmail = {
   items: Array<OrderLineItemForEmail & { taxRatePercentSnapshot: number }>;
 };
 
-function buildBodies(order: OrderForEmail): { subject: string; text: string; html: string } {
+function buildBodies(
+  order: OrderForEmail,
+  branding: TransactionalEmailBranding,
+): { subject: string; text: string; html: string } {
   const base = publicSiteBaseUrl();
   const successPath = `/checkout/erfolg?nr=${encodeURIComponent(order.orderNumber)}`;
   const successUrl = base ? `${base}${successPath}` : successPath;
+  const shopName = branding.shopName;
 
   const lines = order.items
     .map(
@@ -50,7 +58,7 @@ function buildBodies(order: OrderForEmail): { subject: string; text: string; htm
   const text = [
     `Hallo ${order.shippingFirstName},`,
     "",
-    "vielen Dank für deine Bestellung bei jerry's.",
+    `vielen Dank für deine Bestellung bei ${shopName}.`,
     "",
     `Bestellnummer: ${order.orderNumber}`,
     `Zwischensumme: ${formatPrice(order.subtotalGrossCents, order.currency)}`,
@@ -64,7 +72,7 @@ function buildBodies(order: OrderForEmail): { subject: string; text: string; htm
     `Bestellung ansehen: ${successUrl}`,
     "",
     "Liebe Grüße",
-    "jerry's",
+    shopName,
   ].join("\n");
 
   const sub = escapeHtmlForEmail(formatPrice(order.subtotalGrossCents, order.currency));
@@ -90,6 +98,7 @@ function buildBodies(order: OrderForEmail): { subject: string; text: string; htm
     intro: "Wir haben deine Bestellung erhalten und bereiten sie mit Sorgfalt vor.",
     bodyHtml,
     cta: { href: successUrl, label: "Bestellung ansehen" },
+    branding,
   });
 
   return { subject, text, html };
@@ -120,17 +129,21 @@ export async function sendOrderConfirmationIfNeeded(
     taxRatePercentSnapshot: line.taxRatePercentSnapshot,
   }));
 
-  const { subject, text, html } = buildBodies({
-    orderNumber: order.orderNumber,
-    shippingFirstName: order.shippingFirstName,
-    email: order.email,
-    paymentMethod: order.paymentMethod,
-    totalGrossCents: order.totalGrossCents,
-    subtotalGrossCents: order.subtotalGrossCents,
-    shippingCents: order.shippingCents,
-    currency: order.currency,
-    items: itemsForBodies,
-  });
+  const branding = await resolveTransactionalEmailBranding();
+  const { subject, text, html } = buildBodies(
+    {
+      orderNumber: order.orderNumber,
+      shippingFirstName: order.shippingFirstName,
+      email: order.email,
+      paymentMethod: order.paymentMethod,
+      totalGrossCents: order.totalGrossCents,
+      subtotalGrossCents: order.subtotalGrossCents,
+      shippingCents: order.shippingCents,
+      currency: order.currency,
+      items: itemsForBodies,
+    },
+    branding,
+  );
 
   let result: Awaited<ReturnType<typeof sendTransactionalEmail>>;
   try {

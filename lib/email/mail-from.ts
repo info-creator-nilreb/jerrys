@@ -125,16 +125,20 @@ export function resolveMailFromForResend(raw: string | undefined | null): string
 
 /**
  * Bevorzugt getrennte Vercel-Variablen (ohne Parsing-Probleme), sonst `MAIL_FROM`.
+ * `displayNameFallback` (z. B. ShopSettings.emailFromName) nur wenn kein Env-Name gesetzt.
  */
-export function resolveTransactionalMailFrom(env?: {
-  MAIL_FROM?: string;
-  MAIL_FROM_EMAIL?: string;
-  MAIL_FROM_NAME?: string;
-}): MailFromResolveResult {
+export function resolveTransactionalMailFrom(
+  env?: {
+    MAIL_FROM?: string;
+    MAIL_FROM_EMAIL?: string;
+    MAIL_FROM_NAME?: string;
+  },
+  options?: { displayNameFallback?: string | null },
+): MailFromResolveResult {
   const e = env ?? process.env;
   const emailSplit = e.MAIL_FROM_EMAIL?.trim();
   if (emailSplit && EMAIL_RE.test(emailSplit)) {
-    const nameSplit = e.MAIL_FROM_NAME?.trim();
+    const nameSplit = e.MAIL_FROM_NAME?.trim() || options?.displayNameFallback?.trim();
     const from = coerceResendFromFormat(
       nameSplit ? formatResendFrom(emailSplit, nameSplit) : emailSplit,
     );
@@ -142,8 +146,25 @@ export function resolveTransactionalMailFrom(env?: {
   }
 
   const parsed = resolveMailFromForResend(e.MAIL_FROM);
-  const from = parsed ? coerceResendFromFormat(parsed) : null;
-  return { from, source: from ? "mail_from" : "none" };
+  if (!parsed) {
+    return { from: null, source: "none" };
+  }
+  const coerced = coerceResendFromFormat(parsed);
+  if (!coerced) {
+    return { from: null, source: "none" };
+  }
+  /** Nur nackte E-Mail → optional Anzeigename aus Settings ergänzen. */
+  if (
+    EMAIL_RE.test(coerced) &&
+    options?.displayNameFallback?.trim() &&
+    !e.MAIL_FROM_NAME?.trim()
+  ) {
+    const withName = coerceResendFromFormat(
+      formatResendFrom(coerced, options.displayNameFallback.trim()),
+    );
+    return { from: withName ?? coerced, source: "mail_from" };
+  }
+  return { from: coerced, source: "mail_from" };
 }
 
 export type ResendErrorBody = {
