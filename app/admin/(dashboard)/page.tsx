@@ -140,9 +140,6 @@ export default async function AdminHomePage() {
                     Datum
                   </th>
                   <th scope="col" className="px-4 py-3 font-medium">
-                    E-Mail
-                  </th>
-                  <th scope="col" className="px-4 py-3 font-medium">
                     Positionen
                   </th>
                   <th scope="col" className="px-4 py-3 font-medium">
@@ -182,7 +179,6 @@ export default async function AdminHomePage() {
                       <td className="px-4 py-3 whitespace-nowrap text-[#6b7280]">
                         {dateFmt.format(o.createdAt)}
                       </td>
-                      <td className="max-w-[14rem] truncate px-4 py-3 text-[#374151]">{o.email}</td>
                       <td className="px-4 py-3 text-[#6b7280]">{o._count.items}</td>
                       <td className="px-4 py-3">
                         <OrderTriplePill triple={triple} dim="payment" />

@@ -38,7 +38,13 @@
 }
 
 html {
-  scroll-padding-top: 5.5rem;
+  /* Anker/Scroll: Abstand unter dem fixed Header (Token aus Layout/Header). */
+  scroll-padding-top: calc(var(--storefront-header-height, 4.5rem) + 1rem);
+}
+
+/* Seiten-Headlines nicht unter dem fixed Header „einklappen“ beim Ankern. */
+main h1 {
+  scroll-margin-top: calc(var(--storefront-header-height, 4.5rem) + 0.75rem);
 }
 
 body {

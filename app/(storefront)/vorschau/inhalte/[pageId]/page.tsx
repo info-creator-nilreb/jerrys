@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ContentBlocksRenderer } from "@/components/content/content-blocks-renderer";
 import { getContentPageById } from "@/lib/content/content-pages";
 import { verifyContentPreviewToken } from "@/lib/content/preview-token";
+import { storefrontMainPagePaddingClass } from "@/lib/storefront/page-below-header-padding";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,7 @@ export default async function ContentPreviewPage({
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
+    <div className={`mx-auto max-w-5xl px-4 sm:px-6 ${storefrontMainPagePaddingClass}`}>
       <div
         className="mb-8 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
         role="status"

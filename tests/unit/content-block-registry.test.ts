@@ -81,4 +81,14 @@ describe("sanitizeContentRichTextHtml", () => {
     expect(clean).toContain("https://example.com");
     expect(clean).not.toContain("script");
   });
+
+  it("behält Ausrichtung und Schriftgröße, entfernt andere Styles", () => {
+    const clean = sanitizeContentRichTextHtml(
+      '<p style="text-align: center; color: red"><span style="font-size: 1.25rem; background: yellow">Hi</span></p>',
+    );
+    expect(clean).toContain("text-align:center");
+    expect(clean).toContain("font-size:1.25rem");
+    expect(clean).not.toContain("color");
+    expect(clean).not.toContain("background");
+  });
 });
