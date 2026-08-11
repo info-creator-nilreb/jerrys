@@ -40,8 +40,8 @@ ADRs record material decisions that constrain future implementation.
 - [ADR-0004: Product categories (browse taxonomy)](./0004-product-categories.md)
 - [ADR-0005: Customer authentication (Auth.js + first-party identity)](./0005-customer-authentication.md)
 - [ADR-0006: ShopSettings branding singleton](./0006-shop-settings-branding.md)
+- [ADR-0008: Object storage (Vercel Blob)](./0008-object-storage.md)
 
 Geplante ADRs (durch Agenten anzulegen):
 
 - **ADR-0007** — ContentPage / CMS-light Blöcke ([EPIC12_AGENT_HANDOFF.md](../EPIC12_AGENT_HANDOFF.md))
-- Object Storage (falls nicht in 0002/0006 abgedeckt) vor Logo-/CMS-Bild-Uploads

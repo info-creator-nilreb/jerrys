@@ -41,7 +41,7 @@ Positive:
 Negative / accepted trade-offs:
 
 - Until Slice 4–5, UI/email/PDF still read hardcoded tokens; dual sources exist briefly.
-- Asset URL columns stay null until durable storage (Slice 2) and upload UI (Slice 3).
+- Asset URL columns are filled by Slice 2 uploads via Vercel Blob ([ADR-0008](./0008-object-storage.md)); Admin UI follows in Slice 3.
 
 ## Guardrails
 

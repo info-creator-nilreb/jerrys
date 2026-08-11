@@ -19,7 +19,7 @@ Production data must not be copied to preview. A staging copy requires an approv
 Before the relevant epic reaches production, select and record providers in ADRs for:
 
 - PostgreSQL with connection pooling, automated backups, point-in-time recovery, and restore support
-- Object storage for product media, invoices, and shipping labels
+- Object storage for product media, invoices, and shipping labels (public branding/media: Vercel Blob per [ADR-0008](./adr/0008-object-storage.md))
 - Durable queue or workflow execution for outbox delivery, retries, reservation expiry, and reconciliation
 - Error tracking, structured log aggregation, metrics, and alerting
 - Transactional email
@@ -241,7 +241,7 @@ WHERE confirmed_seat_count < 0
 The architecture is fixed; product choices remain deliberately open until evaluated:
 
 - managed PostgreSQL provider
-- object storage provider and retention implementation
+- ~~object storage provider and retention implementation~~ → decided: Vercel Blob for public branding/media ([ADR-0008](./adr/0008-object-storage.md)); private docs (invoices/labels) still open
 - durable queue/workflow provider
 - ~~authentication provider or retained Auth.js design~~ → decided: Auth.js retained for admin + customers ([ADR-0005](./adr/0005-customer-authentication.md))
 - error tracking, logs, metrics, and alert routing
