@@ -2,7 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { resolveShopBrandingAssetUrl } from "@/lib/shop/branding-asset-fallbacks";
 import { JERRYS_SHOP_SETTINGS_DEFAULTS } from "@/lib/shop/shop-settings-defaults";
-import { getShopSettings, type ShopSettingsDTO } from "@/lib/shop/shop-settings";
+import type { ShopSettingsDTO } from "@/lib/shop/shop-settings-defaults";
+import { getShopSettings } from "@/lib/shop/shop-settings";
 
 export type InvoiceLogoEmbed =
   | { kind: "jpg"; bytes: Uint8Array }

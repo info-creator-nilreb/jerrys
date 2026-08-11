@@ -1,4 +1,4 @@
-import { formatGermanDateMedium } from "@/lib/email/transactional-email-layout";
+import { formatGermanDateMedium } from "@/lib/i18n/format-german-date";
 
 /** Terminzeit für Storefront (Datum + Uhrzeit in Termin-Zeitzone). */
 export function formatWorkshopSessionDateTime(startsAt: Date, timeZone: string): string {

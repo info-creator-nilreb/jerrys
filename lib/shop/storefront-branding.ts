@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import { resolveShopBrandingAssetUrl } from "@/lib/shop/branding-asset-fallbacks";
 import { JERRYS_SHOP_SETTINGS_DEFAULTS } from "@/lib/shop/shop-settings-defaults";
-import type { ShopSettingsDTO } from "@/lib/shop/shop-settings";
+import type { ShopSettingsDTO } from "@/lib/shop/shop-settings-defaults";
 import { canonicalSiteOrigin } from "@/lib/site/canonical-origin";
 
 /** Inline-CSS-Variablen für Primärfarben (überschreibt `globals.css`-Defaults). */

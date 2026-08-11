@@ -5,7 +5,7 @@ import { customerAuthSecondaryLinkClass } from "@/components/storefront/customer
 import { getCustomerSession } from "@/lib/auth/customer-session";
 import { getOrderForCustomer } from "@/features/customers";
 import { formatPrice } from "@/lib/catalog/format";
-import { transactionalPaymentLabel } from "@/lib/email/transactional-email-layout";
+import { paymentMethodLabel } from "@/lib/orders/payment-method-label";
 
 export const metadata = {
   title: "Bestelldetails",
@@ -127,7 +127,7 @@ export default async function CustomerOrderDetailPage({
             </dd>
           </div>
           <p className="pt-1 text-xs text-(--foreground-muted)">
-            inkl. MwSt. · {transactionalPaymentLabel(order.paymentMethod)}
+            inkl. MwSt. · {paymentMethodLabel(order.paymentMethod)}
           </p>
         </dl>
       </section>

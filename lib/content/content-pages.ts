@@ -215,8 +215,8 @@ export {
   isContentBlockType,
   type ContentBlockType,
 } from "@/lib/content/block-types";
+export { CONTENT_PAGES_CACHE_TAG } from "@/lib/content/content-pages-cache-tag";
 export {
-  CONTENT_PAGES_CACHE_TAG,
   revalidateContentPagesCache,
   updateContentPagesCacheTag,
 } from "@/lib/content/content-pages-cache";

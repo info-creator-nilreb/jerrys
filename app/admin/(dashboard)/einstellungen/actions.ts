@@ -8,7 +8,8 @@ import {
   isShopBrandingAssetKind,
   type ShopBrandingAssetKind,
 } from "@/lib/shop/branding-asset-kinds";
-import { getShopSettings, type ShopSettingsDTO } from "@/lib/shop/shop-settings";
+import type { ShopSettingsDTO } from "@/lib/shop/shop-settings-defaults";
+import { getShopSettings } from "@/lib/shop/shop-settings";
 import {
   clearShopBrandingAsset,
   uploadShopBrandingAsset,
