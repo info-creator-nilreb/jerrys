@@ -5,11 +5,12 @@ import { redirect } from "next/navigation";
 import {
   disconnectInternetmarkeConnection,
   fetchInternetmarkeCatalogProducts,
+  getInternetmarkeAppCredentialsFromEnv,
   getInternetmarkeConnectionPublic,
   getInternetmarkeConnectionSecrets,
   InternetmarkeClient,
   markInternetmarkeConnectionError,
-  saveInternetmarkeConnection,
+  saveInternetmarkePortokasseConnection,
   updateInternetmarkeSelectedProduct,
 } from "@/features/fulfillment";
 import { getAdminSession } from "@/lib/auth/admin-session";
@@ -30,9 +31,7 @@ export type InternetmarkeAdminActionState =
     }
   | null;
 
-const credentialsSchema = z.object({
-  clientId: z.string().trim().min(8, "API Key / Client ID zu kurz.").max(200),
-  clientSecret: z.string().trim().max(200).optional(),
+const portokasseSchema = z.object({
   username: z.string().trim().email("Portokasse-Benutzername muss eine E-Mail sein."),
   password: z.string().trim().max(22, "Portokasse-Passwort max. 22 Zeichen.").optional(),
 });
@@ -43,7 +42,7 @@ async function requireAdmin() {
 }
 
 /**
- * Speichert Credentials (verschlüsselt) und prüft Token via POST /user.
+ * Speichert Portokasse-Login (API Key/Secret aus Env) und prüft Token via POST /user.
  */
 export async function saveInternetmarkeCredentialsAction(
   _prev: InternetmarkeAdminActionState,
@@ -51,9 +50,14 @@ export async function saveInternetmarkeCredentialsAction(
 ): Promise<InternetmarkeAdminActionState> {
   await requireAdmin();
 
-  const parsed = credentialsSchema.safeParse({
-    clientId: formData.get("clientId"),
-    clientSecret: formData.get("clientSecret") || undefined,
+  if (!getInternetmarkeAppCredentialsFromEnv()) {
+    return {
+      error:
+        "API Key/Secret fehlen in der Env. Bitte INTERNETMARKE_CLIENT_ID und INTERNETMARKE_CLIENT_SECRET setzen (Vercel / .env.local), dann erneut verbinden.",
+    };
+  }
+
+  const parsed = portokasseSchema.safeParse({
     username: formData.get("username"),
     password: formData.get("password") || undefined,
   });
@@ -62,20 +66,17 @@ export async function saveInternetmarkeCredentialsAction(
   }
 
   const existing = await getInternetmarkeConnectionPublic();
-  const clientSecret = parsed.data.clientSecret?.trim() ?? "";
   const password = parsed.data.password?.trim() ?? "";
 
-  if (!existing.connected && (!clientSecret || !password)) {
-    return { error: "API Secret und Portokasse-Passwort sind für die Ersteinrichtung Pflicht." };
+  if (!existing.connected && !password) {
+    return { error: "Portokasse-Passwort ist für die Ersteinrichtung Pflicht." };
   }
 
   try {
-    await saveInternetmarkeConnection({
-      clientId: parsed.data.clientId,
-      clientSecret,
+    await saveInternetmarkePortokasseConnection({
       username: parsed.data.username,
       password,
-      keepExistingSecrets: existing.connected,
+      keepExistingPassword: existing.connected,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Speichern fehlgeschlagen.";
@@ -107,7 +108,7 @@ export async function saveInternetmarkeCredentialsAction(
     await markInternetmarkeConnectionError(msg);
     revalidatePath("/admin/versand");
     return {
-      error: `${msg} Credentials wurden gespeichert — bitte Freigabe prüfen und erneut speichern.`,
+      error: `${msg} Login wurde gespeichert — bitte Freigabe prüfen und erneut verbinden.`,
     };
   }
 
@@ -116,7 +117,7 @@ export async function saveInternetmarkeCredentialsAction(
   return {
     ok: true,
     message:
-      "Verbindung gespeichert und Token geprüft. Als Nächstes ein Porto-Produkt aus der Liste wählen.",
+      "Portokasse verbunden und Token geprüft. Als Nächstes ein Porto-Produkt aus der Liste wählen.",
   };
 }
 
@@ -128,7 +129,7 @@ export async function loadInternetmarkeProductsAction(
 
   const secrets = await getInternetmarkeConnectionSecrets();
   if (!secrets) {
-    return { error: "Zuerst Credentials speichern." };
+    return { error: "Zuerst Portokasse verbinden." };
   }
 
   const catalog = await fetchInternetmarkeCatalogProducts(secrets.clientId);
@@ -164,7 +165,7 @@ export async function selectInternetmarkeProductAction(
 
   const secrets = await getInternetmarkeConnectionSecrets();
   if (!secrets) {
-    return { error: "Zuerst Credentials speichern." };
+    return { error: "Zuerst Portokasse verbinden." };
   }
 
   const catalog = await fetchInternetmarkeCatalogProducts(secrets.clientId);

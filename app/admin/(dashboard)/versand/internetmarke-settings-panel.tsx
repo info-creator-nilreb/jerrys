@@ -21,7 +21,7 @@ type ProductOption = {
 type Props = {
   connected: boolean;
   readyForPurchase: boolean;
-  clientId: string | null;
+  appCredentialsConfigured: boolean;
   clientIdMasked: string | null;
   username: string | null;
   productCode: number | null;
@@ -90,9 +90,8 @@ export function InternetmarkeSettingsPanel(props: Props) {
     <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-[#1f2937]">Internetmarke</h2>
       <p className="mt-2 text-sm text-[#6b7280]">
-        Credentials aus dem DHL Developer Portal und der Portokasse — verschlüsselt gespeichert
-        (wie Instagram). Produktcode und Preis werden über die Products API geladen, nicht manuell
-        getippt.
+        API Key und Secret kommen aus der Env (wie Instagram-App-Credentials). Hier nur Portokasse
+        verbinden — Produktcode und Preis lädt die Products API.
       </p>
 
       <div aria-live="polite" className="mt-4 space-y-2">
@@ -113,63 +112,50 @@ export function InternetmarkeSettingsPanel(props: Props) {
         ) : null}
       </div>
 
-      {props.connected ? (
-        <div className="mt-4 space-y-1 rounded-md border border-[#e8eaed] bg-[#f7f8fa] px-3 py-2 text-xs text-[#6b7280]">
-          <p>
-            Status:{" "}
+      <div className="mt-4 space-y-1 rounded-md border border-[#e8eaed] bg-[#f7f8fa] px-3 py-2 text-xs text-[#6b7280]">
+        <p>
+          Developer-Portal (Env):{" "}
+          {props.appCredentialsConfigured ? (
             <span className="font-medium text-[#374151]">
-              {props.readyForPurchase ? "Bereit für Label-Kauf" : "Verbunden — Produkt wählen"}
+              gesetzt · API Key <code className="text-[11px]">{props.clientIdMasked}</code>
             </span>
-          </p>
-          <p>
-            API Key: <code className="text-[11px]">{props.clientIdMasked ?? "—"}</code>
-            {" · "}
-            Portokasse: {props.username ?? "—"}
-          </p>
-          <p>Zuletzt geprüft: {formatDe(props.lastVerifiedAt)}</p>
-          {props.productNameSnapshot && props.productCode != null && props.productPriceCents != null ? (
-            <p className="text-[#374151]">
-              Aktives Produkt:{" "}
-              <span className="font-medium">
-                {props.productNameSnapshot} (Code {props.productCode},{" "}
-                {formatEuro(props.productPriceCents)})
-              </span>
-            </p>
           ) : (
-            <p>Noch kein Porto-Produkt ausgewählt.</p>
+            <span className="font-medium text-amber-800">
+              fehlt — bitte{" "}
+              <code className="text-[11px]">INTERNETMARKE_CLIENT_ID</code> und{" "}
+              <code className="text-[11px]">INTERNETMARKE_CLIENT_SECRET</code> setzen
+            </span>
           )}
-        </div>
-      ) : null}
+        </p>
+        {props.connected ? (
+          <>
+            <p>
+              Status:{" "}
+              <span className="font-medium text-[#374151]">
+                {props.readyForPurchase ? "Bereit für Label-Kauf" : "Verbunden — Produkt wählen"}
+              </span>
+              {" · "}
+              Portokasse: {props.username ?? "—"}
+            </p>
+            <p>Zuletzt geprüft: {formatDe(props.lastVerifiedAt)}</p>
+            {props.productNameSnapshot &&
+            props.productCode != null &&
+            props.productPriceCents != null ? (
+              <p className="text-[#374151]">
+                Aktives Produkt:{" "}
+                <span className="font-medium">
+                  {props.productNameSnapshot} (Code {props.productCode},{" "}
+                  {formatEuro(props.productPriceCents)})
+                </span>
+              </p>
+            ) : (
+              <p>Noch kein Porto-Produkt ausgewählt.</p>
+            )}
+          </>
+        ) : null}
+      </div>
 
       <form action={saveAction} className="mt-6 space-y-4">
-        <div>
-          <label htmlFor="im-client-id" className="mb-1 block text-sm font-medium text-[#374151]">
-            API Key (Client ID)
-          </label>
-          <input
-            id="im-client-id"
-            name="clientId"
-            type="text"
-            required
-            autoComplete="off"
-            defaultValue={props.clientId ?? ""}
-            placeholder="aus Developer Portal (API Key)"
-            className="h-11 w-full rounded-md border border-[#e5e7eb] px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          />
-        </div>
-        <div>
-          <label htmlFor="im-client-secret" className="mb-1 block text-sm font-medium text-[#374151]">
-            API Secret
-          </label>
-          <input
-            id="im-client-secret"
-            name="clientSecret"
-            type="password"
-            autoComplete="new-password"
-            placeholder={props.connected ? "Leer lassen = unverändert" : "aus Developer Portal"}
-            className="h-11 w-full rounded-md border border-[#e5e7eb] px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          />
-        </div>
         <div>
           <label htmlFor="im-username" className="mb-1 block text-sm font-medium text-[#374151]">
             Portokasse-Benutzername (E-Mail)
@@ -180,7 +166,8 @@ export function InternetmarkeSettingsPanel(props: Props) {
             type="email"
             required
             defaultValue={props.username ?? ""}
-            className="h-11 w-full rounded-md border border-[#e5e7eb] px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            disabled={!props.appCredentialsConfigured}
+            className="h-11 w-full rounded-md border border-[#e5e7eb] px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:bg-[#f3f4f6] disabled:opacity-70"
           />
         </div>
         <div>
@@ -193,16 +180,21 @@ export function InternetmarkeSettingsPanel(props: Props) {
             type="password"
             autoComplete="new-password"
             maxLength={22}
+            disabled={!props.appCredentialsConfigured}
             placeholder={props.connected ? "Leer lassen = unverändert" : "max. 22 Zeichen"}
-            className="h-11 w-full rounded-md border border-[#e5e7eb] px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="h-11 w-full rounded-md border border-[#e5e7eb] px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:bg-[#f3f4f6] disabled:opacity-70"
           />
         </div>
         <button
           type="submit"
-          disabled={savePending}
+          disabled={savePending || !props.appCredentialsConfigured}
           className="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-(--primary-hover) disabled:opacity-60"
         >
-          {savePending ? "Prüfe Verbindung…" : props.connected ? "Credentials aktualisieren" : "Verbinden & prüfen"}
+          {savePending
+            ? "Prüfe Verbindung…"
+            : props.connected
+              ? "Portokasse aktualisieren"
+              : "Verbinden & prüfen"}
         </button>
       </form>
 
@@ -212,7 +204,7 @@ export function InternetmarkeSettingsPanel(props: Props) {
             <form action={loadAction}>
               <button
                 type="submit"
-                disabled={loadPending}
+                disabled={loadPending || !props.appCredentialsConfigured}
                 className="inline-flex min-h-11 items-center justify-center rounded-md border border-[#e5e7eb] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb] disabled:opacity-60"
               >
                 {loadPending ? "Lade Produkte…" : "Porto-Produkte von DHL laden"}

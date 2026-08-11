@@ -29,7 +29,7 @@ export default async function AdminVersandPage() {
       <InternetmarkeSettingsPanel
         connected={im.connected}
         readyForPurchase={im.readyForPurchase}
-        clientId={im.clientId}
+        appCredentialsConfigured={im.appCredentialsConfigured}
         clientIdMasked={im.clientIdMasked}
         username={im.username}
         productCode={im.productCode}
