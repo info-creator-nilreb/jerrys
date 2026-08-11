@@ -1,10 +1,12 @@
-import DOMPurify from "isomorphic-dompurify";
+import { sanitizeAllowedHtml } from "@/lib/security/sanitize-html";
 
 /** Erlaubt einfache Rich-Text-Tags für Produktbeschreibungen. */
-export function sanitizeProductDescriptionHtml(dirty: string | null | undefined): string | null {
+export function sanitizeProductDescriptionHtml(
+  dirty: string | null | undefined,
+): string | null {
   if (dirty == null || dirty.trim() === "") return null;
-  const clean = DOMPurify.sanitize(dirty, {
-    ALLOWED_TAGS: [
+  const clean = sanitizeAllowedHtml(dirty, {
+    allowedTags: [
       "p",
       "br",
       "strong",
@@ -30,7 +32,11 @@ export function sanitizeProductDescriptionHtml(dirty: string | null | undefined)
       "th",
       "td",
     ],
-    ALLOWED_ATTR: ["href", "target", "rel", "colspan", "rowspan"],
+    allowedAttributes: {
+      a: ["href", "target", "rel"],
+      th: ["colspan", "rowspan"],
+      td: ["colspan", "rowspan"],
+    },
   });
   return clean.trim() === "" ? null : clean;
 }
