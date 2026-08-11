@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { CmsMediaField } from "@/components/admin/cms-media-field";
 import type { ContentBlockType } from "@/lib/content/block-types";
 
@@ -420,12 +421,12 @@ export function ContentBlockFields({ type, data, onChange }: Props) {
           <p className="mt-1">
             Keine Live-Verbindung zur Instagram-API. Die Galerie kommt aus kuratierten
             Social-Assets unter{" "}
-            <a
+            <Link
               href="/admin/inhalte/marketing"
               className="font-medium text-primary underline-offset-2 hover:underline"
             >
               Inhalte → Marketing
-            </a>
+            </Link>
             . Titel und Einleitung steuern nur den Text auf der Startseite.
           </p>
         </div>

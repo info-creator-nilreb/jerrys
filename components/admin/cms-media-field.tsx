@@ -2,11 +2,10 @@
 
 import { ImageIcon, Upload } from "lucide-react";
 import Image from "next/image";
-import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import {
   listCmsMediaLibraryAction,
   uploadCmsMediaAction,
-  type CmsMediaUploadState,
 } from "@/app/admin/(dashboard)/inhalte/media-actions";
 import type { CmsMediaLibraryItem } from "@/lib/content/cms-media-library";
 
@@ -39,21 +38,9 @@ export function CmsMediaField({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [library, setLibrary] = useState<CmsMediaLibraryItem[]>([]);
   const [libraryError, setLibraryError] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [loadingLibrary, startLibraryTransition] = useTransition();
-  const [uploadState, uploadAction, uploadPending] = useActionState<
-    CmsMediaUploadState,
-    FormData
-  >(uploadCmsMediaAction, null);
-
-  useEffect(() => {
-    if (uploadState?.ok && uploadState.url) {
-      onChange(uploadState.url);
-      setPickerOpen(false);
-      startLibraryTransition(async () => {
-        setLibrary(await listCmsMediaLibraryAction());
-      });
-    }
-  }, [uploadState?.ok, uploadState?.url, onChange]);
+  const [uploadPending, startUploadTransition] = useTransition();
 
   function openPicker() {
     setPickerOpen(true);
@@ -64,6 +51,27 @@ export function CmsMediaField({
       } catch {
         setLibraryError("Medienbibliothek konnte nicht geladen werden.");
       }
+    });
+  }
+
+  function onFileSelected(fileList: FileList | null) {
+    const file = fileList?.[0];
+    if (!file) return;
+    setUploadError(null);
+    const formData = new FormData();
+    formData.set("file", file);
+    startUploadTransition(async () => {
+      const result = await uploadCmsMediaAction(null, formData);
+      if (result?.ok && result.url) {
+        onChange(result.url);
+        setPickerOpen(false);
+        startLibraryTransition(async () => {
+          setLibrary(await listCmsMediaLibraryAction());
+        });
+      } else {
+        setUploadError(result?.error ?? "Upload fehlgeschlagen.");
+      }
+      if (fileRef.current) fileRef.current.value = "";
     });
   }
 
@@ -137,23 +145,16 @@ export function CmsMediaField({
         </div>
       </div>
 
-      <form action={uploadAction} className="hidden">
-        <input
-          ref={fileRef}
-          type="file"
-          name="file"
-          accept="image/jpeg,image/png,image/webp,image/svg+xml"
-          onChange={(e) => {
-            const form = e.currentTarget.form;
-            if (form && e.currentTarget.files?.length) {
-              form.requestSubmit();
-            }
-          }}
-        />
-      </form>
-      {uploadState?.error ? (
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/svg+xml"
+        className="hidden"
+        onChange={(e) => onFileSelected(e.currentTarget.files)}
+      />
+      {uploadError ? (
         <p className="text-sm text-red-600" role="alert">
-          {uploadState.error}
+          {uploadError}
         </p>
       ) : null}
 
