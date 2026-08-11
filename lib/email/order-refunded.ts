@@ -21,6 +21,7 @@ import {
   wrapTransactionalEmailHtml,
 } from "@/lib/email/transactional-email-layout";
 import { escapeHtmlForEmail, publicSiteBaseUrl } from "@/lib/email/template-utils";
+import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
 
 /**
  * Hinweis zur Erstattung: nach Statuswechsel auf „erstattet“ höchstens einmal (Dedupe).
@@ -40,6 +41,7 @@ export async function sendOrderRefundedIfNeeded(
   });
   if (!order) return;
 
+  const branding = await resolveTransactionalEmailBranding();
   const base = publicSiteBaseUrl();
   const successPath = `/checkout/erfolg?nr=${encodeURIComponent(order.orderNumber)}`;
   const successUrl = base ? `${base}${successPath}` : successPath;
@@ -66,7 +68,7 @@ export async function sendOrderRefundedIfNeeded(
     `Bestellübersicht: ${successUrl}`,
     "",
     "Liebe Grüße",
-    "jerry's",
+    branding.shopName,
   ].join("\n");
 
   const { textMuted } = TRANSACTIONAL_EMAIL_DESIGN;
@@ -97,6 +99,7 @@ export async function sendOrderRefundedIfNeeded(
       "Wir haben deine Rückerstattung bearbeitet. Der Betrag wird in Kürze auf deinem Konto gutgeschrieben (je nach Zahlungsart kann es einige Werktage dauern).",
     bodyHtml,
     cta: { href: shopUrl, label: "Zurück zum Shop" },
+    branding,
   });
 
   let result: Awaited<ReturnType<typeof sendTransactionalEmail>>;

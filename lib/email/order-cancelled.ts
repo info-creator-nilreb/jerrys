@@ -7,6 +7,7 @@ import {
 } from "@/lib/email/order-email-log";
 import { sendTransactionalEmail } from "@/lib/email/provider";
 import { escapeHtmlForEmail, publicSiteBaseUrl } from "@/lib/email/template-utils";
+import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
 
 /**
  * Storno-Mail: nach erfolgreichem Versand höchstens einmal erneut senden (Dedupe).
@@ -30,9 +31,11 @@ export async function sendOrderCancelledIfNeeded(
   });
   if (!order) return;
 
+  const branding = await resolveTransactionalEmailBranding();
   const base = publicSiteBaseUrl();
   const successPath = `/checkout/erfolg?nr=${encodeURIComponent(order.orderNumber)}`;
   const successUrl = base ? `${base}${successPath}` : successPath;
+  const shopName = branding.shopName;
 
   const subject = `Storno zu Bestellung ${order.orderNumber}`;
   const text = [
@@ -45,7 +48,7 @@ export async function sendOrderCancelledIfNeeded(
     `Link zur Bestellübersicht: ${successUrl}`,
     "",
     "Liebe Grüße",
-    "jerry's",
+    shopName,
   ].join("\n");
 
   const html = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;line-height:1.5;color:#111">
@@ -53,7 +56,7 @@ export async function sendOrderCancelledIfNeeded(
 <p>deine Bestellung <strong>${escapeHtmlForEmail(order.orderNumber)}</strong> wurde storniert.</p>
 <p>Bei Fragen nutze bitte die Kontaktdaten im Impressum.</p>
 <p style="margin-top:1.25rem"><a href="${escapeHtmlForEmail(successUrl)}">Bestellung ansehen</a></p>
-<p>Liebe Grüße<br/>jerry's</p>
+<p>Liebe Grüße<br/>${escapeHtmlForEmail(shopName)}</p>
 </body></html>`;
 
   let result: Awaited<ReturnType<typeof sendTransactionalEmail>>;

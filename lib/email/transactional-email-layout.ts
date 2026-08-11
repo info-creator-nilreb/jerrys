@@ -1,9 +1,14 @@
 import { absoluteUrlForEmail } from "@/lib/email/email-absolute-url";
 import { escapeHtmlForEmail } from "@/lib/email/template-utils";
+import {
+  defaultTransactionalEmailBranding,
+  type TransactionalEmailBranding,
+} from "@/lib/shop/email-branding";
 
 /**
  * Transaktions-Mails: Akzentgrün nur für CTA, Hero-Icons und Tabellenlinien (`globals.css` --primary / --accent-green).
  * Hauptkarte: weiß; Footer: dunkler Kontrastblock wie Storefront-Footer.
+ * Primärfarbe kann pro Aufruf aus ShopSettings überschrieben werden.
  */
 export const TRANSACTIONAL_EMAIL_DESIGN = {
   primary: "#8bbe25",
@@ -23,9 +28,6 @@ export const TRANSACTIONAL_EMAIL_DESIGN = {
   footerTextMuted: "#9ca3af",
   footerDivider: "rgba(255,255,255,0.18)",
 } as const;
-
-/** Instagram laut Vorgabe (nur dieser Link in transaktionalen Mails). */
-const TRANSACTIONAL_EMAIL_INSTAGRAM_URL = "https://www.instagram.com/jerrys.design/";
 
 export type TransactionalHeroVariant = "order" | "shipping" | "refund" | "account" | "workshop";
 
@@ -47,14 +49,21 @@ function absUrl(path: string): string {
   return absoluteUrlForEmail(path) ?? "#";
 }
 
-/** Logo-`<img>` nur bei gültiger absoluter URL; sonst Textmarke (Clients ohne `NEXT_PUBLIC_SITE_URL`). */
-function transactionalLogoBlock(): string {
+function brandingOrDefault(
+  branding?: TransactionalEmailBranding,
+): TransactionalEmailBranding {
+  return branding ?? defaultTransactionalEmailBranding();
+}
+
+/** Logo-`<img>` nur bei gültiger absoluter URL; sonst Textmarke. */
+function transactionalLogoBlock(branding: TransactionalEmailBranding): string {
   const home = absUrl("/");
-  const logoUrl = absoluteUrlForEmail("/branding/jerrys-wordmark.jpg");
+  const shopName = escapeHtmlForEmail(branding.shopName);
+  const logoUrl = branding.logoAbsoluteUrl;
   if (logoUrl) {
-    return `<tr><td align="center" style="padding:0 0 22px"><a href="${escapeHtmlForEmail(home)}" style="text-decoration:none;display:inline-block"><img src="${escapeHtmlForEmail(logoUrl)}" alt="jerry's" width="200" border="0" style="display:block;margin:0 auto;max-width:220px;height:auto;border:0;outline:none"/></a></td></tr>`;
+    return `<tr><td align="center" style="padding:0 0 22px"><a href="${escapeHtmlForEmail(home)}" style="text-decoration:none;display:inline-block"><img src="${escapeHtmlForEmail(logoUrl)}" alt="${shopName}" width="200" border="0" style="display:block;margin:0 auto;max-width:220px;height:auto;border:0;outline:none"/></a></td></tr>`;
   }
-  return `<tr><td align="center" style="padding:0 0 22px"><a href="${escapeHtmlForEmail(home)}" style="text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:700;color:#1f2937">jerry&apos;s</a></td></tr>`;
+  return `<tr><td align="center" style="padding:0 0 22px"><a href="${escapeHtmlForEmail(home)}" style="text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:700;color:#1f2937">${shopName}</a></td></tr>`;
 }
 
 /** Hero-Kreis: neutral helles Grau (kein Grünflächen-Tint). */
@@ -79,10 +88,11 @@ function heroIconHtml(variant: TransactionalHeroVariant): string {
   return `<span style="font-size:36px;line-height:1;display:inline-block" aria-hidden="true">${emoji}</span>`;
 }
 
-function ctaButton(href: string, label: string): string {
+function ctaButton(href: string, label: string, branding: TransactionalEmailBranding): string {
   const safeHref = escapeHtmlForEmail(href);
   const safeLabel = escapeHtmlForEmail(label);
-  const { primary, primaryStrong } = TRANSACTIONAL_EMAIL_DESIGN;
+  const primary = branding.primary;
+  const primaryStrong = branding.primaryStrong;
   return `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:28px 0 8px"><tr><td align="center" bgcolor="${primary}" style="border-radius:8px;border:2px solid ${primaryStrong}"><a href="${safeHref}" style="display:inline-block;padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:6px">${safeLabel}</a></td></tr></table>`;
 }
 
@@ -91,11 +101,13 @@ function footerLegalLink(href: string, label: string): string {
   return `<a href="${escapeHtmlForEmail(href)}" style="color:${footerText};font-weight:600;text-decoration:underline">${escapeHtmlForEmail(label)}</a>`;
 }
 
-function footerSocialRow(): string {
-  const { primary } = TRANSACTIONAL_EMAIL_DESIGN;
-  const url = TRANSACTIONAL_EMAIL_INSTAGRAM_URL;
+function footerSocialRow(branding: TransactionalEmailBranding): string {
+  const url = branding.instagramUrl?.trim();
+  if (!url) return "";
+  const primary = branding.primary;
+  const aria = escapeHtmlForEmail(`${branding.shopName} auf Instagram`);
   const igMark = `<span style="font-size:20px;line-height:1;vertical-align:middle" aria-hidden="true">📷</span>`;
-  return `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:20px auto 0"><tr><td align="center" style="padding:0 10px"><a href="${escapeHtmlForEmail(url)}" style="text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:600;color:${primary}" aria-label="jerry's auf Instagram"><table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto"><tr><td style="vertical-align:middle;line-height:1;padding-right:8px">${igMark}</td><td style="vertical-align:middle;color:${primary}">Instagram</td></tr></table></a></td></tr></table>`;
+  return `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:20px auto 0"><tr><td align="center" style="padding:0 10px"><a href="${escapeHtmlForEmail(url)}" style="text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:600;color:${primary}" aria-label="${aria}"><table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto"><tr><td style="vertical-align:middle;line-height:1;padding-right:8px">${igMark}</td><td style="vertical-align:middle;color:${primary}">Instagram</td></tr></table></a></td></tr></table>`;
 }
 
 function footerUspRow(): string {
@@ -108,12 +120,13 @@ function footerUspRow(): string {
   return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:8px;border-top:1px solid ${footerDivider}"><tr>${item(lock, "Sicher bezahlen")}${item(truck, "Schneller Versand")}${item(mail, "Kundenservice")}</tr></table>`;
 }
 
-function emailFooterBlock(): string {
+function emailFooterBlock(branding: TransactionalEmailBranding): string {
   const impressum = absUrl("/impressum");
   const datenschutz = absUrl("/datenschutz");
-  const social = footerSocialRow();
+  const social = footerSocialRow(branding);
+  const identity = escapeHtmlForEmail(branding.footerIdentityLine);
   const { footerBg, footerText, footerTextMuted, maxWidth } = TRANSACTIONAL_EMAIL_DESIGN;
-  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:${maxWidth}px;margin:0 auto;background:${footerBg}"><tr><td style="padding:24px 22px 28px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:${footerTextMuted};line-height:1.65;text-align:center">${footerUspRow()}${social}<p style="margin:20px 0 8px;color:${footerText}">jerry&apos;s · Dr. Alexander Berlin (e.U.) · Stargarder Str. 16 · 10437 Berlin</p><p style="margin:0">${footerLegalLink(impressum, "Impressum")} · ${footerLegalLink(datenschutz, "Datenschutz")}</p><p style="margin:16px 0 0;font-size:11px;color:${footerTextMuted}">Diese E-Mail wurde automatisch erstellt. Bitte antworte nicht direkt auf diese Nachricht.</p></td></tr></table>`;
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:${maxWidth}px;margin:0 auto;background:${footerBg}"><tr><td style="padding:24px 22px 28px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:${footerTextMuted};line-height:1.65;text-align:center">${footerUspRow()}${social}<p style="margin:20px 0 8px;color:${footerText}">${identity}</p><p style="margin:0">${footerLegalLink(impressum, "Impressum")} · ${footerLegalLink(datenschutz, "Datenschutz")}</p><p style="margin:16px 0 0;font-size:11px;color:${footerTextMuted}">Diese E-Mail wurde automatisch erstellt. Bitte antworte nicht direkt auf diese Nachricht.</p></td></tr></table>`;
 }
 
 export type TransactionalEmailWrapParams = {
@@ -124,19 +137,22 @@ export type TransactionalEmailWrapParams = {
   /** Hauptinhalt: Karten, Tabellen, rein HTML, bereits escapet wo nötig. */
   bodyHtml: string;
   cta: { href: string; label: string };
+  /** Optional aus ShopSettings; sonst jerry’s-Defaults. */
+  branding?: TransactionalEmailBranding;
 };
 
 /**
  * Tabellenbasiertes Grundgerüst (max. 600px): weiße Karte, grüne Akzente nur bei Icon/Button/Linien.
  */
 export function wrapTransactionalEmailHtml(p: TransactionalEmailWrapParams): string {
+  const branding = brandingOrDefault(p.branding);
   const { text, pageBg, maxWidth, cardBorderNeutral } = TRANSACTIONAL_EMAIL_DESIGN;
   const circleBg = heroCircleBg();
   const icon = heroIconHtml(p.variant);
-  const logoBlock = transactionalLogoBlock();
-  const mainCard = `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:${maxWidth}px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid ${cardBorderNeutral}"><tr><td style="padding:32px 28px 28px;font-family:Arial,Helvetica,sans-serif;color:${text};background-color:#ffffff"><table role="presentation" width="100%" cellspacing="0" cellpadding="0">${logoBlock}<tr><td align="center" style="padding:4px 0 22px"><table role="presentation" cellspacing="0" cellpadding="0"><tr><td align="center" valign="middle" style="width:84px;height:84px;border-radius:50%;background:${circleBg};border:1px solid ${cardBorderNeutral};line-height:0;padding:16px">${icon}</td></tr></table></td></tr><tr><td style="font-size:22px;font-weight:700;color:#1f2937;line-height:1.35;text-align:center;padding-bottom:12px">${escapeHtmlForEmail(p.heading)}</td></tr><tr><td style="font-size:15px;line-height:1.55;color:${text};text-align:center;padding:0 4px 24px">${escapeHtmlForEmail(p.intro)}</td></tr><tr><td>${p.bodyHtml}</td></tr><tr><td align="center">${ctaButton(p.cta.href, p.cta.label)}</td></tr></table></td></tr></table>`;
+  const logoBlock = transactionalLogoBlock(branding);
+  const mainCard = `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:${maxWidth}px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid ${cardBorderNeutral}"><tr><td style="padding:32px 28px 28px;font-family:Arial,Helvetica,sans-serif;color:${text};background-color:#ffffff"><table role="presentation" width="100%" cellspacing="0" cellpadding="0">${logoBlock}<tr><td align="center" style="padding:4px 0 22px"><table role="presentation" cellspacing="0" cellpadding="0"><tr><td align="center" valign="middle" style="width:84px;height:84px;border-radius:50%;background:${circleBg};border:1px solid ${cardBorderNeutral};line-height:0;padding:16px">${icon}</td></tr></table></td></tr><tr><td style="font-size:22px;font-weight:700;color:#1f2937;line-height:1.35;text-align:center;padding-bottom:12px">${escapeHtmlForEmail(p.heading)}</td></tr><tr><td style="font-size:15px;line-height:1.55;color:${text};text-align:center;padding:0 4px 24px">${escapeHtmlForEmail(p.intro)}</td></tr><tr><td>${p.bodyHtml}</td></tr><tr><td align="center">${ctaButton(p.cta.href, p.cta.label, branding)}</td></tr></table></td></tr></table>`;
 
-  return `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta http-equiv="x-ua-compatible" content="ie=edge"/><title>${escapeHtmlForEmail(p.documentTitle)}</title></head><body style="margin:0;padding:0;background:${pageBg}"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${pageBg}"><tr><td align="center" style="padding:24px 12px">${mainCard}</td></tr><tr><td align="center" style="padding:0 12px 24px">${emailFooterBlock()}</td></tr></table></body></html>`;
+  return `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta http-equiv="x-ua-compatible" content="ie=edge"/><title>${escapeHtmlForEmail(p.documentTitle)}</title></head><body style="margin:0;padding:0;background:${pageBg}"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${pageBg}"><tr><td align="center" style="padding:24px 12px">${mainCard}</td></tr><tr><td align="center" style="padding:0 12px 24px">${emailFooterBlock(branding)}</td></tr></table></body></html>`;
 }
 
 export function grayInfoCard(innerHtml: string): string {

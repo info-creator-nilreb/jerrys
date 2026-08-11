@@ -4,6 +4,7 @@ import {
   wrapTransactionalEmailHtml,
 } from "@/lib/email/transactional-email-layout";
 import { escapeHtmlForEmail, publicSiteBaseUrl } from "@/lib/email/template-utils";
+import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
 import { formatWorkshopSessionDateTime } from "@/lib/workshop/format-session-datetime";
 import { createLogger } from "@/lib/logging/logger";
 
@@ -22,6 +23,7 @@ export async function sendWorkshopDateRequestApprovedEmail(input: {
   seatCount: number;
   sessionId: string;
 }): Promise<void> {
+  const branding = await resolveTransactionalEmailBranding();
   const greeting = input.contactName?.trim() || "du";
   const when = formatWorkshopSessionDateTime(input.preferredStartsAt, "Europe/Berlin");
   const seats =
@@ -43,7 +45,7 @@ export async function sendWorkshopDateRequestApprovedEmail(input: {
     overviewUrl,
     "",
     "Liebe Grüße",
-    "jerry's",
+    branding.shopName,
   ].join("\n");
 
   const bodyInner = grayInfoCard(
@@ -61,6 +63,7 @@ export async function sendWorkshopDateRequestApprovedEmail(input: {
     intro: "Danke für deine Anfrage — wir melden uns, sobald der Termin buchbar ist.",
     bodyHtml: bodyInner,
     cta: { href: overviewUrl, label: "Termine ansehen" },
+    branding,
   });
 
   try {
@@ -84,6 +87,7 @@ export async function sendWorkshopDateRequestRejectedEmail(input: {
   preferredStartsAt: Date;
   adminNote: string | null;
 }): Promise<void> {
+  const branding = await resolveTransactionalEmailBranding();
   const greeting = input.contactName?.trim() || "du";
   const when = formatWorkshopSessionDateTime(input.preferredStartsAt, "Europe/Berlin");
   const overviewUrl = termineOverviewUrl();
@@ -106,7 +110,7 @@ export async function sendWorkshopDateRequestRejectedEmail(input: {
     overviewUrl,
     "",
     "Liebe Grüße",
-    "jerry's",
+    branding.shopName,
   ].join("\n");
 
   const noteHtml = input.adminNote?.trim()
@@ -127,6 +131,7 @@ export async function sendWorkshopDateRequestRejectedEmail(input: {
     intro: "Schau gern in unserem Terminkalender nach Alternativen oder stelle eine neue Anfrage.",
     bodyHtml: bodyInner,
     cta: { href: overviewUrl, label: "Termine ansehen" },
+    branding,
   });
 
   try {

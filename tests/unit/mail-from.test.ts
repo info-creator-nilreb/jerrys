@@ -59,6 +59,14 @@ describe("resolveTransactionalMailFrom", () => {
       source: "none",
     });
   });
+
+  it("nutzt displayNameFallback wenn MAIL_FROM_NAME fehlt", () => {
+    const result = resolveTransactionalMailFrom(
+      { MAIL_FROM_EMAIL: "shop@example.com" },
+      { displayNameFallback: "jerry's" },
+    );
+    expect(result.from).toBe("Jerrys <shop@example.com>");
+  });
 });
 
 describe("resendSafeDisplayName", () => {

@@ -19,6 +19,7 @@ import {
 } from "@/lib/email/transactional-email-layout";
 import { escapeHtmlForEmail, publicSiteBaseUrl } from "@/lib/email/template-utils";
 import { buildInvoicePdfBuffer } from "@/lib/invoice/build-invoice-pdf";
+import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
 import { buildCarrierTrackingUrl, shippingCarrierLabel } from "@/lib/shipping/carrier-tracking";
 
 /**
@@ -58,6 +59,7 @@ export async function sendOrderShippedIfNeeded(
     }
   }
 
+  const branding = await resolveTransactionalEmailBranding();
   const base = publicSiteBaseUrl();
   const successPath = `/checkout/erfolg?nr=${encodeURIComponent(order.orderNumber)}`;
   const successUrl = base ? `${base}${successPath}` : successPath;
@@ -103,7 +105,7 @@ export async function sendOrderShippedIfNeeded(
     `Zur Bestellung: ${successUrl}`,
     "",
     "Liebe Grüße",
-    "jerry's",
+    branding.shopName,
   );
   const text = textParts.join("\n");
 
@@ -119,7 +121,7 @@ export async function sendOrderShippedIfNeeded(
     shipHtml += `<p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1f2937"><strong>Versand:</strong> ${escapeHtmlForEmail(carrierLine)}</p>`;
   }
   if (trackUrl) {
-    shipHtml += `<p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1f2937"><a href="${escapeHtmlForEmail(trackUrl)}" style="color:#8bbe25;font-weight:600">Sendung verfolgen</a></p>`;
+    shipHtml += `<p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1f2937"><a href="${escapeHtmlForEmail(trackUrl)}" style="color:${branding.primary};font-weight:600">Sendung verfolgen</a></p>`;
   }
   if (order.invoiceNumber) {
     shipHtml += `<p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:${textMuted}">Rechnungsnummer: ${escapeHtmlForEmail(order.invoiceNumber)}${pdfAttachment ? " (PDF angehängt)" : ""}</p>`;
@@ -136,6 +138,7 @@ export async function sendOrderShippedIfNeeded(
     intro: "Gute Neuigkeiten: deine Bestellung wurde versendet und ist jetzt auf dem Weg zu dir.",
     bodyHtml,
     cta: { href: successUrl, label: "Zur Bestellung" },
+    branding,
   });
 
   let result: Awaited<ReturnType<typeof sendTransactionalEmail>>;

@@ -15,6 +15,10 @@ import {
   wrapTransactionalEmailHtml,
 } from "@/lib/email/transactional-email-layout";
 import { escapeHtmlForEmail, publicSiteBaseUrl } from "@/lib/email/template-utils";
+import {
+  resolveTransactionalEmailBranding,
+  type TransactionalEmailBranding,
+} from "@/lib/shop/email-branding";
 import { formatWorkshopSessionDateTime } from "@/lib/workshop/format-session-datetime";
 import {
   buildWorkshopBookingIcs,
@@ -118,6 +122,7 @@ function calendarDownloadPath(bookingId: string): string {
 function buildConfirmationBodies(
   row: BookingEmailRow,
   greetingName: string,
+  branding: TransactionalEmailBranding,
 ): { subject: string; text: string; html: string } {
   const when = formatWorkshopSessionDateTime(
     row.sessionStartsAtSnapshot,
@@ -132,11 +137,12 @@ function buildConfirmationBodies(
 
   const detailUrl = bookingDetailUrl(row.id);
   const subject = `Terminbestätigung: ${row.sessionTitleSnapshot}`;
+  const shopName = branding.shopName;
 
   const text = [
     `Hallo ${greetingName},`,
     "",
-    "dein Workshop-Termin bei jerry's ist bestätigt.",
+    `dein Workshop-Termin bei ${shopName} ist bestätigt.`,
     "",
     row.sessionTitleSnapshot,
     when,
@@ -149,7 +155,7 @@ function buildConfirmationBodies(
     `Termin im Konto: ${detailUrl}`,
     "",
     "Liebe Grüße",
-    "jerry's",
+    shopName,
   ].join("\n");
 
   const bodyInner = grayInfoCard(
@@ -169,6 +175,7 @@ function buildConfirmationBodies(
     intro: "Wir freuen uns auf dich — speichere den Termin am besten direkt in deinem Kalender.",
     bodyHtml: bodyInner,
     cta: { href: detailUrl, label: "Termin im Konto ansehen" },
+    branding,
   });
 
   return { subject, text, html };
@@ -177,6 +184,7 @@ function buildConfirmationBodies(
 function buildCancellationBodies(
   row: BookingEmailRow,
   greetingName: string,
+  branding: TransactionalEmailBranding,
 ): { subject: string; text: string; html: string } {
   const when = formatWorkshopSessionDateTime(
     row.sessionStartsAtSnapshot,
@@ -204,7 +212,7 @@ function buildCancellationBodies(
     `Weitere Termine: ${termineUrl}`,
     "",
     "Liebe Grüße",
-    "jerry's",
+    branding.shopName,
   ].join("\n");
 
   const bodyInner = grayInfoCard(
@@ -223,6 +231,7 @@ function buildCancellationBodies(
     intro: "Deine Buchung ist nicht mehr aktiv. Wir hoffen, dich bald bei einem anderen Termin zu sehen.",
     bodyHtml: bodyInner,
     cta: { href: termineUrl, label: "Termine im Konto" },
+    branding,
   });
 
   return { subject, text, html };
@@ -258,7 +267,8 @@ export async function sendWorkshopBookingConfirmationIfNeeded(
   if (!row || row.status !== "confirmed") return;
 
   const greetingName = await resolveGreetingName(row.orderId, row.contactEmail);
-  const { subject, text, html } = buildConfirmationBodies(row, greetingName);
+  const branding = await resolveTransactionalEmailBranding();
+  const { subject, text, html } = buildConfirmationBodies(row, greetingName, branding);
 
   let result: Awaited<ReturnType<typeof sendTransactionalEmail>>;
   try {
@@ -304,7 +314,8 @@ export async function sendWorkshopBookingCancelledForBookingId(
   }
 
   const greetingName = await resolveGreetingName(row.orderId, row.contactEmail);
-  const { subject, text, html } = buildCancellationBodies(row, greetingName);
+  const branding = await resolveTransactionalEmailBranding();
+  const { subject, text, html } = buildCancellationBodies(row, greetingName, branding);
 
   let result: Awaited<ReturnType<typeof sendTransactionalEmail>>;
   try {

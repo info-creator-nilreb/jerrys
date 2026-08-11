@@ -1,10 +1,12 @@
-import fs from "node:fs";
-import path from "node:path";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import type { Order, OrderItem } from "@/app/generated/prisma/client";
 import { formatPrice } from "@/lib/catalog/format";
 import { loadInvoiceImpressumFooterPlain } from "@/lib/invoice/invoice-impressum-footer";
 import { getInvoiceSellerDetails } from "@/lib/invoice/seller-details";
+import {
+  loadInvoiceLogoEmbed,
+  loadShopSettingsForInvoice,
+} from "@/lib/shop/invoice-branding";
 
 const TEXT = rgb(0.12, 0.16, 0.22);
 const MUTED = rgb(0.35, 0.38, 0.42);
@@ -54,19 +56,24 @@ export async function buildInvoicePdfBuffer(order: Order & { items: OrderItem[] 
   let y = pageH - margin;
 
   const headerH = 56;
-  const logoPath = path.join(process.cwd(), "public", "branding", "jerrys-wordmark.jpg");
-  if (fs.existsSync(logoPath)) {
-    const jpgBytes = fs.readFileSync(logoPath);
-    const img = await pdf.embedJpg(jpgBytes);
-    const targetH = 36;
-    const scale = targetH / img.height;
-    const w = img.width * scale;
-    page.drawImage(img, {
-      x: margin,
-      y: y - targetH - 8,
-      width: w,
-      height: targetH,
-    });
+  const settings = await loadShopSettingsForInvoice();
+  try {
+    const logo = await loadInvoiceLogoEmbed(settings);
+    if (logo) {
+      const img =
+        logo.kind === "png" ? await pdf.embedPng(logo.bytes) : await pdf.embedJpg(logo.bytes);
+      const targetH = 36;
+      const scale = targetH / img.height;
+      const w = img.width * scale;
+      page.drawImage(img, {
+        x: margin,
+        y: y - targetH - 8,
+        width: w,
+        height: targetH,
+      });
+    }
+  } catch {
+    // Fehlendes/ungültiges Logo darf die Rechnung nicht verhindern.
   }
 
   y -= headerH + 16;
@@ -74,7 +81,7 @@ export async function buildInvoicePdfBuffer(order: Order & { items: OrderItem[] 
   page.drawText("Rechnung", { x: margin, y, size: 18, font: fontBold, color: TEXT });
   y -= 28;
 
-  const seller = getInvoiceSellerDetails();
+  const seller = await getInvoiceSellerDetails();
   page.drawText("Aussteller", { x: margin, y, size: 9, font: fontBold, color: MUTED });
   y -= 12;
   for (const line of seller.lines) {

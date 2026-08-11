@@ -3,6 +3,7 @@ import {
   parseResendErrorBody,
   resolveTransactionalMailFrom,
 } from "@/lib/email/mail-from";
+import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
 
 const log = createLogger("email.provider");
 
@@ -35,7 +36,11 @@ export async function sendTransactionalEmail(params: {
   attachments?: TransactionalAttachment[];
 }): Promise<SendTransactionalResult> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
-  const { from: fromResolved, source: mailFromSource } = resolveTransactionalMailFrom();
+  const branding = await resolveTransactionalEmailBranding();
+  const { from: fromResolved, source: mailFromSource } = resolveTransactionalMailFrom(
+    undefined,
+    { displayNameFallback: branding.emailFromName },
+  );
 
   if (!apiKey) {
     log.info("transactional_skipped", {
