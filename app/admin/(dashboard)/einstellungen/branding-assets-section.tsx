@@ -1,56 +1,90 @@
 "use client";
 
-import { ImageUp, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import {
   clearShopBrandingAssetAction,
   uploadShopBrandingAssetAction,
   type BrandingAssetFormState,
 } from "@/app/admin/(dashboard)/einstellungen/actions";
 import { resolveShopBrandingAssetUrl } from "@/lib/shop/branding-asset-fallbacks";
-import {
-  SHOP_BRANDING_ASSET_KINDS,
-  type ShopBrandingAssetKind,
-} from "@/lib/shop/branding-asset-kinds";
+import type { ShopBrandingAssetKind } from "@/lib/shop/branding-asset-kinds";
 import type { ShopSettingsDTO } from "@/lib/shop/shop-settings";
 
 const initial: BrandingAssetFormState = null;
 
-const LABELS: Record<ShopBrandingAssetKind, { title: string; hint: string; accept: string }> = {
-  logoLight: {
-    title: "Logo (heller Hintergrund)",
-    hint: "PNG, JPEG, WebP oder SVG, max. 2 MB",
-    accept: "image/png,image/jpeg,image/webp,image/svg+xml",
-  },
-  logoDark: {
-    title: "Logo (dunkler Hintergrund)",
-    hint: "PNG, JPEG, WebP oder SVG, max. 2 MB",
-    accept: "image/png,image/jpeg,image/webp,image/svg+xml",
-  },
-  favicon: {
-    title: "Favicon",
-    hint: "PNG, ICO oder SVG, max. 512 KB, bis 512×512",
-    accept: "image/png,image/x-icon,image/vnd.microsoft.icon,image/svg+xml",
-  },
-  ogImage: {
-    title: "Social-/OG-Bild",
-    hint: "PNG, JPEG oder WebP, min. 200×200, max. 5 MB",
-    accept: "image/png,image/jpeg,image/webp",
-  },
+type AssetMeta = {
+  kind: ShopBrandingAssetKind;
+  title: string;
+  description: string;
+  hint: string;
+  accept: string;
+  /** Große Fläche (Logo/Titelbild) vs. kompaktes Quadrat (Favicon). */
+  variant: "wide" | "square" | "cover";
 };
 
-const secondaryBtn =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#d2d5d9] bg-white px-3 py-2 text-sm font-medium text-[#374151] transition-colors hover:bg-[#f7f8fa] disabled:opacity-50";
+const LOGO_ASSETS: AssetMeta[] = [
+  {
+    kind: "logoLight",
+    title: "Standard",
+    description: "Wird für die gängigsten Logo-Anwendungen verwendet",
+    hint: "WEBP, SVG, PNG oder JPG. Empfohlene Breite: mindestens 512 Pixel.",
+    accept: "image/png,image/jpeg,image/webp,image/svg+xml",
+    variant: "wide",
+  },
+  {
+    kind: "logoDark",
+    title: "Für dunkle Flächen",
+    description: "Für Footer, Admin-Sidebar und dunkle Hintergründe",
+    hint: "WEBP, SVG, PNG oder JPG. Empfohlene Breite: mindestens 512 Pixel.",
+    accept: "image/png,image/jpeg,image/webp,image/svg+xml",
+    variant: "wide",
+  },
+  {
+    kind: "favicon",
+    title: "Favicon",
+    description: "Browser-Tab und Lesezeichen",
+    hint: "PNG, ICO oder SVG. Empfohlen: mindestens 512×512 Pixel.",
+    accept: "image/png,image/x-icon,image/vnd.microsoft.icon,image/svg+xml",
+    variant: "square",
+  },
+];
 
-function AssetCard({
-  kind,
-  settings,
-}: {
-  kind: ShopBrandingAssetKind;
-  settings: ShopSettingsDTO;
-}) {
+const COVER_ASSET: AssetMeta = {
+  kind: "ogImage",
+  title: "Titelbild",
+  description: "Wichtiges Bild für Social Sharing, Open Graph und Profilflächen",
+  hint: "WEBP, PNG oder JPG. Empfohlen: mindestens 1200×630 Pixel.",
+  accept: "image/png,image/jpeg,image/webp",
+  variant: "cover",
+};
+
+function hasCustomUrl(settings: ShopSettingsDTO, kind: ShopBrandingAssetKind): boolean {
+  switch (kind) {
+    case "logoLight":
+      return Boolean(settings.logoLightUrl);
+    case "logoDark":
+      return Boolean(settings.logoDarkUrl);
+    case "favicon":
+      return Boolean(settings.faviconUrl);
+    case "ogImage":
+      return Boolean(settings.ogImageUrl);
+  }
+}
+
+function previewShellClass(variant: AssetMeta["variant"], dark?: boolean): string {
+  if (variant === "cover") {
+    return "flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg bg-[#f1f2f3]";
+  }
+  if (variant === "square") {
+    return `flex aspect-square w-full max-w-[12rem] items-center justify-center overflow-hidden rounded-lg ${dark ? "bg-[#182d4d]" : "bg-[#f1f2f3]"}`;
+  }
+  return `flex min-h-[9rem] w-full items-center justify-center overflow-hidden rounded-lg px-8 py-10 ${dark ? "bg-[#182d4d]" : "bg-[#f1f2f3]"}`;
+}
+
+function AssetBlock({ meta, settings }: { meta: AssetMeta; settings: ShopSettingsDTO }) {
   const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [uploadState, uploadAction, uploadPending] = useActionState(
     uploadShopBrandingAssetAction,
     initial,
@@ -60,106 +94,116 @@ function AssetCard({
     initial,
   );
 
-  const meta = LABELS[kind];
-  const url = resolveShopBrandingAssetUrl(settings, kind);
-  const hasCustom =
-    kind === "logoLight"
-      ? Boolean(settings.logoLightUrl)
-      : kind === "logoDark"
-        ? Boolean(settings.logoDarkUrl)
-        : kind === "favicon"
-          ? Boolean(settings.faviconUrl)
-          : Boolean(settings.ogImageUrl);
-
-  useEffect(() => {
-    if (uploadState?.ok || clearState?.ok) {
-      router.refresh();
-    }
-  }, [uploadState?.ok, clearState?.ok, router]);
-
+  const url = resolveShopBrandingAssetUrl(settings, meta.kind);
+  const custom = hasCustomUrl(settings, meta.kind);
   const pending = uploadPending || clearPending;
   const error =
-    (uploadState?.kind === kind ? uploadState.error : undefined) ??
-    (clearState?.kind === kind ? clearState.error : undefined);
+    (uploadState?.kind === meta.kind ? uploadState.error : undefined) ??
+    (clearState?.kind === meta.kind ? clearState.error : undefined);
   const ok =
-    (uploadState?.kind === kind && uploadState.ok) ||
-    (clearState?.kind === kind && clearState.ok);
+    (uploadState?.kind === meta.kind && uploadState.ok) ||
+    (clearState?.kind === meta.kind && clearState.ok);
+
+  useEffect(() => {
+    if (uploadState?.ok || clearState?.ok) router.refresh();
+  }, [uploadState?.ok, clearState?.ok, router]);
+
+  const darkPreview = meta.kind === "logoDark";
 
   return (
-    <div className="rounded-lg border border-[#e8eaed] bg-[#fafbfc] p-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-        <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-md border border-[#e8eaed] bg-white">
-          {/* eslint-disable-next-line @next/next/no-img-element -- Favicon/SVG/Blob-Vorschau */}
-          <img src={url} alt="" className="max-h-16 max-w-16 object-contain" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-semibold text-[#1f2937]">{meta.title}</h3>
-          <p className="mt-1 text-xs text-[#6b7280]">{meta.hint}</p>
-          <p className="mt-1 truncate text-xs text-[#9ca3af]" title={url}>
-            {hasCustom ? "Eigener Upload" : "Static-Fallback"} · {url}
-          </p>
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            <form action={uploadAction} className="flex flex-wrap items-center gap-2">
-              <input type="hidden" name="kind" value={kind} />
-              <label className={`${secondaryBtn} cursor-pointer`}>
-                <ImageUp className="size-4" aria-hidden />
-                <span>{uploadPending ? "Lädt …" : "Datei wählen"}</span>
-                <input
-                  type="file"
-                  name="file"
-                  accept={meta.accept}
-                  className="sr-only"
-                  disabled={pending}
-                  onChange={(e) => {
-                    const form = e.currentTarget.form;
-                    if (form && e.currentTarget.files?.length) {
-                      form.requestSubmit();
-                    }
-                  }}
-                />
-              </label>
-            </form>
-            {hasCustom ? (
-              <form action={clearAction}>
-                <input type="hidden" name="kind" value={kind} />
-                <button type="submit" disabled={pending} className={secondaryBtn} aria-label={`${meta.title} entfernen`}>
-                  <Trash2 className="size-4" aria-hidden />
-                  Entfernen
-                </button>
-              </form>
-            ) : null}
-          </div>
-
-          {error ? (
-            <p className="mt-2 text-sm text-red-600" role="alert">
-              {error}
-            </p>
-          ) : null}
-          {ok && !error ? (
-            <p className="mt-2 text-sm font-medium text-primary" role="status">
-              Aktualisiert.
-            </p>
-          ) : null}
-        </div>
+    <div className="space-y-3">
+      <div>
+        <h3 className="text-sm font-semibold text-[#1f2937]">{meta.title}</h3>
+        <p className="mt-1 text-sm text-[#6b7280]">{meta.description}</p>
       </div>
+
+      <div className={previewShellClass(meta.variant, darkPreview)}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- Branding-Vorschau inkl. SVG/ICO/Blob */}
+        <img
+          src={url}
+          alt=""
+          className={
+            meta.variant === "cover"
+              ? "h-full w-full object-cover"
+              : meta.variant === "square"
+                ? "max-h-[70%] max-w-[70%] object-contain"
+                : "max-h-16 w-auto max-w-[min(100%,16rem)] object-contain"
+          }
+        />
+      </div>
+
+      <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-[#d2d5d9] bg-white">
+        <form action={uploadAction} className="contents">
+          <input type="hidden" name="kind" value={meta.kind} />
+          <input
+            ref={fileRef}
+            type="file"
+            name="file"
+            accept={meta.accept}
+            className="sr-only"
+            disabled={pending}
+            onChange={(e) => {
+              const form = e.currentTarget.form;
+              if (form && e.currentTarget.files?.length) form.requestSubmit();
+            }}
+          />
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => fileRef.current?.click()}
+            className="min-h-11 border-r border-[#d2d5d9] px-3 text-sm font-medium text-[#1f2937] transition-colors hover:bg-[#f7f8fa] disabled:opacity-50"
+          >
+            {uploadPending ? "Lädt …" : "Ändern"}
+          </button>
+        </form>
+        <form action={clearAction} className="contents">
+          <input type="hidden" name="kind" value={meta.kind} />
+          <button
+            type="submit"
+            disabled={pending || !custom}
+            className="min-h-11 px-3 text-sm font-medium text-[#1f2937] transition-colors hover:bg-[#f7f8fa] disabled:cursor-not-allowed disabled:text-[#9ca3af] disabled:hover:bg-white"
+          >
+            Entfernen
+          </button>
+        </form>
+      </div>
+
+      <p className="text-xs text-[#6b7280]">{meta.hint}</p>
+      {!custom ? (
+        <p className="text-xs text-[#9ca3af]">Aktuell: Static-Fallback</p>
+      ) : null}
+
+      {error ? (
+        <p className="text-sm text-[#b42318]" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {ok && !error ? (
+        <p className="text-sm font-medium text-primary" role="status">
+          Aktualisiert.
+        </p>
+      ) : null}
     </div>
   );
 }
 
-export function BrandingAssetsSection({ settings }: { settings: ShopSettingsDTO }) {
+export function LogosSection({ settings }: { settings: ShopSettingsDTO }) {
   return (
-    <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
-      <h2 className="text-base font-semibold text-[#1f2937]">Medien</h2>
-      <p className="mt-2 text-xs leading-relaxed text-[#6b7280]">
-        Uploads liegen in Vercel Blob (nicht auf dem Server-Dateisystem). Fehlt ein Asset, gilt der
-        Static-Fallback unter <code className="rounded bg-[#f3f4f6] px-1">/branding/</code>.
-      </p>
-      <div className="mt-6 space-y-4">
-        {SHOP_BRANDING_ASSET_KINDS.map((kind) => (
-          <AssetCard key={kind} kind={kind} settings={settings} />
+    <section className="rounded-xl border border-[#e8eaed] bg-white p-5 shadow-sm sm:p-6">
+      <h2 className="text-base font-semibold text-[#1f2937]">Logos</h2>
+      <div className="mt-6 space-y-8">
+        {LOGO_ASSETS.map((meta) => (
+          <AssetBlock key={meta.kind} meta={meta} settings={settings} />
         ))}
       </div>
+    </section>
+  );
+}
+
+export function CoverImageSection({ settings }: { settings: ShopSettingsDTO }) {
+  return (
+    <section className="rounded-xl border border-[#e8eaed] bg-white p-5 shadow-sm sm:p-6">
+      <AssetBlock meta={COVER_ASSET} settings={settings} />
     </section>
   );
 }

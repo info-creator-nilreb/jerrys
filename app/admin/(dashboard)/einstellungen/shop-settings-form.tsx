@@ -1,32 +1,107 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { Facebook, Instagram } from "lucide-react";
+import { useActionState, useMemo, useState, type ReactNode } from "react";
 import {
   saveShopSettingsAction,
   type ShopSettingsFormState,
 } from "@/app/admin/(dashboard)/einstellungen/actions";
-import { BrandingAssetsSection } from "@/app/admin/(dashboard)/einstellungen/branding-assets-section";
+import {
+  CoverImageSection,
+  LogosSection,
+} from "@/app/admin/(dashboard)/einstellungen/branding-assets-section";
 import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
 import { evaluatePrimaryBrandContrast } from "@/lib/shop/color-contrast";
-import { resolveShopBrandingAssetUrl } from "@/lib/shop/branding-asset-fallbacks";
+import { JERRYS_SHOP_SETTINGS_DEFAULTS } from "@/lib/shop/shop-settings-defaults";
 import type { ShopSettingsDTO } from "@/lib/shop/shop-settings";
 
 const initial: ShopSettingsFormState = null;
 
 const inputClass =
-  "w-full rounded-md border border-[#d2d5d9] bg-white px-3 py-2 text-sm text-[#1f2937] outline-none ring-primary focus:border-primary focus:ring-1";
-
-const labelClass = "text-xs font-medium text-[#6b7280]";
+  "w-full rounded-lg border border-[#d2d5d9] bg-white px-3 py-2.5 text-sm text-[#1f2937] outline-none ring-primary focus:border-primary focus:ring-1";
 
 const saveBtnClass =
   "shrink-0 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-(--primary-hover) disabled:opacity-50";
 
+const removeLinkClass =
+  "text-sm font-medium text-[#b42318] transition-colors hover:text-[#912018] disabled:text-[#9ca3af]";
+
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <p className="mt-1 text-sm text-red-600" role="alert">
+    <p className="mt-1.5 text-sm text-[#b42318]" role="alert">
       {message}
     </p>
+  );
+}
+
+function SettingsCard({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-xl border border-[#e8eaed] bg-white p-5 shadow-sm sm:p-6">
+      <h2 className="text-base font-semibold text-[#1f2937]">{title}</h2>
+      {description ? <p className="mt-1 text-sm text-[#6b7280]">{description}</p> : null}
+      <div className={description ? "mt-4" : "mt-5"}>{children}</div>
+    </section>
+  );
+}
+
+function ColorRow({
+  label,
+  name,
+  value,
+  onChange,
+  onRemove,
+  error,
+}: {
+  label: string;
+  name: string;
+  value: string;
+  onChange: (v: string) => void;
+  onRemove?: () => void;
+  error?: string;
+}) {
+  const hex = /^#[0-9a-fA-F]{6}$/.test(value) ? value : "#8bbe25";
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-[#e8eaed] bg-[#fafbfc] p-3">
+        <label className="relative size-12 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-[#d2d5d9] shadow-sm">
+          <span className="absolute inset-0" style={{ backgroundColor: hex }} aria-hidden />
+          <input
+            type="color"
+            aria-label={`${label} wählen`}
+            value={hex}
+            onChange={(e) => onChange(e.target.value)}
+            className="absolute inset-0 cursor-pointer opacity-0"
+          />
+        </label>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-[#1f2937]">{label}</p>
+          <input
+            name={name}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            pattern="#[0-9A-Fa-f]{6}"
+            required
+            aria-label={`${label} Hex`}
+            className="mt-0.5 w-full border-0 bg-transparent p-0 font-mono text-sm text-[#6b7280] outline-none focus:text-[#1f2937]"
+          />
+        </div>
+        {onRemove ? (
+          <button type="button" onClick={onRemove} className={removeLinkClass}>
+            Entfernen
+          </button>
+        ) : null}
+      </div>
+      <FieldError message={error} />
+    </div>
   );
 }
 
@@ -37,95 +112,216 @@ type Props = {
 export function ShopSettingsForm({ defaults }: Props) {
   const [state, formAction, pending] = useActionState(saveShopSettingsAction, initial);
   const [shopName, setShopName] = useState(defaults.shopName);
+  const [shortDescription, setShortDescription] = useState(defaults.shortDescription ?? "");
   const [primaryColor, setPrimaryColor] = useState(defaults.primaryColor);
   const [primaryHoverColor, setPrimaryHoverColor] = useState(defaults.primaryHoverColor);
+  const [instagramUrl, setInstagramUrl] = useState(defaults.instagramUrl ?? "");
+  const [facebookUrl, setFacebookUrl] = useState(defaults.facebookUrl ?? "");
 
   const fe = state?.fieldErrors ?? {};
-  const logoPreview = resolveShopBrandingAssetUrl(defaults, "logoLight");
-
   const liveContrast = useMemo(
     () => evaluatePrimaryBrandContrast(primaryColor),
     [primaryColor],
   );
 
   return (
-    <div className="space-y-8">
-      <section
-        className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm"
-        aria-label="Vorschau"
-      >
-        <h2 className="text-base font-semibold text-[#1f2937]">Vorschau</h2>
-        <p className="mt-2 text-xs text-[#6b7280]">
-          Zeigt den aktuellen Serverzustand für Logo und die live bearbeiteten Farben/Namen (noch nicht
-          gespeichert).
-        </p>
-        <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center">
-          {/* eslint-disable-next-line @next/next/no-img-element -- Admin-Vorschau inkl. SVG/ICO */}
-          <img
-            src={logoPreview}
-            alt=""
-            className="h-12 w-auto max-w-[10rem] object-contain"
-          />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-lg font-semibold text-[#1f2937]">{shopName || "—"}</p>
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                className="rounded-md px-4 py-2 text-sm font-semibold text-white shadow-sm"
-                style={{ backgroundColor: primaryColor }}
+    <div className="space-y-4 sm:space-y-5">
+      <LogosSection settings={defaults} />
+
+      <form action={formAction} className="space-y-4 sm:space-y-5">
+        <SettingsCard
+          title="Farben"
+          description="Die Markenfarben, die in deinem Shop, in E-Mails und im Admin erscheinen"
+        >
+          <div className="space-y-3">
+            <p className="text-sm font-semibold text-[#1f2937]">Primär</p>
+            <ColorRow
+              label="Primärfarbe"
+              name="primaryColor"
+              value={primaryColor}
+              onChange={setPrimaryColor}
+              onRemove={() => setPrimaryColor(JERRYS_SHOP_SETTINGS_DEFAULTS.primaryColor)}
+              error={fe.primaryColor}
+            />
+            <ColorRow
+              label="Hover-/Fokusfarbe"
+              name="primaryHoverColor"
+              value={primaryHoverColor}
+              onChange={setPrimaryHoverColor}
+              onRemove={() => setPrimaryHoverColor(JERRYS_SHOP_SETTINGS_DEFAULTS.primaryHoverColor)}
+              error={fe.primaryHoverColor}
+            />
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-[#e8eaed] bg-[#fafbfc] p-3">
+              <span
+                className="size-12 shrink-0 rounded-lg border border-[#d2d5d9] bg-white shadow-sm"
+                aria-hidden
+              />
+              <div>
+                <p className="text-sm font-medium text-[#1f2937]">Kontrastfarbe</p>
+                <p className="font-mono text-sm text-[#6b7280]">#ffffff</p>
+              </div>
+              <p className="w-full text-xs text-[#6b7280] sm:ml-auto sm:w-auto">
+                Fest für Button-Text auf Primärflächen
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <span
+                className="inline-flex min-h-10 items-center rounded-md px-4 text-sm font-semibold text-white"
+                style={{ backgroundColor: /^#[0-9a-fA-F]{6}$/.test(primaryColor) ? primaryColor : "#8bbe25" }}
               >
                 Primäraktion
-              </button>
-              <button
-                type="button"
-                className="rounded-md px-4 py-2 text-sm font-semibold text-white shadow-sm"
-                style={{ backgroundColor: primaryHoverColor }}
+              </span>
+              <span
+                className="inline-flex min-h-10 items-center rounded-md px-4 text-sm font-semibold text-white"
+                style={{
+                  backgroundColor: /^#[0-9a-fA-F]{6}$/.test(primaryHoverColor)
+                    ? primaryHoverColor
+                    : "#74a320",
+                }}
               >
                 Hover
-              </button>
-              <a href="#farben" className="text-sm font-medium underline-offset-2 hover:underline" style={{ color: primaryColor }}>
-                Beispiel-Link
-              </a>
+              </span>
+            </div>
+            {liveContrast && liveContrast.warnings.length > 0 ? (
+              <div
+                className="rounded-lg border border-[#f3e0b5] bg-[#fff8e6] px-3 py-3 text-sm text-[#5c4b1f]"
+                role="status"
+              >
+                <p className="font-medium">Kontrast-Hinweis</p>
+                <ul className="mt-1 list-disc space-y-1 pl-4">
+                  {liveContrast.warnings.map((w) => (
+                    <li key={w}>{w}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        </SettingsCard>
+
+        <SettingsCard
+          title="Shopname"
+          description="Name deiner Marke in Shop, Admin und Metadaten"
+        >
+          <div className="relative">
+            <input
+              id="shopName"
+              name="shopName"
+              required
+              maxLength={80}
+              value={shopName}
+              onChange={(e) => setShopName(e.target.value)}
+              className={inputClass}
+            />
+            <p className="pointer-events-none absolute right-3 bottom-2.5 text-xs text-[#9ca3af]">
+              {shopName.length}/80
+            </p>
+          </div>
+          <FieldError message={fe.shopName} />
+        </SettingsCard>
+
+        <SettingsCard
+          title="Kurzbeschreibung"
+          description="Beschreibung deines Unternehmens, oft in Biografien und Angeboten verwendet"
+        >
+          <div className="relative">
+            <textarea
+              id="shortDescription"
+              name="shortDescription"
+              rows={4}
+              maxLength={500}
+              value={shortDescription}
+              onChange={(e) => setShortDescription(e.target.value)}
+              className={`${inputClass} resize-y pb-7`}
+            />
+            <p className="pointer-events-none absolute right-3 bottom-2.5 text-xs text-[#9ca3af]">
+              {shortDescription.length}/500
+            </p>
+          </div>
+          <FieldError message={fe.shortDescription} />
+        </SettingsCard>
+
+        <SettingsCard
+          title="Social-Media-Links"
+          description="Social-Media-Links für dein Unternehmen, oft in der Theme-Fußzeile verwendet"
+        >
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="instagramUrl" className="text-sm font-medium text-[#1f2937]">
+                Instagram
+              </label>
+              <div className="mt-1.5 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="relative min-w-0 flex-1">
+                  <Instagram
+                    className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#6b7280]"
+                    aria-hidden
+                    strokeWidth={1.75}
+                  />
+                  <input
+                    id="instagramUrl"
+                    name="instagramUrl"
+                    type="url"
+                    placeholder="https://instagram.com/…"
+                    value={instagramUrl}
+                    onChange={(e) => setInstagramUrl(e.target.value)}
+                    className={`${inputClass} pl-10`}
+                  />
+                </div>
+                <button
+                  type="button"
+                  className={`${removeLinkClass} self-start sm:self-center`}
+                  onClick={() => setInstagramUrl("")}
+                  disabled={!instagramUrl}
+                >
+                  Entfernen
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-[#9ca3af]">https://instagram.com/shop</p>
+              <FieldError message={fe.instagramUrl} />
+            </div>
+
+            <div>
+              <label htmlFor="facebookUrl" className="text-sm font-medium text-[#1f2937]">
+                Facebook
+              </label>
+              <div className="mt-1.5 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="relative min-w-0 flex-1">
+                  <Facebook
+                    className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#6b7280]"
+                    aria-hidden
+                    strokeWidth={1.75}
+                  />
+                  <input
+                    id="facebookUrl"
+                    name="facebookUrl"
+                    type="url"
+                    placeholder="https://facebook.com/…"
+                    value={facebookUrl}
+                    onChange={(e) => setFacebookUrl(e.target.value)}
+                    className={`${inputClass} pl-10`}
+                  />
+                </div>
+                <button
+                  type="button"
+                  className={`${removeLinkClass} self-start sm:self-center`}
+                  onClick={() => setFacebookUrl("")}
+                  disabled={!facebookUrl}
+                >
+                  Entfernen
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-[#9ca3af]">https://facebook.com/shop</p>
+              <FieldError message={fe.facebookUrl} />
             </div>
           </div>
-        </div>
-      </section>
+        </SettingsCard>
 
-      <form action={formAction} className="space-y-8">
-        <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
-          <h2 className="text-base font-semibold text-[#1f2937]">Identität</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label htmlFor="shopName" className={labelClass}>
-                Shopname <span className="text-primary">*</span>
-              </label>
-              <input
-                id="shopName"
-                name="shopName"
-                required
-                maxLength={80}
-                value={shopName}
-                onChange={(e) => setShopName(e.target.value)}
-                className={`${inputClass} mt-1`}
-              />
-              <FieldError message={fe.shopName} />
-            </div>
-            <div className="sm:col-span-2">
-              <label htmlFor="shortDescription" className={labelClass}>
-                Kurzbeschreibung
-              </label>
-              <textarea
-                id="shortDescription"
-                name="shortDescription"
-                rows={3}
-                maxLength={500}
-                defaultValue={defaults.shortDescription ?? ""}
-                className={`${inputClass} mt-1`}
-              />
-              <FieldError message={fe.shortDescription} />
-            </div>
+        <SettingsCard
+          title="Kontakt & Geschäftsangaben"
+          description="Öffentliche Kontaktdaten und Anschrift für Impressum, E-Mail und Rechnungen"
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="emailFromName" className={labelClass}>
+              <label htmlFor="emailFromName" className="text-sm font-medium text-[#1f2937]">
                 E-Mail-Absendername
               </label>
               <input
@@ -133,83 +329,12 @@ export function ShopSettingsForm({ defaults }: Props) {
                 name="emailFromName"
                 maxLength={80}
                 defaultValue={defaults.emailFromName ?? ""}
-                className={`${inputClass} mt-1`}
+                className={`${inputClass} mt-1.5`}
               />
               <FieldError message={fe.emailFromName} />
             </div>
-          </div>
-        </section>
-
-        <section id="farben" className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
-          <h2 className="text-base font-semibold text-[#1f2937]">Farben</h2>
-          <p className="mt-2 text-xs text-[#6b7280]">
-            Nur <code className="rounded bg-[#f3f4f6] px-1">#RRGGBB</code> — keine freie CSS-Eingabe.
-            Kontrastwarnungen blockieren das Speichern nicht (Baseline-Markengrün bleibt möglich).
-          </p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="primaryColor" className={labelClass}>
-                Primärfarbe <span className="text-primary">*</span>
-              </label>
-              <div className="mt-1 flex items-center gap-2">
-                <input
-                  type="color"
-                  aria-label="Primärfarbe wählen"
-                  value={/^#[0-9a-fA-F]{6}$/.test(primaryColor) ? primaryColor : "#8bbe25"}
-                  onChange={(e) => setPrimaryColor(e.target.value)}
-                  className="size-11 cursor-pointer rounded border border-[#d2d5d9] bg-white p-1"
-                />
-                <input
-                  id="primaryColor"
-                  name="primaryColor"
-                  required
-                  pattern="#[0-9A-Fa-f]{6}"
-                  value={primaryColor}
-                  onChange={(e) => setPrimaryColor(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-              <FieldError message={fe.primaryColor} />
-            </div>
-            <div>
-              <label htmlFor="primaryHoverColor" className={labelClass}>
-                Hover-/Fokusfarbe <span className="text-primary">*</span>
-              </label>
-              <div className="mt-1 flex items-center gap-2">
-                <input
-                  type="color"
-                  aria-label="Hoverfarbe wählen"
-                  value={/^#[0-9a-fA-F]{6}$/.test(primaryHoverColor) ? primaryHoverColor : "#74a320"}
-                  onChange={(e) => setPrimaryHoverColor(e.target.value)}
-                  className="size-11 cursor-pointer rounded border border-[#d2d5d9] bg-white p-1"
-                />
-                <input
-                  id="primaryHoverColor"
-                  name="primaryHoverColor"
-                  required
-                  pattern="#[0-9A-Fa-f]{6}"
-                  value={primaryHoverColor}
-                  onChange={(e) => setPrimaryHoverColor(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-              <FieldError message={fe.primaryHoverColor} />
-            </div>
-          </div>
-          {liveContrast && liveContrast.warnings.length > 0 ? (
-            <ul className="mt-4 list-disc space-y-1 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
-              {liveContrast.warnings.map((w) => (
-                <li key={w}>{w}</li>
-              ))}
-            </ul>
-          ) : null}
-        </section>
-
-        <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
-          <h2 className="text-base font-semibold text-[#1f2937]">Kontakt</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="contactEmail" className={labelClass}>
+              <label htmlFor="contactEmail" className="text-sm font-medium text-[#1f2937]">
                 Kontakt-E-Mail
               </label>
               <input
@@ -217,12 +342,12 @@ export function ShopSettingsForm({ defaults }: Props) {
                 name="contactEmail"
                 type="email"
                 defaultValue={defaults.contactEmail ?? ""}
-                className={`${inputClass} mt-1`}
+                className={`${inputClass} mt-1.5`}
               />
               <FieldError message={fe.contactEmail} />
             </div>
             <div>
-              <label htmlFor="supportEmail" className={labelClass}>
+              <label htmlFor="supportEmail" className="text-sm font-medium text-[#1f2937]">
                 Support-E-Mail
               </label>
               <input
@@ -230,90 +355,84 @@ export function ShopSettingsForm({ defaults }: Props) {
                 name="supportEmail"
                 type="email"
                 defaultValue={defaults.supportEmail ?? ""}
-                className={`${inputClass} mt-1`}
+                className={`${inputClass} mt-1.5`}
               />
               <FieldError message={fe.supportEmail} />
             </div>
             <div>
-              <label htmlFor="contactPhone" className={labelClass}>
+              <label htmlFor="contactPhone" className="text-sm font-medium text-[#1f2937]">
                 Telefon
               </label>
               <input
                 id="contactPhone"
                 name="contactPhone"
                 defaultValue={defaults.contactPhone ?? ""}
-                className={`${inputClass} mt-1`}
+                className={`${inputClass} mt-1.5`}
               />
               <FieldError message={fe.contactPhone} />
             </div>
-          </div>
-        </section>
-
-        <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
-          <h2 className="text-base font-semibold text-[#1f2937]">Geschäftsanschrift</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <label htmlFor="legalName" className={labelClass}>
+              <label htmlFor="legalName" className="text-sm font-medium text-[#1f2937]">
                 Rechtlicher Name
               </label>
               <input
                 id="legalName"
                 name="legalName"
                 defaultValue={defaults.legalName ?? ""}
-                className={`${inputClass} mt-1`}
+                className={`${inputClass} mt-1.5`}
               />
               <FieldError message={fe.legalName} />
             </div>
             <div className="sm:col-span-2">
-              <label htmlFor="addressLine1" className={labelClass}>
+              <label htmlFor="addressLine1" className="text-sm font-medium text-[#1f2937]">
                 Straße und Hausnummer
               </label>
               <input
                 id="addressLine1"
                 name="addressLine1"
                 defaultValue={defaults.addressLine1 ?? ""}
-                className={`${inputClass} mt-1`}
+                className={`${inputClass} mt-1.5`}
               />
               <FieldError message={fe.addressLine1} />
             </div>
             <div className="sm:col-span-2">
-              <label htmlFor="addressLine2" className={labelClass}>
+              <label htmlFor="addressLine2" className="text-sm font-medium text-[#1f2937]">
                 Adresszusatz
               </label>
               <input
                 id="addressLine2"
                 name="addressLine2"
                 defaultValue={defaults.addressLine2 ?? ""}
-                className={`${inputClass} mt-1`}
+                className={`${inputClass} mt-1.5`}
               />
               <FieldError message={fe.addressLine2} />
             </div>
             <div>
-              <label htmlFor="addressZip" className={labelClass}>
+              <label htmlFor="addressZip" className="text-sm font-medium text-[#1f2937]">
                 PLZ
               </label>
               <input
                 id="addressZip"
                 name="addressZip"
                 defaultValue={defaults.addressZip ?? ""}
-                className={`${inputClass} mt-1`}
+                className={`${inputClass} mt-1.5`}
               />
               <FieldError message={fe.addressZip} />
             </div>
             <div>
-              <label htmlFor="addressCity" className={labelClass}>
+              <label htmlFor="addressCity" className="text-sm font-medium text-[#1f2937]">
                 Ort
               </label>
               <input
                 id="addressCity"
                 name="addressCity"
                 defaultValue={defaults.addressCity ?? ""}
-                className={`${inputClass} mt-1`}
+                className={`${inputClass} mt-1.5`}
               />
               <FieldError message={fe.addressCity} />
             </div>
             <div>
-              <label htmlFor="addressCountry" className={labelClass}>
+              <label htmlFor="addressCountry" className="text-sm font-medium text-[#1f2937]">
                 Land (ISO-2)
               </label>
               <input
@@ -321,62 +440,27 @@ export function ShopSettingsForm({ defaults }: Props) {
                 name="addressCountry"
                 maxLength={2}
                 defaultValue={defaults.addressCountry || "DE"}
-                className={`${inputClass} mt-1 uppercase`}
+                className={`${inputClass} mt-1.5 uppercase`}
               />
               <FieldError message={fe.addressCountry} />
             </div>
             <div>
-              <label htmlFor="vatId" className={labelClass}>
+              <label htmlFor="vatId" className="text-sm font-medium text-[#1f2937]">
                 USt-IdNr.
               </label>
               <input
                 id="vatId"
                 name="vatId"
                 defaultValue={defaults.vatId ?? ""}
-                className={`${inputClass} mt-1`}
+                className={`${inputClass} mt-1.5`}
               />
               <FieldError message={fe.vatId} />
             </div>
           </div>
-        </section>
-
-        <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
-          <h2 className="text-base font-semibold text-[#1f2937]">Social Links</h2>
-          <p className="mt-2 text-xs text-[#6b7280]">Nur HTTPS-URLs.</p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="instagramUrl" className={labelClass}>
-                Instagram
-              </label>
-              <input
-                id="instagramUrl"
-                name="instagramUrl"
-                type="url"
-                placeholder="https://"
-                defaultValue={defaults.instagramUrl ?? ""}
-                className={`${inputClass} mt-1`}
-              />
-              <FieldError message={fe.instagramUrl} />
-            </div>
-            <div>
-              <label htmlFor="facebookUrl" className={labelClass}>
-                Facebook
-              </label>
-              <input
-                id="facebookUrl"
-                name="facebookUrl"
-                type="url"
-                placeholder="https://"
-                defaultValue={defaults.facebookUrl ?? ""}
-                className={`${inputClass} mt-1`}
-              />
-              <FieldError message={fe.facebookUrl} />
-            </div>
-          </div>
-        </section>
+        </SettingsCard>
 
         {state?.error ? (
-          <p className="text-sm text-red-600" role="alert">
+          <p className="text-sm text-[#b42318]" role="alert">
             {state.error}
           </p>
         ) : null}
@@ -384,11 +468,13 @@ export function ShopSettingsForm({ defaults }: Props) {
           <div className="space-y-2" role="status">
             <p className="text-sm font-medium text-primary">Gespeichert.</p>
             {state.contrastWarnings && state.contrastWarnings.length > 0 ? (
-              <ul className="list-disc space-y-1 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                {state.contrastWarnings.map((w) => (
-                  <li key={w}>{w}</li>
-                ))}
-              </ul>
+              <div className="rounded-lg border border-[#f3e0b5] bg-[#fff8e6] px-3 py-3 text-sm text-[#5c4b1f]">
+                <ul className="list-disc space-y-1 pl-4">
+                  {state.contrastWarnings.map((w) => (
+                    <li key={w}>{w}</li>
+                  ))}
+                </ul>
+              </div>
             ) : null}
           </div>
         ) : null}
@@ -402,7 +488,7 @@ export function ShopSettingsForm({ defaults }: Props) {
         </AdminFormActionDock>
       </form>
 
-      <BrandingAssetsSection settings={defaults} />
+      <CoverImageSection settings={defaults} />
     </div>
   );
 }
