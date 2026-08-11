@@ -7,6 +7,10 @@ import {
   saveContentPageAction,
   type ContentPageFormState,
 } from "@/app/admin/(dashboard)/inhalte/actions";
+import {
+  ContentLivePreview,
+  type LivePreviewProduct,
+} from "@/components/content/live-preview/content-live-preview";
 import { defaultDataForContentBlockType } from "@/lib/content/block-defaults";
 import {
   CONTENT_BLOCK_TYPE_LABELS,
@@ -50,7 +54,13 @@ function newClientId(): string {
   return `tmp_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-export function ContentPageForm({ initial }: { initial?: InitialPage }) {
+export function ContentPageForm({
+  initial,
+  previewProducts = [],
+}: {
+  initial?: InitialPage;
+  previewProducts?: LivePreviewProduct[];
+}) {
   const formId = useId();
   const [state, formAction, pending] = useActionState<
     ContentPageFormState,
@@ -58,6 +68,7 @@ export function ContentPageForm({ initial }: { initial?: InitialPage }) {
   >(saveContentPageAction, null);
 
   const [pageType, setPageType] = useState(initial?.pageType ?? "content");
+  const [title, setTitle] = useState(initial?.title ?? "");
   const [slug, setSlug] = useState(
     initial?.slug ?? (pageType === "homepage" ? CONTENT_PAGE_HOME_SLUG : ""),
   );
@@ -81,6 +92,16 @@ export function ContentPageForm({ initial }: { initial?: InitialPage }) {
           data: b.data,
         })),
       ),
+    [blocks],
+  );
+
+  const previewBlocks = useMemo(
+    () =>
+      blocks.map((b) => ({
+        clientId: b.clientId,
+        type: b.type,
+        data: b.data,
+      })),
     [blocks],
   );
 
@@ -110,7 +131,7 @@ export function ContentPageForm({ initial }: { initial?: InitialPage }) {
     ]);
   }
 
-  return (
+  const editor = (
     <form id={formId} action={formAction} className="space-y-8">
       {initial?.id ? <input type="hidden" name="id" value={initial.id} /> : null}
       <input type="hidden" name="blocksJson" value={blocksJson} />
@@ -126,7 +147,8 @@ export function ContentPageForm({ initial }: { initial?: InitialPage }) {
             <input
               name="title"
               required
-              defaultValue={initial?.title ?? ""}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               className={fieldClass}
             />
             {fe.title ? <p className="mt-1 text-sm text-red-600">{fe.title}</p> : null}
@@ -143,30 +165,31 @@ export function ContentPageForm({ initial }: { initial?: InitialPage }) {
                 if (t === "homepage") setSlug(CONTENT_PAGE_HOME_SLUG);
               }}
             >
-              {(Object.keys(CONTENT_PAGE_TYPE_LABELS) as Array<keyof typeof CONTENT_PAGE_TYPE_LABELS>).map(
-                (k) => (
-                  <option key={k} value={k}>
-                    {CONTENT_PAGE_TYPE_LABELS[k]}
-                  </option>
-                ),
-              )}
+              {(Object.keys(CONTENT_PAGE_TYPE_LABELS) as Array<
+                keyof typeof CONTENT_PAGE_TYPE_LABELS
+              >).map((k) => (
+                <option key={k} value={k}>
+                  {CONTENT_PAGE_TYPE_LABELS[k]}
+                </option>
+              ))}
             </select>
             {fe.pageType ? <p className="mt-1 text-sm text-red-600">{fe.pageType}</p> : null}
           </label>
           <label className="text-sm text-[#5c5f66]">
             Status beim Speichern
-            <select name="status" className={fieldClass} defaultValue={initial?.status ?? "draft"}>
-              {(Object.keys(CONTENT_PAGE_STATUS_LABELS) as Array<keyof typeof CONTENT_PAGE_STATUS_LABELS>).map(
-                (k) => (
-                  <option key={k} value={k}>
-                    {CONTENT_PAGE_STATUS_LABELS[k]}
-                  </option>
-                ),
-              )}
+            <select
+              name="status"
+              className={fieldClass}
+              defaultValue={initial?.status ?? "draft"}
+            >
+              {(Object.keys(CONTENT_PAGE_STATUS_LABELS) as Array<
+                keyof typeof CONTENT_PAGE_STATUS_LABELS
+              >).map((k) => (
+                <option key={k} value={k}>
+                  {CONTENT_PAGE_STATUS_LABELS[k]}
+                </option>
+              ))}
             </select>
-            <p className="mt-1 text-xs text-[#9ca3af]">
-              Schnell wechseln: Panel „Veröffentlichung“ oben (ohne Formular speichern).
-            </p>
           </label>
           <label className="text-sm text-[#5c5f66] sm:col-span-2">
             Slug <span className="text-primary">*</span>
@@ -187,7 +210,11 @@ export function ContentPageForm({ initial }: { initial?: InitialPage }) {
           </label>
           <label className="text-sm text-[#5c5f66]">
             SEO-Titel
-            <input name="seoTitle" defaultValue={initial?.seoTitle ?? ""} className={fieldClass} />
+            <input
+              name="seoTitle"
+              defaultValue={initial?.seoTitle ?? ""}
+              className={fieldClass}
+            />
           </label>
           <label className="text-sm text-[#5c5f66]">
             Canonical-Pfad
@@ -208,7 +235,11 @@ export function ContentPageForm({ initial }: { initial?: InitialPage }) {
           </label>
           <label className="text-sm text-[#5c5f66] sm:col-span-2">
             OG-Bild-URL
-            <input name="ogImageUrl" defaultValue={initial?.ogImageUrl ?? ""} className={fieldClass} />
+            <input
+              name="ogImageUrl"
+              defaultValue={initial?.ogImageUrl ?? ""}
+              className={fieldClass}
+            />
           </label>
           <input type="hidden" name="previousSlug" value={initial?.previousSlug ?? ""} />
           <label className="flex items-center gap-2 text-sm text-[#2d2e32] sm:col-span-2">
@@ -221,16 +252,6 @@ export function ContentPageForm({ initial }: { initial?: InitialPage }) {
             />
             Für Suchmaschinen indexierbar (nach Veröffentlichung)
           </label>
-          {initial?.previousSlug ? (
-            <p className="text-xs text-[#6b7280] sm:col-span-2">
-              Redirect aktiv: <code className="text-[#374151]">/{initial.previousSlug}</code> →
-              aktueller Slug (301 nach Speichern bei Slug-Wechsel neu gesetzt).
-            </p>
-          ) : (
-            <p className="text-xs text-[#9ca3af] sm:col-span-2">
-              Bei Slug-Änderung wird der bisherige Slug automatisch als Redirect-Quelle gespeichert.
-            </p>
-          )}
         </div>
       </section>
 
@@ -274,7 +295,7 @@ export function ContentPageForm({ initial }: { initial?: InitialPage }) {
                 <div className="flex flex-wrap items-center gap-2 px-3 py-2">
                   <button
                     type="button"
-                    className="min-h-11 min-w-11 rounded-md border border-[#e3e4e8] bg-white px-2 text-[#374151] hover:bg-white"
+                    className="min-h-11 min-w-11 rounded-md border border-[#e3e4e8] bg-white px-2 text-[#374151]"
                     aria-label="Nach oben"
                     disabled={index === 0}
                     onClick={() => moveBlock(index, -1)}
@@ -283,7 +304,7 @@ export function ContentPageForm({ initial }: { initial?: InitialPage }) {
                   </button>
                   <button
                     type="button"
-                    className="min-h-11 min-w-11 rounded-md border border-[#e3e4e8] bg-white px-2 text-[#374151] hover:bg-white"
+                    className="min-h-11 min-w-11 rounded-md border border-[#e3e4e8] bg-white px-2 text-[#374151]"
                     aria-label="Nach unten"
                     disabled={index === blocks.length - 1}
                     onClick={() => moveBlock(index, 1)}
@@ -308,7 +329,9 @@ export function ContentPageForm({ initial }: { initial?: InitialPage }) {
                     className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-red-600 hover:bg-red-50"
                     aria-label="Block entfernen"
                     onClick={() =>
-                      setBlocks((prev) => prev.filter((b) => b.clientId !== block.clientId))
+                      setBlocks((prev) =>
+                        prev.filter((b) => b.clientId !== block.clientId),
+                      )
                     }
                   >
                     <Trash2 className="size-4" aria-hidden strokeWidth={1.75} />
@@ -349,5 +372,19 @@ export function ContentPageForm({ initial }: { initial?: InitialPage }) {
         </button>
       </div>
     </form>
+  );
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] xl:items-start">
+      <div className="min-w-0">{editor}</div>
+      <aside className="xl:sticky xl:top-4 xl:self-start">
+        <ContentLivePreview
+          title={title}
+          pageType={pageType}
+          blocks={previewBlocks}
+          products={previewProducts}
+        />
+      </aside>
+    </div>
   );
 }

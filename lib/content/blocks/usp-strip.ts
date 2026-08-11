@@ -1,6 +1,9 @@
 import { z } from "zod";
+import { optionalBlockText } from "@/lib/content/block-data-helpers";
 
 export const uspStripBlockDataSchema = z.object({
+  title: optionalBlockText(120),
+  intro: optionalBlockText(500),
   items: z
     .array(
       z.object({

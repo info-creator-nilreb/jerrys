@@ -18,6 +18,7 @@ import {
 } from "@/lib/content/content-pages-cache";
 import { CONTENT_PAGE_HOME_SLUG } from "@/lib/content/reserved-slugs";
 import { sanitizeContentRichTextHtml } from "@/lib/content/sanitize-content-html";
+import { sanitizeLegalDocumentHtml } from "@/lib/legal/sanitize-legal-html";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 
 const log = createLogger("content-page-update");
@@ -50,17 +51,22 @@ function fieldErrorsFromZod(err: {
 function sanitizeBlockData(
   type: string,
   data: Record<string, unknown>,
+  pageType?: string,
 ): Record<string, unknown> {
   if (type === "richText" && typeof data.html === "string") {
-    return {
-      ...data,
-      html: sanitizeContentRichTextHtml(data.html) ?? "",
-    };
+    const html =
+      pageType === "legal"
+        ? sanitizeLegalDocumentHtml(data.html)
+        : (sanitizeContentRichTextHtml(data.html) ?? "");
+    return { ...data, html };
   }
   return data;
 }
 
-export function parseBlocksJson(raw: unknown): {
+export function parseBlocksJson(
+  raw: unknown,
+  options?: { pageType?: string },
+): {
   ok: true;
   blocks: ContentBlockInput[];
 } | {
@@ -100,7 +106,7 @@ export function parseBlocksJson(raw: unknown): {
       rec.data && typeof rec.data === "object" && !Array.isArray(rec.data)
         ? (rec.data as Record<string, unknown>)
         : {};
-    const data = sanitizeBlockData(type, dataRaw);
+    const data = sanitizeBlockData(type, dataRaw, options?.pageType);
     const validated = parseContentBlockData(type, data);
     if (!validated.ok) {
       return {
@@ -133,7 +139,9 @@ export async function upsertContentPageFromInput(input: {
   }
   const values: ContentPageValues = pageParsed.data;
 
-  const blocksParsed = parseBlocksJson(input.blocksJson);
+  const blocksParsed = parseBlocksJson(input.blocksJson, {
+    pageType: values.pageType,
+  });
   if (!blocksParsed.ok) {
     return { ok: false, fieldErrors: blocksParsed.fieldErrors };
   }

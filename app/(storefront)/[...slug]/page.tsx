@@ -39,6 +39,19 @@ export default async function PublicContentPage({ params }: PageProps) {
 
   const { page } = resolved;
 
+  if (page.pageType === "legal") {
+    return (
+      <article className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
+        <header className="mb-8">
+          <h1 className="text-3xl font-semibold tracking-tight text-(--foreground-heading) sm:text-4xl">
+            {page.title}
+          </h1>
+        </header>
+        <ContentBlocksRenderer blocks={page.blocks} pageType="legal" />
+      </article>
+    );
+  }
+
   return (
     <article className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
       <header className="mb-8 max-w-3xl">
@@ -47,7 +60,7 @@ export default async function PublicContentPage({ params }: PageProps) {
         </h1>
       </header>
       <div className="space-y-10">
-        <ContentBlocksRenderer blocks={page.blocks} />
+        <ContentBlocksRenderer blocks={page.blocks} pageType={page.pageType} />
       </div>
     </article>
   );

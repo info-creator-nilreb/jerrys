@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   updateHomepageAmazonReview,
   type StartseiteFormState,
-} from "@/app/admin/(dashboard)/startseite/actions";
+} from "@/app/admin/(dashboard)/inhalte/marketing/actions";
 
 const inputClass =
   "w-full rounded-md border border-[#d2d5d9] bg-white px-3 py-2 text-sm text-[#1f2937] outline-none ring-primary focus:border-primary focus:ring-1";
@@ -30,7 +30,7 @@ export function ReviewEditForm({ review }: { review: Review }) {
 
   useEffect(() => {
     if (state?.ok) {
-      router.replace("/admin/startseite");
+      router.replace("/admin/inhalte/marketing");
       router.refresh();
     }
   }, [state, router]);
@@ -42,7 +42,7 @@ export function ReviewEditForm({ review }: { review: Review }) {
         <button
           type="button"
           className="text-sm font-medium text-primary hover:underline"
-          onClick={() => router.replace("/admin/startseite")}
+          onClick={() => router.replace("/admin/inhalte/marketing")}
         >
           Abbrechen
         </button>

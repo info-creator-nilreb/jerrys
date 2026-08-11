@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   createHomepageAmazonReview,
   type StartseiteFormState,
-} from "@/app/admin/(dashboard)/startseite/actions";
+} from "@/app/admin/(dashboard)/inhalte/marketing/actions";
 
 const inputClass =
   "w-full rounded-md border border-[#d2d5d9] bg-white px-3 py-2 text-sm text-[#1f2937] outline-none ring-primary focus:border-primary focus:ring-1";

@@ -12,7 +12,7 @@ import { ALLOWED_IMAGE_TYPES, extFromMime, MAX_UPLOAD_BYTES } from "@/lib/admin/
 import { getPrisma } from "@/lib/db/prisma";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 
-const log = createLogger("admin.startseite");
+const log = createLogger("admin.inhalte.marketing");
 
 export type StartseiteFormState = { error?: string; ok?: boolean } | null;
 
@@ -100,7 +100,7 @@ export async function createHomepageAmazonReview(
   }
 
   revalidatePath("/");
-  revalidatePath("/admin/startseite");
+  revalidatePath("/admin/inhalte/marketing");
   return { ok: true };
 }
 
@@ -146,7 +146,7 @@ export async function updateHomepageAmazonReview(
   }
 
   revalidatePath("/");
-  revalidatePath("/admin/startseite");
+  revalidatePath("/admin/inhalte/marketing");
   return { ok: true };
 }
 
@@ -165,7 +165,7 @@ export async function deleteHomepageAmazonReview(formData: FormData): Promise<vo
     log.error("homepage_review_delete_failed", { id, ...errorMeta(e) });
   }
   revalidatePath("/");
-  revalidatePath("/admin/startseite");
+  revalidatePath("/admin/inhalte/marketing");
 }
 
 export async function setHomepageAmazonReviewActive(formData: FormData): Promise<void> {
@@ -178,7 +178,7 @@ export async function setHomepageAmazonReviewActive(formData: FormData): Promise
     data: { isActive: active },
   });
   revalidatePath("/");
-  revalidatePath("/admin/startseite");
+  revalidatePath("/admin/inhalte/marketing");
 }
 
 export async function moveHomepageAmazonReview(formData: FormData): Promise<void> {
@@ -208,7 +208,7 @@ export async function moveHomepageAmazonReview(formData: FormData): Promise<void
     }),
   ]);
   revalidatePath("/");
-  revalidatePath("/admin/startseite");
+  revalidatePath("/admin/inhalte/marketing");
 }
 
 const HOMEPAGE_SOCIAL_PREFIX = "/media/homepage-social/";
@@ -283,7 +283,7 @@ export async function uploadHomepageSocialImages(
   }
 
   revalidatePath("/");
-  revalidatePath("/admin/startseite");
+  revalidatePath("/admin/inhalte/marketing");
   return { ok: true };
 }
 
@@ -313,7 +313,7 @@ export async function updateHomepageSocialImageMeta(
   }
 
   revalidatePath("/");
-  revalidatePath("/admin/startseite");
+  revalidatePath("/admin/inhalte/marketing");
   return { ok: true };
 }
 
@@ -343,7 +343,7 @@ export async function deleteHomepageSocialImage(formData: FormData): Promise<voi
     log.error("homepage_social_delete_failed", { id, ...errorMeta(e) });
   }
   revalidatePath("/");
-  revalidatePath("/admin/startseite");
+  revalidatePath("/admin/inhalte/marketing");
 }
 
 export async function setHomepageSocialImageActive(formData: FormData): Promise<void> {
@@ -356,7 +356,7 @@ export async function setHomepageSocialImageActive(formData: FormData): Promise<
     data: { isActive: active },
   });
   revalidatePath("/");
-  revalidatePath("/admin/startseite");
+  revalidatePath("/admin/inhalte/marketing");
 }
 
 export async function moveHomepageSocialImage(formData: FormData): Promise<void> {
@@ -386,5 +386,5 @@ export async function moveHomepageSocialImage(formData: FormData): Promise<void>
     }),
   ]);
   revalidatePath("/");
-  revalidatePath("/admin/startseite");
+  revalidatePath("/admin/inhalte/marketing");
 }

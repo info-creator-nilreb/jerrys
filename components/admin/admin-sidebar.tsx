@@ -19,7 +19,6 @@ import {
   IconPromotions,
   IconSettings,
   IconShipping,
-  IconStorefront,
   IconWorkshops,
 } from "@/components/admin/admin-nav-icons";
 
@@ -35,7 +34,6 @@ type NavItem = {
 
 const mainNav: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: IconDashboard },
-  { href: "/admin/startseite", label: "Startseite", icon: IconStorefront },
   { href: "/admin/inhalte", label: "Inhalte", icon: IconContents },
   { href: "/admin/products", label: "Katalog", icon: IconCatalog },
   { href: "/admin/collections", label: "Kollektionen", icon: IconCollections },

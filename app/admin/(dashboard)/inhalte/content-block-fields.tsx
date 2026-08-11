@@ -118,7 +118,18 @@ export function ContentBlockFields({ type, data, onChange }: Props) {
           />
         </label>
         <label className="text-sm text-[#5c5f66]">
-          Bildposition
+          Layout
+          <select
+            className={fieldClass}
+            value={str(data, "layout") || "split"}
+            onChange={(e) => set("layout", e.target.value)}
+          >
+            <option value="split">Zwei Spalten</option>
+            <option value="stacked">Zentrierter Banner</option>
+          </select>
+        </label>
+        <label className="text-sm text-[#5c5f66]">
+          Bildposition (nur Spalten)
           <select
             className={fieldClass}
             value={str(data, "imagePosition") || "left"}
@@ -136,6 +147,22 @@ export function ContentBlockFields({ type, data, onChange }: Props) {
     const items = Array.isArray(data.items) ? data.items : [];
     return (
       <div className="space-y-3">
+        <label className="block text-sm text-[#5c5f66]">
+          Abschnitts-Titel
+          <input
+            className={fieldClass}
+            value={str(data, "title")}
+            onChange={(e) => set("title", e.target.value)}
+          />
+        </label>
+        <label className="block text-sm text-[#5c5f66]">
+          Einleitung
+          <textarea
+            className={`${fieldClass} min-h-20`}
+            value={str(data, "intro")}
+            onChange={(e) => set("intro", e.target.value)}
+          />
+        </label>
         {items.map((raw, idx) => {
           const item =
             raw && typeof raw === "object"
@@ -278,6 +305,19 @@ export function ContentBlockFields({ type, data, onChange }: Props) {
             onChange={(e) => set("title", e.target.value)}
           />
         </label>
+        {type === "curatedProductList" ? (
+          <label className="text-sm text-[#5c5f66] sm:col-span-2">
+            Quelle
+            <select
+              className={fieldClass}
+              value={str(data, "source") || "ids"}
+              onChange={(e) => set("source", e.target.value)}
+            >
+              <option value="ids">Produkt-IDs</option>
+              <option value="allActive">Alle aktiven Produkte</option>
+            </select>
+          </label>
+        ) : null}
         {type === "productCategoryPick" ? (
           <>
             <label className="text-sm text-[#5c5f66]">
@@ -367,6 +407,14 @@ export function ContentBlockFields({ type, data, onChange }: Props) {
             className={fieldClass}
             value={str(data, "titleSocial")}
             onChange={(e) => set("titleSocial", e.target.value)}
+          />
+        </label>
+        <label className="text-sm text-[#5c5f66] sm:col-span-2">
+          Einleitung Social
+          <textarea
+            className={`${fieldClass} min-h-16`}
+            value={str(data, "introSocial")}
+            onChange={(e) => set("introSocial", e.target.value)}
           />
         </label>
       </div>

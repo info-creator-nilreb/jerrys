@@ -22,6 +22,7 @@ export function defaultDataForContentBlockType(
         body: "Beschreibung …",
         imageUrl: "/media/hero-mood.jpg",
         imageAlt: "",
+        layout: "split",
         imagePosition: "left",
         ctaLabel: "",
         ctaHref: "",
@@ -37,11 +38,14 @@ export function defaultDataForContentBlockType(
     case "curatedProductList":
       return {
         title: "Auswahl",
+        source: "ids",
         productIds: [],
         limit: 12,
       };
     case "uspStrip":
       return {
+        title: "",
+        intro: "",
         items: [
           {
             icon: "design",
@@ -61,6 +65,7 @@ export function defaultDataForContentBlockType(
         showSocial: true,
         titleReviews: "Stimmen",
         titleSocial: "Einblicke",
+        introSocial: "",
       };
     case "workshopCalendar":
       return {

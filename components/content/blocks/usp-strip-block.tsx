@@ -3,8 +3,21 @@ import type { UspStripBlockData } from "@/lib/content/blocks/usp-strip";
 
 export function UspStripBlock({ data }: { data: UspStripBlockData; blockId: string }) {
   return (
-    <section className="mx-auto max-w-6xl px-4 py-14 md:py-16">
-      <div className="grid gap-8 md:grid-cols-3">
+    <section
+      id="nach-hero"
+      className="mx-auto max-w-6xl scroll-mt-[5.5rem] px-4 py-16 md:py-20"
+    >
+      {data.title ? (
+        <h2 className="text-center text-2xl font-semibold text-(--foreground-heading) md:text-3xl">
+          {data.title}
+        </h2>
+      ) : null}
+      {data.intro ? (
+        <p className="mx-auto mt-4 max-w-3xl text-center text-base text-(--foreground-muted) md:text-lg">
+          {data.intro}
+        </p>
+      ) : null}
+      <div className={`grid gap-8 md:grid-cols-3 ${data.title || data.intro ? "mt-12" : ""}`}>
         {data.items.map((u) => (
           <article
             key={u.title}
@@ -15,7 +28,7 @@ export function UspStripBlock({ data }: { data: UspStripBlockData; blockId: stri
               <h3 className="mt-4 text-lg font-semibold text-(--foreground-heading)">
                 {u.title}
               </h3>
-              <p className="mt-2 text-sm text-(--foreground-muted)">{u.body}</p>
+              <p className="mt-2 text-base leading-relaxed text-(--foreground-muted)">{u.body}</p>
             </div>
           </article>
         ))}

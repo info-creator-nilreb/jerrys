@@ -537,6 +537,13 @@ async function main() {
         isActive: true,
       },
     });
+    const { migrateStorefrontContentPages } = await import(
+      "../lib/content/migrate-storefront-content"
+    );
+    const migrated = await migrateStorefrontContentPages();
+    console.log(
+      `CMS Storefront-Migration: homepage=${migrated.homepageId}, legal=${migrated.legalCount}`,
+    );
   } finally {
     await prisma.$disconnect();
   }

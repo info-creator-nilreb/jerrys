@@ -29,27 +29,50 @@ export async function SocialReviewsBlock({
   if (reviews.length === 0 && social.length === 0) return null;
 
   return (
-    <section className="space-y-16 py-14 md:py-16">
+    <div className="space-y-0">
       {data.showReviews && reviews.length > 0 ? (
-        <div className="mx-auto max-w-6xl px-4">
-          {data.titleReviews ? (
-            <h2 className="mb-8 text-center text-2xl font-semibold text-(--foreground-heading)">
-              {data.titleReviews}
-            </h2>
-          ) : null}
-          <HomepageReviewsCarousel reviews={reviews} />
-        </div>
+        <section
+          id="kundenstimmen"
+          className="scroll-mt-20 border-y border-(--surface-muted) bg-(--surface-soft) px-4 py-16 md:py-20"
+          aria-labelledby="kundenstimmen-heading"
+        >
+          <div className="mx-auto max-w-6xl">
+            {data.titleReviews ? (
+              <h2
+                id="kundenstimmen-heading"
+                className="text-center text-2xl font-semibold text-(--foreground-heading) md:text-3xl"
+              >
+                {data.titleReviews}
+              </h2>
+            ) : null}
+            <HomepageReviewsCarousel reviews={reviews} />
+          </div>
+        </section>
       ) : null}
       {data.showSocial && social.length > 0 ? (
-        <div className="mx-auto max-w-6xl px-4">
-          {data.titleSocial ? (
-            <h2 className="mb-8 text-center text-2xl font-semibold text-(--foreground-heading)">
-              {data.titleSocial}
-            </h2>
-          ) : null}
-          <HomepageSocialCarousel items={social} />
-        </div>
+        <section
+          id="momente-instagram"
+          className="scroll-mt-20 bg-white px-4 py-16 md:py-20"
+          aria-labelledby="momente-instagram-heading"
+        >
+          <div className="mx-auto max-w-6xl">
+            {data.titleSocial ? (
+              <h2
+                id="momente-instagram-heading"
+                className="text-center text-2xl font-semibold text-(--foreground-heading) md:text-3xl"
+              >
+                {data.titleSocial}
+              </h2>
+            ) : null}
+            {data.introSocial ? (
+              <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-(--foreground-muted) md:text-base">
+                {data.introSocial}
+              </p>
+            ) : null}
+            <HomepageSocialCarousel items={social} />
+          </div>
+        </section>
       ) : null}
-    </section>
+    </div>
   );
 }
