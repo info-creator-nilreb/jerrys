@@ -74,6 +74,27 @@ PRISMA_MIGRATE_DATABASE_URL="postgresql://…" npx prisma migrate deploy
 Neue Tabellen erst nach dem Deploy nutzbar: Die App zeigt bei fehlender Migration eine
 verständliche Meldung (`P2021`) statt einer Fehlerseite, speichert aber nichts.
 
+## Shop Settings and Branding (Epic 11)
+
+Zentrale Konfiguration unter `/admin/einstellungen` (`ShopSettings` Singleton `id = default`, [ADR-0006](./adr/0006-shop-settings-branding.md)). Wirkt ohne Redeploy auf Storefront (CSS-Variablen, Metadata, Header/Footer), Admin-Login, Transaktions-E-Mails und Rechnungs-PDF.
+
+| Thema | Hinweis |
+| --- | --- |
+| Migration | `prisma/migrations/20260811120000_epic11_shop_settings` + Seed mit jerry’s-Defaults; vorhandene Zeile wird beim Seed nicht überschrieben |
+| Cache | Tag `shop-settings`; nach Save/Upload: `updateTag` + `revalidateTag` + `revalidatePath("/", "layout")` |
+| Uploads | Vercel Blob (`BLOB_READ_WRITE_TOKEN`, [ADR-0008](./adr/0008-object-storage.md)); ohne Token schlagen Uploads fehl, Lesen fällt auf `/branding/*` zurück |
+| Fallbacks | Fehlende/ungültige Logos brechen Checkout, Mail und PDF nicht (Textmarke / Static-Asset / PDF ohne Logo) |
+| Absender | Env `MAIL_FROM_EMAIL` / `MAIL_FROM_NAME` hat Vorrang; sonst Anzeigename aus `emailFromName` |
+| Rechnung | Env `INVOICE_SELLER_*` überschreibt Aussteller; sonst ShopSettings (Name/Adresse/USt-Id) |
+
+### Runbook: Branding-Upload oder Farben greifen nicht
+
+1. Admin → Einstellungen: Speichern erfolgreich? Kontrast-Warnungen prüfen (AA warnt, blockiert derzeit nicht).
+2. Vercel Env: `BLOB_READ_WRITE_TOKEN` für Preview und Production getrennt setzen, wenn neue Logos hochgeladen werden sollen.
+3. Storefront hard-refresh / neues Preview-Deploy: Layout-Cache invalidiert sich bei Save; bei Zweifel Production Redeploy.
+4. DB: `SELECT shop_name, primary_color, logo_light_url, updated_at FROM shop_settings WHERE id = 'default';`
+5. Outbox: Events `shop_settings.*` in `integration_outbox_messages` für Audit.
+
 ## Secrets and Access
 
 - Separate credentials for preview, staging, and production.

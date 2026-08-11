@@ -9,6 +9,7 @@
   --foreground: #666666;
   --foreground-heading: #3b3b3b;
   --foreground-muted: #757575;
+  /* Defaults; Runtime-Override aus ShopSettings im Root-Layout (Epic 11). */
   --primary: #8bbe25;
   --primary-hover: #74a320;
   --surface-muted: #e9e8e8;

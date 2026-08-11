@@ -1,6 +1,7 @@
 # Epic 11 — Zentrale Shop-Einstellungen und Branding
 
-Referenz: [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md#epic-11-central-shop-settings-and-branding)
+Referenz: [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md#epic-11-central-shop-settings-and-branding)  
+**Status:** umgesetzt (Slices 1–6). Ops: [OPERATIONS.md](./OPERATIONS.md#shop-settings-and-branding-epic-11).
 
 ## Zielbild
 
@@ -18,14 +19,14 @@ Eine Shop-Installation besitzt genau **ein aktives Branding**. Admins konfigurie
 
 Schriftarten werden nur aus einer kuratierten, lokal bzw. datenschutzkonform bereitgestellten Auswahl angeboten; keine freie CSS-Eingabe.
 
-## Vorgeschlagene Slices
+## Slices (geliefert)
 
-1. **ADR und Schema:** `ShopSettings` als Singleton, validierte Farb-/URL-/Kontaktfelder, Cache-/Invalidierungsstrategie.
-2. **Medien:** Logo/Favicon/OG-Upload in dauerhaftem Object Storage; Typ-, Größen- und Bildvalidierung.
-3. **Admin:** Einstellungen mit Vorschau, Speichern, Fehler-/Erfolgszustand und Audit.
-4. **Storefront:** semantische CSS-Tokens serverseitig anwenden; Header/Footer/Metadata dynamisieren.
-5. **Ausgaben:** E-Mail-Layout, Rechnungs-PDF und Admin-Login auf dieselbe Konfiguration umstellen.
-6. **Migration:** bestehende jerry’s-Werte als Initialdaten übernehmen; sichere Fallbacks bei fehlenden Assets.
+1. **ADR und Schema:** `ShopSettings` als Singleton, validierte Farb-/URL-/Kontaktfelder, Cache-/Invalidierungsstrategie. ✅
+2. **Medien:** Logo/Favicon/OG-Upload in dauerhaftem Object Storage; Typ-, Größen- und Bildvalidierung. ✅
+3. **Admin:** Einstellungen mit Vorschau, Speichern, Fehler-/Erfolgszustand und Audit. ✅
+4. **Storefront:** semantische CSS-Tokens serverseitig anwenden; Header/Footer/Metadata dynamisieren. ✅
+5. **Ausgaben:** E-Mail-Layout, Rechnungs-PDF und Admin-Login auf dieselbe Konfiguration umstellen. ✅
+6. **Migration/Docs:** jerry’s-Defaults als Seed/Fallback; OPERATIONS/SECURITY dokumentiert. ✅
 
 ## Sicherheits- und Qualitätsgrenzen
 
