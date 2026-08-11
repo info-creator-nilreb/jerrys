@@ -15,6 +15,19 @@ export function isVercelPreviewDeployment(): boolean {
   return process.env.VERCEL_ENV === "preview";
 }
 
+/** True, wenn Origin dem aktuellen Vercel-Deployment-Host entspricht (ephemeral). */
+export function isEphemeralVercelOrigin(origin: string): boolean {
+  const vercelHost = process.env.VERCEL_URL?.trim()
+    .replace(/^https?:\/\//, "")
+    .replace(/\/$/, "");
+  if (!vercelHost) return false;
+  try {
+    return new URL(origin).hostname === vercelHost;
+  } catch {
+    return false;
+  }
+}
+
 /** Hostname für Meta „App-Domains“ (ohne Schema, ohne Pfad). */
 export function getInstagramMetaAppDomain(redirectUri: string): string | null {
   try {
@@ -27,7 +40,7 @@ export function getInstagramMetaAppDomain(redirectUri: string): string | null {
 /**
  * Stabile Origin für OAuth-Redirect (Meta App Domains).
  * Bewusst NICHT `VERCEL_URL` / Preview-`AUTH_URL` — die wechseln und stehen nicht in Meta.
- * Reihenfolge: INSTAGRAM_REDIRECT_URI → NEXT_PUBLIC_SITE_URL → AUTH_URL (nur Production).
+ * Reihenfolge: INSTAGRAM_REDIRECT_URI → NEXT_PUBLIC_SITE_URL → AUTH_URL (nur stabile Hosts).
  */
 export function getInstagramOAuthOrigin(): string {
   const redirect = process.env.INSTAGRAM_REDIRECT_URI?.trim();
@@ -41,9 +54,10 @@ export function getInstagramOAuthOrigin(): string {
   const site = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
   if (site) return site;
   // Auf Preview setzt syncAuthUrlForVercelPreview() AUTH_URL auf den Deployment-Host.
+  // Auch ohne VERCEL_ENV=preview: AUTH_URL == https://$VERCEL_URL nie für Meta nutzen.
   if (!isVercelPreviewDeployment()) {
     const auth = process.env.AUTH_URL?.trim().replace(/\/$/, "");
-    if (auth) return auth;
+    if (auth && !isEphemeralVercelOrigin(auth)) return auth;
   }
   if (process.env.NODE_ENV === "development") {
     const port = process.env.PORT ?? "3001";

@@ -19,6 +19,7 @@ describe("getInstagramAppConfig", () => {
     auth: process.env.AUTH_URL,
     redirect: process.env.INSTAGRAM_REDIRECT_URI,
     vercelEnv: process.env.VERCEL_ENV,
+    vercelUrl: process.env.VERCEL_URL,
   };
 
   afterEach(() => {
@@ -29,6 +30,7 @@ describe("getInstagramAppConfig", () => {
       AUTH_URL: prev.auth,
       INSTAGRAM_REDIRECT_URI: prev.redirect,
       VERCEL_ENV: prev.vercelEnv,
+      VERCEL_URL: prev.vercelUrl,
     })) {
       if (v === undefined) delete process.env[k];
       else process.env[k] = v;
@@ -64,6 +66,18 @@ describe("getInstagramAppConfig", () => {
     process.env.INSTAGRAM_APP_ID = "1111222233334444";
     process.env.INSTAGRAM_APP_SECRET = "secret";
     process.env.VERCEL_ENV = "preview";
+    process.env.AUTH_URL = "https://fecom-preview-xyz.vercel.app";
+    delete process.env.NEXT_PUBLIC_SITE_URL;
+    delete process.env.INSTAGRAM_REDIRECT_URI;
+    const { getInstagramAppConfig } = await import("@/lib/instagram/config");
+    expect(getInstagramAppConfig()).toBeNull();
+  });
+
+  it("ignoriert AUTH_URL wenn sie dem ephemeral VERCEL_URL entspricht", async () => {
+    process.env.INSTAGRAM_APP_ID = "1111222233334444";
+    process.env.INSTAGRAM_APP_SECRET = "secret";
+    delete process.env.VERCEL_ENV;
+    process.env.VERCEL_URL = "fecom-preview-xyz.vercel.app";
     process.env.AUTH_URL = "https://fecom-preview-xyz.vercel.app";
     delete process.env.NEXT_PUBLIC_SITE_URL;
     delete process.env.INSTAGRAM_REDIRECT_URI;

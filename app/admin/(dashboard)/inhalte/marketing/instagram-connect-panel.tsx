@@ -103,13 +103,27 @@ export function InstagramConnectPanel(props: Props) {
             ) : null}
           </p>
           {props.metaAppDomain ? (
-            <p>
-              Meta App-Domain eintragen:{" "}
-              <code className="text-[11px] font-medium text-[#374151]">{props.metaAppDomain}</code>
-              {" · "}
-              OAuth-Redirect-URI (Facebook Login):{" "}
-              <code className="break-all text-[11px]">{props.redirectUri}</code>
-            </p>
+            <div className="space-y-1 rounded border border-[#e8eaed] bg-white px-2 py-1.5 text-[11px] text-[#374151]">
+              <p className="font-medium">Meta-Dashboard (Pflicht bei Domain-Fehler):</p>
+              <ol className="list-decimal space-y-0.5 pl-4 text-[#6b7280]">
+                <li>
+                  App-Einstellungen → Allgemeines → App-Domains:{" "}
+                  <code className="font-medium text-[#374151]">{props.metaAppDomain}</code>
+                </li>
+                <li>
+                  Facebook Login → Einstellungen → Gültige OAuth-Redirect-URIs:{" "}
+                  <code className="break-all font-medium text-[#374151]">
+                    {props.redirectUri}
+                  </code>
+                </li>
+                <li>
+                  Optional Website-URL / Site-URL:{" "}
+                  <code className="font-medium text-[#374151]">
+                    {props.redirectUri?.replace(/\/api\/admin\/instagram\/callback\/?$/, "")}
+                  </code>
+                </li>
+              </ol>
+            </div>
           ) : null}
           {!props.oauthReady && props.oauthBlockReason ? (
             <p className="rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-amber-900">
@@ -126,9 +140,9 @@ export function InstagramConnectPanel(props: Props) {
           ) : null}
           <p>
             Bei <span className="font-medium text-[#374151]">Invalid platform app</span>: Mode{" "}
-            <code className="text-[11px]">facebook</code> + Meta App ID/Secret (Allgemeines). Bei
-            Domain-Fehler bei Meta: App-Domain und OAuth-Redirect exakt wie oben — Verbinden nur über
-            Production-Admin.
+            <code className="text-[11px]">facebook</code> + Meta App ID/Secret (Allgemeines). Domain-Fehler
+            („nicht in den Domains der App“) = App-Domain/Redirect oben fehlen oder Verbinden über Preview —
+            immer Production-Admin nutzen.
           </p>
         </div>
       )}

@@ -35,20 +35,28 @@ Wenn im Dashboard **Facebook Login for Business** aktiv ist und Connect mit **In
 
 ### Domain-Fehler („Domain … nicht in den Domains der App“)
 
-OAuth braucht eine **feste** Redirect-URL — keine Vercel-Preview-Hosts (`*-alexbs-projects-*.vercel.app`).
+Meta zeigt diese Facebook-Fehlerseite, wenn `redirect_uri` eine Domain hat, die **nicht** unter App-Domains steht — häufig weil:
 
-1. Vercel **Production**:  
+- auf einer **Vercel-Preview** verbunden wurde (`AUTH_URL` wird dort auf den Preview-Host umgebogen), oder
+- `NEXT_PUBLIC_SITE_URL` / `INSTAGRAM_REDIRECT_URI` fehlen und OAuth auf einen ephemeral Host fällt, oder
+- in Meta App-Domains / OAuth-Redirects die Production-Domain fehlt.
+
+**Fix (Code + Config):**
+
+1. Vercel **Production** (Environment = Production):  
    `NEXT_PUBLIC_SITE_URL=https://ecom-seven-livid.vercel.app`  
-   und/oder  
-   `INSTAGRAM_REDIRECT_URI=https://ecom-seven-livid.vercel.app/api/admin/instagram/callback`
-2. Meta → App-Einstellungen → **Allgemeines** → **App-Domains**: `ecom-seven-livid.vercel.app`
+   und empfohlen  
+   `INSTAGRAM_REDIRECT_URI=https://ecom-seven-livid.vercel.app/api/admin/instagram/callback`  
+   + Redeploy
+2. Meta → App-Einstellungen → **Allgemeines** → **App-Domains**: `ecom-seven-livid.vercel.app`  
+   (nur Hostname, ohne `https://`)
 3. Meta → **Facebook Login** → **Gültige OAuth-Redirect-URIs**: exakt  
    `https://ecom-seven-livid.vercel.app/api/admin/instagram/callback`
 4. Verbinden **nur** über  
    `https://ecom-seven-livid.vercel.app/admin/inhalte/marketing`  
-   (nicht über Preview-Links — die App blockiert OAuth sonst vor dem Meta-Redirect)
+   (nicht über Preview — die App blockiert OAuth sonst vor dem Meta-Redirect)
 
-Die Admin-Diagnose unter Marketing zeigt Redirect-URI und Meta-App-Domain an.
+Die Admin-Diagnose unter Marketing zeigt Redirect-URI, Meta-App-Domain und eine kurze Checkliste.
 
 ## CMS
 
