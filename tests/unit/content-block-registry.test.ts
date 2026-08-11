@@ -77,7 +77,7 @@ describe("parseContentBlockData", () => {
     if (ok.ok) {
       expect(ok.data).toMatchObject({
         showHeader: true,
-        limit: 12,
+        limit: 6,
         showDateRequestLink: true,
       });
     }
@@ -99,7 +99,7 @@ describe("parseContentBlockData", () => {
     }
 
     expect(parseContentBlockData("workshopCalendar", { limit: 0 }).ok).toBe(false);
-    expect(parseContentBlockData("workshopCalendar", { limit: 99 }).ok).toBe(false);
+    expect(parseContentBlockData("workshopCalendar", { limit: 48 }).ok).toBe(false);
   });
 });
 

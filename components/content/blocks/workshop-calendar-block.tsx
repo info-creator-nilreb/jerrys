@@ -3,8 +3,8 @@ import { WorkshopSessionList } from "@/components/storefront/workshop-session-li
 import type { WorkshopCalendarBlockData } from "@/lib/content/blocks/workshop-calendar";
 
 /**
- * CMS-Einbettung des Epic-5-Termin-Kalenders.
- * Eine Datenquelle / eine Buchungslogik — kein paralleler Checkout-Pfad.
+ * CMS-Einbettung: schlanke Terminliste für Landingpages.
+ * Details/Buchung nur auf der Terminseite (progressive disclosure).
  */
 export async function WorkshopCalendarBlock({
   data,
@@ -26,8 +26,9 @@ export async function WorkshopCalendarBlock({
     ) : null;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-14 md:py-16">
+    <div className="mx-auto max-w-3xl px-4 py-10 md:py-12">
       <WorkshopSessionList
+        density="embed"
         showHeader={data.showHeader}
         title={data.title ?? undefined}
         intro={data.intro ?? undefined}
