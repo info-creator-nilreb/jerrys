@@ -208,6 +208,7 @@ Exit criteria: branding changes require no code deploy; uploads use durable stor
 
 ## Epic 12: Content Pages and CMS Light
 
+**Status:** delivered (Slices 1–7 on `main`, inkl. Termin-Kalender-Block).  
 Suggested delivery: [EPIC12_CONTENT_PAGES_CMS.md](./EPIC12_CONTENT_PAGES_CMS.md).  
 **Agent-Handoff:** [EPIC12_AGENT_HANDOFF.md](./EPIC12_AGENT_HANDOFF.md).
 
