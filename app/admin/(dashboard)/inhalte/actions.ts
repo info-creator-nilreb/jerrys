@@ -3,12 +3,21 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth/admin-session";
+import {
+  publishContentPage,
+  unpublishContentPage,
+} from "@/lib/content/publish-content-page";
 import { upsertContentPageFromInput } from "@/lib/content/update-content-page";
 
 export type ContentPageFormState = {
   error?: string;
   fieldErrors?: Record<string, string>;
   ok?: boolean;
+} | null;
+
+export type ContentPageLifecycleState = {
+  ok?: boolean;
+  error?: string;
 } | null;
 
 async function requireAdmin(): Promise<boolean> {
@@ -57,5 +66,31 @@ export async function saveContentPageAction(
     redirect(`/admin/inhalte/${result.page.id}/edit`);
   }
 
+  return { ok: true };
+}
+
+export async function publishContentPageAction(
+  pageId: string,
+): Promise<ContentPageLifecycleState> {
+  if (!(await requireAdmin())) {
+    return { error: "Nicht angemeldet." };
+  }
+  const result = await publishContentPage(pageId);
+  if (!result.ok) return { error: result.error };
+  revalidatePath("/admin/inhalte");
+  revalidatePath(`/admin/inhalte/${result.page.id}/edit`);
+  return { ok: true };
+}
+
+export async function unpublishContentPageAction(
+  pageId: string,
+): Promise<ContentPageLifecycleState> {
+  if (!(await requireAdmin())) {
+    return { error: "Nicht angemeldet." };
+  }
+  const result = await unpublishContentPage(pageId);
+  if (!result.ok) return { error: result.error };
+  revalidatePath("/admin/inhalte");
+  revalidatePath(`/admin/inhalte/${result.page.id}/edit`);
   return { ok: true };
 }

@@ -2,7 +2,13 @@ import type { MetadataRoute } from "next";
 import { canonicalSiteOrigin } from "@/lib/site/canonical-origin";
 
 /** Pfade, die für automatisierte Crawler (KI + klassisch) tabu bleiben. */
-const DISALLOW_SENSITIVE = ["/admin/", "/api/", "/checkout", "/warenkorb"] as const;
+const DISALLOW_SENSITIVE = [
+  "/admin/",
+  "/api/",
+  "/checkout",
+  "/warenkorb",
+  "/vorschau/",
+] as const;
 
 /** Bekannte KI-/Daten-Crawler: gleiche Grenzen wie für `*`, explizit pro User-Agent für Transparenz. */
 const AI_AND_DATA_CRAWLER_USER_AGENTS = [

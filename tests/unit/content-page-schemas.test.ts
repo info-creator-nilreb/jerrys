@@ -15,6 +15,7 @@ describe("reserved content slugs", () => {
     expect(isReservedContentSlug("admin")).toBe(true);
     expect(isReservedContentSlug("/Checkout")).toBe(true);
     expect(isReservedContentSlug("produkte")).toBe(true);
+    expect(isReservedContentSlug("vorschau")).toBe(true);
     expect(isReservedContentSlug("impressum")).toBe(false);
     expect(isReservedContentSlug(CONTENT_PAGE_HOME_SLUG)).toBe(false);
   });

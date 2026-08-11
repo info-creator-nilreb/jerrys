@@ -1,13 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   STATIC_SITEMAP_PATHS,
+  buildContentPageSitemapEntries,
   buildProductSitemapEntries,
   buildStaticSitemapEntries,
 } from "@/lib/site/sitemap-entries";
 
+const listPublished = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/content/content-public-discovery", () => ({
+  listPublishedContentPagesForDiscovery: listPublished,
+}));
+
 describe("sitemap entries", () => {
   beforeEach(() => {
     vi.resetModules();
+    listPublished.mockReset();
   });
 
   afterEach(() => {
@@ -32,5 +40,36 @@ describe("sitemap entries", () => {
     vi.stubEnv("NEXT_PHASE", "phase-production-build");
     const entries = await buildProductSitemapEntries("https://shop.example");
     expect(entries).toEqual([]);
+  });
+
+  it("nimmt nur Discovery-Ergebnisse (published) und überspringt Static-Pfade", async () => {
+    vi.stubEnv("DATABASE_URL", "postgresql://u:p@localhost:5432/db");
+    vi.stubEnv("NEXT_PHASE", "");
+    listPublished.mockResolvedValue([
+      {
+        id: "1",
+        slug: "ueber-uns",
+        pageType: "content",
+        title: "Über uns",
+        path: "/ueber-uns",
+        robotsIndex: true,
+        updatedAt: new Date("2026-08-11T00:00:00.000Z"),
+        publishedAt: new Date("2026-08-11T00:00:00.000Z"),
+      },
+      {
+        id: "2",
+        slug: "impressum",
+        pageType: "legal",
+        title: "Impressum",
+        path: "/impressum",
+        robotsIndex: true,
+        updatedAt: new Date("2026-08-11T00:00:00.000Z"),
+        publishedAt: new Date("2026-08-11T00:00:00.000Z"),
+      },
+    ]);
+
+    const entries = await buildContentPageSitemapEntries("https://shop.example");
+    expect(listPublished).toHaveBeenCalledWith({ robotsIndexOnly: true });
+    expect(entries.map((e) => e.url)).toEqual(["https://shop.example/ueber-uns"]);
   });
 });

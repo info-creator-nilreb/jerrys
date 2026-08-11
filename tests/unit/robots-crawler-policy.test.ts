@@ -25,7 +25,9 @@ describe("robots.ts Crawler-Richtlinien", () => {
     expect(uas).toContain("CCBot");
 
     const star = rules.find((x) => x.userAgent === "*");
-    expect(star?.disallow).toEqual(expect.arrayContaining(["/admin/", "/api/"]));
+    expect(star?.disallow).toEqual(
+      expect.arrayContaining(["/admin/", "/api/", "/vorschau/"]),
+    );
 
     const gpt = rules.find((x) => x.userAgent === "GPTBot");
     expect(gpt?.disallow).toEqual(star?.disallow);

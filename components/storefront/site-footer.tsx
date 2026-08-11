@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CookieSettingsButton } from "@/components/storefront/cookie-consent/cookie-settings-button";
 import { listActiveCategoriesForNav } from "@/lib/catalog/category-queries";
 import { listActiveCollectionsForStorefront } from "@/lib/catalog/collection-queries";
+import { listPublishedContentNavLinks } from "@/lib/content/content-public-discovery";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 import { getShopSettings } from "@/lib/shop/shop-settings";
 import { shopFooterTagline } from "@/lib/shop/storefront-branding";
@@ -39,6 +40,14 @@ export async function SiteFooter() {
       shopLinks,
       collections.filter((c) => c._count.products > 0).map((c) => ({ slug: c.slug, title: c.title })),
     );
+  } catch (e) {
+    if (!isDatabaseUnreachable(e)) throw e;
+  }
+
+  /** Nur published CMS-Content-Seiten — Drafts nie (Epic 12 Slice 4). */
+  let cmsContentLinks: Array<{ href: string; label: string }> = [];
+  try {
+    cmsContentLinks = await listPublishedContentNavLinks();
   } catch (e) {
     if (!isDatabaseUnreachable(e)) throw e;
   }
@@ -80,6 +89,22 @@ export async function SiteFooter() {
             aria-label="Kollektionen"
           >
             {merchandisingLinks.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className="font-medium text-primary underline-offset-4 transition-colors hover:text-(--primary-hover) hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#182d4d]"
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+        ) : null}
+        {cmsContentLinks.length > 0 ? (
+          <nav
+            className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2.5 text-[0.95rem] text-white/80 sm:text-base"
+            aria-label="Inhalte"
+          >
+            {cmsContentLinks.map(({ href, label }) => (
               <Link
                 key={href}
                 href={href}
