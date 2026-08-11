@@ -34,7 +34,12 @@ function SocialSlide({ item }: { item: HomepageSocialSlide }) {
 
   if (item.href) {
     return (
-      <a href={item.href} target="_blank" rel="noopener noreferrer" className="block outline-none ring-primary focus-visible:ring-2">
+      <a
+        href={item.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block outline-none ring-primary focus-visible:ring-2"
+      >
         {inner}
       </a>
     );
@@ -43,7 +48,9 @@ function SocialSlide({ item }: { item: HomepageSocialSlide }) {
   return inner;
 }
 
-const slideSlotClass = "w-64 shrink-0 sm:w-72 lg:w-80";
+/** Feste Slide-Breite — Embla-kompatibel über flex-basis, nicht w-max im Viewport. */
+const slideSlotClass =
+  "min-w-0 shrink-0 grow-0 basis-[16rem] sm:basis-[18rem] lg:basis-[20rem]";
 
 function SocialGrid({ items }: { items: HomepageSocialSlide[] }) {
   return (
@@ -63,6 +70,7 @@ function SocialEmbla({ items }: { items: HomepageSocialSlide[] }) {
     duration: 22,
     align: "start",
     containScroll: "trimSnaps",
+    slidesToScroll: 1,
   });
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
@@ -76,16 +84,19 @@ function SocialEmbla({ items }: { items: HomepageSocialSlide[] }) {
   useEffect(() => {
     if (!emblaApi) return;
     const raf = requestAnimationFrame(() => {
+      emblaApi.reInit();
       onSelect();
     });
     emblaApi.on("reInit", onSelect);
     emblaApi.on("select", onSelect);
+    emblaApi.on("resize", onSelect);
     return () => {
       cancelAnimationFrame(raf);
       emblaApi.off("reInit", onSelect);
       emblaApi.off("select", onSelect);
+      emblaApi.off("resize", onSelect);
     };
-  }, [emblaApi, onSelect]);
+  }, [emblaApi, onSelect, items.length]);
 
   // Kein disabled:pointer-events-none — sonst fallen Klicks durch auf Instagram-<a> darunter.
   const navBtnClass =
@@ -125,9 +136,10 @@ function SocialEmbla({ items }: { items: HomepageSocialSlide[] }) {
           </button>
         </>
       ) : null}
+      {/* Embla-Viewport: nur overflow-hidden — kein flex/justify-center (bricht Scroll-Messung). */}
       <div
         ref={emblaRef}
-        className="relative z-0 flex w-full justify-center overflow-hidden rounded-xl outline-none ring-primary focus-visible:ring-2"
+        className="relative z-0 overflow-hidden rounded-xl outline-none ring-primary focus-visible:ring-2"
         tabIndex={0}
         role="region"
         aria-roledescription="Karussell"
@@ -143,7 +155,7 @@ function SocialEmbla({ items }: { items: HomepageSocialSlide[] }) {
           }
         }}
       >
-        <div className="flex w-max touch-pan-y gap-4 sm:gap-5 md:gap-6">
+        <div className="flex touch-pan-y gap-4 sm:gap-5 md:gap-6">
           {items.map((item, slideIndex) => (
             <div
               key={item.id}
