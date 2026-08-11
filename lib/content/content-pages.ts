@@ -1,7 +1,10 @@
 import type { ContentPageStatus, ContentPageType, Prisma } from "@/app/generated/prisma/client";
 import { getPrisma } from "@/lib/db/prisma";
 import { isMissingSchemaError } from "@/lib/db/prisma-error";
-import { CONTENT_PAGE_HOME_SLUG } from "@/lib/content/reserved-slugs";
+import {
+  CONTENT_PAGE_HOME_SLUG,
+  normalizeContentSlug,
+} from "@/lib/content/reserved-slugs";
 
 export type ContentBlockDTO = {
   id: string;
@@ -122,6 +125,27 @@ export async function getPublishedContentPageBySlug(
   const page = await getContentPageBySlug(slug);
   if (!page || page.status !== "published") return null;
   return page;
+}
+
+/**
+ * Published Seite, deren `previousSlug` dem Pfad entspricht (301-Ziel ermitteln).
+ */
+export async function getPublishedContentPageByPreviousSlug(
+  previousSlug: string,
+): Promise<ContentPageDTO | null> {
+  const normalized = normalizeContentSlug(previousSlug);
+  if (!normalized) return null;
+  const prisma = getPrisma();
+  try {
+    const row = await prisma.contentPage.findFirst({
+      where: { previousSlug: normalized, status: "published" },
+      include: pageInclude,
+    });
+    return row ? toPageDto(row) : null;
+  } catch (e) {
+    if (isMissingSchemaError(e)) return null;
+    throw e;
+  }
 }
 
 export async function getContentPageById(

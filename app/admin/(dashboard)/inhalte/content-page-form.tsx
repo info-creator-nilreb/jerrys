@@ -221,6 +221,16 @@ export function ContentPageForm({ initial }: { initial?: InitialPage }) {
             />
             Für Suchmaschinen indexierbar (nach Veröffentlichung)
           </label>
+          {initial?.previousSlug ? (
+            <p className="text-xs text-[#6b7280] sm:col-span-2">
+              Redirect aktiv: <code className="text-[#374151]">/{initial.previousSlug}</code> →
+              aktueller Slug (301 nach Speichern bei Slug-Wechsel neu gesetzt).
+            </p>
+          ) : (
+            <p className="text-xs text-[#9ca3af] sm:col-span-2">
+              Bei Slug-Änderung wird der bisherige Slug automatisch als Redirect-Quelle gespeichert.
+            </p>
+          )}
         </div>
       </section>
 
