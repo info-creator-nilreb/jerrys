@@ -7,6 +7,7 @@ import {
   saveContentPageAction,
   type ContentPageFormState,
 } from "@/app/admin/(dashboard)/inhalte/actions";
+import { CmsMediaField } from "@/components/admin/cms-media-field";
 import {
   ContentLivePreview,
   type LivePreviewProduct,
@@ -69,6 +70,7 @@ export function ContentPageForm({
 
   const [pageType, setPageType] = useState(initial?.pageType ?? "content");
   const [title, setTitle] = useState(initial?.title ?? "");
+  const [ogImageUrl, setOgImageUrl] = useState(initial?.ogImageUrl ?? "");
   const [slug, setSlug] = useState(
     initial?.slug ?? (pageType === "homepage" ? CONTENT_PAGE_HOME_SLUG : ""),
   );
@@ -233,14 +235,13 @@ export function ContentPageForm({
               className={`${fieldClass} min-h-20`}
             />
           </label>
-          <label className="text-sm text-[#5c5f66] sm:col-span-2">
-            OG-Bild-URL
-            <input
-              name="ogImageUrl"
-              defaultValue={initial?.ogImageUrl ?? ""}
-              className={fieldClass}
-            />
-          </label>
+          <CmsMediaField
+            label="OG-Bild"
+            name="ogImageUrl"
+            value={ogImageUrl}
+            onChange={setOgImageUrl}
+            hint="Upload, Medienbibliothek oder URL (Social Sharing)"
+          />
           <input type="hidden" name="previousSlug" value={initial?.previousSlug ?? ""} />
           <label className="flex items-center gap-2 text-sm text-[#2d2e32] sm:col-span-2">
             <input
