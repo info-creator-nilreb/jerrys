@@ -37,6 +37,9 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | Seiten `/admin/inhalte`, `/admin/inhalte/new`, `/admin/inhalte/[id]/edit`, `/admin/inhalte/marketing` | Admin-Session | CMS-light inkl. Live-Vorschau (Client); Marketing Reviews/Social; `/admin/startseite` → Redirect Marketing |
 | Server Actions `app/admin/.../inhalte/actions.ts` | `auth()` in Action | ContentPage + ContentBlocks speichern; Publish/Unpublish; Rich-Text sanitize; Outbox `content_page.*` / `content_page.published` / `content_page.unpublished` |
 | Server Actions `app/admin/.../inhalte/marketing/actions.ts` | `auth()` in Action | Homepage Amazon-/Social-Pflege (früher `/admin/startseite`) |
+| Server Actions `app/admin/.../inhalte/marketing/instagram-actions.ts` | Admin-Session | Instagram trennen / manueller Sync |
+| `GET /api/admin/instagram/connect` | Admin-Session | Start Instagram OAuth (State-Cookie) |
+| `GET /api/admin/instagram/callback` | Admin-Session + OAuth-State | Code→Token, verschlüsselte Persistenz, Erst-Sync |
 | Seite `/vorschau/inhalte/[pageId]` | Signiertes Query-Token (`CONTENT_PREVIEW_SECRET` oder `AUTH_SECRET`), TTL 30 min | CMS-Vorschau (Draft/Published); **noindex**; ungültig/abgelaufen → **404**; kein Session-Auth-Leak |
 | Catch-all `/(storefront)/[...slug]` | Öffentlich; nur `published` ContentPages | Freie CMS-URLs; Drafts → **404**; `previousSlug` → **301**; reservierte Systempfade → **404**; statische Routen (`/produkte`, `/impressum`, …) haben Vorrang |
 | Lesepfade Storefront/E-Mail/PDF/Admin-Login | Öffentlich bzw. serverseitig | `getShopSettings()` + Static-Fallbacks `/branding/*`; keine freie CSS/JS aus Admin-Eingaben (nur Hex-Farben, URLs, Text via Zod) |
@@ -49,7 +52,7 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | `POST /api/checkout/paypal/create-order` | Öffentlich (Checkout) | Bestellung anlegen + PayPal-Order; **Rate-Limit** pro IP (`lib/security/paypal-checkout-api-rate-limit.ts`) |
 | `POST /api/checkout/paypal/capture-order` | Öffentlich (Checkout) | Capture nach Karte/Wallet; **gleiches Rate-Limit** wie create-order |
 | `POST /api/webhooks/paypal` | Öffentlich (PayPal) | PayPal-Webhooks; **Signaturpflicht** (`PAYPAL_WEBHOOK_ID` + verify-webhook-signature); Inbox-Idempotenz (`paypal_webhook` / Event-ID); Rate-Limit pro IP (`lib/security/paypal-webhook-api-rate-limit.ts`); ohne Webhook-ID → **503**; Events u. a. Capture-Complete/Approve + `PAYMENT.CAPTURE.REFUNDED` |
-| `GET`/`POST /api/internal/commerce-maintenance` | Bearer `CRON_SECRET` (Vercel Cron), Bearer/`x-commerce-maintenance-secret` (`COMMERCE_MAINTENANCE_SECRET`) | Epic 1: abgelaufene Bestandsreservierungen + Outbox-Publisher (Cron/manuell) |
+| `GET`/`POST /api/internal/commerce-maintenance` | Bearer `CRON_SECRET` (Vercel Cron), Bearer/`x-commerce-maintenance-secret` (`COMMERCE_MAINTENANCE_SECRET`) | Bestandsreservierungen, Outbox, Workshops, PayPal-Reconciliation, Instagram-Feed-Sync (wenn verbunden) |
 | Tabelle `order_payments` | — | PSP-Versuche pro Bestellung (Prisma-Modell `OrderPayment`) |
 | Seiten unter `/admin/*` (außer Login) | Middleware + Layout `auth()` | Admin-UI |
 

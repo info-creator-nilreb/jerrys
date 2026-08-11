@@ -4,6 +4,8 @@ import { publishIntegrationOutboxBatch } from "@/features/integrations";
 import { expireStaleStockReservations } from "@/features/inventory";
 import { runWorkshopMaintenance } from "@/features/workshops";
 import { getPrisma } from "@/lib/db/prisma";
+import { getInstagramConnectionPublic } from "@/lib/instagram/connection";
+import { syncInstagramMediaFeed } from "@/lib/instagram/sync-media";
 import { reconcilePendingPayPalPayments } from "@/lib/orders/reconcile-pending-paypal-payments";
 
 function bearerToken(req: NextRequest): string | null {
@@ -25,9 +27,26 @@ function isAuthorized(req: NextRequest): boolean {
   return Boolean(maintenance && header === maintenance);
 }
 
+async function runInstagramSyncIfConnected() {
+  const conn = await getInstagramConnectionPublic();
+  if (!conn.connected) {
+    return { skipped: true as const, reason: "not_connected" };
+  }
+  const result = await syncInstagramMediaFeed();
+  if (!result.ok) {
+    return { skipped: false as const, ok: false as const, error: result.error };
+  }
+  return {
+    skipped: false as const,
+    ok: true as const,
+    synced: result.synced,
+    skippedMedia: result.skipped,
+  };
+}
+
 async function runCommerceMaintenance() {
   const prisma = getPrisma();
-  const [expired, outbox, workshops, paypalReconcile] = await Promise.all([
+  const [expired, outbox, workshops, paypalReconcile, instagram] = await Promise.all([
     expireStaleStockReservations(prisma),
     publishIntegrationOutboxBatch(prisma),
     runWorkshopMaintenance(prisma),
@@ -35,6 +54,7 @@ async function runCommerceMaintenance() {
       limit: 25,
       source: "paypal_reconciliation",
     }),
+    runInstagramSyncIfConnected(),
   ]);
   return {
     expiredReservations: expired,
@@ -47,6 +67,7 @@ async function runCommerceMaintenance() {
       failed: paypalReconcile.failed,
       skipped: paypalReconcile.skipped,
     },
+    instagram,
   };
 }
 

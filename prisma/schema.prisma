@@ -650,6 +650,41 @@ model HomepageSocialImage {
   @@map("homepage_social_images")
 }
 
+/// Einmalige Instagram-OAuth-Verbindung (Professional Account). Singleton id = default.
+model InstagramConnection {
+  id              String    @id @default("default")
+  igUserId        String    @map("ig_user_id")
+  username        String    @default("")
+  /// AES-GCM Ciphertext (lib/security/secret-crypto.ts).
+  accessTokenEnc  String    @map("access_token_enc")
+  tokenExpiresAt  DateTime? @map("token_expires_at")
+  connectedAt     DateTime  @default(now()) @map("connected_at")
+  lastSyncAt      DateTime? @map("last_sync_at")
+  lastSyncError   String?   @map("last_sync_error") @db.Text
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@map("instagram_connections")
+}
+
+/// Gecachte Instagram-Medien (Bilder) für Storefront/CMS — Sync, kein Live-Graph pro Request.
+model InstagramMediaCache {
+  id            String    @id @default(cuid())
+  mediaId       String    @unique @map("media_id")
+  mediaType     String    @map("media_type")
+  caption       String?   @db.Text
+  permalink     String
+  /// Storefront-URL (Blob-Spiegel oder Meta-CDN-Fallback).
+  imageUrl      String    @map("image_url")
+  thumbnailUrl  String?   @map("thumbnail_url")
+  postedAt      DateTime? @map("posted_at")
+  sortOrder     Int       @default(0) @map("sort_order")
+  syncedAt      DateTime  @default(now()) @map("synced_at")
+  isActive      Boolean   @default(true) @map("is_active")
+
+  @@index([isActive, sortOrder])
+  @@map("instagram_media_cache")
+}
+
 /// CMS-light Seitentyp (Epic 12 / ADR-0007).
 enum ContentPageType {
   homepage

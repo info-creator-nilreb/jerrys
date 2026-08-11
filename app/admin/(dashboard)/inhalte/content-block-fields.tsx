@@ -416,18 +416,40 @@ export function ContentBlockFields({ type, data, onChange }: Props) {
             onChange={(e) => set("introSocial", e.target.value)}
           />
         </label>
+        <label className="text-sm text-[#5c5f66]">
+          Bildquelle
+          <select
+            className={fieldClass}
+            value={str(data, "socialSource") || "auto"}
+            onChange={(e) => set("socialSource", e.target.value)}
+          >
+            <option value="auto">Auto (Instagram-Feed, sonst kuratiert)</option>
+            <option value="instagram">Nur Instagram-Feed</option>
+            <option value="curated">Nur kuratierte Marketing-Bilder</option>
+          </select>
+        </label>
+        <label className="text-sm text-[#5c5f66]">
+          Anzahl Bilder
+          <input
+            type="number"
+            min={1}
+            max={24}
+            className={fieldClass}
+            value={num(data, "socialLimit", 12)}
+            onChange={(e) => set("socialLimit", Number(e.target.value) || 12)}
+          />
+        </label>
         <div className="rounded-md border border-[#e8eaed] bg-[#f7f8fa] px-3 py-2 text-xs text-[#6b7280] sm:col-span-2">
-          <p className="font-medium text-[#374151]">Instagram-Bilder</p>
+          <p className="font-medium text-[#374151]">Instagram-Feed</p>
           <p className="mt-1">
-            Keine Live-Verbindung zur Instagram-API. Die Galerie kommt aus kuratierten
-            Social-Assets unter{" "}
+            OAuth-Verbindung und Sync unter{" "}
             <Link
               href="/admin/inhalte/marketing"
               className="font-medium text-primary underline-offset-2 hover:underline"
             >
               Inhalte → Marketing
             </Link>
-            . Titel und Einleitung steuern nur den Text auf der Startseite.
+            . Darstellung wie bisheriges Social-Carousel (Desktop/Mobile). Zunächst nur Bilder.
           </p>
         </div>
       </div>

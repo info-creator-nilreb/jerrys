@@ -13,10 +13,22 @@ export type HomepageSocialSlide = {
   href: string | null;
 };
 
+function isBlobOrLocal(url: string): boolean {
+  if (url.startsWith("/")) return true;
+  return url.includes("blob.vercel-storage.com");
+}
+
 function SocialSlide({ item }: { item: HomepageSocialSlide }) {
   const inner = (
     <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl border border-(--surface-muted) bg-(--surface-soft) shadow-sm">
-      <Image src={item.url} alt={item.alt} fill className="object-cover" sizes="(max-width:768px)85vw,320px" />
+      <Image
+        src={item.url}
+        alt={item.alt}
+        fill
+        className="object-cover"
+        sizes="(max-width:768px)85vw,320px"
+        unoptimized={!isBlobOrLocal(item.url)}
+      />
     </div>
   );
 
