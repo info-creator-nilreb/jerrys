@@ -3,6 +3,7 @@ import {
   Bell,
   ChevronLeft,
   ChevronUp,
+  FileText,
   FolderTree,
   Home,
   Layers,
@@ -78,6 +79,10 @@ export function IconBell({ className }: { className?: string }) {
 
 export function IconStorefront({ className }: { className?: string }) {
   return <Store className={className} aria-hidden strokeWidth={stroke} />;
+}
+
+export function IconContents({ className }: { className?: string }) {
+  return <FileText className={className} aria-hidden strokeWidth={stroke} />;
 }
 
 export function IconWorkshops({ className }: { className?: string }) {

@@ -11,6 +11,7 @@ import {
   IconChevronLeft,
   IconChevronUp,
   IconCollections,
+  IconContents,
   IconCustomers,
   IconDashboard,
   IconInventory,
@@ -35,6 +36,7 @@ type NavItem = {
 const mainNav: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: IconDashboard },
   { href: "/admin/startseite", label: "Startseite", icon: IconStorefront },
+  { href: "/admin/inhalte", label: "Inhalte", icon: IconContents },
   { href: "/admin/products", label: "Katalog", icon: IconCatalog },
   { href: "/admin/collections", label: "Kollektionen", icon: IconCollections },
   { href: "/admin/categories", label: "Kategorien", icon: IconCategories },
