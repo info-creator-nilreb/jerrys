@@ -70,6 +70,37 @@ describe("parseContentBlockData", () => {
       });
     }
   });
+
+  it("parst workshopCalendar mit Defaults und lehnt ungültiges Limit ab", () => {
+    const ok = parseContentBlockData("workshopCalendar", {});
+    expect(ok.ok).toBe(true);
+    if (ok.ok) {
+      expect(ok.data).toMatchObject({
+        showHeader: true,
+        limit: 12,
+        showDateRequestLink: true,
+      });
+    }
+
+    const withTitle = parseContentBlockData("workshopCalendar", {
+      title: "Workshops",
+      intro: "Bald",
+      limit: 8,
+      showDateRequestLink: false,
+    });
+    expect(withTitle.ok).toBe(true);
+    if (withTitle.ok) {
+      expect(withTitle.data).toMatchObject({
+        title: "Workshops",
+        intro: "Bald",
+        limit: 8,
+        showDateRequestLink: false,
+      });
+    }
+
+    expect(parseContentBlockData("workshopCalendar", { limit: 0 }).ok).toBe(false);
+    expect(parseContentBlockData("workshopCalendar", { limit: 99 }).ok).toBe(false);
+  });
 });
 
 describe("sanitizeContentRichTextHtml", () => {

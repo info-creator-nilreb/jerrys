@@ -28,6 +28,11 @@ function bool(data: Record<string, unknown>, key: string, fallback: boolean): bo
   return typeof v === "boolean" ? v : fallback;
 }
 
+function num(data: Record<string, unknown>, key: string, fallback: number): number {
+  const v = data[key];
+  return typeof v === "number" && Number.isFinite(v) ? v : fallback;
+}
+
 function PreviewBlock({
   block,
   products,
@@ -286,12 +291,26 @@ function PreviewBlock({
   }
 
   if (type === "workshopCalendar") {
+    const title = str(data, "title") || "Kommende Termine";
+    const limit = num(data, "limit", 12);
     return (
       <section className="px-4 py-8">
-        <div className="rounded-md border border-dashed border-[#d1d5db] p-4 text-center text-xs text-[#6b7280]">
-          Termin-Kalender (Live-Daten aus Workshops)
+        <div className="rounded-md border border-dashed border-[#d1d5db] bg-[#fafafa] p-4 text-sm text-[#374151]">
+          <p className="font-medium text-[#1f2937]">Termin-Kalender</p>
+          <p className="mt-1 text-xs text-[#6b7280]">
+            Live-Daten aus veröffentlichten Workshops (max. {limit}). Buchung über denselben
+            Pfad wie /termine — hier nur Vorschau der Einstellungen.
+          </p>
+          {bool(data, "showHeader", true) ? (
+            <p className="mt-3 font-semibold text-(--foreground-heading)">{title}</p>
+          ) : (
+            <p className="mt-3 text-xs text-[#9ca3af]">Header ausgeblendet</p>
+          )}
+          {str(data, "intro") ? (
+            <p className="mt-1 text-xs text-[#6b7280]">{str(data, "intro")}</p>
+          ) : null}
           {str(data, "emptyMessage") ? (
-            <p className="mt-2 text-[#9ca3af]">{str(data, "emptyMessage")}</p>
+            <p className="mt-2 text-xs text-[#9ca3af]">Leer: {str(data, "emptyMessage")}</p>
           ) : null}
         </div>
       </section>

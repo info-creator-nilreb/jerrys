@@ -71,9 +71,12 @@ export function defaultDataForContentBlockType(
       };
     case "workshopCalendar":
       return {
+        title: "",
+        intro: "",
         showHeader: true,
         limit: 12,
         emptyMessage: "Derzeit sind keine Termine buchbar.",
+        showDateRequestLink: true,
       };
   }
 }

@@ -475,6 +475,24 @@ export function ContentBlockFields({ type, data, onChange }: Props) {
           />
           Listen-Header anzeigen
         </label>
+        <label className="text-sm text-[#5c5f66] sm:col-span-2">
+          Titel (optional)
+          <input
+            className={fieldClass}
+            value={str(data, "title")}
+            onChange={(e) => set("title", e.target.value)}
+            placeholder="Kommende Termine"
+          />
+        </label>
+        <label className="text-sm text-[#5c5f66] sm:col-span-2">
+          Einleitung (optional)
+          <textarea
+            className={`${fieldClass} min-h-16`}
+            value={str(data, "intro")}
+            onChange={(e) => set("intro", e.target.value)}
+            placeholder="Verfügbarkeit und freie Plätze werden serverseitig berechnet."
+          />
+        </label>
         <label className="text-sm text-[#5c5f66]">
           Limit
           <input
@@ -494,6 +512,22 @@ export function ContentBlockFields({ type, data, onChange }: Props) {
             onChange={(e) => set("emptyMessage", e.target.value)}
           />
         </label>
+        <label className="flex items-center gap-2 text-sm text-[#2d2e32] sm:col-span-2">
+          <input
+            type="checkbox"
+            className="size-4 checkbox-primary"
+            checked={bool(data, "showDateRequestLink", true)}
+            onChange={(e) => set("showDateRequestLink", e.target.checked)}
+          />
+          Link „Wunschtermin anfragen“ bei leerer Liste
+        </label>
+        <p className="text-xs text-[#9ca3af] sm:col-span-2">
+          Nutzt dieselbe Terminliste und Buchungslogik wie{" "}
+          <Link href="/termine" className="font-medium text-primary hover:underline">
+            /termine
+          </Link>{" "}
+          und den Produkt-Flag „Termin-Kalender“. Pflege unter Admin → Termine.
+        </p>
       </div>
     );
   }

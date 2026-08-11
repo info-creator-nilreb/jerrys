@@ -36,7 +36,7 @@ Keine freie React-, HTML-, CSS- oder JavaScript-Ausführung.
 4. **Draft/Publish/Preview:** nicht öffentliche signierte Preview-URL; atomare Veröffentlichung.
 5. **Freie Seiten:** Routing, Navigation/Linkauswahl, Slug-/Reserved-Path-Schutz, Redirect-Konzept.
 6. **Migration:** aktuelle Startseite, Marketingdaten und Rechtstexte ohne URL-Verlust übernehmen.
-7. **Buchungseinbettung:** Kalenderblock und optionale PDP-Verknüpfung ohne duplizierte Buchungslogik.
+7. **Buchungseinbettung:** Kalenderblock und optionale PDP-Verknüpfung ohne duplizierte Buchungslogik. **Status:** umgesetzt (`workshopCalendar` + PDP-Flag `showWorkshopCalendar`).
 
 ## SEO und Sicherheit
 
