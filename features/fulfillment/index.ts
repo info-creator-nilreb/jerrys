@@ -14,13 +14,20 @@ export {
 
 export {
   createNotConfiguredShippingLabelAdapter,
+  type InternetmarkeVoucherLayout,
   type PurchaseShippingLabelInput,
   type PurchaseShippingLabelResult,
+  type ShippingLabelAddress,
   type ShippingLabelPort,
   type ShippingLabelProviderId,
   type VoidShippingLabelInput,
   type VoidShippingLabelResult,
 } from "@/features/fulfillment/application/shipping-label-port";
+
+export {
+  createShippingLabelPort,
+  createShippingLabelPortFromEnv,
+} from "@/features/fulfillment/application/create-shipping-label-port";
 
 export {
   createShipmentDraftForOrder,
@@ -31,3 +38,62 @@ export {
   listShipmentsForOrder,
   type ShipmentListItem,
 } from "@/features/fulfillment/application/list-shipments-for-order";
+
+export {
+  purchaseShippingLabelForShipment,
+  type PurchaseShippingLabelForShipmentInput,
+  type PurchaseShippingLabelForShipmentResult,
+} from "@/features/fulfillment/application/purchase-shipping-label-for-shipment";
+
+export {
+  voidShippingLabelForShipment,
+  type VoidShippingLabelForShipmentResult,
+} from "@/features/fulfillment/application/void-shipping-label-for-shipment";
+
+export {
+  syncManualShipmentOnOrderShipped,
+  type SyncManualShipmentOnOrderShippedResult,
+} from "@/features/fulfillment/application/sync-manual-shipment-on-order-shipped";
+
+export {
+  buildInternetmarkeSenderFromShopSettings,
+  type BuildInternetmarkeSenderResult,
+} from "@/features/fulfillment/application/build-internetmarke-sender";
+
+export {
+  getInternetmarkeConfig,
+  getInternetmarkeConfigFromEnv,
+  getInternetmarkeAppCredentialsFromEnv,
+  getInternetmarkeAppCredentialsPublic,
+  isInternetmarkeAppConfiguredFromEnv,
+  isInternetmarkeConfigured,
+  isInternetmarkeConfiguredFromEnv,
+  resolveInternetmarkeConfig,
+  INTERNETMARKE_API_BASE_URL,
+  type InternetmarkeEnvConfig,
+} from "@/features/fulfillment/infrastructure/internetmarke-config";
+
+export {
+  getInternetmarkeConnectionPublic,
+  saveInternetmarkeConnection,
+  saveInternetmarkePortokasseConnection,
+  updateInternetmarkeSelectedProduct,
+  updateInternetmarkeProductPriceCents,
+  disconnectInternetmarkeConnection,
+  getInternetmarkeConnectionSecrets,
+  markInternetmarkeConnectionError,
+  markInternetmarkeConnectionVerified,
+  type InternetmarkeConnectionPublic,
+} from "@/features/fulfillment/infrastructure/internetmarke-connection";
+
+export { InternetmarkeClient } from "@/features/fulfillment/infrastructure/internetmarke-client";
+
+export {
+  fetchInternetmarkeCatalogProducts,
+  findInternetmarkeProductPriceCents,
+  type InternetmarkeCatalogProduct,
+} from "@/features/fulfillment/infrastructure/internetmarke-products-api";
+
+export { createInternetmarkeShippingLabelAdapter } from "@/features/fulfillment/infrastructure/internetmarke-shipping-label-adapter";
+
+export { toInternetmarkeCountryCode } from "@/features/fulfillment/infrastructure/internetmarke-country";

@@ -149,7 +149,7 @@ Create and test these before their associated feature is enabled:
 - webhook or outbox backlog
 - stuck or expired workshop reservations
 - Zettle inventory discrepancy
-- INTERNETMARKE/DHL label purchase failure
+- INTERNETMARKE/DHL label purchase failure (see runbook below)
 - personal-data incident and data-subject request
 
 Concrete steps for the commerce paths already in production follow below. Features not yet shipped keep the checklist item until an owned runbook exists.
@@ -187,6 +187,20 @@ PayPal zeigt Capture/`COMPLETED`, Shop-Bestellung bleibt `pending_payment`.
 4. Erwartung: Status `paid`, Capture-Inbox `processed`, Bestätigungsmail (falls noch nicht gesendet). Bei Betrags-Mismatch Logs `paypal_amount_mismatch` — **nicht** manuell auf `paid` setzen ohne Klärung.
 
 Siehe auch [EPIC4_RECONCILIATION.md](./EPIC4_RECONCILIATION.md).
+
+### Runbook: INTERNETMARKE Label-Kauf / Auth fehlgeschlagen
+
+Symptoms: Admin/Command liefert `not_configured` oder `provider_rejected`; Logs mit INTERNETMARKE 401/4xx.
+
+1. Primär: **Admin → Versand → Internetmarke** — Credentials verschlüsselt in DB; Produkt aus Products API wählen (nicht manuell tippen). Optional Env-Fallback `INTERNETMARKE_*`.
+2. Ohne Verbindung/Produkt: Adapter ist `not_configured` — manueller Versand bleibt möglich.
+3. **401 beim Token (`POST /user`):** Portokasse „Meine Daten → Geschäftsanwendungen“ freigeben; Entwickler-Portokasse ggf. via `it-csp@deutschepost.de`.
+4. Preise: beim Label-Kauf wird der Cent-Preis für das gewählte Produkt aus der Products API aktualisiert.
+5. Parameter: Kauf mit `directCheckout=true`. Health: `GET https://api-eu.dhl.com/post/de/shipping/im/v1/`.
+6. Nach Erfolg: `shipments.label_external_ref` = `shopOrderId`; PDF-Link ist **ephemer**.
+7. Void: `POST /app/retoure`; Status `voided` nur bei Provider-OK.
+
+Siehe [EPIC7_SHIPPING_RETURNS.md](./EPIC7_SHIPPING_RETURNS.md), ADR-0009.
 
 ### Runbook: Webhook- oder Outbox-Backlog
 

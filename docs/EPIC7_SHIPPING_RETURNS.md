@@ -21,7 +21,7 @@ Admins erzeugen Sendungen zu bezahlten Warenbestellungen, kaufen/voiden Labels (
 
 1. **ADR + Domäne:** `Shipment`, Statusmaschine, `ShippingLabelPort` Stub, `createShipmentDraftForOrder` — **kein** Provider-HTTP, **kein** neues Admin-UI. **Status:** umgesetzt (Slice 1).
 2. **Manual sync:** Beim bestehenden Admin-„Versandt“ optional/automatisch `Shipment` anlegen/aktualisieren; Order-Felder bleiben denormalisiert.
-3. **INTERNETMARKE:** Label kaufen/voiden hinter Port; private Label-Ablage; Idempotenz.
+3. **INTERNETMARKE:** REST-Adapter + `purchaseShippingLabelForShipment` / `voidShippingLabelForShipment`; Env-Credentials; Idempotenz über `shopOrderId`. **Status:** Adapter umgesetzt (Slice 3) — Admin-UI und privater Label-Blob folgen.
 4. **DHL Parcel (optional):** Zweiter Adapter; Produktauswahl/Regeln.
 5. **Kunde:** Versand-Mail/Tracking (bestehende Mail pflegen); Retoure/Reship Admin-MVP.
 

@@ -712,6 +712,31 @@ model InstagramConnection {
   @@map("instagram_connections")
 }
 
+/// INTERNETMARKE-Anbindung (Epic 7). Singleton id = default; Secrets AES-GCM wie Instagram.
+model InternetmarkeConnection {
+  id                   String    @id @default("default")
+  /// DHL Developer Portal API Key (= client_id).
+  clientId             String    @map("client_id")
+  /// AES-GCM Ciphertext (lib/security/secret-crypto.ts).
+  clientSecretEnc      String    @map("client_secret_enc")
+  /// Portokasse-Benutzername (E-Mail).
+  username             String
+  /// AES-GCM Ciphertext.
+  passwordEnc          String    @map("password_enc")
+  /// Gewähltes Produkt (extProductid aus Products API); Preis wird beim Kauf aktualisiert.
+  productCode          Int?      @map("product_code")
+  productPriceCents    Int?      @map("product_price_cents")
+  productNameSnapshot  String?   @map("product_name_snapshot")
+  pageFormatId         Int       @default(1) @map("page_format_id")
+  voucherLayout        String    @default("ADDRESS_ZONE") @map("voucher_layout")
+  connectedAt          DateTime  @default(now()) @map("connected_at")
+  lastVerifiedAt       DateTime? @map("last_verified_at")
+  lastError            String?   @map("last_error") @db.Text
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  @@map("internetmarke_connections")
+}
+
 /// Gecachte Instagram-Medien (Bilder) für Storefront/CMS — Sync, kein Live-Graph pro Request.
 model InstagramMediaCache {
   id            String    @id @default(cuid())
