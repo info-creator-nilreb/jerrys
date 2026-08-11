@@ -193,8 +193,10 @@ Out of scope for this epic (explicit):
 
 ## Epic 11: Central Shop Settings and Branding
 
+**Status:** delivered (Slices 1–6 on `main`).  
 Suggested delivery: [EPIC11_BRANDING_SETTINGS.md](./EPIC11_BRANDING_SETTINGS.md).  
-**Agent-Handoff:** [EPIC11_AGENT_HANDOFF.md](./EPIC11_AGENT_HANDOFF.md).
+**Agent-Handoff:** [EPIC11_AGENT_HANDOFF.md](./EPIC11_AGENT_HANDOFF.md).  
+Ops: [OPERATIONS.md](./OPERATIONS.md#shop-settings-and-branding-epic-11).
 
 User stories:
 

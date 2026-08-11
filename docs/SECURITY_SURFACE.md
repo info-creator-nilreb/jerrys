@@ -35,6 +35,7 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | Server Actions `app/admin/.../versand/actions.ts` | `auth()` in Action | Shopweite Versandländer und -kosten |
 | Seite `/admin/einstellungen` | Admin-Session | Shop-Branding, Kontakt, Farben, Medien-Uploads (Epic 11) |
 | Server Actions `app/admin/.../einstellungen/actions.ts` | `auth()` in Action | ShopSettings speichern; Branding-Upload/Clear (Vercel Blob); Audit via Outbox `shop_settings.*` |
+| Lesepfade Storefront/E-Mail/PDF/Admin-Login | Öffentlich bzw. serverseitig | `getShopSettings()` + Static-Fallbacks `/branding/*`; keine freie CSS/JS aus Admin-Eingaben (nur Hex-Farben, URLs, Text via Zod) |
 | Seiten `/admin/termine`, `/admin/termine/neu`, `/admin/termine/[id]/edit` | Admin-Session | Gruppentermine (Entwurf, Veröffentlichen, Absage); globale Storno-Frist |
 | Server Actions `app/admin/(dashboard)/termine/actions.ts` | `auth()` in Action | Termin-CRUD (nur Entwürfe), Lifecycle, Shop-Workshop-Einstellungen; Audit `workshop.session.*` |
 | `GET /llms.txt` | Öffentlich | KI-/Agenten-Hinweis (nur statischer Text, keine personenbezogenen Daten) |
@@ -51,6 +52,7 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 **Hinweise**
 
 - **CSP:** `Content-Security-Policy` nur bei **Production-Build** (`NODE_ENV=production`), nicht bei `next dev` (HMR). Konfiguration: [`lib/site/content-security-policy.ts`](../lib/site/content-security-policy.ts), Header in [`next.config.ts`](../next.config.ts). `upgrade-insecure-requests` zusätzlich nur bei `VERCEL=1`.
+- **Epic 11 Branding:** Primärfarben werden als Inline-CSS-Variablen gesetzt (`--primary` / `--primary-hover`); WCAG-Kontrast wird beim Speichern **gewarnt**, nicht hart blockiert (bestehendes jerry’s-Grün). Blob-URLs nur nach serverseitiger MIME-/Größen-/Magic-Byte-Prüfung.
 - Admin-APIs: ohne gültige Session → **401 JSON** (siehe Integrationstests).
 - Keine weiteren öffentlichen REST-Endpunkte für schreibende Shop-Daten außer Server Actions.
 - PayPal-Webhooks: Signatur über PayPal Postback; Replay über `webhook_inbox_entries` (`provider: paypal_webhook`). Capture-Finalisierung zusätzlich über `provider: paypal` / `capture:<orderId>` in `completePayPalCaptureFlow`.

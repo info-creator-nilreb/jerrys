@@ -40,19 +40,20 @@ Positive:
 
 Negative / accepted trade-offs:
 
-- Until Slice 4–5, UI/email/PDF still read hardcoded tokens; dual sources exist briefly.
-- Asset URL columns are filled by Slice 2 uploads via Vercel Blob ([ADR-0008](./0008-object-storage.md)); Admin UI follows in Slice 3.
+- CSS defaults in `globals.css` remain as build-time fallbacks; runtime overrides come from Settings (Root-Layout).
+- Contrast failures warn in Admin; hard-blocking AA remains a product decision.
+- Asset URL columns are filled via Vercel Blob ([ADR-0008](./0008-object-storage.md)).
 
 ## Guardrails
 
 - Exactly one logical settings document (`id = "default"`); no multi-tenant themes.
 - Never persist free CSS/JS from admins.
 - Do not store uploads on the Vercel filesystem (ADR-0002).
-- Missing or invalid assets must not break checkout, mail, or PDF (later consumers use static fallbacks).
+- Missing or invalid assets must not break checkout, mail, or PDF (static `/branding/*` / text fallbacks).
 - Cross-cutting readers live under `lib/shop/` until a dedicated bounded-context export is justified.
 
 ## Revisit when
 
-- Object storage ADR/product is chosen and logo upload ships.
 - Admin contrast policy hard-blocks colors that fail AA for primary button text.
 - Multiple shops or white-label themes are explicitly approved (currently out of scope).
+- Private object storage for invoices/labels is chosen (separate from public Blob).
