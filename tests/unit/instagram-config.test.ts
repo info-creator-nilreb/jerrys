@@ -33,14 +33,28 @@ describe("getInstagramAppConfig", () => {
     }
   });
 
-  it("baut Redirect aus Site-URL", async () => {
+  it("baut Redirect aus Site-URL und ignoriert Preview-VERCEL_URL", async () => {
     process.env.INSTAGRAM_APP_ID = "1111222233334444";
     process.env.INSTAGRAM_APP_SECRET = "secret";
     process.env.NEXT_PUBLIC_SITE_URL = "https://example.com";
+    process.env.VERCEL_URL = "fecom-preview-xyz.vercel.app";
     delete process.env.INSTAGRAM_REDIRECT_URI;
     delete process.env.AUTH_URL;
     const { getInstagramAppConfig } = await import("@/lib/instagram/config");
     const cfg = getInstagramAppConfig();
     expect(cfg?.redirectUri).toBe("https://example.com/api/admin/instagram/callback");
+  });
+
+  it("bevorzugt INSTAGRAM_REDIRECT_URI", async () => {
+    process.env.INSTAGRAM_APP_ID = "1111222233334444";
+    process.env.INSTAGRAM_APP_SECRET = "secret";
+    process.env.NEXT_PUBLIC_SITE_URL = "https://example.com";
+    process.env.INSTAGRAM_REDIRECT_URI =
+      "https://shop.example.com/api/admin/instagram/callback";
+    const { getInstagramAppConfig } = await import("@/lib/instagram/config");
+    const cfg = getInstagramAppConfig();
+    expect(cfg?.redirectUri).toBe(
+      "https://shop.example.com/api/admin/instagram/callback",
+    );
   });
 });

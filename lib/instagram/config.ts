@@ -1,5 +1,4 @@
 import { getInstagramAuthMode, type InstagramAuthMode } from "@/lib/instagram/auth-mode";
-import { canonicalSiteOrigin } from "@/lib/site/canonical-origin";
 
 export const INSTAGRAM_OAUTH_STATE_COOKIE = "jerrys_ig_oauth_state";
 export const INSTAGRAM_CONNECTION_ID = "default";
@@ -12,13 +11,38 @@ export type InstagramAppConfig = {
   redirectUri: string;
 };
 
+/**
+ * Stabile Origin für OAuth-Redirect (Meta App Domains).
+ * Bewusst NICHT `VERCEL_URL` / Preview-Hosts — die wechseln und stehen nicht in Meta.
+ * Reihenfolge: INSTAGRAM_REDIRECT_URI → NEXT_PUBLIC_SITE_URL → AUTH_URL.
+ */
+export function getInstagramOAuthOrigin(): string {
+  const redirect = process.env.INSTAGRAM_REDIRECT_URI?.trim();
+  if (redirect) {
+    try {
+      return new URL(redirect).origin;
+    } catch {
+      // fall through
+    }
+  }
+  const site = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
+  if (site) return site;
+  const auth = process.env.AUTH_URL?.trim().replace(/\/$/, "");
+  if (auth) return auth;
+  if (process.env.NODE_ENV === "development") {
+    const port = process.env.PORT ?? "3001";
+    return `http://127.0.0.1:${port}`;
+  }
+  return "";
+}
+
 export function getInstagramRedirectUri(): string {
   const override = process.env.INSTAGRAM_REDIRECT_URI?.trim();
   if (override) return override.replace(/\/$/, "");
-  const origin = canonicalSiteOrigin().replace(/\/$/, "");
+  const origin = getInstagramOAuthOrigin().replace(/\/$/, "");
   if (!origin) {
     throw new Error(
-      "Keine Site-URL für Instagram-Redirect (NEXT_PUBLIC_SITE_URL / AUTH_URL).",
+      "Keine stabile Site-URL für Instagram-Redirect (NEXT_PUBLIC_SITE_URL oder INSTAGRAM_REDIRECT_URI).",
     );
   }
   return `${origin}/api/admin/instagram/callback`;

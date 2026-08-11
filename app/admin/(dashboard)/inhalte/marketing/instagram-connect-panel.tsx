@@ -99,13 +99,10 @@ export function InstagramConnectPanel(props: Props) {
             ) : null}
           </p>
           <p>
-            Bei <span className="font-medium text-[#374151]">Invalid platform app</span> und
-            Facebook Login for Business im Meta-Dashboard: In Vercel setzen{" "}
-            <code className="text-[11px]">INSTAGRAM_AUTH_MODE=facebook</code>, dazu die{" "}
-            <span className="font-medium text-[#374151]">Meta App ID + App Secret</span> aus
-            App-Einstellungen → Allgemeines (nicht die Instagram App ID). Redirect-URI auch unter
-            Facebook Login → Gültige OAuth-Redirect-URIs eintragen. Instagram muss mit einer
-            Facebook-Page verknüpft sein.
+            Bei <span className="font-medium text-[#374151]">Invalid platform app</span>: Mode{" "}
+            <code className="text-[11px]">facebook</code> + Meta App ID/Secret (Allgemeines). Bei
+            Domain-Fehler: feste Production-URL in Meta App-Domains und OAuth-Redirects (keine
+            Vercel-Preview-Hosts); Verbinden nur über Production-Admin.
           </p>
         </div>
       )}
