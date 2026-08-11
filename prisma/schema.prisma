@@ -312,6 +312,23 @@ enum FulfillmentStatus {
   returned
 }
 
+/// Sendungs-Lebenszyklus (Epic 7). Getrennt von Order.fulfillmentStatus / Zahlungsstatus.
+enum ShipmentStatus {
+  draft
+  labeled
+  shipped
+  delivered
+  voided
+  returned
+}
+
+/// Label-Anbieter hinter ShippingLabelPort (Slice 1: nur Speicherung / Stub).
+enum ShippingLabelProvider {
+  none
+  internetmarke
+  dhl_parcel
+}
+
 enum StockReservationStatus {
   active
   committed
@@ -437,9 +454,36 @@ model Order {
   events              OrderEvent[]
   payments            OrderPayment[]
   stockReservations   StockReservation[]
+  shipments           Shipment[]
 
   @@index([customerId, createdAt])
   @@map("orders")
+}
+
+/// Physische Sendung zu einer Warenbestellung (Epic 7).
+model Shipment {
+  id                 String                @id @default(cuid())
+  orderId            String                @map("order_id")
+  order              Order                 @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status             ShipmentStatus        @default(draft)
+  /// Anzeigename / manueller Carrier (optional bis Label-Kauf).
+  carrier            ShippingCarrier?
+  trackingNumber     String?               @map("tracking_number")
+  labelProvider      ShippingLabelProvider @default(none) @map("label_provider")
+  /// Externe Provider-Referenz (INTERNETMARKE/DHL) — Idempotenz später.
+  labelExternalRef   String?               @map("label_external_ref")
+  /// Privater Object-Storage-Key für Label-PDF (Store folgt später).
+  labelStorageKey    String?               @map("label_storage_key")
+  labelPurchasedAt   DateTime?             @map("label_purchased_at")
+  voidedAt           DateTime?             @map("voided_at")
+  shippedAt          DateTime?             @map("shipped_at")
+  deliveredAt        DateTime?             @map("delivered_at")
+  createdAt          DateTime              @default(now()) @map("created_at")
+  updatedAt          DateTime              @updatedAt @map("updated_at")
+
+  @@index([orderId, status])
+  @@index([labelExternalRef])
+  @@map("shipments")
 }
 
 model StockReservation {

@@ -124,6 +124,11 @@ Exit criteria: Zettle cannot silently overwrite shop inventory; conflicts and ne
 
 ## Epic 7: Shipping and Returns
 
+**Status:** in progress (Slice 1 domain on branch/main).  
+Suggested delivery: [EPIC7_SHIPPING_RETURNS.md](./EPIC7_SHIPPING_RETURNS.md).  
+**Agent-Handoff:** [EPIC7_AGENT_HANDOFF.md](./EPIC7_AGENT_HANDOFF.md).  
+**ADR:** [0009-fulfillment-shipments.md](./adr/0009-fulfillment-shipments.md).
+
 User stories:
 
 - As an admin, I can create a shipment from a paid order.
