@@ -9,7 +9,18 @@ export type InstagramAppConfig = {
   appId: string;
   appSecret: string;
   redirectUri: string;
+  /** Facebook Login for Business → Konfigurationen → Config-ID. */
+  facebookConfigId: string | null;
 };
+
+/** Config-ID aus Meta: Facebook Login for Business → Konfigurationen. */
+export function getFacebookLoginConfigId(): string | null {
+  const id =
+    process.env.INSTAGRAM_FB_LOGIN_CONFIG_ID?.trim() ||
+    process.env.FACEBOOK_LOGIN_CONFIG_ID?.trim() ||
+    "";
+  return id || null;
+}
 
 export function isVercelPreviewDeployment(): boolean {
   return process.env.VERCEL_ENV === "preview";
@@ -123,6 +134,17 @@ export function getInstagramOAuthReadiness(requestOrigin?: string | null): Insta
     };
   }
 
+  if (getInstagramAuthMode() === "facebook" && !config.facebookConfigId) {
+    return {
+      ready: false,
+      redirectUri: config.redirectUri,
+      metaAppDomain,
+      connectAdminUrl,
+      blockReason:
+        "Facebook Login for Business braucht INSTAGRAM_FB_LOGIN_CONFIG_ID (Meta → Facebook Login for Business → Konfigurationen). Sonst: Invalid Scopes.",
+    };
+  }
+
   return {
     ready: true,
     redirectUri: config.redirectUri,
@@ -149,7 +171,12 @@ export function getInstagramAppConfig(): InstagramAppConfig | null {
   const appSecret = process.env.INSTAGRAM_APP_SECRET?.trim() ?? "";
   if (!appId || !appSecret) return null;
   try {
-    return { appId, appSecret, redirectUri: getInstagramRedirectUri() };
+    return {
+      appId,
+      appSecret,
+      redirectUri: getInstagramRedirectUri(),
+      facebookConfigId: getFacebookLoginConfigId(),
+    };
   } catch {
     return null;
   }
@@ -175,6 +202,7 @@ export function getInstagramConfigDiagnostics(requestOrigin?: string | null): {
   oauthReady: boolean;
   oauthBlockReason: string | null;
   authMode: InstagramAuthMode;
+  facebookConfigId: string | null;
 } {
   const authMode = getInstagramAuthMode();
   const readiness = getInstagramOAuthReadiness(requestOrigin);
@@ -189,6 +217,7 @@ export function getInstagramConfigDiagnostics(requestOrigin?: string | null): {
       oauthReady: false,
       oauthBlockReason: readiness.blockReason,
       authMode,
+      facebookConfigId: getFacebookLoginConfigId(),
     };
   }
   return {
@@ -200,5 +229,6 @@ export function getInstagramConfigDiagnostics(requestOrigin?: string | null): {
     oauthReady: readiness.ready,
     oauthBlockReason: readiness.blockReason,
     authMode,
+    facebookConfigId: config.facebookConfigId,
   };
 }

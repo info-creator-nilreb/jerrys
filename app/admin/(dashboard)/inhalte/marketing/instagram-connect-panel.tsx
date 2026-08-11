@@ -24,6 +24,8 @@ type Props = {
   oauthReady?: boolean;
   oauthBlockReason?: string | null;
   authMode?: "instagram" | "facebook";
+  /** Facebook Login for Business Config-ID (nur Mode facebook). */
+  facebookConfigId?: string | null;
   flash?: { kind: "ok" | "error"; message: string } | null;
 };
 
@@ -101,26 +103,45 @@ export function InstagramConnectPanel(props: Props) {
                 Redirect: <code className="break-all text-[11px]">{props.redirectUri}</code>
               </>
             ) : null}
+            {props.authMode === "facebook" ? (
+              <>
+                {" · "}
+                Config-ID:{" "}
+                <code className="text-[11px]">
+                  {props.facebookConfigId ? props.facebookConfigId : "fehlt"}
+                </code>
+              </>
+            ) : null}
           </p>
           {props.metaAppDomain ? (
             <div className="space-y-1 rounded border border-[#e8eaed] bg-white px-2 py-1.5 text-[11px] text-[#374151]">
-              <p className="font-medium">Meta-Dashboard (Pflicht bei Domain-Fehler):</p>
+              <p className="font-medium">Meta-Dashboard (facebook-Mode):</p>
               <ol className="list-decimal space-y-0.5 pl-4 text-[#6b7280]">
                 <li>
-                  App-Einstellungen → Allgemeines → App-Domains:{" "}
+                  App-Domains:{" "}
                   <code className="font-medium text-[#374151]">{props.metaAppDomain}</code>
                 </li>
                 <li>
-                  Facebook Login → Einstellungen → Gültige OAuth-Redirect-URIs:{" "}
+                  Facebook Login for Business → Einstellungen → OAuth-Redirect:{" "}
                   <code className="break-all font-medium text-[#374151]">
                     {props.redirectUri}
                   </code>
                 </li>
                 <li>
-                  Optional Website-URL / Site-URL:{" "}
-                  <code className="font-medium text-[#374151]">
-                    {props.redirectUri?.replace(/\/api\/admin\/instagram\/callback\/?$/, "")}
-                  </code>
+                  Facebook Login for Business →{" "}
+                  <span className="font-medium text-[#374151]">Konfigurationen</span>: Config
+                  anlegen (Permissions u. a. <code>instagram_basic</code>,{" "}
+                  <code>pages_show_list</code>) → Config-ID in Vercel als{" "}
+                  <code className="font-medium text-[#374151]">INSTAGRAM_FB_LOGIN_CONFIG_ID</code>
+                  {props.facebookConfigId ? (
+                    <>
+                      {" "}
+                      (aktuell:{" "}
+                      <code className="font-medium text-[#374151]">{props.facebookConfigId}</code>)
+                    </>
+                  ) : (
+                    <> setzen und Redeploy</>
+                  )}
                 </li>
               </ol>
             </div>

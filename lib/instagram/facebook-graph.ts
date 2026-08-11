@@ -7,6 +7,11 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : null;
 }
 
+/**
+ * Fallback-Scopes nur ohne Facebook-Login-for-Business-Config.
+ * Mit `config_id` (empfohlen) dürfen diese NICHT mitgeschickt werden — sonst
+ * „Invalid Scopes“ bei FL4B-Apps.
+ */
 export const FACEBOOK_LOGIN_SCOPES = [
   "instagram_basic",
   "pages_show_list",
@@ -23,7 +28,13 @@ export function buildFacebookAuthorizeUrl(
   dialog.searchParams.set("redirect_uri", config.redirectUri);
   dialog.searchParams.set("state", state);
   dialog.searchParams.set("response_type", "code");
-  dialog.searchParams.set("scope", FACEBOOK_LOGIN_SCOPES);
+  const configId = config.facebookConfigId?.trim();
+  if (configId) {
+    // Facebook Login for Business: Permissions kommen aus der Konfiguration.
+    dialog.searchParams.set("config_id", configId);
+  } else {
+    dialog.searchParams.set("scope", FACEBOOK_LOGIN_SCOPES);
+  }
   return dialog.toString();
 }
 

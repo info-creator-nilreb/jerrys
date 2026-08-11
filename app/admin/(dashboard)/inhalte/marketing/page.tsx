@@ -97,6 +97,7 @@ export default async function AdminStartseitePage({
         oauthReady={igDiagnostics.oauthReady}
         oauthBlockReason={igDiagnostics.oauthBlockReason}
         authMode={igDiagnostics.authMode}
+        facebookConfigId={igDiagnostics.facebookConfigId}
         flash={igFlash}
       />
 

@@ -12,7 +12,7 @@ Umsetzung des Live-Feeds für den CMS-Block **Social / Reviews** (Bilder zuerst)
 
 ## Env
 
-Siehe `.env.example`: `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, Site-URL, optional `INSTAGRAM_REDIRECT_URI`, `INTEGRATIONS_ENCRYPTION_KEY`.
+Siehe `.env.example`: `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, Site-URL, optional `INSTAGRAM_REDIRECT_URI`, bei Mode `facebook` zusätzlich `INSTAGRAM_FB_LOGIN_CONFIG_ID`, `INTEGRATIONS_ENCRYPTION_KEY`.
 
 Meta App: Redirect URI exakt `{SITE}/api/admin/instagram/callback`. App Review für Production.
 
@@ -25,13 +25,18 @@ Zwei gültige Setups:
 | `instagram` (Default) | **Instagram** App ID/Secret unter Instagram → API setup with Instagram login | Business Login for Instagram |
 | `facebook` | **Meta** App ID/Secret unter App-Einstellungen → Allgemeines | Facebook Login for Business + IG an Page |
 
-Wenn im Dashboard **Facebook Login for Business** aktiv ist und Connect mit **Invalid platform app** scheitert:
+Wenn im Dashboard **Facebook Login for Business** aktiv ist und Connect mit **Invalid platform app** oder **Invalid Scopes** scheitert:
 
 1. Vercel: `INSTAGRAM_AUTH_MODE=facebook`
 2. `INSTAGRAM_APP_ID` / `INSTAGRAM_APP_SECRET` = Meta App ID + Secret (Allgemeines)
-3. Dieselbe Callback-URL unter **Facebook Login → Gültige OAuth-Redirect-URIs**
-4. Instagram Professional-Konto mit einer **Facebook-Page** verknüpfen
-5. Redeploy, erneut verbinden
+3. Dieselbe Callback-URL unter **Facebook Login for Business → Einstellungen → Gültige OAuth-Redirect-URIs**
+4. **Facebook Login for Business → Konfigurationen**: Login-Config anlegen mit u. a.  
+   `instagram_basic`, `pages_show_list`, `pages_read_engagement`  
+   → Config-ID nach Vercel als `INSTAGRAM_FB_LOGIN_CONFIG_ID`
+5. Instagram Professional-Konto mit einer **Facebook-Page** verknüpfen
+6. Redeploy, erneut verbinden
+
+Ohne Config-ID sendet die App klassische `scope=`-Parameter — Meta antwortet bei FL4B oft mit **Invalid Scopes**.
 
 ### Domain-Fehler („Domain … nicht in den Domains der App“)
 
