@@ -20,6 +20,7 @@ export const RESERVED_CONTENT_SLUGS = [
   "favicon.ico",
   "_next",
   "auth",
+  "vorschau",
 ] as const;
 
 /** Interner Slug der Startseite; öffentliche URL ist immer `/`. */

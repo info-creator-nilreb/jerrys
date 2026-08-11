@@ -154,7 +154,7 @@ export function ContentPageForm({ initial }: { initial?: InitialPage }) {
             {fe.pageType ? <p className="mt-1 text-sm text-red-600">{fe.pageType}</p> : null}
           </label>
           <label className="text-sm text-[#5c5f66]">
-            Status
+            Status beim Speichern
             <select name="status" className={fieldClass} defaultValue={initial?.status ?? "draft"}>
               {(Object.keys(CONTENT_PAGE_STATUS_LABELS) as Array<keyof typeof CONTENT_PAGE_STATUS_LABELS>).map(
                 (k) => (
@@ -164,6 +164,9 @@ export function ContentPageForm({ initial }: { initial?: InitialPage }) {
                 ),
               )}
             </select>
+            <p className="mt-1 text-xs text-[#9ca3af]">
+              Schnell wechseln: Panel „Veröffentlichung“ oben (ohne Formular speichern).
+            </p>
           </label>
           <label className="text-sm text-[#5c5f66] sm:col-span-2">
             Slug <span className="text-primary">*</span>

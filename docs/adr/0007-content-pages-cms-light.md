@@ -48,8 +48,15 @@ Negative / accepted trade-offs:
 - Rich text sanitization is mandatory before any public render (Slice 2+).
 - Uploads for block images use durable object storage (ADR-0008), never Vercel FS.
 
+## Preview tokens (Slice 4)
+
+- Format: `v1.<base64url(pageId)>.<expUnix>.<hmac-sha256>` (HMAC over `v1.id.exp`).
+- Secret: `CONTENT_PREVIEW_SECRET` if set, otherwise `AUTH_SECRET` / `NEXTAUTH_SECRET`.
+- TTL: 30 minutes (`CONTENT_PREVIEW_TTL_SECONDS`); stateless (no DB token rows).
+- Route: `/vorschau/inhalte/[pageId]?token=…` — `robots: noindex`, `robots.txt` disallows `/vorschau/`; invalid/expired token → **404** (no auth session required, no existence distinction beyond path).
+- Public discovery (`listPublishedContentPagesForDiscovery`) and sitemap/nav helpers never include `draft`.
+
 ## Revisit when
 
-- Preview token design (Slice 4) needs signed URL crypto details.
 - Multi-language content is approved (currently out of scope).
 - Version history or collaborative editing is explicitly requested.

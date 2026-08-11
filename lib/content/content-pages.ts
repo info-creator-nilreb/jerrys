@@ -113,6 +113,17 @@ export async function getContentPageBySlug(
   }
 }
 
+/**
+ * Öffentlicher Lesepfad: nur `published`. Drafts → null (kein Leak über Existenz).
+ */
+export async function getPublishedContentPageBySlug(
+  slug: string,
+): Promise<ContentPageDTO | null> {
+  const page = await getContentPageBySlug(slug);
+  if (!page || page.status !== "published") return null;
+  return page;
+}
+
 export async function getContentPageById(
   id: string,
 ): Promise<ContentPageDTO | null> {

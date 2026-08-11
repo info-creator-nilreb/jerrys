@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { listActiveCategoriesForStorefrontIndex } from "@/lib/catalog/category-queries";
 import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
+import { listPublishedContentPagesForDiscovery } from "@/lib/content/content-public-discovery";
 import {
   isNextProductionBuildPhase,
   shouldSkipSitemapDatabase,
@@ -93,13 +94,54 @@ export async function buildCategorySitemapEntries(
   }
 }
 
+/**
+ * Published + robotsIndex ContentPages.
+ * Pfade, die bereits in STATIC_SITEMAP_PATHS liegen, werden übersprungen
+ * (keine Duplikate bis Slice-6-Migration die Static-Liste ersetzt).
+ * Drafts erscheinen hier nie.
+ */
+export async function buildContentPageSitemapEntries(
+  base: string,
+  now: Date = new Date(),
+): Promise<MetadataRoute.Sitemap> {
+  if (!process.env.DATABASE_URL?.trim() || isNextProductionBuildPhase()) {
+    return [];
+  }
+
+  const normalizedBase = base.replace(/\/$/, "");
+  const staticPaths = new Set<string>(STATIC_SITEMAP_PATHS);
+
+  try {
+    const pages = await listPublishedContentPagesForDiscovery({
+      robotsIndexOnly: true,
+    });
+    return pages
+      .filter((p) => !staticPaths.has(p.path))
+      .map((p) => ({
+        url: p.path === "/" ? `${normalizedBase}/` : `${normalizedBase}${p.path}`,
+        lastModified: p.updatedAt ?? now,
+        changeFrequency: p.path === "/" ? ("weekly" as const) : ("monthly" as const),
+        priority: p.path === "/" ? 1 : 0.6,
+      }));
+  } catch (e) {
+    if (e instanceof Error && e.message === "DATABASE_URL is not set") {
+      return [];
+    }
+    if (shouldSkipSitemapDatabase(e)) {
+      return [];
+    }
+    throw e;
+  }
+}
+
 export async function buildDynamicSitemapEntries(
   base: string,
   now: Date = new Date(),
 ): Promise<MetadataRoute.Sitemap> {
   const productEntries = await buildProductSitemapEntries(base, now);
   const categoryEntries = await buildCategorySitemapEntries(base, now);
-  return [...productEntries, ...categoryEntries];
+  const contentEntries = await buildContentPageSitemapEntries(base, now);
+  return [...productEntries, ...categoryEntries, ...contentEntries];
 }
 
 export async function buildFullSitemap(
