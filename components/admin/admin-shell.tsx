@@ -23,6 +23,22 @@ export function AdminShell({
   const [mobileNavOpenForPath, setMobileNavOpenForPath] = useState<string | null>(null);
   const mobileNavOpen = mobileNavOpenForPath === pathname;
 
+  /** Admin-Shell füllt den Viewport — kein Window-Scroll (sonst Leerraum unter der App). */
+  useEffect(() => {
+    const html = document.documentElement;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevBodyOverscroll = document.body.style.overscrollBehavior;
+    html.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      document.body.style.overflow = prevBodyOverflow;
+      document.body.style.overscrollBehavior = prevBodyOverscroll;
+    };
+  }, []);
+
   useEffect(() => {
     if (!mobileNavOpen) return;
     const prev = document.body.style.overflow;
@@ -35,7 +51,7 @@ export function AdminShell({
   const sidebarWidth = collapsed ? "4.25rem" : "15.5rem";
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-[#eef0f3]">
+    <div className="fixed inset-0 flex overflow-hidden bg-[#eef0f3]">
       {mobileNavOpen ? (
         <button
           type="button"

@@ -10,7 +10,6 @@ import {
   CoverImageSection,
   LogosSection,
 } from "@/app/admin/(dashboard)/einstellungen/branding-assets-section";
-import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
 import { evaluatePrimaryBrandContrast } from "@/lib/shop/color-contrast";
 import { JERRYS_SHOP_SETTINGS_DEFAULTS } from "@/lib/shop/shop-settings-defaults";
 import type { ShopSettingsDTO } from "@/lib/shop/shop-settings";
@@ -129,7 +128,7 @@ export function ShopSettingsForm({ defaults }: Props) {
       <LogosSection settings={defaults} />
       <CoverImageSection settings={defaults} />
 
-      <form id="shop-settings-form" action={formAction} className="space-y-4 sm:space-y-5">
+      <form action={formAction} className="space-y-4 sm:space-y-5">
         <SettingsCard
           title="Farben"
           description="Die Markenfarben, die in deinem Shop, in E-Mails und im Admin erscheinen"
@@ -479,20 +478,14 @@ export function ShopSettingsForm({ defaults }: Props) {
             ) : null}
           </div>
         ) : null}
-      </form>
 
-      <AdminFormActionDock>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-          <button
-            type="submit"
-            form="shop-settings-form"
-            disabled={pending}
-            className={saveBtnClass}
-          >
+        {/* Speichern im normalen Fluss — kein fixed/sticky Dock (erzeugte Leerraum im scrollbaren main). */}
+        <div className="flex justify-end border-t border-[#e8eaed] pt-4">
+          <button type="submit" disabled={pending} className={saveBtnClass}>
             {pending ? "Speichern …" : "Speichern"}
           </button>
         </div>
-      </AdminFormActionDock>
+      </form>
     </div>
   );
 }

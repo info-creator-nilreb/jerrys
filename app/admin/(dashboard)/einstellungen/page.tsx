@@ -12,7 +12,7 @@ export default async function AdminEinstellungenPage() {
   const defaults = await getShopSettingsForAdminForm();
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5 pb-20">
+    <div className="mx-auto max-w-3xl space-y-5">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-[#1f2937]">Branding</h1>
         <p className="mt-2 text-sm text-[#6b7280]">
