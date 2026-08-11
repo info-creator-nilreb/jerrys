@@ -1,4 +1,8 @@
 import type { InstagramAppConfig } from "@/lib/instagram/config";
+import {
+  instagramMediaPageSize,
+  paginateInstagramGraphMedia,
+} from "@/lib/instagram/media-fetch";
 
 export type InstagramShortLivedToken = {
   accessToken: string;
@@ -140,48 +144,16 @@ export async function fetchInstagramProfile(
 export async function fetchInstagramMedia(
   accessToken: string,
   limit: number,
+  mediaTypes?: ReadonlySet<string>,
 ): Promise<InstagramMediaItem[]> {
   const url = new URL("https://graph.instagram.com/me/media");
   url.searchParams.set(
     "fields",
     "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp",
   );
-  url.searchParams.set("limit", String(Math.max(1, Math.min(limit, 50))));
+  url.searchParams.set("limit", String(instagramMediaPageSize(limit)));
   url.searchParams.set("access_token", accessToken);
-
-  const items: InstagramMediaItem[] = [];
-  let nextUrl: string | null = url.toString();
-
-  while (nextUrl && items.length < limit) {
-    const res = await fetch(nextUrl);
-    const json: unknown = await res.json().catch(() => null);
-    const root = asRecord(json);
-    if (!res.ok) {
-      throw new Error(`Instagram Media-Abruf fehlgeschlagen (${res.status}).`);
-    }
-    const data = Array.isArray(root?.data) ? root.data : [];
-    for (const raw of data) {
-      const row = asRecord(raw);
-      if (!row) continue;
-      const id = typeof row.id === "string" ? row.id : "";
-      const permalink = typeof row.permalink === "string" ? row.permalink : "";
-      if (!id || !permalink) continue;
-      items.push({
-        id,
-        caption: typeof row.caption === "string" ? row.caption : null,
-        mediaType: typeof row.media_type === "string" ? row.media_type : "UNKNOWN",
-        mediaUrl: typeof row.media_url === "string" ? row.media_url : null,
-        thumbnailUrl: typeof row.thumbnail_url === "string" ? row.thumbnail_url : null,
-        permalink,
-        timestamp: typeof row.timestamp === "string" ? row.timestamp : null,
-      });
-      if (items.length >= limit) break;
-    }
-    const paging = asRecord(root?.paging);
-    nextUrl = typeof paging?.next === "string" ? paging.next : null;
-  }
-
-  return items;
+  return paginateInstagramGraphMedia(url.toString(), { limit, mediaTypes });
 }
 
 /** Scope-String für Authorize-URL (kommagetrennt laut Meta). */
