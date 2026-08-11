@@ -1,18 +1,34 @@
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth/admin-session";
 import { getInstagramAuthMode } from "@/lib/instagram/auth-mode";
 import {
+  getInstagramAdminSiteBase,
   getInstagramAppConfig,
+  getInstagramOAuthReadiness,
   INSTAGRAM_OAUTH_STATE_COOKIE,
 } from "@/lib/instagram/config";
 import { buildFacebookAuthorizeUrl } from "@/lib/instagram/facebook-graph";
 import { buildInstagramAuthorizeUrl } from "@/lib/instagram/graph-api";
 import { createInstagramOAuthState } from "@/lib/instagram/oauth-state";
+import { getRequestOrigin } from "@/lib/instagram/request-origin";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const siteBase = getInstagramAdminSiteBase();
   const session = await getAdminSession();
   if (!session?.user) {
-    return NextResponse.redirect(new URL("/admin/login", absoluteFallback()));
+    return NextResponse.redirect(new URL("/admin/login", siteBase));
+  }
+
+  const readiness = getInstagramOAuthReadiness(getRequestOrigin(req));
+  if (!readiness.ready) {
+    return NextResponse.redirect(
+      new URL(
+        "/admin/inhalte/marketing?ig=error&msg=" +
+          encodeURIComponent(readiness.blockReason ?? "Instagram OAuth nicht bereit."),
+        siteBase,
+      ),
+    );
   }
 
   const config = getInstagramAppConfig();
@@ -23,7 +39,7 @@ export async function GET() {
           encodeURIComponent(
             "Instagram App nicht konfiguriert (INSTAGRAM_APP_ID / INSTAGRAM_APP_SECRET / Site-URL).",
           ),
-        absoluteFallback(),
+        siteBase,
       ),
     );
   }
@@ -36,7 +52,7 @@ export async function GET() {
       new URL(
         "/admin/inhalte/marketing?ig=error&msg=" +
           encodeURIComponent("AUTH_SECRET fehlt für OAuth-State."),
-        absoluteFallback(),
+        siteBase,
       ),
     );
   }
@@ -56,14 +72,4 @@ export async function GET() {
     maxAge: 15 * 60,
   });
   return res;
-}
-
-function absoluteFallback(): string {
-  const site =
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    process.env.AUTH_URL?.trim() ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
-  if (site) return site.replace(/\/$/, "");
-  const port = process.env.PORT ?? "3001";
-  return `http://127.0.0.1:${port}`;
 }

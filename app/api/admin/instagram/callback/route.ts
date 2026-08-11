@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth/admin-session";
 import { getInstagramAuthMode } from "@/lib/instagram/auth-mode";
 import {
+  getInstagramAdminSiteBase,
   getInstagramAppConfig,
   INSTAGRAM_OAUTH_STATE_COOKIE,
 } from "@/lib/instagram/config";
@@ -24,13 +25,7 @@ import { createLogger, errorMeta } from "@/lib/logging/logger";
 const log = createLogger("instagram-oauth-callback");
 
 function siteBase(): string {
-  const site =
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    process.env.AUTH_URL?.trim() ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
-  if (site) return site.replace(/\/$/, "");
-  const port = process.env.PORT ?? "3001";
-  return `http://127.0.0.1:${port}`;
+  return getInstagramAdminSiteBase();
 }
 
 function marketingRedirect(query: Record<string, string>): NextResponse {
