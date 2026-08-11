@@ -131,9 +131,11 @@ export function OrderInternetmarkePanel({
 
       {!configured ? (
         <p className="text-sm text-[#6b7280]">
-          Nicht konfiguriert. Env{" "}
-          <code className="rounded bg-[#f3f4f6] px-1 text-xs">INTERNETMARKE_*</code> setzen
-          (Client-ID/Secret, Portokasse, Produktcode/Preis). Manueller Versand bleibt möglich.
+          Nicht konfiguriert. Unter{" "}
+          <a href="/admin/versand" className="font-medium text-primary hover:underline">
+            Admin → Versand
+          </a>{" "}
+          verbinden und ein Porto-Produkt aus der DHL-Liste wählen. Manueller Versand bleibt möglich.
         </p>
       ) : null}
 

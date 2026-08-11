@@ -42,7 +42,7 @@ afterEach(() => {
 describe("createShippingLabelPortFromEnv", () => {
   it("fällt ohne Env auf NotConfigured zurück", async () => {
     vi.stubEnv("INTERNETMARKE_CLIENT_ID", "");
-    const port = createShippingLabelPortFromEnv();
+    const port = await createShippingLabelPortFromEnv();
     const res = await port.purchaseLabel({
       shipmentId: "s1",
       orderId: "o1",

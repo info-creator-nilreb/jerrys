@@ -24,7 +24,10 @@ export {
   type VoidShippingLabelResult,
 } from "@/features/fulfillment/application/shipping-label-port";
 
-export { createShippingLabelPortFromEnv } from "@/features/fulfillment/application/create-shipping-label-port";
+export {
+  createShippingLabelPort,
+  createShippingLabelPortFromEnv,
+} from "@/features/fulfillment/application/create-shipping-label-port";
 
 export {
   createShipmentDraftForOrder,
@@ -59,10 +62,32 @@ export {
 
 export {
   getInternetmarkeConfig,
+  getInternetmarkeConfigFromEnv,
   isInternetmarkeConfigured,
+  isInternetmarkeConfiguredFromEnv,
+  resolveInternetmarkeConfig,
   INTERNETMARKE_API_BASE_URL,
   type InternetmarkeEnvConfig,
 } from "@/features/fulfillment/infrastructure/internetmarke-config";
+
+export {
+  getInternetmarkeConnectionPublic,
+  saveInternetmarkeConnection,
+  updateInternetmarkeSelectedProduct,
+  updateInternetmarkeProductPriceCents,
+  disconnectInternetmarkeConnection,
+  getInternetmarkeConnectionSecrets,
+  markInternetmarkeConnectionError,
+  type InternetmarkeConnectionPublic,
+} from "@/features/fulfillment/infrastructure/internetmarke-connection";
+
+export { InternetmarkeClient } from "@/features/fulfillment/infrastructure/internetmarke-client";
+
+export {
+  fetchInternetmarkeCatalogProducts,
+  findInternetmarkeProductPriceCents,
+  type InternetmarkeCatalogProduct,
+} from "@/features/fulfillment/infrastructure/internetmarke-products-api";
 
 export { createInternetmarkeShippingLabelAdapter } from "@/features/fulfillment/infrastructure/internetmarke-shipping-label-adapter";
 

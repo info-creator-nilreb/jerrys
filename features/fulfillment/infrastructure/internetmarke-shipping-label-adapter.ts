@@ -12,7 +12,7 @@ import {
   type InternetmarkeFetch,
 } from "@/features/fulfillment/infrastructure/internetmarke-client";
 import {
-  getInternetmarkeConfig,
+  getInternetmarkeConfigFromEnv,
   type InternetmarkeEnvConfig,
 } from "@/features/fulfillment/infrastructure/internetmarke-config";
 import { toInternetmarkeCountryCode } from "@/features/fulfillment/infrastructure/internetmarke-country";
@@ -64,14 +64,14 @@ export function createInternetmarkeShippingLabelAdapter(options?: {
   fetchImpl?: InternetmarkeFetch;
   client?: InternetmarkeClient;
 }): ShippingLabelPort | null {
-  const config = options?.config ?? getInternetmarkeConfig();
+  const config = options?.config ?? getInternetmarkeConfigFromEnv();
   if (!config && !options?.client) return null;
 
   const client =
     options?.client ??
     new InternetmarkeClient(config!, options?.fetchImpl ?? fetch);
 
-  const defaults = config ?? getInternetmarkeConfig();
+  const defaults = config ?? getInternetmarkeConfigFromEnv();
 
   return {
     async purchaseLabel(input: PurchaseShippingLabelInput): Promise<PurchaseShippingLabelResult> {

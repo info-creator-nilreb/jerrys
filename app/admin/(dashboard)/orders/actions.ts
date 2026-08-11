@@ -354,16 +354,19 @@ export async function purchaseInternetmarkeLabelForOrderAction(
   const {
     buildInternetmarkeSenderFromShopSettings,
     createShipmentDraftForOrder,
-    createShippingLabelPortFromEnv,
+    createShippingLabelPort,
+    findInternetmarkeProductPriceCents,
     isInternetmarkeConfigured,
     purchaseShippingLabelForShipment,
+    resolveInternetmarkeConfig,
+    updateInternetmarkeProductPriceCents,
   } = await import("@/features/fulfillment");
   const { getShopSettings } = await import("@/lib/shop/shop-settings");
 
-  if (!isInternetmarkeConfigured()) {
+  if (!(await isInternetmarkeConfigured())) {
     return {
       error:
-        "INTERNETMARKE ist nicht konfiguriert. Bitte INTERNETMARKE_* Env-Variablen setzen (Client, Portokasse, Produkt).",
+        "INTERNETMARKE ist nicht konfiguriert. Unter Admin → Versand verbinden und ein Porto-Produkt wählen.",
     };
   }
 
@@ -407,10 +410,29 @@ export async function purchaseInternetmarkeLabelForOrderAction(
     return { error: messages[draft.error] ?? "Sendung konnte nicht angelegt werden." };
   }
 
-  const port = createShippingLabelPortFromEnv();
+  const config = await resolveInternetmarkeConfig();
+  let productCode = config?.productCode;
+  let totalCents = config?.productPriceCents;
+  if (config?.clientId && productCode != null) {
+    const livePrice = await findInternetmarkeProductPriceCents(config.clientId, productCode);
+    if (livePrice != null) {
+      totalCents = livePrice;
+      if (config.source === "db") {
+        try {
+          await updateInternetmarkeProductPriceCents(livePrice);
+        } catch {
+          /* Snapshot-Update optional */
+        }
+      }
+    }
+  }
+
+  const port = await createShippingLabelPort();
   const purchased = await purchaseShippingLabelForShipment(getPrisma(), port, {
     shipmentId,
     sender: senderResult.sender,
+    productCode,
+    totalCents,
   });
 
   revalidatePath("/admin/orders");
@@ -448,12 +470,11 @@ export async function voidInternetmarkeLabelAction(
     return { error: "Ungültige Sendung." };
   }
 
-  const {
-    createShippingLabelPortFromEnv,
-    voidShippingLabelForShipment,
-  } = await import("@/features/fulfillment");
+  const { createShippingLabelPort, voidShippingLabelForShipment } = await import(
+    "@/features/fulfillment"
+  );
 
-  const port = createShippingLabelPortFromEnv();
+  const port = await createShippingLabelPort();
   const voided = await voidShippingLabelForShipment(getPrisma(), port, shipmentId.trim());
 
   revalidatePath("/admin/orders");

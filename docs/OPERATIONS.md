@@ -192,13 +192,13 @@ Siehe auch [EPIC4_RECONCILIATION.md](./EPIC4_RECONCILIATION.md).
 
 Symptoms: Admin/Command liefert `not_configured` oder `provider_rejected`; Logs mit INTERNETMARKE 401/4xx.
 
-1. Env prüfen (Preview ≠ Production): `INTERNETMARKE_CLIENT_ID`, `INTERNETMARKE_CLIENT_SECRET`, `INTERNETMARKE_USERNAME`, `INTERNETMARKE_PASSWORD`, `INTERNETMARKE_PRODUCT_CODE`, `INTERNETMARKE_PRODUCT_PRICE_CENTS` (optional `PAGE_FORMAT_ID`, `VOUCHER_LAYOUT`).
-2. Ohne vollständige Env: Adapter ist bewusst `not_configured` — manueller Versand (Carrier + Tracking) bleibt möglich.
-3. **401 beim Token (`POST /user`):** In der Portokasse unter „Meine Daten → Geschäftsanwendungen“ die App freigeben. Entwickler-Portokasse ggf. bei `it-csp@deutschepost.de` beantragen (Portokasse-ID + E-Mail).
-4. Produkt/Preis: Code und Cent-Betrag müssen zur aktuellen PPL / Products API passen; sonst Provider-Reject beim Checkout.
-5. Parameter: Kauf nur mit `directCheckout=true` (nicht veraltetem `finalize`). Health: `GET https://api-eu.dhl.com/post/de/shipping/im/v1/`.
-6. Nach Erfolg: `shipments.label_external_ref` = `shopOrderId`; PDF-Link vom Provider ist **ephemer** — nicht als dauerhafte Ablage behandeln (privater Blob folgt).
-7. Void/Retoure: `POST /app/retoure` mit `shopOrderId`; bei Ablehnung Shipment-Status nicht lokal auf `voided` setzen (Command macht das nur bei Provider-OK).
+1. Primär: **Admin → Versand → Internetmarke** — Credentials verschlüsselt in DB; Produkt aus Products API wählen (nicht manuell tippen). Optional Env-Fallback `INTERNETMARKE_*`.
+2. Ohne Verbindung/Produkt: Adapter ist `not_configured` — manueller Versand bleibt möglich.
+3. **401 beim Token (`POST /user`):** Portokasse „Meine Daten → Geschäftsanwendungen“ freigeben; Entwickler-Portokasse ggf. via `it-csp@deutschepost.de`.
+4. Preise: beim Label-Kauf wird der Cent-Preis für das gewählte Produkt aus der Products API aktualisiert.
+5. Parameter: Kauf mit `directCheckout=true`. Health: `GET https://api-eu.dhl.com/post/de/shipping/im/v1/`.
+6. Nach Erfolg: `shipments.label_external_ref` = `shopOrderId`; PDF-Link ist **ephemer**.
+7. Void: `POST /app/retoure`; Status `voided` nur bei Provider-OK.
 
 Siehe [EPIC7_SHIPPING_RETURNS.md](./EPIC7_SHIPPING_RETURNS.md), ADR-0009.
 

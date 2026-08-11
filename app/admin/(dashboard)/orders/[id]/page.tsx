@@ -157,7 +157,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
   const labeledShipment = order.shipments.find(
     (s) => s.status === "labeled" && s.trackingNumber,
   );
-  const internetmarkeConfigured = isInternetmarkeConfigured();
+  const internetmarkeConfigured = await isInternetmarkeConfigured();
 
   const tabAllgemein = (
     <div className="space-y-8">
