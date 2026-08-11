@@ -55,12 +55,13 @@ function isKatalogPath(pathname: string): boolean {
 }
 
 /**
- * Shopify-ähnliche Admin-IA: operative Bereiche (Bestellungen, Katalog, Kunden)
+ * Shopify-ähnliche Admin-IA: operative Bereiche (Bestellungen, Termine, Katalog, Kunden)
  * oben; Inhalte/Marketing und Shop-spezifika darunter; Einstellungen am Ende.
  */
 const mainNav: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: IconDashboard },
   { href: "/admin/orders", label: "Bestellungen", icon: IconOrders },
+  { href: "/admin/termine", label: "Termine", icon: IconWorkshops },
   {
     href: "/admin/products",
     label: "Katalog",
@@ -109,7 +110,6 @@ const mainNav: NavItem[] = [
   },
   { href: "/admin/promotions", label: "Promotions", icon: IconPromotions },
   { href: "/admin/versand", label: "Versand", icon: IconShipping },
-  { href: "/admin/termine", label: "Termine", icon: IconWorkshops },
   { href: "/admin/einstellungen", label: "Einstellungen", icon: IconSettings },
 ];
 
