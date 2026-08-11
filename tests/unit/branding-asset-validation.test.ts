@@ -43,8 +43,7 @@ describe("validateBrandingAssetUpload", () => {
   });
 
   it("lehnt zu große Dateien ab", () => {
-    const huge = Buffer.alloc(3 * 1024 * 1024, 1);
-    // Signature so detection doesn't fail first for random bytes — use oversized PNG header + pad
+    // Signatur + Padding über dem Logo-Limit (2 MB)
     const png = pngWithSize(10, 10);
     const buf = Buffer.concat([png, Buffer.alloc(3 * 1024 * 1024)]);
     const result = validateBrandingAssetUpload("logoLight", buf);
