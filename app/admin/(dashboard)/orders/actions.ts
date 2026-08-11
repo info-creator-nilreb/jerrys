@@ -326,3 +326,142 @@ export async function reconcilePayPalPaymentForOrderAction(
       : "Abgleich fehlgeschlagen.",
   };
 }
+
+export type InternetmarkeLabelActionState =
+  | {
+      ok?: boolean;
+      error?: string;
+      message?: string;
+      labelDownloadUrl?: string | null;
+      trackingNumber?: string | null;
+    }
+  | null;
+
+export async function purchaseInternetmarkeLabelForOrderAction(
+  _prev: InternetmarkeLabelActionState,
+  formData: FormData,
+): Promise<InternetmarkeLabelActionState> {
+  const session = await getAdminSession();
+  if (!session?.user) {
+    redirect("/admin/login");
+  }
+
+  const orderId = formData.get("orderId");
+  if (typeof orderId !== "string" || !orderId.trim()) {
+    return { error: "Ungültige Bestellung." };
+  }
+
+  const {
+    buildInternetmarkeSenderFromShopSettings,
+    createShipmentDraftForOrder,
+    createShippingLabelPortFromEnv,
+    isInternetmarkeConfigured,
+    purchaseShippingLabelForShipment,
+  } = await import("@/features/fulfillment");
+  const { getShopSettings } = await import("@/lib/shop/shop-settings");
+
+  if (!isInternetmarkeConfigured()) {
+    return {
+      error:
+        "INTERNETMARKE ist nicht konfiguriert. Bitte INTERNETMARKE_* Env-Variablen setzen (Client, Portokasse, Produkt).",
+    };
+  }
+
+  let settings;
+  try {
+    settings = await getShopSettings();
+  } catch {
+    settings = null;
+  }
+  const senderResult = buildInternetmarkeSenderFromShopSettings(settings);
+  if (!senderResult.ok) {
+    return { error: senderResult.message };
+  }
+
+  const draft = await createShipmentDraftForOrder(getPrisma(), orderId.trim());
+  let shipmentId: string;
+  if (draft.ok) {
+    shipmentId = draft.shipment.id;
+  } else if (draft.error === "open_shipment_exists") {
+    const open = await getPrisma().shipment.findFirst({
+      where: {
+        orderId: orderId.trim(),
+        status: { in: ["draft", "labeled"] },
+      },
+      orderBy: { createdAt: "desc" },
+      select: { id: true },
+    });
+    if (!open) {
+      return { error: "Offene Sendung nicht gefunden." };
+    }
+    shipmentId = open.id;
+  } else {
+    const messages: Record<string, string> = {
+      not_found: "Bestellung nicht gefunden.",
+      no_physical_items: "Keine physischen Positionen — Label nicht nötig.",
+      order_not_ready: "Bestellung ist noch nicht bereit für Versand.",
+      already_fully_shipped: "Bestellung ist bereits versandt.",
+      cancelled_or_refunded: "Stornierte/erstattete Bestellung.",
+      open_shipment_exists: "Es gibt bereits eine offene Sendung mit Label — bitte zuerst prüfen.",
+    };
+    return { error: messages[draft.error] ?? "Sendung konnte nicht angelegt werden." };
+  }
+
+  const port = createShippingLabelPortFromEnv();
+  const purchased = await purchaseShippingLabelForShipment(getPrisma(), port, {
+    shipmentId,
+    sender: senderResult.sender,
+  });
+
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${orderId.trim()}`);
+
+  if (!purchased.ok) {
+    return { error: purchased.message };
+  }
+
+  return {
+    ok: true,
+    message: purchased.alreadyLabeled
+      ? "Label war bereits vorhanden."
+      : "Internetmarke wurde gekauft.",
+    labelDownloadUrl: purchased.labelDownloadUrl,
+    trackingNumber: purchased.trackingNumber,
+  };
+}
+
+export async function voidInternetmarkeLabelAction(
+  _prev: InternetmarkeLabelActionState,
+  formData: FormData,
+): Promise<InternetmarkeLabelActionState> {
+  const session = await getAdminSession();
+  if (!session?.user) {
+    redirect("/admin/login");
+  }
+
+  const orderId = formData.get("orderId");
+  const shipmentId = formData.get("shipmentId");
+  if (typeof orderId !== "string" || !orderId.trim()) {
+    return { error: "Ungültige Bestellung." };
+  }
+  if (typeof shipmentId !== "string" || !shipmentId.trim()) {
+    return { error: "Ungültige Sendung." };
+  }
+
+  const {
+    createShippingLabelPortFromEnv,
+    voidShippingLabelForShipment,
+  } = await import("@/features/fulfillment");
+
+  const port = createShippingLabelPortFromEnv();
+  const voided = await voidShippingLabelForShipment(getPrisma(), port, shipmentId.trim());
+
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${orderId.trim()}`);
+
+  if (!voided.ok) {
+    return { error: voided.message };
+  }
+
+  return { ok: true, message: "Label / Sendung wurde storniert (Retoure beim Anbieter)." };
+}

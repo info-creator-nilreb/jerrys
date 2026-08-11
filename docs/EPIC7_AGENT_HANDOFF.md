@@ -26,12 +26,11 @@
 - Domäne: Shipment-Statusmaschine, Draft anlegen für geeignete Orders
 - `ShippingLabelPort` + `NotConfiguredShippingLabelAdapter`
 
-### Slice 3 (INTERNETMARKE)
-- REST-Adapter (`POST /user`, `POST /app/shoppingcart/pdf?directCheckout=true`, `POST /app/retoure`)
+### Slice 2 + 3
+- REST-Adapter INTERNETMARKE + Admin-Panel „Internetmarke kaufen/stornieren“ an der Bestellung
+- Sync: manueller Admin-„Versandt“ schreibt/aktualisiert `shipments`
 - Factory `createShippingLabelPortFromEnv()` — ohne Env → NotConfigured
-- Application: `purchaseShippingLabelForShipment`, `voidShippingLabelForShipment`
-- Env in `.env.example`; Unit-Tests mit gemocktem `fetch`
-- **Kein** Admin-UI, **kein** privater Label-Blob, **kein** Live-Kauf ohne Credentials
+- Env in `.env.example` / `.env.local` / Vercel (niemals committen)
 
 ---
 
@@ -42,24 +41,20 @@ Branch-Prefix: `cursor/epic7-slice<N>-<kurzname>-2fb1`
 | Slice | Inhalt | Exit | Credentials? |
 | --- | --- | --- | --- |
 | **1** | ADR-0009 + Schema + Domäne + Port-Stub | ✅ Migration; Unit-Tests; architecture:check | Nein |
-| **2** | Sync mit Admin-„Versandt“ / Order-Denormalisierung | Shipment spiegelt manuellen Versand | Nein |
-| **3** | INTERNETMARKE Adapter + Kauf/Void-Commands | ✅ Mock-HTTP; Env; Idempotenz-Key = shopOrderId | **Ja** (Live) |
+| **2** | Sync mit Admin-„Versandt“ / Order-Denormalisierung | ✅ `syncManualShipmentOnOrderShipped` | Nein |
+| **3** | INTERNETMARKE Adapter + Admin Kauf/Void | ✅ Mock-HTTP; Env; Bestelldetail-Panel | **Ja** (Live) |
 | **4** | Optional DHL Parcel | Zweiter Adapter | **Ja** |
-| **5** | Retoure/Reship Admin-MVP + Tracking-UX + private Label-Keys | Auditierbar | Teilweise |
+| **5** | Retoure/Reship Admin-MVP + private Label-Keys | Auditierbar | Teilweise |
 
 ---
 
-## Copy-Paste — nächster Agent (Slice 2)
+## Copy-Paste — nächster Agent (Slice 5 / private Labels)
 
 ```
-Epic 7 Slice 2 auf main (oder nach Merge von Slice 1+3): Beim bestehenden
-Admin-Statuswechsel nach „shipped“ (applyOrderStatusTransition mit Carrier +
-Tracking) eine Shipment-Zeile anlegen oder aktualisieren (features/fulfillment).
-Order.shippingCarrier / trackingNumber bleiben denormalisiert. Kein neues Admin-UI.
-
-Lies: docs/EPIC7_AGENT_HANDOFF.md, docs/adr/0009-fulfillment-shipments.md
-Branch: cursor/epic7-slice2-manual-shipment-sync-2fb1
-Tests: npm run validate (mind. typecheck + test:unit + architecture:check)
+Epic 7: Private Ablage für INTERNETMARKE-PDF (nicht öffentlicher Vercel-Blob).
+Nach Label-Kauf PDF vom temporären Provider-Link laden, privat speichern,
+labelStorageKey setzen. Admin-Download über geschützte Route.
+Branch: cursor/epic7-slice5-private-label-storage-2fb1
 Antworten auf Deutsch.
 ```
 

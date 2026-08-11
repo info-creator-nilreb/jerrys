@@ -73,6 +73,21 @@ export async function getOrderDetailForAdmin(id: string) {
           productVariant: { select: { sku: true } },
         },
       },
+      shipments: {
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          status: true,
+          carrier: true,
+          trackingNumber: true,
+          labelProvider: true,
+          labelExternalRef: true,
+          labelPurchasedAt: true,
+          voidedAt: true,
+          shippedAt: true,
+          createdAt: true,
+        },
+      },
     },
   });
 }

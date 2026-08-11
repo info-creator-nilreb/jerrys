@@ -48,6 +48,16 @@ export {
 } from "@/features/fulfillment/application/void-shipping-label-for-shipment";
 
 export {
+  syncManualShipmentOnOrderShipped,
+  type SyncManualShipmentOnOrderShippedResult,
+} from "@/features/fulfillment/application/sync-manual-shipment-on-order-shipped";
+
+export {
+  buildInternetmarkeSenderFromShopSettings,
+  type BuildInternetmarkeSenderResult,
+} from "@/features/fulfillment/application/build-internetmarke-sender";
+
+export {
   getInternetmarkeConfig,
   isInternetmarkeConfigured,
   INTERNETMARKE_API_BASE_URL,

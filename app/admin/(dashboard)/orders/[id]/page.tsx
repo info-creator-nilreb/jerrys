@@ -4,10 +4,15 @@ import { Suspense } from "react";
 import { OrderEmailLogResendButton } from "@/app/admin/(dashboard)/orders/order-email-log-resend-button";
 import { OrderRefundButton } from "@/app/admin/(dashboard)/orders/order-refund-button";
 import { OrderPayPalReconcileButton } from "@/app/admin/(dashboard)/orders/order-paypal-reconcile-button";
+import { OrderInternetmarkePanel } from "@/app/admin/(dashboard)/orders/order-internetmarke-panel";
 import { OrderStatusPanel } from "@/app/admin/(dashboard)/orders/order-status-panel";
 import { CopyTextButton } from "@/app/admin/(dashboard)/orders/copy-text-button";
 import { OrderDetailTabs } from "@/app/admin/(dashboard)/orders/order-detail-tabs";
 import { OrderInvoiceGenerateButton } from "@/app/admin/(dashboard)/orders/order-invoice-generate-button";
+import {
+  evaluateOrderShipmentEligibility,
+  isInternetmarkeConfigured,
+} from "@/features/fulfillment";
 import { fulfillmentStatusLabel } from "@/features/orders";
 import { formatPrice } from "@/lib/catalog/format";
 import { EMAIL_ORDER_SHIPPED } from "@/lib/email/email-types";
@@ -141,6 +146,19 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
     (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
   );
 
+  const physicalItemQuantity = order.items
+    .filter((i) => i.productVariantId != null)
+    .reduce((sum, i) => sum + i.quantity, 0);
+  const shipmentEligibility = evaluateOrderShipmentEligibility({
+    orderStatus: order.status,
+    fulfillmentStatus: order.fulfillmentStatus,
+    physicalItemQuantity,
+  });
+  const labeledShipment = order.shipments.find(
+    (s) => s.status === "labeled" && s.trackingNumber,
+  );
+  const internetmarkeConfigured = isInternetmarkeConfigured();
+
   const tabAllgemein = (
     <div className="space-y-8">
       <section>
@@ -154,7 +172,27 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
             {fulfillmentStatusLabel(order.fulfillmentStatus)}
           </span>
         </p>
-        <OrderStatusPanel orderId={order.id} order={order} />
+        <OrderStatusPanel
+          orderId={order.id}
+          order={order}
+          shipmentDefaults={
+            labeledShipment
+              ? {
+                  carrier: (labeledShipment.carrier as "DHL" | "DPD" | "UPS" | "Hermes" | null) ?? "DHL",
+                  trackingNumber: labeledShipment.trackingNumber,
+                }
+              : undefined
+          }
+        />
+      </section>
+
+      <section className="border-t border-[#e8eaed] pt-6">
+        <OrderInternetmarkePanel
+          orderId={order.id}
+          configured={internetmarkeConfigured}
+          canPrepareShipment={shipmentEligibility.ok}
+          shipments={order.shipments}
+        />
       </section>
 
       {order.stockReservations.length > 0 ? (

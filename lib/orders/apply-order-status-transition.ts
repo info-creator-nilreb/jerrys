@@ -1,4 +1,5 @@
 import type { PrismaClient, ShippingCarrier } from "@/app/generated/prisma/client";
+import { syncManualShipmentOnOrderShipped } from "@/features/fulfillment";
 import { releaseStockReservationsForOrder } from "@/features/inventory";
 import { fulfillmentStatusAfterOrderTransition } from "@/features/orders";
 import { sendOrderCancelledIfNeeded } from "@/lib/email/order-cancelled";
@@ -160,6 +161,14 @@ export async function applyOrderStatusTransition(
       fromStatus: from,
       toStatus,
     });
+
+    if (toStatus === "shipped" && options?.shipment) {
+      await syncManualShipmentOnOrderShipped(tx, {
+        orderId,
+        carrier: options.shipment.carrier,
+        trackingNumber: options.shipment.trackingNumber.trim(),
+      });
+    }
 
     return { ok: true } as const;
   });
