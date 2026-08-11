@@ -1,4 +1,7 @@
-import { sanitizeAllowedHtml } from "@/lib/security/sanitize-html";
+import {
+  RICH_TEXT_ALLOWED_STYLES,
+  sanitizeAllowedHtml,
+} from "@/lib/security/sanitize-html";
 
 /** Erlaubt einfache Rich-Text-Tags für Produktbeschreibungen. */
 export function sanitizeProductDescriptionHtml(
@@ -31,12 +34,19 @@ export function sanitizeProductDescriptionHtml(
       "tr",
       "th",
       "td",
+      "span",
     ],
     allowedAttributes: {
       a: ["href", "target", "rel"],
       th: ["colspan", "rowspan"],
       td: ["colspan", "rowspan"],
+      p: ["style"],
+      h1: ["style"],
+      h2: ["style"],
+      h3: ["style"],
+      span: ["style"],
     },
+    allowedStyles: RICH_TEXT_ALLOWED_STYLES,
   });
   return clean.trim() === "" ? null : clean;
 }

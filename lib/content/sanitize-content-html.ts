@@ -1,8 +1,12 @@
-import { sanitizeAllowedHtml } from "@/lib/security/sanitize-html";
+import {
+  RICH_TEXT_ALLOWED_STYLES,
+  sanitizeAllowedHtml,
+} from "@/lib/security/sanitize-html";
 
 /**
- * Rich-Text für CMS-Blöcke (enger als Rechtstexte, ohne style).
- * Nie ungesäubertes HTML rendern.
+ * Rich-Text für CMS-Blöcke (enger als Rechtstexte).
+ * Erlaubt kompakte Shopify-ähnliche Formatierung: Fett, Kursiv, Unterstrichen,
+ * Ausrichtung, Schriftgröße. Nie ungesäubertes HTML rendern.
  */
 export function sanitizeContentRichTextHtml(
   dirty: string | null | undefined,
@@ -25,10 +29,17 @@ export function sanitizeContentRichTextHtml(
       "h3",
       "h4",
       "blockquote",
+      "span",
     ],
     allowedAttributes: {
       a: ["href", "target", "rel"],
+      p: ["style"],
+      h2: ["style"],
+      h3: ["style"],
+      h4: ["style"],
+      span: ["style"],
     },
+    allowedStyles: RICH_TEXT_ALLOWED_STYLES,
   });
   return clean.trim() === "" ? null : clean;
 }

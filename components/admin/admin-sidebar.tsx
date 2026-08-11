@@ -7,14 +7,11 @@ import { signOut } from "next-auth/react";
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import {
   IconCatalog,
-  IconCategories,
   IconChevronLeft,
   IconChevronUp,
-  IconCollections,
   IconContents,
   IconCustomers,
   IconDashboard,
-  IconInventory,
   IconOrders,
   IconPromotions,
   IconSettings,
@@ -38,6 +35,8 @@ type NavItem = {
   label: string;
   icon: ComponentType<{ className?: string }>;
   children?: NavChild[];
+  /** Wenn gesetzt: aktive Markierung des Überpunkts statt Prefix-Match auf href. */
+  isActivePath?: (pathname: string) => boolean;
 };
 
 function isInhaltePagesPath(pathname: string): boolean {
@@ -46,8 +45,51 @@ function isInhaltePagesPath(pathname: string): boolean {
   return pathname.startsWith("/admin/inhalte/");
 }
 
+function isKatalogPath(pathname: string): boolean {
+  return (
+    pathname.startsWith("/admin/products") ||
+    pathname.startsWith("/admin/collections") ||
+    pathname.startsWith("/admin/categories") ||
+    pathname.startsWith("/admin/bestand")
+  );
+}
+
+/**
+ * Shopify-ähnliche Admin-IA: operative Bereiche (Bestellungen, Katalog, Kunden)
+ * oben; Inhalte/Marketing und Shop-spezifika darunter; Einstellungen am Ende.
+ */
 const mainNav: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: IconDashboard },
+  { href: "/admin/orders", label: "Bestellungen", icon: IconOrders },
+  {
+    href: "/admin/products",
+    label: "Katalog",
+    icon: IconCatalog,
+    isActivePath: isKatalogPath,
+    children: [
+      {
+        href: "/admin/products",
+        label: "Produkte",
+        isActivePath: (pathname) => pathname.startsWith("/admin/products"),
+      },
+      {
+        href: "/admin/collections",
+        label: "Kollektionen",
+        isActivePath: (pathname) => pathname.startsWith("/admin/collections"),
+      },
+      {
+        href: "/admin/categories",
+        label: "Kategorien",
+        isActivePath: (pathname) => pathname.startsWith("/admin/categories"),
+      },
+      {
+        href: "/admin/bestand",
+        label: "Bestand",
+        isActivePath: (pathname) => pathname.startsWith("/admin/bestand"),
+      },
+    ],
+  },
+  { href: "/admin/customers", label: "Kunden", icon: IconCustomers },
   {
     href: "/admin/inhalte",
     label: "Inhalte",
@@ -65,15 +107,9 @@ const mainNav: NavItem[] = [
       },
     ],
   },
-  { href: "/admin/products", label: "Katalog", icon: IconCatalog },
-  { href: "/admin/collections", label: "Kollektionen", icon: IconCollections },
-  { href: "/admin/categories", label: "Kategorien", icon: IconCategories },
-  { href: "/admin/bestand", label: "Bestand", icon: IconInventory },
   { href: "/admin/promotions", label: "Promotions", icon: IconPromotions },
   { href: "/admin/versand", label: "Versand", icon: IconShipping },
   { href: "/admin/termine", label: "Termine", icon: IconWorkshops },
-  { href: "/admin/orders", label: "Bestellungen", icon: IconOrders },
-  { href: "/admin/customers", label: "Kunden", icon: IconCustomers },
   { href: "/admin/einstellungen", label: "Einstellungen", icon: IconSettings },
 ];
 
@@ -132,9 +168,10 @@ export function AdminSidebar({
           .join(" ")
       : userEmail);
 
-  function isActive(href: string) {
-    if (href === "/admin") return pathname === "/admin";
-    return pathname === href || pathname.startsWith(`${href}/`);
+  function itemActive(item: NavItem) {
+    if (item.isActivePath) return item.isActivePath(pathname);
+    if (item.href === "/admin") return pathname === "/admin";
+    return pathname === item.href || pathname.startsWith(`${item.href}/`);
   }
 
   function childActive(child: NavChild) {
@@ -194,7 +231,7 @@ export function AdminSidebar({
       <nav className="flex flex-1 flex-col overflow-y-auto py-3" aria-label="Hauptnavigation">
         {mainNav.map((item) => {
           const Icon = item.icon;
-          const active = isActive(item.href);
+          const active = itemActive(item);
           const children = item.children;
           const showChildren = Boolean(children?.length && showLabels);
 

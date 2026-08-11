@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AdminRichTextEditor } from "@/components/admin/admin-rich-text-editor";
 import { CmsMediaField } from "@/components/admin/cms-media-field";
 import type { ContentBlockType } from "@/lib/content/block-types";
 
@@ -80,14 +81,20 @@ export function ContentBlockFields({ type, data, onChange }: Props) {
 
   if (type === "richText") {
     return (
-      <label className="block text-sm text-[#5c5f66]">
-        HTML (wird beim Speichern sanitisiert)
-        <textarea
-          className={`${fieldClass} min-h-36 font-mono text-xs`}
+      <div className="block text-sm text-[#5c5f66]">
+        <span className="mb-1 block">
+          Text <span className="text-primary">*</span>
+        </span>
+        <AdminRichTextEditor
           value={str(data, "html")}
-          onChange={(e) => set("html", e.target.value)}
+          onChange={(html) => set("html", html)}
+          placeholder="Text eingeben …"
         />
-      </label>
+        <p className="mt-1 text-xs text-[#9ca3af]">
+          Fett, Kursiv, Unterstrichen, Ausrichtung und Schriftgröße. HTML wird beim
+          Speichern sanitisiert.
+        </p>
+      </div>
     );
   }
 
