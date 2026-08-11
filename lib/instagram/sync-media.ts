@@ -8,6 +8,7 @@ import {
   markInstagramSyncResult,
   updateInstagramAccessToken,
 } from "@/lib/instagram/connection";
+import { fetchFacebookInstagramMedia } from "@/lib/instagram/facebook-graph";
 import {
   fetchInstagramMedia,
   refreshInstagramLongLivedToken,
@@ -28,6 +29,8 @@ export type InstagramSyncResult =
 async function ensureFreshToken(): Promise<{
   accessToken: string;
   username: string;
+  igUserId: string;
+  authMode: "instagram" | "facebook";
 } | null> {
   const conn = await getInstagramAccessToken();
   if (!conn) return null;
@@ -35,7 +38,9 @@ async function ensureFreshToken(): Promise<{
   let accessToken = conn.accessToken;
   const expiresAt = conn.tokenExpiresAt?.getTime() ?? null;
   const needsRefresh =
-    expiresAt !== null && expiresAt - Date.now() < REFRESH_BEFORE_MS;
+    conn.authMode === "instagram" &&
+    expiresAt !== null &&
+    expiresAt - Date.now() < REFRESH_BEFORE_MS;
 
   if (needsRefresh) {
     try {
@@ -47,11 +52,15 @@ async function ensureFreshToken(): Promise<{
       });
     } catch (e) {
       log.warn("instagram_token_refresh_failed", errorMeta(e));
-      // weiter mit bestehendem Token versuchen
     }
   }
 
-  return { accessToken, username: conn.username };
+  return {
+    accessToken,
+    username: conn.username,
+    igUserId: conn.igUserId,
+    authMode: conn.authMode,
+  };
 }
 
 /**
@@ -66,7 +75,14 @@ export async function syncInstagramMediaFeed(
       return { ok: false, error: "Instagram ist nicht verbunden." };
     }
 
-    const media = await fetchInstagramMedia(token.accessToken, limit);
+    const media =
+      token.authMode === "facebook"
+        ? await fetchFacebookInstagramMedia(
+            token.accessToken,
+            token.igUserId,
+            limit,
+          )
+        : await fetchInstagramMedia(token.accessToken, limit);
     const images = media.filter((m) => IMAGE_TYPES.has(m.mediaType));
     let synced = 0;
     let skipped = media.length - images.length;
@@ -128,7 +144,7 @@ export async function syncInstagramMediaFeed(
         aggregateType: "instagram_connection",
         aggregateId: INSTAGRAM_CONNECTION_ID,
         eventType: "instagram.sync_completed",
-        payload: { synced, skipped },
+        payload: { synced, skipped, authMode: token.authMode },
       });
     });
 

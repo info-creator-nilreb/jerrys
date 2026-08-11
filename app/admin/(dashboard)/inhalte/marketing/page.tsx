@@ -84,6 +84,7 @@ export default async function AdminStartseitePage({
         cachedCount={igCache.length}
         appIdMasked={igDiagnostics.appIdMasked}
         redirectUri={igDiagnostics.redirectUri}
+        authMode={igDiagnostics.authMode}
         flash={igFlash}
       />
 

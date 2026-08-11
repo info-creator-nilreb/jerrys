@@ -16,16 +16,22 @@ Siehe `.env.example`: `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, Site-URL, opti
 
 Meta App: Redirect URI exakt `{SITE}/api/admin/instagram/callback`. App Review für Production.
 
-### Wichtig: Instagram App ID ≠ Meta App ID
+### Auth-Mode und „Invalid platform app“
 
-Fehler **Invalid platform app** bedeutet fast immer: In `INSTAGRAM_APP_ID` / `_SECRET` steht die **Meta-/Facebook-App-ID** (Dashboard-Kopf), nicht die **Instagram App ID**.
+Zwei gültige Setups:
 
-Richtig holen:
-1. App Dashboard → **Instagram** → **API setup with Instagram login**
-2. Abschnitt **Business login settings**
-3. Dort **Instagram App ID** und **Instagram App Secret** kopieren → Vercel Env → Redeploy
+| `INSTAGRAM_AUTH_MODE` | Credentials | Meta-Produkt |
+|-----------------------|-------------|--------------|
+| `instagram` (Default) | **Instagram** App ID/Secret unter Instagram → API setup with Instagram login | Business Login for Instagram |
+| `facebook` | **Meta** App ID/Secret unter App-Einstellungen → Allgemeines | Facebook Login for Business + IG an Page |
 
-Die allgemeine App-ID oben links im Dashboard funktioniert für diesen OAuth-Flow nicht.
+Wenn im Dashboard **Facebook Login for Business** aktiv ist und Connect mit **Invalid platform app** scheitert:
+
+1. Vercel: `INSTAGRAM_AUTH_MODE=facebook`
+2. `INSTAGRAM_APP_ID` / `INSTAGRAM_APP_SECRET` = Meta App ID + Secret (Allgemeines)
+3. Dieselbe Callback-URL unter **Facebook Login → Gültige OAuth-Redirect-URIs**
+4. Instagram Professional-Konto mit einer **Facebook-Page** verknüpfen
+5. Redeploy, erneut verbinden
 
 ## CMS
 

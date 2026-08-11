@@ -1,3 +1,4 @@
+import { getInstagramAuthMode, type InstagramAuthMode } from "@/lib/instagram/auth-mode";
 import { canonicalSiteOrigin } from "@/lib/site/canonical-origin";
 
 export const INSTAGRAM_OAUTH_STATE_COOKIE = "jerrys_ig_oauth_state";
@@ -49,14 +50,22 @@ export function getInstagramConfigDiagnostics(): {
   configured: boolean;
   appIdMasked: string | null;
   redirectUri: string | null;
+  authMode: InstagramAuthMode;
 } {
+  const authMode = getInstagramAuthMode();
   const config = getInstagramAppConfig();
   if (!config) {
-    return { configured: false, appIdMasked: null, redirectUri: null };
+    return {
+      configured: false,
+      appIdMasked: null,
+      redirectUri: null,
+      authMode,
+    };
   }
   return {
     configured: true,
     appIdMasked: maskInstagramAppId(config.appId),
     redirectUri: config.redirectUri,
+    authMode,
   };
 }

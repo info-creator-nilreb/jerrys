@@ -191,11 +191,9 @@ export function buildInstagramAuthorizeUrl(
   config: InstagramAppConfig,
   state: string,
 ): string {
-  // Business Login for Instagram — client_id muss die *Instagram* App ID sein
-  // (nicht die Meta-/Facebook-App-ID), sonst: "Invalid platform app".
-  const url = new URL("https://www.instagram.com/oauth/authorize");
-  url.searchParams.set("force_authentication", "1");
-  url.searchParams.set("enable_fb_login", "0");
+  // Business Login for Instagram — client_id = Instagram App ID
+  // (Meta-App-ID → "Invalid platform app"). Host laut Meta OAuth-Authorize-Reference.
+  const url = new URL("https://api.instagram.com/oauth/authorize");
   url.searchParams.set("client_id", config.appId);
   url.searchParams.set("redirect_uri", config.redirectUri);
   url.searchParams.set("response_type", "code");

@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth/admin-session";
+import { getInstagramAuthMode } from "@/lib/instagram/auth-mode";
 import {
   getInstagramAppConfig,
   INSTAGRAM_OAUTH_STATE_COOKIE,
 } from "@/lib/instagram/config";
+import { buildFacebookAuthorizeUrl } from "@/lib/instagram/facebook-graph";
 import { buildInstagramAuthorizeUrl } from "@/lib/instagram/graph-api";
 import { createInstagramOAuthState } from "@/lib/instagram/oauth-state";
 
@@ -39,7 +41,12 @@ export async function GET() {
     );
   }
 
-  const authorizeUrl = buildInstagramAuthorizeUrl(config, state);
+  const mode = getInstagramAuthMode();
+  const authorizeUrl =
+    mode === "facebook"
+      ? buildFacebookAuthorizeUrl(config, state)
+      : buildInstagramAuthorizeUrl(config, state);
+
   const res = NextResponse.redirect(authorizeUrl);
   res.cookies.set(INSTAGRAM_OAUTH_STATE_COOKIE, state, {
     httpOnly: true,

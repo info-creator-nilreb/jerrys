@@ -16,9 +16,10 @@ type Props = {
   lastSyncError: string | null;
   tokenExpiresAt: string | null;
   cachedCount: number;
-  /** Maskierte Instagram App ID (nicht Meta-App-ID). */
+  /** Maskierte App ID (Instagram- oder Meta-App-ID je nach Mode). */
   appIdMasked?: string | null;
   redirectUri?: string | null;
+  authMode?: "instagram" | "facebook";
   flash?: { kind: "ok" | "error"; message: string } | null;
 };
 
@@ -82,20 +83,31 @@ export function InstagramConnectPanel(props: Props) {
           <code className="text-xs">…/api/admin/instagram/callback</code>
         </p>
       ) : (
-        <p className="mt-4 rounded-md border border-[#e8eaed] bg-[#f7f8fa] px-3 py-2 text-xs text-[#6b7280]">
-          Bei Fehler <strong className="font-medium text-[#374151]">Invalid platform app</strong>: In
-          Vercel steht oft die Meta-/Facebook-App-ID. Benötigt wird die{" "}
-          <strong className="font-medium text-[#374151]">Instagram App ID</strong> unter Instagram →
-          API setup with Instagram login → Business login settings (nicht die ID oben im Dashboard).
-          Aktuell konfiguriert:{" "}
-          <code className="text-[11px]">{props.appIdMasked ?? "—"}</code>
-          {props.redirectUri ? (
-            <>
-              {" "}
-              · Redirect: <code className="break-all text-[11px]">{props.redirectUri}</code>
-            </>
-          ) : null}
-        </p>
+        <div className="mt-4 space-y-2 rounded-md border border-[#e8eaed] bg-[#f7f8fa] px-3 py-2 text-xs text-[#6b7280]">
+          <p>
+            Auth-Mode:{" "}
+            <code className="text-[11px] font-medium text-[#374151]">
+              {props.authMode === "facebook" ? "facebook" : "instagram"}
+            </code>
+            {" · "}
+            App-ID: <code className="text-[11px]">{props.appIdMasked ?? "—"}</code>
+            {props.redirectUri ? (
+              <>
+                {" · "}
+                Redirect: <code className="break-all text-[11px]">{props.redirectUri}</code>
+              </>
+            ) : null}
+          </p>
+          <p>
+            Bei <span className="font-medium text-[#374151]">Invalid platform app</span> und
+            Facebook Login for Business im Meta-Dashboard: In Vercel setzen{" "}
+            <code className="text-[11px]">INSTAGRAM_AUTH_MODE=facebook</code>, dazu die{" "}
+            <span className="font-medium text-[#374151]">Meta App ID + App Secret</span> aus
+            App-Einstellungen → Allgemeines (nicht die Instagram App ID). Redirect-URI auch unter
+            Facebook Login → Gültige OAuth-Redirect-URIs eintragen. Instagram muss mit einer
+            Facebook-Page verknüpft sein.
+          </p>
+        </div>
       )}
 
       <dl className="mt-4 grid gap-2 text-sm text-[#374151] sm:grid-cols-2">
