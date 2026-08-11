@@ -16,6 +16,9 @@ type Props = {
   lastSyncError: string | null;
   tokenExpiresAt: string | null;
   cachedCount: number;
+  /** Maskierte Instagram App ID (nicht Meta-App-ID). */
+  appIdMasked?: string | null;
+  redirectUri?: string | null;
   flash?: { kind: "ok" | "error"; message: string } | null;
 };
 
@@ -78,7 +81,22 @@ export function InstagramConnectPanel(props: Props) {
           setzen. Redirect-URI:{" "}
           <code className="text-xs">…/api/admin/instagram/callback</code>
         </p>
-      ) : null}
+      ) : (
+        <p className="mt-4 rounded-md border border-[#e8eaed] bg-[#f7f8fa] px-3 py-2 text-xs text-[#6b7280]">
+          Bei Fehler <strong className="font-medium text-[#374151]">Invalid platform app</strong>: In
+          Vercel steht oft die Meta-/Facebook-App-ID. Benötigt wird die{" "}
+          <strong className="font-medium text-[#374151]">Instagram App ID</strong> unter Instagram →
+          API setup with Instagram login → Business login settings (nicht die ID oben im Dashboard).
+          Aktuell konfiguriert:{" "}
+          <code className="text-[11px]">{props.appIdMasked ?? "—"}</code>
+          {props.redirectUri ? (
+            <>
+              {" "}
+              · Redirect: <code className="break-all text-[11px]">{props.redirectUri}</code>
+            </>
+          ) : null}
+        </p>
+      )}
 
       <dl className="mt-4 grid gap-2 text-sm text-[#374151] sm:grid-cols-2">
         <div>
