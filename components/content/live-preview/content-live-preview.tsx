@@ -1,10 +1,10 @@
 "use client";
 
-import DOMPurify from "isomorphic-dompurify";
 import Image from "next/image";
 import { useDeferredValue, useMemo } from "react";
 import { UspIcon } from "@/components/storefront/usp-icons";
 import { isContentBlockType, type ContentBlockType } from "@/lib/content/block-types";
+import { sanitizeContentRichTextHtml } from "@/lib/content/sanitize-content-html";
 
 export type LivePreviewProduct = {
   id: string;
@@ -77,8 +77,7 @@ function PreviewBlock({
   }
 
   if (type === "richText") {
-    const dirty = str(data, "html");
-    const html = DOMPurify.sanitize(dirty || "<p></p>");
+    const html = sanitizeContentRichTextHtml(str(data, "html")) ?? "";
     return (
       <div
         className="prose prose-sm max-w-none px-4 py-6 prose-headings:text-[#1f2937] prose-a:text-primary"

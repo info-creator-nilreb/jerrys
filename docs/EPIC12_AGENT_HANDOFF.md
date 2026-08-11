@@ -27,7 +27,7 @@
 - Statische/Content-Seiten: bestehende Routes unter Storefront (Impressum, Datenschutz, …)
 - Workshop-Einbettung PDP: Flag `showWorkshopCalendar`
 - Kein `ContentPage` / Block-Modell bisher
-- Sanitization: `isomorphic-dompurify` bereits Dependency
+- Sanitization: `sanitize-html` (ohne jsdom; Vercel-SSR-kompatibel)
 
 ---
 

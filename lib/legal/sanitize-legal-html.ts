@@ -1,9 +1,9 @@
-import DOMPurify from "isomorphic-dompurify";
+import { sanitizeAllowedHtml } from "@/lib/security/sanitize-html";
 
-/** CMS-Export der Rechtstexte: erlaubt gängige Tags inkl. Inline-Styles. */
+/** CMS-/Datei-Rechtstexte: gängige Tags inkl. begrenzter Inline-Styles. */
 export function sanitizeLegalDocumentHtml(dirty: string): string {
-  return DOMPurify.sanitize(dirty, {
-    ALLOWED_TAGS: [
+  return sanitizeAllowedHtml(dirty, {
+    allowedTags: [
       "p",
       "br",
       "strong",
@@ -31,6 +31,18 @@ export function sanitizeLegalDocumentHtml(dirty: string): string {
       "th",
       "td",
     ],
-    ALLOWED_ATTR: ["href", "target", "rel", "style", "face", "color", "colspan", "rowspan", "align"],
+    allowedAttributes: {
+      a: ["href", "target", "rel"],
+      span: ["style"],
+      font: ["face", "color"],
+      th: ["colspan", "rowspan", "align", "style"],
+      td: ["colspan", "rowspan", "align", "style"],
+      p: ["style", "align"],
+      h1: ["style"],
+      h2: ["style"],
+      h3: ["style"],
+      h4: ["style"],
+      table: ["style"],
+    },
   });
 }

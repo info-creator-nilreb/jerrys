@@ -1,4 +1,4 @@
-import DOMPurify from "isomorphic-dompurify";
+import { sanitizeAllowedHtml } from "@/lib/security/sanitize-html";
 
 /**
  * Rich-Text für CMS-Blöcke (enger als Rechtstexte, ohne style).
@@ -8,8 +8,8 @@ export function sanitizeContentRichTextHtml(
   dirty: string | null | undefined,
 ): string | null {
   if (dirty == null || dirty.trim() === "") return null;
-  const clean = DOMPurify.sanitize(dirty, {
-    ALLOWED_TAGS: [
+  const clean = sanitizeAllowedHtml(dirty, {
+    allowedTags: [
       "p",
       "br",
       "strong",
@@ -26,7 +26,9 @@ export function sanitizeContentRichTextHtml(
       "h4",
       "blockquote",
     ],
-    ALLOWED_ATTR: ["href", "target", "rel"],
+    allowedAttributes: {
+      a: ["href", "target", "rel"],
+    },
   });
   return clean.trim() === "" ? null : clean;
 }
