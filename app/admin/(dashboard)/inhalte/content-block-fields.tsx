@@ -467,9 +467,9 @@ export function ContentBlockFields({ type, data, onChange }: Props) {
     return (
       <div className="grid gap-3 sm:grid-cols-2">
         <p className="rounded-md border border-[#e8eaed] bg-[#f7f8fa] px-3 py-2 text-xs text-[#6b7280] sm:col-span-2">
-          <span className="font-medium text-[#374151]">Kompakte Einbettung:</span> Nur Datum,
-          Uhrzeit und freie Plätze. Ort, Preis und Buchung erscheinen erst auf der Termindetailseite —
-          geeignet für Landingpages und Produktseiten.
+          <span className="font-medium text-[#374151]">Kompakte Einbettung:</span> Datum,
+          Uhrzeit und freie Plätze. Liegen Termine in mehreren Monaten, erscheinen Monats-Chips.
+          Ort, Preis und Buchung erst auf der Termindetailseite.
         </p>
         <label className="flex items-center gap-2 text-sm text-[#2d2e32] sm:col-span-2">
           <input

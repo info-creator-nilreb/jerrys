@@ -1,9 +1,11 @@
-import Link from "next/link";
 import { listPublishedWorkshopSessionsForStorefront } from "@/features/workshops";
-import { WorkshopSessionEmbedRow } from "@/components/storefront/workshop-session-embed-row";
+import { WorkshopSessionEmbedPanel } from "@/components/storefront/workshop-session-embed-panel";
 import { WorkshopSessionStorefrontCard } from "@/components/storefront/workshop-session-storefront-card";
 
 export type WorkshopSessionListDensity = "full" | "embed";
+
+/** Pool für Monats-Chips / „weitere Termine“-Zähler (über dem sichtbaren Limit). */
+const EMBED_SESSION_POOL_LIMIT = 48;
 
 type Props = {
   /** Überschrift weglassen bei Einbettung (PDP, CMS ohne Header). */
@@ -14,6 +16,7 @@ type Props = {
   intro?: string;
   /** Eindeutige Heading-ID (mehrere Blöcke auf einer Seite). */
   headingId?: string;
+  /** Sichtbare Zeilen in der Embed-Liste (Default 6). */
   limit?: number;
   emptyMessage?: string;
   /** Zusätzlicher Inhalt unter leerer Liste (z. B. Wunschtermin). */
@@ -25,8 +28,6 @@ type Props = {
   density?: WorkshopSessionListDensity;
   /** Bei embed: ausgebuchte Termine ausblenden (Default true, conversion-fokussiert). */
   hideSoldOut?: boolean;
-  /** Footer-Link zur vollständigen Terminübersicht. */
-  showAllSessionsLink?: boolean;
 };
 
 /**
@@ -43,13 +44,19 @@ export async function WorkshopSessionList({
   emptyStateAddon,
   density = "full",
   hideSoldOut = density === "embed",
-  showAllSessionsLink = density === "embed",
 }: Props) {
-  const sessions = await listPublishedWorkshopSessionsForStorefront({ limit });
-  const visible =
+  const fetchLimit = density === "embed" ? EMBED_SESSION_POOL_LIMIT : limit;
+  const sessions = await listPublishedWorkshopSessionsForStorefront({
+    limit: fetchLimit,
+  });
+  const available =
     hideSoldOut && density === "embed"
       ? sessions.filter((s) => s.availability !== "sold_out")
       : sessions;
+
+  const displayLimit = density === "embed" ? Math.min(limit, 24) : limit;
+  const poolPossiblyTruncated =
+    density === "embed" && sessions.length >= EMBED_SESSION_POOL_LIMIT;
 
   const resolvedIntro =
     intro !== undefined
@@ -78,43 +85,28 @@ export async function WorkshopSessionList({
         </header>
       ) : null}
 
-      {visible.length === 0 ? (
-        <div
-          className={`rounded-md border border-(--surface-muted) bg-(--surface-soft) text-center text-sm text-(--foreground-muted) ${
-            density === "embed" ? "px-3 py-5" : "px-4 py-8"
-          }`}
-        >
+      {density === "embed" ? (
+        <WorkshopSessionEmbedPanel
+          sessions={available}
+          displayLimit={displayLimit}
+          poolPossiblyTruncated={poolPossiblyTruncated}
+          emptyMessage={emptyMessage}
+          emptyStateAddon={emptyStateAddon}
+        />
+      ) : available.length === 0 ? (
+        <div className="rounded-md border border-(--surface-muted) bg-(--surface-soft) px-4 py-8 text-center text-sm text-(--foreground-muted)">
           <p>{emptyMessage}</p>
           {emptyStateAddon ? <div className="not-prose">{emptyStateAddon}</div> : null}
         </div>
-      ) : density === "embed" ? (
-        <ul className="divide-y divide-(--surface-muted) overflow-hidden rounded-md border border-(--surface-muted) bg-white">
-          {visible.map((s) => (
-            <li key={s.id}>
-              <WorkshopSessionEmbedRow session={s} />
-            </li>
-          ))}
-        </ul>
       ) : (
         <ul className="space-y-4">
-          {visible.map((s) => (
+          {available.map((s) => (
             <li key={s.id}>
               <WorkshopSessionStorefrontCard session={s} />
             </li>
           ))}
         </ul>
       )}
-
-      {showAllSessionsLink && visible.length > 0 ? (
-        <p className="mt-3 text-sm">
-          <Link
-            href="/termine"
-            className="font-medium text-primary underline-offset-2 hover:underline"
-          >
-            Alle Termine ansehen
-          </Link>
-        </p>
-      ) : null}
     </section>
   );
 }
