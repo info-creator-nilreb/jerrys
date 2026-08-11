@@ -1,7 +1,10 @@
 import "server-only";
 
 import type { InternetmarkeVoucherLayout } from "@/features/fulfillment/application/shipping-label-port";
-import type { InternetmarkeEnvConfig } from "@/features/fulfillment/infrastructure/internetmarke-config";
+import {
+  getInternetmarkeAppCredentialsFromEnv,
+  type InternetmarkeEnvConfig,
+} from "@/features/fulfillment/infrastructure/internetmarke-config";
 import { getPrisma } from "@/lib/db/prisma";
 import { isMissingSchemaError } from "@/lib/db/prisma-error";
 import { decryptSecret, encryptSecret } from "@/lib/security/secret-crypto";
@@ -10,8 +13,8 @@ export const INTERNETMARKE_CONNECTION_ID = "default" as const;
 
 export type InternetmarkeConnectionPublic = {
   connected: boolean;
-  /** Klartext API Key nur für Admin-Formular (kein Secret). */
-  clientId: string | null;
+  /** Env INTERNETMARKE_CLIENT_ID/_SECRET gesetzt. */
+  appCredentialsConfigured: boolean;
   clientIdMasked: string | null;
   username: string | null;
   productCode: number | null;
@@ -22,7 +25,7 @@ export type InternetmarkeConnectionPublic = {
   connectedAt: Date | null;
   lastVerifiedAt: Date | null;
   lastError: string | null;
-  /** true wenn Credentials + gewähltes Produkt vorhanden. */
+  /** true wenn App-Env + Portokasse + gewähltes Produkt vorhanden. */
   readyForPurchase: boolean;
 };
 
@@ -37,10 +40,11 @@ function asLayout(raw: string | null | undefined): InternetmarkeVoucherLayout {
 }
 
 export async function getInternetmarkeConnectionPublic(): Promise<InternetmarkeConnectionPublic> {
+  const app = getInternetmarkeAppCredentialsFromEnv();
   const empty: InternetmarkeConnectionPublic = {
     connected: false,
-    clientId: null,
-    clientIdMasked: null,
+    appCredentialsConfigured: app != null,
+    clientIdMasked: app ? maskClientId(app.clientId) : null,
     username: null,
     productCode: null,
     productPriceCents: null,
@@ -59,10 +63,13 @@ export async function getInternetmarkeConnectionPublic(): Promise<InternetmarkeC
     if (!row) return empty;
     const productCode = row.productCode;
     const productPriceCents = row.productPriceCents;
+    const clientIdMasked = app
+      ? maskClientId(app.clientId)
+      : maskClientId(row.clientId);
     return {
       connected: true,
-      clientId: row.clientId,
-      clientIdMasked: maskClientId(row.clientId),
+      appCredentialsConfigured: app != null,
+      clientIdMasked,
       username: row.username,
       productCode,
       productPriceCents,
@@ -73,7 +80,11 @@ export async function getInternetmarkeConnectionPublic(): Promise<InternetmarkeC
       lastVerifiedAt: row.lastVerifiedAt,
       lastError: row.lastError,
       readyForPurchase:
-        productCode != null && productCode > 0 && productPriceCents != null && productPriceCents > 0,
+        app != null &&
+        productCode != null &&
+        productCode > 0 &&
+        productPriceCents != null &&
+        productPriceCents > 0,
     };
   } catch (e) {
     if (isMissingSchemaError(e)) return empty;
@@ -81,7 +92,10 @@ export async function getInternetmarkeConnectionPublic(): Promise<InternetmarkeC
   }
 }
 
-/** Entschlüsselte Credentials aus DB (ohne Env-Fallback). */
+/**
+ * Portokasse aus DB + App-Credentials bevorzugt aus Env.
+ * Client-ID/Secret aus Env überschreiben DB-Kopien (Env ist Quelle der Wahrheit).
+ */
 export async function getInternetmarkeConnectionSecrets(): Promise<{
   clientId: string;
   clientSecret: string;
@@ -97,9 +111,10 @@ export async function getInternetmarkeConnectionSecrets(): Promise<{
       where: { id: INTERNETMARKE_CONNECTION_ID },
     });
     if (!row) return null;
+    const app = getInternetmarkeAppCredentialsFromEnv();
     return {
-      clientId: row.clientId,
-      clientSecret: decryptSecret(row.clientSecretEnc),
+      clientId: app?.clientId ?? row.clientId,
+      clientSecret: app?.clientSecret ?? decryptSecret(row.clientSecretEnc),
       username: row.username,
       password: decryptSecret(row.passwordEnc),
       productCode: row.productCode,
@@ -136,41 +151,44 @@ export async function getInternetmarkeConfigFromDb(): Promise<InternetmarkeEnvCo
   };
 }
 
-export async function saveInternetmarkeConnection(input: {
-  clientId: string;
-  clientSecret: string;
+/**
+ * Speichert Portokasse-Login. API Key/Secret kommen aus Env und werden mitgespiegelt.
+ */
+export async function saveInternetmarkePortokasseConnection(input: {
   username: string;
   password: string;
-  /** Wenn Secret/Passwort leer: bestehende Werte behalten (nur bei Update). */
-  keepExistingSecrets?: boolean;
+  /** Leer lassen beim Update = bestehendes Passwort behalten. */
+  keepExistingPassword?: boolean;
 }): Promise<void> {
+  const app = getInternetmarkeAppCredentialsFromEnv();
+  if (!app) {
+    throw new Error(
+      "INTERNETMARKE_CLIENT_ID und INTERNETMARKE_CLIENT_SECRET müssen in der Env (Vercel / .env.local) stehen.",
+    );
+  }
+
   const prisma = getPrisma();
   const existing = await prisma.internetmarkeConnection.findUnique({
     where: { id: INTERNETMARKE_CONNECTION_ID },
   });
 
-  let clientSecretEnc: string;
   let passwordEnc: string;
-  if (existing && input.keepExistingSecrets) {
-    clientSecretEnc = input.clientSecret.trim()
-      ? encryptSecret(input.clientSecret.trim())
-      : existing.clientSecretEnc;
-    passwordEnc = input.password.trim()
-      ? encryptSecret(input.password.trim())
-      : existing.passwordEnc;
+  if (existing && input.keepExistingPassword && !input.password.trim()) {
+    passwordEnc = existing.passwordEnc;
   } else {
-    if (!input.clientSecret.trim() || !input.password.trim()) {
-      throw new Error("API Secret und Portokasse-Passwort sind erforderlich.");
+    if (!input.password.trim()) {
+      throw new Error("Portokasse-Passwort ist erforderlich.");
     }
-    clientSecretEnc = encryptSecret(input.clientSecret.trim());
     passwordEnc = encryptSecret(input.password.trim());
   }
+
+  const clientSecretEnc = encryptSecret(app.clientSecret);
 
   await prisma.internetmarkeConnection.upsert({
     where: { id: INTERNETMARKE_CONNECTION_ID },
     create: {
       id: INTERNETMARKE_CONNECTION_ID,
-      clientId: input.clientId.trim(),
+      clientId: app.clientId,
       clientSecretEnc,
       username: input.username.trim(),
       passwordEnc,
@@ -179,7 +197,7 @@ export async function saveInternetmarkeConnection(input: {
       lastError: null,
     },
     update: {
-      clientId: input.clientId.trim(),
+      clientId: app.clientId,
       clientSecretEnc,
       username: input.username.trim(),
       passwordEnc,
@@ -187,6 +205,21 @@ export async function saveInternetmarkeConnection(input: {
       lastVerifiedAt: new Date(),
       lastError: null,
     },
+  });
+}
+
+/** @deprecated Nutze `saveInternetmarkePortokasseConnection`. */
+export async function saveInternetmarkeConnection(input: {
+  clientId: string;
+  clientSecret: string;
+  username: string;
+  password: string;
+  keepExistingSecrets?: boolean;
+}): Promise<void> {
+  await saveInternetmarkePortokasseConnection({
+    username: input.username,
+    password: input.password,
+    keepExistingPassword: input.keepExistingSecrets,
   });
 }
 

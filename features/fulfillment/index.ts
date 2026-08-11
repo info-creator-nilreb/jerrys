@@ -63,6 +63,9 @@ export {
 export {
   getInternetmarkeConfig,
   getInternetmarkeConfigFromEnv,
+  getInternetmarkeAppCredentialsFromEnv,
+  getInternetmarkeAppCredentialsPublic,
+  isInternetmarkeAppConfiguredFromEnv,
   isInternetmarkeConfigured,
   isInternetmarkeConfiguredFromEnv,
   resolveInternetmarkeConfig,
@@ -73,6 +76,7 @@ export {
 export {
   getInternetmarkeConnectionPublic,
   saveInternetmarkeConnection,
+  saveInternetmarkePortokasseConnection,
   updateInternetmarkeSelectedProduct,
   updateInternetmarkeProductPriceCents,
   disconnectInternetmarkeConnection,

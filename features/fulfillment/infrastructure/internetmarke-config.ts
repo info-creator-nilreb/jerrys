@@ -38,17 +38,45 @@ function readPositiveInt(name: string): number | null {
   return n;
 }
 
-/** Nur Env — für Tests und Fallback. */
-export function getInternetmarkeConfigFromEnv(): InternetmarkeEnvConfig | null {
+/** App-Credentials aus Env (Developer Portal) — analog Instagram App ID/Secret. */
+export function getInternetmarkeAppCredentialsFromEnv(): {
+  clientId: string;
+  clientSecret: string;
+} | null {
   const clientId = readRequired("INTERNETMARKE_CLIENT_ID");
   const clientSecret = readRequired("INTERNETMARKE_CLIENT_SECRET");
+  if (!clientId || !clientSecret) return null;
+  return { clientId, clientSecret };
+}
+
+export function isInternetmarkeAppConfiguredFromEnv(): boolean {
+  return getInternetmarkeAppCredentialsFromEnv() != null;
+}
+
+function maskClientId(id: string): string {
+  const t = id.trim();
+  if (t.length <= 8) return "••••";
+  return `${t.slice(0, 4)}…${t.slice(-4)}`;
+}
+
+export function getInternetmarkeAppCredentialsPublic(): {
+  configured: boolean;
+  clientIdMasked: string | null;
+} {
+  const app = getInternetmarkeAppCredentialsFromEnv();
+  if (!app) return { configured: false, clientIdMasked: null };
+  return { configured: true, clientIdMasked: maskClientId(app.clientId) };
+}
+
+/** Volle Config nur aus Env (inkl. Portokasse) — Legacy-/Test-Fallback. */
+export function getInternetmarkeConfigFromEnv(): InternetmarkeEnvConfig | null {
+  const app = getInternetmarkeAppCredentialsFromEnv();
   const username = readRequired("INTERNETMARKE_USERNAME");
   const password = readRequired("INTERNETMARKE_PASSWORD");
   const productCode = readPositiveInt("INTERNETMARKE_PRODUCT_CODE");
   const productPriceCents = readPositiveInt("INTERNETMARKE_PRODUCT_PRICE_CENTS");
   if (
-    !clientId ||
-    !clientSecret ||
+    !app ||
     !username ||
     !password ||
     productCode == null ||
@@ -64,8 +92,8 @@ export function getInternetmarkeConfigFromEnv(): InternetmarkeEnvConfig | null {
     layoutRaw === "FRANKING_ZONE" ? "FRANKING_ZONE" : "ADDRESS_ZONE";
 
   return {
-    clientId,
-    clientSecret,
+    clientId: app.clientId,
+    clientSecret: app.clientSecret,
     username,
     password,
     productCode,
