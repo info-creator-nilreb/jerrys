@@ -34,7 +34,7 @@ Der Kalender kann als Block auf einer CMS-Seite (Epic 12) und optional auf ausge
 
 **Status:** umgesetzt (Admin). `/admin/termine`: Entwurf anlegen/bearbeiten, veröffentlichen, absagen, abschließen; shopweite Storno-Frist (Std. 48h); Audit `workshop_session_events` + Outbox. Storefront-Kalender und Checkout folgen in Slice 2–3.
 
-**Status:** umgesetzt. Öffentliche Seite `/termine` und Detail `/termine/[sessionId]`; wiederverwendbare Komponente `WorkshopSessionList` (PDP per Produktflag `showWorkshopCalendar`, CMS-Block folgt Epic 12). Verfügbarkeit serverseitig: buchbar, ausgebucht, Mindestteilnehmer offen. Checkout-CTA folgt Slice 3.
+**Status:** umgesetzt. Öffentliche Seite `/termine` und Detail `/termine/[sessionId]`; wiederverwendbare Komponente `WorkshopSessionList` (PDP per Produktflag `showWorkshopCalendar`, CMS-Block `workshopCalendar` Epic 12 Slice 7). Verfügbarkeit serverseitig: buchbar, ausgebucht, Mindestteilnehmer offen. Checkout-CTA folgt Slice 3.
 
 ### Slice 3 — Kapazität und Checkout
 
@@ -76,7 +76,7 @@ Der Kalender kann als Block auf einer CMS-Seite (Epic 12) und optional auf ausge
 2. Mehrere Kunden können Teilmengen buchen; Beispiel `2 × 5` füllt Kapazität 10 korrekt.
 3. Admin-Freigabe steuert Sichtbarkeit und Buchbarkeit.
 4. Selbststornierung respektiert die serverseitige Frist und gibt Plätze höchstens einmal frei.
-5. Kalender funktioniert auf CMS-Seite und PDP ohne duplizierte Buchungslogik.
+5. Kalender funktioniert auf CMS-Seite und PDP ohne duplizierte Buchungslogik. **Status:** erfüllt (`WorkshopSessionList` + CMS-Block `workshopCalendar` + PDP-Flag).
 
 ## Noch zu entscheiden
 

@@ -199,8 +199,13 @@ export default async function ProduktDetailPage({
       </div>
 
       {product.showWorkshopCalendar ? (
-        <div className="mx-auto max-w-6xl px-4 pb-12">
-          <WorkshopSessionList showHeader limit={8} />
+        <div className="mx-auto max-w-3xl px-4 pb-12 pt-2">
+          <WorkshopSessionList
+            density="embed"
+            showHeader
+            title="Kommende Termine"
+            limit={6}
+          />
         </div>
       ) : null}
 

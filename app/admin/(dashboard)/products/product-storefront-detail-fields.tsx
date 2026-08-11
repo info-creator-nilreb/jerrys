@@ -54,9 +54,11 @@ export function ProductStorefrontDetailFields({ state, defaults }: Props) {
             className="mt-1 size-4 checkbox-primary"
           />
           <span>
-            <span className="text-sm font-medium text-[#1f2937]">Termin-Kalender auf Produktseite</span>
+            <span className="text-sm font-medium text-[#1f2937]">
+              Kompakte Terminliste auf Produktseite
+            </span>
             <span className="mt-0.5 block text-xs text-[#6b7280]">
-              Zeigt kommende Gruppentermine unterhalb des Produkts (gleiche Liste wie unter /termine).
+              Schlanke Liste (Datum + freie Plätze). Details und Buchung erst auf der Terminseite.
             </span>
           </span>
         </label>

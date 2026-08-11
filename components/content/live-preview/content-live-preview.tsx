@@ -28,6 +28,11 @@ function bool(data: Record<string, unknown>, key: string, fallback: boolean): bo
   return typeof v === "boolean" ? v : fallback;
 }
 
+function num(data: Record<string, unknown>, key: string, fallback: number): number {
+  const v = data[key];
+  return typeof v === "number" && Number.isFinite(v) ? v : fallback;
+}
+
 function PreviewBlock({
   block,
   products,
@@ -286,13 +291,32 @@ function PreviewBlock({
   }
 
   if (type === "workshopCalendar") {
+    const title = str(data, "title") || "Kommende Termine";
+    const limit = num(data, "limit", 6);
     return (
-      <section className="px-4 py-8">
-        <div className="rounded-md border border-dashed border-[#d1d5db] p-4 text-center text-xs text-[#6b7280]">
-          Termin-Kalender (Live-Daten aus Workshops)
-          {str(data, "emptyMessage") ? (
-            <p className="mt-2 text-[#9ca3af]">{str(data, "emptyMessage")}</p>
+      <section className="px-4 py-6">
+        <div className="mx-auto max-w-md">
+          {bool(data, "showHeader", true) ? (
+            <p className="mb-2 text-sm font-semibold text-[#1f2937]">{title}</p>
           ) : null}
+          {str(data, "intro") ? (
+            <p className="mb-2 text-xs text-[#6b7280]">{str(data, "intro")}</p>
+          ) : null}
+          <ul className="divide-y divide-[#e5e7eb] overflow-hidden rounded-md border border-[#e5e7eb] bg-white text-sm">
+            {Array.from({ length: Math.min(limit, 3) }, (_, i) => (
+              <li
+                key={i}
+                className="flex items-center justify-between gap-3 px-3 py-2.5 text-[#374151]"
+              >
+                <span className="font-medium">Sa. 0{i + 1}.09. · 14:00</span>
+                <span className="tabular-nums text-[#1f2937]">{4 - i} Plätze frei</span>
+                <span className="text-primary">Details</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-[11px] text-[#9ca3af]">
+            Vorschau — Live-Termine ohne Ort/Preis; Details auf Terminseite.
+          </p>
         </div>
       </section>
     );

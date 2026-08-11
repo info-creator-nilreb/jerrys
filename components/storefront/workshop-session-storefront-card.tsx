@@ -32,12 +32,11 @@ function AvailabilityBadge({
   );
 }
 
+/** Volle Terminkarte für `/termine` — nicht für Landing/PDP-Einbettung. */
 export function WorkshopSessionStorefrontCard({
   session,
-  compact = false,
 }: {
   session: StorefrontWorkshopSessionListItem;
-  compact?: boolean;
 }) {
   const when = formatWorkshopSessionDateTime(session.startsAt, session.timezone);
   const duration = formatDurationLabel(session.durationMinutes);
@@ -62,8 +61,8 @@ export function WorkshopSessionStorefrontCard({
         {session.timezone} · {duration}
       </p>
 
-      <dl className={`mt-4 grid gap-2 text-sm text-(--foreground-muted) ${compact ? "" : "sm:grid-cols-2"}`}>
-        <div className={compact ? "" : "sm:col-span-2"}>
+      <dl className="mt-4 grid gap-2 text-sm text-(--foreground-muted) sm:grid-cols-2">
+        <div className="sm:col-span-2">
           <WorkshopSessionLocationBlock location={session} />
         </div>
         <div className="flex items-start gap-2">
@@ -79,11 +78,9 @@ export function WorkshopSessionStorefrontCard({
 
       <p className="mt-3 text-sm font-medium text-(--foreground-heading)">{priceLabel} pro Platz</p>
 
-      {!compact ? (
-        <p className="mt-2 text-xs text-(--foreground-muted)">
-          Selbststornierung bis {cancelDeadline} möglich (sofern gebucht).
-        </p>
-      ) : null}
+      <p className="mt-2 text-xs text-(--foreground-muted)">
+        Selbststornierung bis {cancelDeadline} möglich (sofern gebucht).
+      </p>
 
       <div className="mt-4 flex flex-wrap gap-3">
         <Link

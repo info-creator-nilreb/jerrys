@@ -23,10 +23,8 @@
 
 ## Ist-Zustand
 
-- Startseite: App-Router + Marketing-Inhalte (DB `homepage_*` / Admin Startseite)
-- Statische/Content-Seiten: bestehende Routes unter Storefront (Impressum, Datenschutz, …)
-- Workshop-Einbettung PDP: Flag `showWorkshopCalendar`
-- Kein `ContentPage` / Block-Modell bisher
+- Startseite und Inhaltsseiten: CMS (`ContentPage` / Blöcke), inkl. Legal
+- Workshop-Einbettung: PDP-Flag `showWorkshopCalendar` + CMS-Block `workshopCalendar` (gleiche `WorkshopSessionList`)
 - Sanitization: `sanitize-html` (ohne jsdom; Vercel-SSR-kompatibel)
 
 ---
@@ -43,9 +41,9 @@ Branch-Prefix: `cursor/epic12-slice<N>-<kurzname>-ce5b`
 | **4** | Draft/Publish + signierte Preview-URL (kurzlebig); Drafts nicht in Sitemap/Nav | ✅ Preview ohne Auth-Leak |
 | **5** | Freie Seiten-Routing, Slug-Schutz, Redirect-Konzept bei URL-Wechsel | ✅ Keine Kollision mit Systempfaden |
 | **6** | Migration Startseite + Rechtstexte + Marketing ohne URL-Bruch; Live-Vorschau ungespeichert; Menü Startseite → Marketing unter Inhalte | ✅ `/` + Legal aus CMS |
-| **7** | Block „Gruppentermin-Kalender“ + optional PDP (Epic 5 wiederverwenden) | Eine Buchungslogik |
+| **7** | Block „Gruppentermin-Kalender“ + optional PDP (Epic 5 wiederverwenden) | ✅ Eine Buchungslogik (`WorkshopSessionList`) |
 
-**Empfehlung:** Slice 1–2 können vor Epic-11-Uploads laufen (Textblöcke). Bild-Hero braucht Object Storage (Epic 11 Slice 2) oder vorerst nur externe/URL-Felder mit Allowlist.
+**Empfehlung:** Alle Slices 1–7 auf `main`. Nächste Schritte siehe Abschnitt „Nach Epic 12“.
 
 ---
 

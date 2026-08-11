@@ -466,6 +466,11 @@ export function ContentBlockFields({ type, data, onChange }: Props) {
   if (type === "workshopCalendar") {
     return (
       <div className="grid gap-3 sm:grid-cols-2">
+        <p className="rounded-md border border-[#e8eaed] bg-[#f7f8fa] px-3 py-2 text-xs text-[#6b7280] sm:col-span-2">
+          <span className="font-medium text-[#374151]">Kompakte Einbettung:</span> Datum,
+          Uhrzeit und freie Plätze. Liegen Termine in mehreren Monaten, erscheinen Monats-Chips.
+          Ort, Preis und Buchung erst auf der Termindetailseite.
+        </p>
         <label className="flex items-center gap-2 text-sm text-[#2d2e32] sm:col-span-2">
           <input
             type="checkbox"
@@ -475,15 +480,33 @@ export function ContentBlockFields({ type, data, onChange }: Props) {
           />
           Listen-Header anzeigen
         </label>
+        <label className="text-sm text-[#5c5f66] sm:col-span-2">
+          Titel (optional)
+          <input
+            className={fieldClass}
+            value={str(data, "title")}
+            onChange={(e) => set("title", e.target.value)}
+            placeholder="Kommende Termine"
+          />
+        </label>
+        <label className="text-sm text-[#5c5f66] sm:col-span-2">
+          Einleitung (optional, kurz halten)
+          <textarea
+            className={`${fieldClass} min-h-16`}
+            value={str(data, "intro")}
+            onChange={(e) => set("intro", e.target.value)}
+            placeholder="Leer lassen für maximale Schlichtheit"
+          />
+        </label>
         <label className="text-sm text-[#5c5f66]">
-          Limit
+          Max. Termine
           <input
             type="number"
             min={1}
-            max={48}
+            max={24}
             className={fieldClass}
-            value={num(data, "limit", 12)}
-            onChange={(e) => set("limit", Number(e.target.value) || 12)}
+            value={num(data, "limit", 6)}
+            onChange={(e) => set("limit", Number(e.target.value) || 6)}
           />
         </label>
         <label className="text-sm text-[#5c5f66]">
@@ -494,10 +517,25 @@ export function ContentBlockFields({ type, data, onChange }: Props) {
             onChange={(e) => set("emptyMessage", e.target.value)}
           />
         </label>
+        <label className="flex items-center gap-2 text-sm text-[#2d2e32] sm:col-span-2">
+          <input
+            type="checkbox"
+            className="size-4 checkbox-primary"
+            checked={bool(data, "showDateRequestLink", true)}
+            onChange={(e) => set("showDateRequestLink", e.target.checked)}
+          />
+          Link „Wunschtermin anfragen“ bei leerer Liste
+        </label>
+        <p className="text-xs text-[#9ca3af] sm:col-span-2">
+          Ausgebuchte Termine werden ausgeblendet. Vollständige Karten nur unter{" "}
+          <Link href="/termine" className="font-medium text-primary hover:underline">
+            /termine
+          </Link>
+          . Pflege unter Admin → Termine.
+        </p>
       </div>
     );
   }
-
   return (
     <p className="text-sm text-[#6b7280]">Keine Felder für diesen Block-Typ.</p>
   );
