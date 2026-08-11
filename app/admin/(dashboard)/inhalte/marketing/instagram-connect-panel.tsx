@@ -19,7 +19,13 @@ type Props = {
   /** Maskierte App ID (Instagram- oder Meta-App-ID je nach Mode). */
   appIdMasked?: string | null;
   redirectUri?: string | null;
+  metaAppDomain?: string | null;
+  connectAdminUrl?: string | null;
+  oauthReady?: boolean;
+  oauthBlockReason?: string | null;
   authMode?: "instagram" | "facebook";
+  /** Facebook Login for Business Config-ID (nur Mode facebook). */
+  facebookConfigId?: string | null;
   flash?: { kind: "ok" | "error"; message: string } | null;
 };
 
@@ -78,9 +84,9 @@ export function InstagramConnectPanel(props: Props) {
         <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
           App-Credentials fehlen:{" "}
           <code className="text-xs">INSTAGRAM_APP_ID</code>,{" "}
-          <code className="text-xs">INSTAGRAM_APP_SECRET</code> und eine öffentliche Site-URL
-          setzen. Redirect-URI:{" "}
-          <code className="text-xs">…/api/admin/instagram/callback</code>
+          <code className="text-xs">INSTAGRAM_APP_SECRET</code>,{" "}
+          <code className="text-xs">NEXT_PUBLIC_SITE_URL</code> oder{" "}
+          <code className="text-xs">INSTAGRAM_REDIRECT_URI</code>.
         </p>
       ) : (
         <div className="mt-4 space-y-2 rounded-md border border-[#e8eaed] bg-[#f7f8fa] px-3 py-2 text-xs text-[#6b7280]">
@@ -97,12 +103,67 @@ export function InstagramConnectPanel(props: Props) {
                 Redirect: <code className="break-all text-[11px]">{props.redirectUri}</code>
               </>
             ) : null}
+            {props.authMode === "facebook" ? (
+              <>
+                {" · "}
+                Config-ID:{" "}
+                <code className="text-[11px]">
+                  {props.facebookConfigId ? props.facebookConfigId : "fehlt"}
+                </code>
+              </>
+            ) : null}
           </p>
+          {props.metaAppDomain ? (
+            <div className="space-y-1 rounded border border-[#e8eaed] bg-white px-2 py-1.5 text-[11px] text-[#374151]">
+              <p className="font-medium">Meta-Dashboard (facebook-Mode):</p>
+              <ol className="list-decimal space-y-0.5 pl-4 text-[#6b7280]">
+                <li>
+                  App-Domains:{" "}
+                  <code className="font-medium text-[#374151]">{props.metaAppDomain}</code>
+                </li>
+                <li>
+                  Facebook Login for Business → Einstellungen → OAuth-Redirect:{" "}
+                  <code className="break-all font-medium text-[#374151]">
+                    {props.redirectUri}
+                  </code>
+                </li>
+                <li>
+                  Facebook Login for Business →{" "}
+                  <span className="font-medium text-[#374151]">Konfigurationen</span>: Config
+                  anlegen (Permissions u. a. <code>instagram_basic</code>,{" "}
+                  <code>pages_show_list</code>) → Config-ID in Vercel als{" "}
+                  <code className="font-medium text-[#374151]">INSTAGRAM_FB_LOGIN_CONFIG_ID</code>
+                  {props.facebookConfigId ? (
+                    <>
+                      {" "}
+                      (aktuell:{" "}
+                      <code className="font-medium text-[#374151]">{props.facebookConfigId}</code>)
+                    </>
+                  ) : (
+                    <> setzen und Redeploy</>
+                  )}
+                </li>
+              </ol>
+            </div>
+          ) : null}
+          {!props.oauthReady && props.oauthBlockReason ? (
+            <p className="rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-amber-900">
+              {props.oauthBlockReason}
+              {props.connectAdminUrl ? (
+                <>
+                  {" "}
+                  <a href={props.connectAdminUrl} className="font-medium text-primary hover:underline">
+                    Production-Admin öffnen
+                  </a>
+                </>
+              ) : null}
+            </p>
+          ) : null}
           <p>
             Bei <span className="font-medium text-[#374151]">Invalid platform app</span>: Mode{" "}
-            <code className="text-[11px]">facebook</code> + Meta App ID/Secret (Allgemeines). Bei
-            Domain-Fehler: feste Production-URL in Meta App-Domains und OAuth-Redirects (keine
-            Vercel-Preview-Hosts); Verbinden nur über Production-Admin.
+            <code className="text-[11px]">facebook</code> + Meta App ID/Secret (Allgemeines). Domain-Fehler
+            („nicht in den Domains der App“) = App-Domain/Redirect oben fehlen oder Verbinden über Preview —
+            immer Production-Admin nutzen.
           </p>
         </div>
       )}
@@ -145,7 +206,7 @@ export function InstagramConnectPanel(props: Props) {
       </dl>
 
       <div className="mt-5 flex flex-wrap gap-2">
-        {props.configured ? (
+        {props.configured && props.oauthReady !== false ? (
           <button
             type="button"
             onClick={() => {

@@ -87,8 +87,9 @@ function SocialEmbla({ items }: { items: HomepageSocialSlide[] }) {
     };
   }, [emblaApi, onSelect]);
 
+  // Kein disabled:pointer-events-none — sonst fallen Klicks durch auf Instagram-<a> darunter.
   const navBtnClass =
-    "absolute top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-(--surface-muted) bg-white/95 text-(--foreground-heading) shadow-sm transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-40";
+    "absolute top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 pointer-events-auto items-center justify-center rounded-full border border-(--surface-muted) bg-white/95 text-(--foreground-heading) shadow-sm transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-40";
 
   return (
     <div className="relative mt-8 w-full md:mt-10">
@@ -97,7 +98,12 @@ function SocialEmbla({ items }: { items: HomepageSocialSlide[] }) {
           <button
             type="button"
             className={`${navBtnClass} left-1 sm:left-2`}
-            onClick={() => emblaApi?.scrollPrev()}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              emblaApi?.scrollPrev();
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
             disabled={!canPrev}
             aria-label="Vorheriges Bild"
           >
@@ -106,7 +112,12 @@ function SocialEmbla({ items }: { items: HomepageSocialSlide[] }) {
           <button
             type="button"
             className={`${navBtnClass} right-1 sm:right-2`}
-            onClick={() => emblaApi?.scrollNext()}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              emblaApi?.scrollNext();
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
             disabled={!canNext}
             aria-label="Nächstes Bild"
           >
@@ -116,7 +127,7 @@ function SocialEmbla({ items }: { items: HomepageSocialSlide[] }) {
       ) : null}
       <div
         ref={emblaRef}
-        className="flex w-full justify-center overflow-hidden rounded-xl outline-none ring-primary focus-visible:ring-2"
+        className="relative z-0 flex w-full justify-center overflow-hidden rounded-xl outline-none ring-primary focus-visible:ring-2"
         tabIndex={0}
         role="region"
         aria-roledescription="Karussell"

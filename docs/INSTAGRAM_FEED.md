@@ -12,7 +12,7 @@ Umsetzung des Live-Feeds für den CMS-Block **Social / Reviews** (Bilder zuerst)
 
 ## Env
 
-Siehe `.env.example`: `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, Site-URL, optional `INSTAGRAM_REDIRECT_URI`, `INTEGRATIONS_ENCRYPTION_KEY`.
+Siehe `.env.example`: `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, Site-URL, optional `INSTAGRAM_REDIRECT_URI`, bei Mode `facebook` zusätzlich `INSTAGRAM_FB_LOGIN_CONFIG_ID`, `INTEGRATIONS_ENCRYPTION_KEY`.
 
 Meta App: Redirect URI exakt `{SITE}/api/admin/instagram/callback`. App Review für Production.
 
@@ -25,23 +25,43 @@ Zwei gültige Setups:
 | `instagram` (Default) | **Instagram** App ID/Secret unter Instagram → API setup with Instagram login | Business Login for Instagram |
 | `facebook` | **Meta** App ID/Secret unter App-Einstellungen → Allgemeines | Facebook Login for Business + IG an Page |
 
-Wenn im Dashboard **Facebook Login for Business** aktiv ist und Connect mit **Invalid platform app** scheitert:
+Wenn im Dashboard **Facebook Login for Business** aktiv ist und Connect mit **Invalid platform app** oder **Invalid Scopes** scheitert:
 
 1. Vercel: `INSTAGRAM_AUTH_MODE=facebook`
 2. `INSTAGRAM_APP_ID` / `INSTAGRAM_APP_SECRET` = Meta App ID + Secret (Allgemeines)
-3. Dieselbe Callback-URL unter **Facebook Login → Gültige OAuth-Redirect-URIs**
-4. Instagram Professional-Konto mit einer **Facebook-Page** verknüpfen
-5. Redeploy, erneut verbinden
+3. Dieselbe Callback-URL unter **Facebook Login for Business → Einstellungen → Gültige OAuth-Redirect-URIs**
+4. **Facebook Login for Business → Konfigurationen**: Login-Config anlegen mit u. a.  
+   `instagram_basic`, `pages_show_list`, `pages_read_engagement`  
+   → Config-ID nach Vercel als `INSTAGRAM_FB_LOGIN_CONFIG_ID`
+5. Instagram Professional-Konto mit einer **Facebook-Page** verknüpfen
+6. Redeploy, erneut verbinden
+
+Ohne Config-ID sendet die App klassische `scope=`-Parameter — Meta antwortet bei FL4B oft mit **Invalid Scopes**.
 
 ### Domain-Fehler („Domain … nicht in den Domains der App“)
 
-OAuth braucht eine **feste** Redirect-URL — keine Vercel-Preview-Hosts (`*-alexbs-projects-*.vercel.app`).
+Meta zeigt diese Facebook-Fehlerseite, wenn `redirect_uri` eine Domain hat, die **nicht** unter App-Domains steht — häufig weil:
 
-1. Vercel Production: `NEXT_PUBLIC_SITE_URL=https://ecom-seven-livid.vercel.app` (oder Custom Domain) und/oder `INSTAGRAM_REDIRECT_URI=https://…/api/admin/instagram/callback`
-2. Meta → App-Einstellungen → **Allgemeines** → **App-Domains**: `ecom-seven-livid.vercel.app`
+- auf einer **Vercel-Preview** verbunden wurde (`AUTH_URL` wird dort auf den Preview-Host umgebogen), oder
+- `NEXT_PUBLIC_SITE_URL` / `INSTAGRAM_REDIRECT_URI` fehlen und OAuth auf einen ephemeral Host fällt, oder
+- in Meta App-Domains / OAuth-Redirects die Production-Domain fehlt.
+
+**Fix (Code + Config):**
+
+1. Vercel **Production** (Environment = Production):  
+   `NEXT_PUBLIC_SITE_URL=https://ecom-seven-livid.vercel.app`  
+   und empfohlen  
+   `INSTAGRAM_REDIRECT_URI=https://ecom-seven-livid.vercel.app/api/admin/instagram/callback`  
+   + Redeploy
+2. Meta → App-Einstellungen → **Allgemeines** → **App-Domains**: `ecom-seven-livid.vercel.app`  
+   (nur Hostname, ohne `https://`)
 3. Meta → **Facebook Login** → **Gültige OAuth-Redirect-URIs**: exakt  
    `https://ecom-seven-livid.vercel.app/api/admin/instagram/callback`
-4. Verbinden über die **Production**-Admin-URL, nicht über einen Preview-Link
+4. Verbinden **nur** über  
+   `https://ecom-seven-livid.vercel.app/admin/inhalte/marketing`  
+   (nicht über Preview — die App blockiert OAuth sonst vor dem Meta-Redirect)
+
+Die Admin-Diagnose unter Marketing zeigt Redirect-URI, Meta-App-Domain und eine kurze Checkliste.
 
 ## CMS
 
