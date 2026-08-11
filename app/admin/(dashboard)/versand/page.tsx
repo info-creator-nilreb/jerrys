@@ -28,6 +28,7 @@ export default async function AdminVersandPage() {
       <ShippingSettingsForm defaults={defaults} />
       <InternetmarkeSettingsPanel
         connected={im.connected}
+        verified={im.verified}
         readyForPurchase={im.readyForPurchase}
         appCredentialsConfigured={im.appCredentialsConfigured}
         clientIdMasked={im.clientIdMasked}

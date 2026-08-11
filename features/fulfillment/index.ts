@@ -82,6 +82,7 @@ export {
   disconnectInternetmarkeConnection,
   getInternetmarkeConnectionSecrets,
   markInternetmarkeConnectionError,
+  markInternetmarkeConnectionVerified,
   type InternetmarkeConnectionPublic,
 } from "@/features/fulfillment/infrastructure/internetmarke-connection";
 

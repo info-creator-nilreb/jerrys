@@ -10,6 +10,7 @@ import {
   getInternetmarkeConnectionSecrets,
   InternetmarkeClient,
   markInternetmarkeConnectionError,
+  markInternetmarkeConnectionVerified,
   saveInternetmarkePortokasseConnection,
   updateInternetmarkeSelectedProduct,
 } from "@/features/fulfillment";
@@ -100,15 +101,20 @@ export async function saveInternetmarkeCredentialsAction(
       voucherLayout: secrets.voucherLayout,
     });
     await client.getAccessToken();
+    await markInternetmarkeConnectionVerified();
   } catch (e) {
     const msg =
       e instanceof Error
         ? e.message
         : "Token-Test fehlgeschlagen. Portokasse: Geschäftsanwendung freigeben?";
+    const detail =
+      e && typeof e === "object" && "responseBody" in e
+        ? String((e as { responseBody?: string }).responseBody ?? "").slice(0, 160)
+        : "";
     await markInternetmarkeConnectionError(msg);
     revalidatePath("/admin/versand");
     return {
-      error: `${msg} Login wurde gespeichert — bitte Freigabe prüfen und erneut verbinden.`,
+      error: detail ? `${msg} Antwort: ${detail}` : msg,
     };
   }
 
