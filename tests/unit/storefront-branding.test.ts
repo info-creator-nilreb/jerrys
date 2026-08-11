@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { STATIC_BRANDING_ASSET_FALLBACKS } from "@/lib/shop/branding-asset-fallbacks";
 import { JERRYS_SHOP_SETTINGS_DEFAULTS } from "@/lib/shop/shop-settings-defaults";
-import type { ShopSettingsDTO } from "@/lib/shop/shop-settings";
+import type { ShopSettingsDTO } from "@/lib/shop/shop-settings-defaults";
 import {
   buildShopMetadata,
   shopFooterTagline,

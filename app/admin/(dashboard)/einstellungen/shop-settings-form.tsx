@@ -12,7 +12,7 @@ import {
 } from "@/app/admin/(dashboard)/einstellungen/branding-assets-section";
 import { evaluatePrimaryBrandContrast } from "@/lib/shop/color-contrast";
 import { JERRYS_SHOP_SETTINGS_DEFAULTS } from "@/lib/shop/shop-settings-defaults";
-import type { ShopSettingsDTO } from "@/lib/shop/shop-settings";
+import type { ShopSettingsDTO } from "@/lib/shop/shop-settings-defaults";
 
 const initial: ShopSettingsFormState = null;
 

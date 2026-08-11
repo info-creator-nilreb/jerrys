@@ -1,18 +1,17 @@
+import "server-only";
+
 import { unstable_cache } from "next/cache";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 import { getPrisma } from "@/lib/db/prisma";
 import { isMissingSchemaError, isUniqueViolationError } from "@/lib/db/prisma-error";
-import { SHOP_SETTINGS_CACHE_TAG } from "@/lib/shop/shop-settings-cache";
+import { SHOP_SETTINGS_CACHE_TAG } from "@/lib/shop/shop-settings-cache-tag";
 import {
   JERRYS_SHOP_SETTINGS_DEFAULTS,
   SHOP_SETTINGS_DEFAULT_ID,
-  type ShopSettingsDefaults,
+  type ShopSettingsDTO,
 } from "@/lib/shop/shop-settings-defaults";
 
-export type ShopSettingsDTO = ShopSettingsDefaults & {
-  id: typeof SHOP_SETTINGS_DEFAULT_ID;
-  updatedAt: Date | null;
-};
+export type { ShopSettingsDTO };
 
 type ShopSettingsCached = Omit<ShopSettingsDTO, "updatedAt"> & {
   updatedAt: string | null;
@@ -158,8 +157,8 @@ export {
   JERRYS_SHOP_SETTINGS_DEFAULTS,
   SHOP_SETTINGS_DEFAULT_ID,
 } from "@/lib/shop/shop-settings-defaults";
+export { SHOP_SETTINGS_CACHE_TAG } from "@/lib/shop/shop-settings-cache-tag";
 export {
-  SHOP_SETTINGS_CACHE_TAG,
   revalidateShopSettingsCache,
   revalidateStorefrontBranding,
   updateShopSettingsCacheTag,

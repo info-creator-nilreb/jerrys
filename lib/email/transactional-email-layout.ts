@@ -1,9 +1,16 @@
+import "server-only";
+
 import { absoluteUrlForEmail } from "@/lib/email/email-absolute-url";
 import { escapeHtmlForEmail } from "@/lib/email/template-utils";
+import { formatGermanDateMedium } from "@/lib/i18n/format-german-date";
+import { paymentMethodLabel } from "@/lib/orders/payment-method-label";
 import {
   defaultTransactionalEmailBranding,
   type TransactionalEmailBranding,
 } from "@/lib/shop/email-branding";
+
+export { formatGermanDateMedium };
+export const transactionalPaymentLabel = paymentMethodLabel;
 
 /**
  * Transaktions-Mails: Akzentgrün nur für CTA, Hero-Icons und Tabellenlinien (`globals.css` --primary / --accent-green).
@@ -30,19 +37,6 @@ export const TRANSACTIONAL_EMAIL_DESIGN = {
 } as const;
 
 export type TransactionalHeroVariant = "order" | "shipping" | "refund" | "account" | "workshop";
-
-export function transactionalPaymentLabel(method: string): string {
-  switch (method) {
-    case "vorkasse":
-      return "Vorkasse";
-    case "paypal":
-      return "PayPal";
-    case "klarna":
-      return "Klarna";
-    default:
-      return method;
-  }
-}
 
 /** Links in Mails müssen absolut sein; ohne konfigurierte Basis nur Platzhalter. */
 function absUrl(path: string): string {
@@ -197,6 +191,3 @@ export function buildOrderItemsTableHtml(
   return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:8px 0 16px">${rows}</table>`;
 }
 
-export function formatGermanDateMedium(d: Date): string {
-  return new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }).format(d);
-}

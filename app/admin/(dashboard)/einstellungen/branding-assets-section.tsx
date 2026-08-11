@@ -9,7 +9,7 @@ import {
 } from "@/app/admin/(dashboard)/einstellungen/actions";
 import { resolveShopBrandingAssetUrl } from "@/lib/shop/branding-asset-fallbacks";
 import type { ShopBrandingAssetKind } from "@/lib/shop/branding-asset-kinds";
-import type { ShopSettingsDTO } from "@/lib/shop/shop-settings";
+import type { ShopSettingsDTO } from "@/lib/shop/shop-settings-defaults";
 
 const initial: BrandingAssetFormState = null;
 

@@ -4,7 +4,7 @@ import {
   transactionalEmailBrandingFromSettings,
 } from "@/lib/shop/email-branding";
 import { JERRYS_SHOP_SETTINGS_DEFAULTS } from "@/lib/shop/shop-settings-defaults";
-import type { ShopSettingsDTO } from "@/lib/shop/shop-settings";
+import type { ShopSettingsDTO } from "@/lib/shop/shop-settings-defaults";
 import { wrapTransactionalEmailHtml } from "@/lib/email/transactional-email-layout";
 
 function settings(overrides: Partial<ShopSettingsDTO> = {}): ShopSettingsDTO {

@@ -52,3 +52,9 @@ export const JERRYS_SHOP_SETTINGS_DEFAULTS: ShopSettingsDefaults = {
   faviconUrl: null,
   ogImageUrl: null,
 };
+
+/** Client-sichere DTO-Form (ohne next/cache / Prisma). */
+export type ShopSettingsDTO = ShopSettingsDefaults & {
+  id: typeof SHOP_SETTINGS_DEFAULT_ID;
+  updatedAt: Date | null;
+};

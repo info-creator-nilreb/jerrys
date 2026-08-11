@@ -1,10 +1,9 @@
-import { revalidatePath, revalidateTag, updateTag } from "next/cache";
+import "server-only";
 
-/**
- * Next.js Cache-Tag für ShopSettings (ADR-0006).
- * Storefront/E-Mail/PDF (Slice 4+) taggen damit; Admin-Save invalidiert.
- */
-export const SHOP_SETTINGS_CACHE_TAG = "shop-settings" as const;
+import { revalidatePath, revalidateTag, updateTag } from "next/cache";
+import { SHOP_SETTINGS_CACHE_TAG } from "@/lib/shop/shop-settings-cache-tag";
+
+export { SHOP_SETTINGS_CACHE_TAG };
 
 /** Stale-while-revalidate für breitere Oberflächen nach Branding-Änderung. */
 export function revalidateShopSettingsCache(): void {

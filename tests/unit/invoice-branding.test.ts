@@ -4,7 +4,7 @@ import {
   loadInvoiceLogoEmbed,
 } from "@/lib/shop/invoice-branding";
 import { JERRYS_SHOP_SETTINGS_DEFAULTS } from "@/lib/shop/shop-settings-defaults";
-import type { ShopSettingsDTO } from "@/lib/shop/shop-settings";
+import type { ShopSettingsDTO } from "@/lib/shop/shop-settings-defaults";
 
 function settings(overrides: Partial<ShopSettingsDTO> = {}): ShopSettingsDTO {
   return {

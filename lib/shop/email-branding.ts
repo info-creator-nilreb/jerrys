@@ -1,7 +1,12 @@
+import "server-only";
+
 import { absoluteUrlForEmail } from "@/lib/email/email-absolute-url";
 import { resolveShopBrandingAssetUrl } from "@/lib/shop/branding-asset-fallbacks";
-import { JERRYS_SHOP_SETTINGS_DEFAULTS } from "@/lib/shop/shop-settings-defaults";
-import { getShopSettings, type ShopSettingsDTO } from "@/lib/shop/shop-settings";
+import {
+  JERRYS_SHOP_SETTINGS_DEFAULTS,
+  type ShopSettingsDTO,
+} from "@/lib/shop/shop-settings-defaults";
+import { getShopSettings } from "@/lib/shop/shop-settings";
 
 /** Werte für transaktionale Mails (Layout + Signatur). */
 export type TransactionalEmailBranding = {

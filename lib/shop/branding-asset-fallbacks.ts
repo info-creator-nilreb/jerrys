@@ -1,5 +1,5 @@
 import type { ShopBrandingAssetKind } from "@/lib/shop/branding-asset-kinds";
-import type { ShopSettingsDTO } from "@/lib/shop/shop-settings";
+import type { ShopSettingsDTO } from "@/lib/shop/shop-settings-defaults";
 
 /** Statische Fallbacks unter `public/branding/` (heutiges jerry’s-Branding). */
 export const STATIC_BRANDING_ASSET_FALLBACKS: Record<ShopBrandingAssetKind, string> = {

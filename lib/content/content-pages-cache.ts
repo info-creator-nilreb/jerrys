@@ -1,7 +1,9 @@
-import { revalidateTag, updateTag } from "next/cache";
+import "server-only";
 
-/** Next.js Cache-Tag für ContentPages (ADR-0007). */
-export const CONTENT_PAGES_CACHE_TAG = "content-pages" as const;
+import { revalidateTag, updateTag } from "next/cache";
+import { CONTENT_PAGES_CACHE_TAG } from "@/lib/content/content-pages-cache-tag";
+
+export { CONTENT_PAGES_CACHE_TAG };
 
 export function revalidateContentPagesCache(): void {
   revalidateTag(CONTENT_PAGES_CACHE_TAG, "max");
