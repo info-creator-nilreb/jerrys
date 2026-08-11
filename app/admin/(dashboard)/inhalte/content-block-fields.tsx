@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { CmsMediaField } from "@/components/admin/cms-media-field";
 import type { ContentBlockType } from "@/lib/content/block-types";
 
 type Props = {
@@ -48,14 +50,13 @@ export function ContentBlockFields({ type, data, onChange }: Props) {
             onChange={(e) => set("eyebrow", e.target.value)}
           />
         </label>
-        <label className="text-sm text-[#5c5f66]">
-          Bild-URL <span className="text-primary">*</span>
-          <input
-            className={fieldClass}
-            value={str(data, "imageUrl")}
-            onChange={(e) => set("imageUrl", e.target.value)}
-          />
-        </label>
+        <CmsMediaField
+          label="Hero-Bild"
+          value={str(data, "imageUrl")}
+          onChange={(url) => set("imageUrl", url)}
+          required
+          hint="Upload, Medienbibliothek oder URL"
+        />
         <label className="text-sm text-[#5c5f66]">
           CTA-Label
           <input
@@ -109,14 +110,12 @@ export function ContentBlockFields({ type, data, onChange }: Props) {
             onChange={(e) => set("body", e.target.value)}
           />
         </label>
-        <label className="text-sm text-[#5c5f66]">
-          Bild-URL
-          <input
-            className={fieldClass}
-            value={str(data, "imageUrl")}
-            onChange={(e) => set("imageUrl", e.target.value)}
-          />
-        </label>
+        <CmsMediaField
+          label="Bild"
+          value={str(data, "imageUrl")}
+          onChange={(url) => set("imageUrl", url)}
+          hint="Upload, Medienbibliothek oder URL"
+        />
         <label className="text-sm text-[#5c5f66]">
           Layout
           <select
@@ -417,6 +416,20 @@ export function ContentBlockFields({ type, data, onChange }: Props) {
             onChange={(e) => set("introSocial", e.target.value)}
           />
         </label>
+        <div className="rounded-md border border-[#e8eaed] bg-[#f7f8fa] px-3 py-2 text-xs text-[#6b7280] sm:col-span-2">
+          <p className="font-medium text-[#374151]">Instagram-Bilder</p>
+          <p className="mt-1">
+            Keine Live-Verbindung zur Instagram-API. Die Galerie kommt aus kuratierten
+            Social-Assets unter{" "}
+            <Link
+              href="/admin/inhalte/marketing"
+              className="font-medium text-primary underline-offset-2 hover:underline"
+            >
+              Inhalte → Marketing
+            </Link>
+            . Titel und Einleitung steuern nur den Text auf der Startseite.
+          </p>
+        </div>
       </div>
     );
   }

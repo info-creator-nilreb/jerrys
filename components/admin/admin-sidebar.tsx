@@ -26,15 +26,45 @@ const STORAGE_KEY = "jerrys-admin-sidebar-collapsed";
 
 const NAVY = "#182d4d";
 
+type NavChild = {
+  href: string;
+  label: string;
+  /** Wenn gesetzt: aktive Markierung statt Prefix-Match auf href. */
+  isActivePath?: (pathname: string) => boolean;
+};
+
 type NavItem = {
   href: string;
   label: string;
   icon: ComponentType<{ className?: string }>;
+  children?: NavChild[];
 };
+
+function isInhaltePagesPath(pathname: string): boolean {
+  if (pathname === "/admin/inhalte") return true;
+  if (pathname.startsWith("/admin/inhalte/marketing")) return false;
+  return pathname.startsWith("/admin/inhalte/");
+}
 
 const mainNav: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: IconDashboard },
-  { href: "/admin/inhalte", label: "Inhalte", icon: IconContents },
+  {
+    href: "/admin/inhalte",
+    label: "Inhalte",
+    icon: IconContents,
+    children: [
+      {
+        href: "/admin/inhalte",
+        label: "Seiten",
+        isActivePath: isInhaltePagesPath,
+      },
+      {
+        href: "/admin/inhalte/marketing",
+        label: "Marketing",
+        isActivePath: (pathname) => pathname.startsWith("/admin/inhalte/marketing"),
+      },
+    ],
+  },
   { href: "/admin/products", label: "Katalog", icon: IconCatalog },
   { href: "/admin/collections", label: "Kollektionen", icon: IconCollections },
   { href: "/admin/categories", label: "Kategorien", icon: IconCategories },
@@ -107,6 +137,11 @@ export function AdminSidebar({
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
+  function childActive(child: NavChild) {
+    if (child.isActivePath) return child.isActivePath(pathname);
+    return pathname === child.href || pathname.startsWith(`${child.href}/`);
+  }
+
   const showLabels = !collapsed || mobileOpen;
 
   return (
@@ -160,23 +195,49 @@ export function AdminSidebar({
         {mainNav.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
+          const children = item.children;
+          const showChildren = Boolean(children?.length && showLabels);
+
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              title={showLabels ? undefined : item.label}
-              onClick={() => onNavigate?.()}
-              className={`flex w-full min-h-11 items-center gap-3 py-2.5 text-sm transition-colors ${
-                showLabels ? "px-3" : "justify-center px-0"
-              } ${
-                active
-                  ? "border-l-2 border-primary bg-primary/15 font-medium text-white"
-                  : "border-l-2 border-transparent text-white/70 hover:bg-white/5 hover:text-white/90"
-              }`}
-            >
-              <Icon className="size-[1.35rem] shrink-0" />
-              {showLabels ? <span className="truncate">{item.label}</span> : null}
-            </Link>
+            <div key={item.href} className="flex flex-col">
+              <Link
+                href={item.href}
+                title={showLabels ? undefined : item.label}
+                onClick={() => onNavigate?.()}
+                className={`flex w-full min-h-11 items-center gap-3 py-2.5 text-sm transition-colors ${
+                  showLabels ? "px-3" : "justify-center px-0"
+                } ${
+                  active
+                    ? "border-l-2 border-primary bg-primary/15 font-medium text-white"
+                    : "border-l-2 border-transparent text-white/70 hover:bg-white/5 hover:text-white/90"
+                }`}
+              >
+                <Icon className="size-[1.35rem] shrink-0" />
+                {showLabels ? <span className="truncate">{item.label}</span> : null}
+              </Link>
+              {showChildren ? (
+                <ul className="mb-1 ml-3 border-l border-white/10 pb-1 pl-2" aria-label={`${item.label}-Untermenü`}>
+                  {children!.map((child) => {
+                    const childIsActive = childActive(child);
+                    return (
+                      <li key={child.href}>
+                        <Link
+                          href={child.href}
+                          onClick={() => onNavigate?.()}
+                          className={`flex min-h-10 items-center rounded-md px-2.5 py-1.5 text-sm transition-colors ${
+                            childIsActive
+                              ? "bg-primary/20 font-medium text-white"
+                              : "text-white/60 hover:bg-white/5 hover:text-white/90"
+                          }`}
+                        >
+                          <span className="truncate">{child.label}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : null}
+            </div>
           );
         })}
       </nav>
