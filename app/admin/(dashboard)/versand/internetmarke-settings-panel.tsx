@@ -20,6 +20,7 @@ type ProductOption = {
 
 type Props = {
   connected: boolean;
+  verified: boolean;
   readyForPurchase: boolean;
   appCredentialsConfigured: boolean;
   clientIdMasked: string | null;
@@ -132,13 +133,18 @@ export function InternetmarkeSettingsPanel(props: Props) {
             <p>
               Status:{" "}
               <span className="font-medium text-[#374151]">
-                {props.readyForPurchase ? "Bereit für Label-Kauf" : "Verbunden — Produkt wählen"}
+                {props.verified
+                  ? props.readyForPurchase
+                    ? "Bereit für Label-Kauf"
+                    : "Token OK — Produkt wählen"
+                  : "Login gespeichert, Token-Prüfung fehlgeschlagen"}
               </span>
               {" · "}
               Portokasse: {props.username ?? "—"}
             </p>
             <p>Zuletzt geprüft: {formatDe(props.lastVerifiedAt)}</p>
-            {props.productNameSnapshot &&
+            {props.verified &&
+            props.productNameSnapshot &&
             props.productCode != null &&
             props.productPriceCents != null ? (
               <p className="text-[#374151]">
@@ -148,9 +154,9 @@ export function InternetmarkeSettingsPanel(props: Props) {
                   {formatEuro(props.productPriceCents)})
                 </span>
               </p>
-            ) : (
+            ) : props.verified ? (
               <p>Noch kein Porto-Produkt ausgewählt.</p>
-            )}
+            ) : null}
           </>
         ) : null}
       </div>
@@ -198,7 +204,7 @@ export function InternetmarkeSettingsPanel(props: Props) {
         </button>
       </form>
 
-      {props.connected ? (
+      {props.connected && props.verified ? (
         <div className="mt-8 space-y-4 border-t border-[#e8eaed] pt-6">
           <div className="flex flex-wrap items-center gap-3">
             <form action={loadAction}>

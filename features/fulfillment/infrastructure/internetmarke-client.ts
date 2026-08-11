@@ -89,14 +89,13 @@ export class InternetmarkeClient {
 
     if (!res.ok) {
       const text = await res.text();
-      throw new InternetmarkeHttpError(
-        "authorize",
-        res.status,
-        text,
+      const hint =
         res.status === 401
-          ? "Token abgelehnt (401). Portokasse: Geschäftsanwendung freigeben; Entwickler-Portokasse ggf. bei it-csp@deutschepost.de beantragen."
-          : `INTERNETMARKE Auth fehlgeschlagen (${res.status}).`,
-      );
+          ? "Token abgelehnt (401). Portokasse: unter „Meine Daten → Geschäftsanwendungen“ die App freigeben; Entwickler-Portokasse ggf. bei it-csp@deutschepost.de beantragen."
+          : res.status === 500
+            ? "DHL meldet 500 beim Token. Häufig: App im Developer Portal noch „in progress/pending“ (warten bis Approved), falsches Secret, oder Portokasse noch nicht freigegeben. API-Status und Portokasse-Freigabe prüfen, dann erneut verbinden."
+            : `INTERNETMARKE Auth fehlgeschlagen (${res.status}).`;
+      throw new InternetmarkeHttpError("authorize", res.status, text, hint);
     }
 
     const data = (await res.json()) as {

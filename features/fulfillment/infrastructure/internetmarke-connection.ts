@@ -13,6 +13,8 @@ export const INTERNETMARKE_CONNECTION_ID = "default" as const;
 
 export type InternetmarkeConnectionPublic = {
   connected: boolean;
+  /** Token-Test erfolgreich (lastVerifiedAt gesetzt, kein lastError). */
+  verified: boolean;
   /** Env INTERNETMARKE_CLIENT_ID/_SECRET gesetzt. */
   appCredentialsConfigured: boolean;
   clientIdMasked: string | null;
@@ -25,7 +27,7 @@ export type InternetmarkeConnectionPublic = {
   connectedAt: Date | null;
   lastVerifiedAt: Date | null;
   lastError: string | null;
-  /** true wenn App-Env + Portokasse + gewähltes Produkt vorhanden. */
+  /** true wenn App-Env + verifizierte Portokasse + gewähltes Produkt vorhanden. */
   readyForPurchase: boolean;
 };
 
@@ -43,6 +45,7 @@ export async function getInternetmarkeConnectionPublic(): Promise<InternetmarkeC
   const app = getInternetmarkeAppCredentialsFromEnv();
   const empty: InternetmarkeConnectionPublic = {
     connected: false,
+    verified: false,
     appCredentialsConfigured: app != null,
     clientIdMasked: app ? maskClientId(app.clientId) : null,
     username: null,
@@ -66,8 +69,10 @@ export async function getInternetmarkeConnectionPublic(): Promise<InternetmarkeC
     const clientIdMasked = app
       ? maskClientId(app.clientId)
       : maskClientId(row.clientId);
+    const verified = row.lastVerifiedAt != null && !row.lastError;
     return {
       connected: true,
+      verified,
       appCredentialsConfigured: app != null,
       clientIdMasked,
       username: row.username,
@@ -81,6 +86,7 @@ export async function getInternetmarkeConnectionPublic(): Promise<InternetmarkeC
       lastError: row.lastError,
       readyForPurchase:
         app != null &&
+        verified &&
         productCode != null &&
         productCode > 0 &&
         productPriceCents != null &&
@@ -193,7 +199,7 @@ export async function saveInternetmarkePortokasseConnection(input: {
       username: input.username.trim(),
       passwordEnc,
       connectedAt: new Date(),
-      lastVerifiedAt: new Date(),
+      lastVerifiedAt: null,
       lastError: null,
     },
     update: {
@@ -202,9 +208,16 @@ export async function saveInternetmarkePortokasseConnection(input: {
       username: input.username.trim(),
       passwordEnc,
       connectedAt: existing ? existing.connectedAt : new Date(),
-      lastVerifiedAt: new Date(),
+      // lastVerifiedAt erst nach erfolgreichem Token-Test setzen
       lastError: null,
     },
+  });
+}
+
+export async function markInternetmarkeConnectionVerified(): Promise<void> {
+  await getPrisma().internetmarkeConnection.update({
+    where: { id: INTERNETMARKE_CONNECTION_ID },
+    data: { lastVerifiedAt: new Date(), lastError: null },
   });
 }
 
