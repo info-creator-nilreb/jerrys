@@ -16,6 +16,7 @@ import {
   IconInventory,
   IconOrders,
   IconPromotions,
+  IconSettings,
   IconShipping,
   IconStorefront,
   IconWorkshops,
@@ -43,6 +44,7 @@ const mainNav: NavItem[] = [
   { href: "/admin/termine", label: "Termine", icon: IconWorkshops },
   { href: "/admin/orders", label: "Bestellungen", icon: IconOrders },
   { href: "/admin/customers", label: "Kunden", icon: IconCustomers },
+  { href: "/admin/einstellungen", label: "Einstellungen", icon: IconSettings },
 ];
 
 function userInitials(name: string, email: string): string {
