@@ -15,16 +15,23 @@
 | Credentials | INTERNETMARKE / DHL **nicht** ohne Secrets starten |
 | Checkout-Versandkosten | `/admin/versand` — anderes Modul (`ShopShippingSettings`) |
 | Manueller Versand | `applyOrderStatusTransition(…, "shipped", { shipment })` bleibt gültig |
-| Module | Neuer Bounded Context `features/fulfillment` |
+| Module | Bounded Context `features/fulfillment` |
 
 ---
 
-## Ist-Zustand (nach Slice 1)
+## Ist-Zustand
 
+### Slice 1
 - Prisma `Shipment` + Status/Label-Provider-Enums
 - Domäne: Shipment-Statusmaschine, Draft anlegen für geeignete Orders
 - `ShippingLabelPort` + `NotConfiguredShippingLabelAdapter`
-- Kein Provider-HTTP, kein neues Admin-UI für Sendungen
+
+### Slice 3 (INTERNETMARKE)
+- REST-Adapter (`POST /user`, `POST /app/shoppingcart/pdf?directCheckout=true`, `POST /app/retoure`)
+- Factory `createShippingLabelPortFromEnv()` — ohne Env → NotConfigured
+- Application: `purchaseShippingLabelForShipment`, `voidShippingLabelForShipment`
+- Env in `.env.example`; Unit-Tests mit gemocktem `fetch`
+- **Kein** Admin-UI, **kein** privater Label-Blob, **kein** Live-Kauf ohne Credentials
 
 ---
 
@@ -36,25 +43,37 @@ Branch-Prefix: `cursor/epic7-slice<N>-<kurzname>-2fb1`
 | --- | --- | --- | --- |
 | **1** | ADR-0009 + Schema + Domäne + Port-Stub | ✅ Migration; Unit-Tests; architecture:check | Nein |
 | **2** | Sync mit Admin-„Versandt“ / Order-Denormalisierung | Shipment spiegelt manuellen Versand | Nein |
-| **3** | INTERNETMARKE Adapter + Idempotenz + private Label-Keys | Kauf/Void gegen Sandbox/Test | **Ja** |
+| **3** | INTERNETMARKE Adapter + Kauf/Void-Commands | ✅ Mock-HTTP; Env; Idempotenz-Key = shopOrderId | **Ja** (Live) |
 | **4** | Optional DHL Parcel | Zweiter Adapter | **Ja** |
-| **5** | Retoure/Reship Admin-MVP + Tracking-UX | Auditierbar | Teilweise |
+| **5** | Retoure/Reship Admin-MVP + Tracking-UX + private Label-Keys | Auditierbar | Teilweise |
 
 ---
 
 ## Copy-Paste — nächster Agent (Slice 2)
 
 ```
-Epic 7 Slice 2 auf main: Beim bestehenden Admin-Statuswechsel nach „shipped“
-(applyOrderStatusTransition mit Carrier + Tracking) eine Shipment-Zeile
-anlegen oder aktualisieren (features/fulfillment). Order.shippingCarrier /
-trackingNumber bleiben denormalisiert. Kein Provider-HTTP.
+Epic 7 Slice 2 auf main (oder nach Merge von Slice 1+3): Beim bestehenden
+Admin-Statuswechsel nach „shipped“ (applyOrderStatusTransition mit Carrier +
+Tracking) eine Shipment-Zeile anlegen oder aktualisieren (features/fulfillment).
+Order.shippingCarrier / trackingNumber bleiben denormalisiert. Kein neues Admin-UI.
 
 Lies: docs/EPIC7_AGENT_HANDOFF.md, docs/adr/0009-fulfillment-shipments.md
 Branch: cursor/epic7-slice2-manual-shipment-sync-2fb1
 Tests: npm run validate (mind. typecheck + test:unit + architecture:check)
 Antworten auf Deutsch.
 ```
+
+---
+
+## INTERNETMARKE Ops (Kurz)
+
+1. App im DHL Developer Portal anlegen → Client ID/Secret
+2. Portokasse registrieren; für Dev: Entwickler-Portokasse via `it-csp@deutschepost.de`
+3. In der Portokasse: **Geschäftsanwendungen** freigeben (sonst 401)
+4. Produktcode + Cent-Preis aus aktueller PPL / Products API setzen
+5. `pageFormatId` über `GET /app/catalog?types=PAGE_FORMATS` wählen
+6. Env setzen → `createShippingLabelPortFromEnv()` liefert den Adapter
+7. Health: `GET https://api-eu.dhl.com/post/de/shipping/im/v1/`
 
 ---
 
