@@ -85,13 +85,12 @@ export function AdminRichTextEditor({
     },
   });
 
-  // Externen Value-Sync nur bei kontrollierter Nutzung.
+  // Externen Value-Sync nur bei kontrollierter Nutzung (kein Hidden-Input / kein html-State nötig).
   useEffect(() => {
     if (!editor || value === undefined) return;
     const current = editor.getHTML();
     if (value !== current) {
       editor.commands.setContent(value || "", { emitUpdate: false });
-      setHtml(value || "");
     }
   }, [editor, value]);
 
