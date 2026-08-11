@@ -18,6 +18,7 @@ import {
   listAllHomepageAmazonReviewsForAdmin,
   listAllHomepageSocialImagesForAdmin,
 } from "@/lib/homepage/marketing-queries";
+import { headers } from "next/headers";
 import { getInstagramConfigDiagnostics } from "@/lib/instagram/config";
 import { getInstagramConnectionPublic } from "@/lib/instagram/connection";
 import { listActiveInstagramMediaCache } from "@/lib/instagram/media-queries";
@@ -35,7 +36,14 @@ export default async function AdminStartseitePage({
   searchParams: Promise<{ review?: string; ig?: string; msg?: string }>;
 }) {
   const { review: editingReviewId, ig, msg } = await searchParams;
-  const igDiagnostics = getInstagramConfigDiagnostics();
+  const headerList = await headers();
+  const requestOrigin = (() => {
+    const proto = headerList.get("x-forwarded-proto") ?? "https";
+    const host = headerList.get("x-forwarded-host") ?? headerList.get("host");
+    if (!host) return null;
+    return `${proto.split(",")[0]?.trim()}://${host.split(",")[0]?.trim()}`.replace(/\/$/, "");
+  })();
+  const igDiagnostics = getInstagramConfigDiagnostics(requestOrigin);
   const [reviews, socialImages, igConnection, igCache] = await Promise.all([
     listAllHomepageAmazonReviewsForAdmin(),
     listAllHomepageSocialImagesForAdmin(),
@@ -84,6 +92,10 @@ export default async function AdminStartseitePage({
         cachedCount={igCache.length}
         appIdMasked={igDiagnostics.appIdMasked}
         redirectUri={igDiagnostics.redirectUri}
+        metaAppDomain={igDiagnostics.metaAppDomain}
+        connectAdminUrl={igDiagnostics.connectAdminUrl}
+        oauthReady={igDiagnostics.oauthReady}
+        oauthBlockReason={igDiagnostics.oauthBlockReason}
         authMode={igDiagnostics.authMode}
         flash={igFlash}
       />
