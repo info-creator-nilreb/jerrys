@@ -86,24 +86,27 @@ export function CmsMediaField({
         {hint ? <p className="text-xs text-[#9ca3af]">{hint}</p> : null}
       </div>
 
-      <div className="flex flex-wrap items-stretch gap-3">
-        <div className="relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#e3e4e8] bg-[#f7f8fa]">
+      <div className="flex flex-col items-stretch gap-3 sm:flex-row">
+        {/* Desktop: Höhe = rechte Spalte (Aktionen + Pfad), Breite via aspect-ratio. */}
+        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-[#e3e4e8] bg-[#f7f8fa] sm:aspect-square sm:h-auto sm:min-h-28 sm:w-auto sm:shrink-0 sm:self-stretch">
           {value ? (
             <Image
               src={value}
               alt=""
               fill
               className="object-cover"
-              sizes="96px"
+              sizes="(max-width: 640px) 100vw, 160px"
               unoptimized={
                 value.startsWith("https://") || value.endsWith(".svg")
               }
             />
           ) : (
-            <ImageIcon className="size-6 text-[#9ca3af]" aria-hidden />
+            <span className="absolute inset-0 flex items-center justify-center">
+              <ImageIcon className="size-8 text-[#9ca3af]" aria-hidden />
+            </span>
           )}
         </div>
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <div className="flex min-w-0 flex-1 flex-col justify-between gap-2">
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
