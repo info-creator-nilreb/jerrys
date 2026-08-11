@@ -75,17 +75,19 @@ export async function syncInstagramMediaFeed(
       return { ok: false, error: "Instagram ist nicht verbunden." };
     }
 
-    const media =
+    // Wichtig: Pagination läuft weiter, bis genug IMAGE/CAROUSEL da sind —
+    // nicht nur `limit` Roh-Medien holen und Videos danach verwerfen (sonst oft nur 3–4 Slides).
+    const images =
       token.authMode === "facebook"
         ? await fetchFacebookInstagramMedia(
             token.accessToken,
             token.igUserId,
             limit,
+            IMAGE_TYPES,
           )
-        : await fetchInstagramMedia(token.accessToken, limit);
-    const images = media.filter((m) => IMAGE_TYPES.has(m.mediaType));
+        : await fetchInstagramMedia(token.accessToken, limit, IMAGE_TYPES);
     let synced = 0;
-    let skipped = media.length - images.length;
+    let skipped = 0;
 
     const prisma = getPrisma();
     const keepIds: string[] = [];

@@ -71,4 +71,6 @@ Block-Felder `socialSource` (`auto` | `instagram` | `curated`) und `socialLimit`
 
 - Migration: `20260811170000_instagram_oauth_feed`
 - Sync läuft in `/api/internal/commerce-maintenance` wenn verbunden
+- Sync holt per Pagination **12 Standbilder/Carousel-Cover** (Videos/Reels werden übersprungen, Pagination läuft weiter)
+- Storefront-Block `socialLimit` Default 12; nach Connect/Deploy ggf. **Jetzt synchronisieren**
 - Trennen löscht Verbindung + Cache
