@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -123,6 +123,7 @@ export function AdminRichTextEditor({
 }
 
 function RichTextToolbar({ editor }: { editor: Editor }) {
+  const fontSizeId = useId();
   const currentSize =
     (editor.getAttributes("textStyle").fontSize as string | undefined) ?? "";
 
@@ -180,11 +181,11 @@ function RichTextToolbar({ editor }: { editor: Editor }) {
 
       <ToolbarDivider />
 
-      <label className="sr-only" htmlFor="admin-rte-font-size">
+      <label className="sr-only" htmlFor={fontSizeId}>
         Schriftgröße
       </label>
       <select
-        id="admin-rte-font-size"
+        id={fontSizeId}
         className="h-7 max-w-[7.5rem] rounded border border-transparent bg-transparent px-1.5 text-xs text-[#374151] hover:bg-[#e5e7eb] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
         value={currentSize}
         onChange={(e) => {
