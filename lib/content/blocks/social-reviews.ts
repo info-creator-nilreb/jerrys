@@ -6,6 +6,7 @@ export const socialReviewsBlockDataSchema = z.object({
   showSocial: z.boolean().default(true),
   titleReviews: optionalBlockText(120),
   titleSocial: optionalBlockText(120),
+  introSocial: optionalBlockText(400),
 });
 
 export type SocialReviewsBlockData = z.infer<typeof socialReviewsBlockDataSchema>;

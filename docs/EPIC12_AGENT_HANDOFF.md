@@ -42,7 +42,7 @@ Branch-Prefix: `cursor/epic12-slice<N>-<kurzname>-ce5b`
 | **3** | Admin-Editor: Blöcke add/edit/reorder/remove, explizites Speichern | ✅ Lucide-Icons, Markengrün, mobile bedienbar |
 | **4** | Draft/Publish + signierte Preview-URL (kurzlebig); Drafts nicht in Sitemap/Nav | ✅ Preview ohne Auth-Leak |
 | **5** | Freie Seiten-Routing, Slug-Schutz, Redirect-Konzept bei URL-Wechsel | ✅ Keine Kollision mit Systempfaden |
-| **6** | Migration Startseite + Rechtstexte + Marketing ohne URL-Bruch | Smoke aller bisherigen öffentlichen URLs |
+| **6** | Migration Startseite + Rechtstexte + Marketing ohne URL-Bruch; Live-Vorschau ungespeichert; Menü Startseite → Marketing unter Inhalte | ✅ `/` + Legal aus CMS |
 | **7** | Block „Gruppentermin-Kalender“ + optional PDP (Epic 5 wiederverwenden) | Eine Buchungslogik |
 
 **Empfehlung:** Slice 1–2 können vor Epic-11-Uploads laufen (Textblöcke). Bild-Hero braucht Object Storage (Epic 11 Slice 2) oder vorerst nur externe/URL-Felder mit Allowlist.

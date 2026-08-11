@@ -23,16 +23,24 @@ export default async function AdminInhaltePage() {
             Inhalte
           </h1>
           <p className="mt-1 text-sm text-[#6b7280]">
-            CMS-Seiten und Blöcke (Entwurf/Veröffentlichung). Öffentliches Routing folgt in einem
-            späteren Slice.
+            Startseite, Rechtstexte und freie Seiten. Live-Vorschau beim Bearbeiten; veröffentlicht
+            unter der jeweiligen URL.
           </p>
         </div>
-        <Link
-          href="/admin/inhalte/new"
-          className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-(--primary-hover)"
-        >
-          Neue Seite
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/inhalte/marketing"
+            className="rounded-md border border-[#e3e4e8] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
+          >
+            Marketing
+          </Link>
+          <Link
+            href="/admin/inhalte/new"
+            className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-(--primary-hover)"
+          >
+            Neue Seite
+          </Link>
+        </div>
       </div>
 
       {pages.length === 0 ? (

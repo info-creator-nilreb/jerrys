@@ -51,7 +51,7 @@ export default async function ContentPreviewPage({
         </p>
       </div>
       <h1 className="sr-only">{page.title}</h1>
-      <ContentBlocksRenderer blocks={page.blocks} />
+      <ContentBlocksRenderer blocks={page.blocks} pageType={page.pageType} />
     </div>
   );
 }

@@ -10,8 +10,10 @@ import type { ContentBlockDTO } from "@/lib/content/content-pages";
  */
 export async function ContentBlocksRenderer({
   blocks,
+  pageType = "content",
 }: {
   blocks: ContentBlockDTO[];
+  pageType?: "homepage" | "content" | "legal";
 }) {
   const ordered = [...blocks].sort(
     (a, b) => a.sortOrder - b.sortOrder || a.id.localeCompare(b.id),
@@ -57,7 +59,20 @@ export async function ContentBlocksRenderer({
       const Component = entry.Component as (props: {
         data: unknown;
         blockId: string;
+        variant?: "content" | "legal";
       }) => React.ReactNode | Promise<React.ReactNode>;
+
+      if (block.type === "richText") {
+        return (
+          <Component
+            key={block.id}
+            data={parsed.data}
+            blockId={block.id}
+            variant={pageType === "legal" ? "legal" : "content"}
+          />
+        );
+      }
+
       return <Component key={block.id} data={parsed.data} blockId={block.id} />;
     }),
   );

@@ -31,12 +31,12 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | Server Actions `app/admin/.../orders/actions.ts` | `auth()` in Action | Bestellstatus |
 | Server Actions `app/admin/.../products/actions.ts` | `auth()` in Action | Katalogpflege |
 | Server Actions `app/admin/.../categories/actions.ts` | `auth()` in Action | Kategorie-CRUD, Produktzuordnung |
-| Server Actions `app/admin/.../startseite/actions.ts` | `auth()` in Action | Startseite Marketing (Amazon-/Social-Inhalte) |
 | Server Actions `app/admin/.../versand/actions.ts` | `auth()` in Action | Shopweite Versandländer und -kosten |
 | Seite `/admin/einstellungen` | Admin-Session | Shop-Branding, Kontakt, Farben, Medien-Uploads (Epic 11) |
 | Server Actions `app/admin/.../einstellungen/actions.ts` | `auth()` in Action | ShopSettings speichern; Branding-Upload/Clear (Vercel Blob); Audit via Outbox `shop_settings.*` |
-| Seiten `/admin/inhalte`, `/admin/inhalte/new`, `/admin/inhalte/[id]/edit` | Admin-Session | CMS-light Seiten/Blöcke (Epic 12); Draft/Publish; signierte Vorschau-Links |
+| Seiten `/admin/inhalte`, `/admin/inhalte/new`, `/admin/inhalte/[id]/edit`, `/admin/inhalte/marketing` | Admin-Session | CMS-light inkl. Live-Vorschau (Client); Marketing Reviews/Social; `/admin/startseite` → Redirect Marketing |
 | Server Actions `app/admin/.../inhalte/actions.ts` | `auth()` in Action | ContentPage + ContentBlocks speichern; Publish/Unpublish; Rich-Text sanitize; Outbox `content_page.*` / `content_page.published` / `content_page.unpublished` |
+| Server Actions `app/admin/.../inhalte/marketing/actions.ts` | `auth()` in Action | Homepage Amazon-/Social-Pflege (früher `/admin/startseite`) |
 | Seite `/vorschau/inhalte/[pageId]` | Signiertes Query-Token (`CONTENT_PREVIEW_SECRET` oder `AUTH_SECRET`), TTL 30 min | CMS-Vorschau (Draft/Published); **noindex**; ungültig/abgelaufen → **404**; kein Session-Auth-Leak |
 | Catch-all `/(storefront)/[...slug]` | Öffentlich; nur `published` ContentPages | Freie CMS-URLs; Drafts → **404**; `previousSlug` → **301**; reservierte Systempfade → **404**; statische Routen (`/produkte`, `/impressum`, …) haben Vorrang |
 | Lesepfade Storefront/E-Mail/PDF/Admin-Login | Öffentlich bzw. serverseitig | `getShopSettings()` + Static-Fallbacks `/branding/*`; keine freie CSS/JS aus Admin-Eingaben (nur Hex-Farben, URLs, Text via Zod) |

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   uploadHomepageSocialImages,
   type StartseiteFormState,
-} from "@/app/admin/(dashboard)/startseite/actions";
+} from "@/app/admin/(dashboard)/inhalte/marketing/actions";
 import { ALLOWED_IMAGE_TYPES, MAX_UPLOAD_BYTES } from "@/lib/admin/upload-image";
 
 const inputClass =
