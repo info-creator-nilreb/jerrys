@@ -147,11 +147,21 @@ export async function listContentPages(options?: {
       },
       orderBy: [{ pageType: "asc" }, { slug: "asc" }],
     });
-    return rows.map((row) => {
-      const dto = toPageDto(row);
-      const { blocks: _b, ...rest } = dto;
-      return rest;
-    });
+    return rows.map((row) => ({
+      id: row.id,
+      slug: row.slug,
+      pageType: row.pageType,
+      status: row.status,
+      title: row.title,
+      seoTitle: row.seoTitle,
+      seoDescription: row.seoDescription,
+      ogImageUrl: row.ogImageUrl,
+      canonicalPath: row.canonicalPath,
+      robotsIndex: row.robotsIndex,
+      previousSlug: row.previousSlug,
+      publishedAt: row.publishedAt,
+      updatedAt: row.updatedAt,
+    }));
   } catch (e) {
     if (isMissingSchemaError(e)) return [];
     throw e;
