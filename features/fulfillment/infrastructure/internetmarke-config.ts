@@ -4,6 +4,8 @@
  * Auth: POST /user (application/x-www-form-urlencoded)
  * Kauf: POST /app/shoppingcart/pdf?directCheckout=true
  * Retoure: POST /app/retoure
+ *
+ * Credentials: bevorzugt Admin-DB (verschlüsselt), Fallback Env.
  */
 
 import type { InternetmarkeVoucherLayout } from "@/features/fulfillment/application/shipping-label-port";
@@ -20,6 +22,7 @@ export type InternetmarkeEnvConfig = {
   productPriceCents: number;
   pageFormatId: number;
   voucherLayout: InternetmarkeVoucherLayout;
+  source?: "db" | "env";
 };
 
 function readRequired(name: string): string | null {
@@ -35,14 +38,8 @@ function readPositiveInt(name: string): number | null {
   return n;
 }
 
-export function isInternetmarkeConfigured(): boolean {
-  return getInternetmarkeConfig() != null;
-}
-
-/**
- * Liest Credentials + Standardprodukt. Fehlt etwas → null (Adapter fällt auf not_configured).
- */
-export function getInternetmarkeConfig(): InternetmarkeEnvConfig | null {
+/** Nur Env — für Tests und Fallback. */
+export function getInternetmarkeConfigFromEnv(): InternetmarkeEnvConfig | null {
   const clientId = readRequired("INTERNETMARKE_CLIENT_ID");
   const clientSecret = readRequired("INTERNETMARKE_CLIENT_SECRET");
   const username = readRequired("INTERNETMARKE_USERNAME");
@@ -75,5 +72,36 @@ export function getInternetmarkeConfig(): InternetmarkeEnvConfig | null {
     productPriceCents,
     pageFormatId,
     voucherLayout,
+    source: "env",
   };
+}
+
+/**
+ * @deprecated Nutze `resolveInternetmarkeConfig()` (DB + Env).
+ * Sync-Env-Fallback für bestehende Sync-Aufrufe/Tests.
+ */
+export function getInternetmarkeConfig(): InternetmarkeEnvConfig | null {
+  return getInternetmarkeConfigFromEnv();
+}
+
+export function isInternetmarkeConfiguredFromEnv(): boolean {
+  return getInternetmarkeConfigFromEnv() != null;
+}
+
+/** Async: DB zuerst, dann Env. */
+export async function resolveInternetmarkeConfig(): Promise<InternetmarkeEnvConfig | null> {
+  try {
+    const { getInternetmarkeConfigFromDb } = await import(
+      "@/features/fulfillment/infrastructure/internetmarke-connection"
+    );
+    const fromDb = await getInternetmarkeConfigFromDb();
+    if (fromDb) return { ...fromDb, source: "db" };
+  } catch {
+    // DB/Schema nicht verfügbar (z. B. Unit-Tests) → Env-Fallback
+  }
+  return getInternetmarkeConfigFromEnv();
+}
+
+export async function isInternetmarkeConfigured(): Promise<boolean> {
+  return (await resolveInternetmarkeConfig()) != null;
 }
