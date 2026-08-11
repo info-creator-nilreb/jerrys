@@ -19,7 +19,6 @@ type AssetMeta = {
   description: string;
   hint: string;
   accept: string;
-  /** Große Fläche (Logo/Titelbild) vs. kompaktes Quadrat (Favicon). */
   variant: "wide" | "square" | "cover";
 };
 
@@ -73,13 +72,14 @@ function hasCustomUrl(settings: ShopSettingsDTO, kind: ShopBrandingAssetKind): b
 }
 
 function previewShellClass(variant: AssetMeta["variant"], dark?: boolean): string {
+  const tone = dark ? "bg-[#182d4d]" : "bg-[#f1f2f3]";
   if (variant === "cover") {
-    return "flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg bg-[#f1f2f3]";
+    return `flex aspect-video max-h-52 w-full items-center justify-center overflow-hidden rounded-lg ${tone}`;
   }
   if (variant === "square") {
-    return `flex aspect-square w-full max-w-[12rem] items-center justify-center overflow-hidden rounded-lg ${dark ? "bg-[#182d4d]" : "bg-[#f1f2f3]"}`;
+    return `flex size-28 items-center justify-center overflow-hidden rounded-lg ${tone}`;
   }
-  return `flex min-h-[9rem] w-full items-center justify-center overflow-hidden rounded-lg px-8 py-10 ${dark ? "bg-[#182d4d]" : "bg-[#f1f2f3]"}`;
+  return `flex h-28 w-full items-center justify-center overflow-hidden rounded-lg px-6 ${tone}`;
 }
 
 function AssetBlock({ meta, settings }: { meta: AssetMeta; settings: ShopSettingsDTO }) {
@@ -126,14 +126,15 @@ function AssetBlock({ meta, settings }: { meta: AssetMeta; settings: ShopSetting
             meta.variant === "cover"
               ? "h-full w-full object-cover"
               : meta.variant === "square"
-                ? "max-h-[70%] max-w-[70%] object-contain"
-                : "max-h-16 w-auto max-w-[min(100%,16rem)] object-contain"
+                ? "max-h-16 max-w-16 object-contain"
+                : "max-h-14 w-auto max-w-[min(100%,14rem)] object-contain"
           }
         />
       </div>
 
-      <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-[#d2d5d9] bg-white">
-        <form action={uploadAction} className="contents">
+      {/* Kein display:contents — versteckte Inputs würden sonst Grid-Zeilen erzeugen */}
+      <div className="flex overflow-hidden rounded-lg border border-[#d2d5d9] bg-white">
+        <form action={uploadAction} className="min-w-0 flex-1">
           <input type="hidden" name="kind" value={meta.kind} />
           <input
             ref={fileRef}
@@ -151,17 +152,17 @@ function AssetBlock({ meta, settings }: { meta: AssetMeta; settings: ShopSetting
             type="button"
             disabled={pending}
             onClick={() => fileRef.current?.click()}
-            className="min-h-11 border-r border-[#d2d5d9] px-3 text-sm font-medium text-[#1f2937] transition-colors hover:bg-[#f7f8fa] disabled:opacity-50"
+            className="flex min-h-11 w-full items-center justify-center border-r border-[#d2d5d9] px-3 text-sm font-medium text-[#1f2937] transition-colors hover:bg-[#f7f8fa] disabled:opacity-50"
           >
             {uploadPending ? "Lädt …" : "Ändern"}
           </button>
         </form>
-        <form action={clearAction} className="contents">
+        <form action={clearAction} className="min-w-0 flex-1">
           <input type="hidden" name="kind" value={meta.kind} />
           <button
             type="submit"
             disabled={pending || !custom}
-            className="min-h-11 px-3 text-sm font-medium text-[#1f2937] transition-colors hover:bg-[#f7f8fa] disabled:cursor-not-allowed disabled:text-[#9ca3af] disabled:hover:bg-white"
+            className="flex min-h-11 w-full items-center justify-center px-3 text-sm font-medium text-[#1f2937] transition-colors hover:bg-[#f7f8fa] disabled:cursor-not-allowed disabled:text-[#9ca3af] disabled:hover:bg-white"
           >
             Entfernen
           </button>
@@ -169,9 +170,7 @@ function AssetBlock({ meta, settings }: { meta: AssetMeta; settings: ShopSetting
       </div>
 
       <p className="text-xs text-[#6b7280]">{meta.hint}</p>
-      {!custom ? (
-        <p className="text-xs text-[#9ca3af]">Aktuell: Static-Fallback</p>
-      ) : null}
+      {!custom ? <p className="text-xs text-[#9ca3af]">Aktuell: Static-Fallback</p> : null}
 
       {error ? (
         <p className="text-sm text-[#b42318]" role="alert">
@@ -191,7 +190,7 @@ export function LogosSection({ settings }: { settings: ShopSettingsDTO }) {
   return (
     <section className="rounded-xl border border-[#e8eaed] bg-white p-5 shadow-sm sm:p-6">
       <h2 className="text-base font-semibold text-[#1f2937]">Logos</h2>
-      <div className="mt-6 space-y-8">
+      <div className="mt-5 space-y-6">
         {LOGO_ASSETS.map((meta) => (
           <AssetBlock key={meta.kind} meta={meta} settings={settings} />
         ))}

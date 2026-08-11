@@ -12,12 +12,12 @@ export default async function AdminEinstellungenPage() {
   const defaults = await getShopSettingsForAdminForm();
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 pb-24">
+    <div className="mx-auto max-w-3xl space-y-5 pb-20">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-[#1f2937]">Branding</h1>
         <p className="mt-2 text-sm text-[#6b7280]">
-          Logos, Farben, Texte und Social Links — eine Konfiguration für Shop, Login, E-Mail und PDF.
-          Gespeicherte Werte kommen vom Server.
+          Logos, Farben, Texte und Social Links. Änderungen werden in der Datenbank gespeichert;
+          die Storefront übernimmt sie mit Epic&nbsp;11 Slice&nbsp;4.
         </p>
       </div>
       <ShopSettingsForm

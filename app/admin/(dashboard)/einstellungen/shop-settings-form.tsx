@@ -127,8 +127,9 @@ export function ShopSettingsForm({ defaults }: Props) {
   return (
     <div className="space-y-4 sm:space-y-5">
       <LogosSection settings={defaults} />
+      <CoverImageSection settings={defaults} />
 
-      <form action={formAction} className="space-y-4 sm:space-y-5">
+      <form id="shop-settings-form" action={formAction} className="space-y-4 sm:space-y-5">
         <SettingsCard
           title="Farben"
           description="Die Markenfarben, die in deinem Shop, in E-Mails und im Admin erscheinen"
@@ -478,17 +479,20 @@ export function ShopSettingsForm({ defaults }: Props) {
             ) : null}
           </div>
         ) : null}
-
-        <AdminFormActionDock>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-            <button type="submit" disabled={pending} className={saveBtnClass}>
-              {pending ? "Speichern …" : "Speichern"}
-            </button>
-          </div>
-        </AdminFormActionDock>
       </form>
 
-      <CoverImageSection settings={defaults} />
+      <AdminFormActionDock>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+          <button
+            type="submit"
+            form="shop-settings-form"
+            disabled={pending}
+            className={saveBtnClass}
+          >
+            {pending ? "Speichern …" : "Speichern"}
+          </button>
+        </div>
+      </AdminFormActionDock>
     </div>
   );
 }
