@@ -1,5 +1,6 @@
 import { ContentBlocksRenderer } from "@/components/content/content-blocks-renderer";
 import { getHomepageContentPage } from "@/lib/content/content-pages";
+import { storefrontMainPagePaddingClass } from "@/lib/storefront/page-below-header-padding";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export default async function StorefrontHomePage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-20 text-center">
+    <div className={`mx-auto max-w-3xl px-4 text-center ${storefrontMainPagePaddingClass}`}>
       <h1 className="text-2xl font-semibold text-(--foreground-heading)">Startseite</h1>
       <p className="mt-4 text-(--foreground-muted)">
         Die Startseite wird über Inhalte (CMS) ausgeliefert. Bitte die Storefront-Migration

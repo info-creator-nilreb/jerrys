@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { CustomerAccountNav } from "@/components/storefront/customer-account-nav";
 import { getCustomerSession } from "@/lib/auth/customer-session";
 import { REQUEST_PATHNAME_HEADER, safeInternalPath } from "@/lib/http/request-pathname";
+import { storefrontMainPagePaddingClass } from "@/lib/storefront/page-below-header-padding";
 
 export default async function CustomerPortalLayout({
   children,
@@ -17,7 +18,7 @@ export default async function CustomerPortalLayout({
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-10 md:py-14">
+    <div className={`mx-auto w-full max-w-3xl px-4 ${storefrontMainPagePaddingClass}`}>
       <p className="text-sm font-medium text-primary">Mein Konto</p>
       <CustomerAccountNav />
       {children}

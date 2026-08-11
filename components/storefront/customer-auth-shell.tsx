@@ -12,7 +12,7 @@ export function CustomerAuthShell({
   footer?: ReactNode;
 }) {
   return (
-    <div className="mx-auto w-full max-w-md px-4 pt-[calc(var(--storefront-header-height,3.25rem)+2rem)] pb-10 md:pb-14">
+    <div className="mx-auto w-full max-w-md px-4 pt-[calc(var(--storefront-header-height,3.75rem)+2rem)] pb-10 md:pb-14">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight text-(--foreground-heading) md:text-[1.75rem]">
           {title}

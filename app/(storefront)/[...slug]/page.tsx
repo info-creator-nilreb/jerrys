@@ -3,6 +3,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { ContentBlocksRenderer } from "@/components/content/content-blocks-renderer";
 import { metadataForContentPage } from "@/lib/content/content-page-metadata";
 import { resolvePublicContentPage } from "@/lib/content/resolve-public-content-page";
+import { storefrontMainPagePaddingClass } from "@/lib/storefront/page-below-header-padding";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +42,9 @@ export default async function PublicContentPage({ params }: PageProps) {
 
   if (page.pageType === "legal") {
     return (
-      <article className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
+      <article
+        className={`mx-auto max-w-3xl px-4 sm:px-6 ${storefrontMainPagePaddingClass}`}
+      >
         <header className="mb-8">
           <h1 className="text-3xl font-semibold tracking-tight text-(--foreground-heading) sm:text-4xl">
             {page.title}
@@ -53,7 +56,9 @@ export default async function PublicContentPage({ params }: PageProps) {
   }
 
   return (
-    <article className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
+    <article
+      className={`mx-auto max-w-5xl px-4 sm:px-6 ${storefrontMainPagePaddingClass}`}
+    >
       <header className="mb-8 max-w-3xl">
         <h1 className="text-3xl font-semibold tracking-tight text-(--foreground-heading) sm:text-4xl">
           {page.title}
