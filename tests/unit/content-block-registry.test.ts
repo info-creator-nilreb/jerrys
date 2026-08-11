@@ -56,6 +56,20 @@ describe("parseContentBlockData", () => {
       }).ok,
     ).toBe(true);
   });
+
+  it("parst socialReviews mit Defaults für Feed-Quelle", () => {
+    const r = parseContentBlockData("socialReviews", {
+      showReviews: true,
+      showSocial: true,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.data).toMatchObject({
+        socialSource: "auto",
+        socialLimit: 12,
+      });
+    }
+  });
 });
 
 describe("sanitizeContentRichTextHtml", () => {

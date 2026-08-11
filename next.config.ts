@@ -34,6 +34,15 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "*.blob.vercel-storage.com",
       },
+      /** Instagram CDN Fallback, falls Feed-Bilder nicht nach Blob gespiegelt wurden. */
+      {
+        protocol: "https",
+        hostname: "*.cdninstagram.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.fbcdn.net",
+      },
     ],
   },
   async headers() {

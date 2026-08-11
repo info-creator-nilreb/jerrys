@@ -66,6 +66,8 @@ export function defaultDataForContentBlockType(
         titleReviews: "Stimmen",
         titleSocial: "Einblicke",
         introSocial: "",
+        socialSource: "auto",
+        socialLimit: 12,
       };
     case "workshopCalendar":
       return {

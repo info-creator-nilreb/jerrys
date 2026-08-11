@@ -2,10 +2,8 @@ import { HomepageReviewsCarousel } from "@/components/storefront/homepage-review
 import { HomepageSocialCarousel } from "@/components/storefront/homepage-social-carousel";
 import type { SocialReviewsBlockData } from "@/lib/content/blocks/social-reviews";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
-import {
-  listActiveHomepageAmazonReviews,
-  listActiveHomepageSocialImages,
-} from "@/lib/homepage/marketing-queries";
+import { listActiveHomepageAmazonReviews } from "@/lib/homepage/marketing-queries";
+import { listSocialFeedSlides } from "@/lib/instagram/media-queries";
 
 export async function SocialReviewsBlock({
   data,
@@ -14,11 +12,16 @@ export async function SocialReviewsBlock({
   blockId: string;
 }) {
   let reviews: Awaited<ReturnType<typeof listActiveHomepageAmazonReviews>> = [];
-  let social: Awaited<ReturnType<typeof listActiveHomepageSocialImages>> = [];
+  let social: Awaited<ReturnType<typeof listSocialFeedSlides>> = [];
   try {
     const tuple = await Promise.all([
       data.showReviews ? listActiveHomepageAmazonReviews() : Promise.resolve([]),
-      data.showSocial ? listActiveHomepageSocialImages() : Promise.resolve([]),
+      data.showSocial
+        ? listSocialFeedSlides({
+            source: data.socialSource ?? "auto",
+            limit: data.socialLimit ?? 12,
+          })
+        : Promise.resolve([]),
     ]);
     [reviews, social] = tuple;
   } catch (e) {

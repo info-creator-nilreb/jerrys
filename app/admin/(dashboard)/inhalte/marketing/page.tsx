@@ -10,6 +10,7 @@ import {
   setHomepageSocialImageActive,
   submitHomepageSocialImageMetaForm,
 } from "@/app/admin/(dashboard)/inhalte/marketing/actions";
+import { InstagramConnectPanel } from "@/app/admin/(dashboard)/inhalte/marketing/instagram-connect-panel";
 import { ReviewCreateForm } from "@/app/admin/(dashboard)/inhalte/marketing/review-create-form";
 import { ReviewEditForm } from "@/app/admin/(dashboard)/inhalte/marketing/review-edit-form";
 import { SocialUploadForm } from "@/app/admin/(dashboard)/inhalte/marketing/social-upload-form";
@@ -17,6 +18,9 @@ import {
   listAllHomepageAmazonReviewsForAdmin,
   listAllHomepageSocialImagesForAdmin,
 } from "@/lib/homepage/marketing-queries";
+import { isInstagramAppConfigured } from "@/lib/instagram/config";
+import { getInstagramConnectionPublic } from "@/lib/instagram/connection";
+import { listActiveInstagramMediaCache } from "@/lib/instagram/media-queries";
 
 export const metadata: Metadata = {
   title: "Marketing-Inhalte",
@@ -28,13 +32,23 @@ const inputClass =
 export default async function AdminStartseitePage({
   searchParams,
 }: {
-  searchParams: Promise<{ review?: string }>;
+  searchParams: Promise<{ review?: string; ig?: string; msg?: string }>;
 }) {
-  const { review: editingReviewId } = await searchParams;
-  const [reviews, socialImages] = await Promise.all([
+  const { review: editingReviewId, ig, msg } = await searchParams;
+  const [reviews, socialImages, igConnection, igCache] = await Promise.all([
     listAllHomepageAmazonReviewsForAdmin(),
     listAllHomepageSocialImagesForAdmin(),
+    getInstagramConnectionPublic(),
+    listActiveInstagramMediaCache(48),
   ]);
+
+  const igFlash =
+    ig === "connected" || ig === "error"
+      ? {
+          kind: (ig === "connected" ? "ok" : "error") as "ok" | "error",
+          message: msg?.trim() || (ig === "connected" ? "Instagram verbunden." : "Fehler"),
+        }
+      : null;
 
   const editingReview = editingReviewId
     ? (reviews.find((r) => r.id === editingReviewId) ?? null)
@@ -53,10 +67,22 @@ export default async function AdminStartseitePage({
           Marketing-Inhalte
         </h1>
         <p className="mt-2 text-sm text-[#6b7280]">
-          Amazon-Zitate und Social-/Instagram-Bilder für CMS-Blöcke „Social/Reviews“ auf der Startseite.
-          Layout der Startseite unter Inhalte → Startseite bearbeiten.
+          Amazon-Zitate, Instagram-OAuth-Feed und kuratierte Social-Bilder für CMS-Blöcke
+          „Social/Reviews“. Layout der Startseite unter Inhalte → Startseite bearbeiten.
         </p>
       </div>
+
+      <InstagramConnectPanel
+        configured={isInstagramAppConfigured()}
+        connected={igConnection.connected}
+        username={igConnection.username}
+        connectedAt={igConnection.connectedAt?.toISOString() ?? null}
+        lastSyncAt={igConnection.lastSyncAt?.toISOString() ?? null}
+        lastSyncError={igConnection.lastSyncError}
+        tokenExpiresAt={igConnection.tokenExpiresAt?.toISOString() ?? null}
+        cachedCount={igCache.length}
+        flash={igFlash}
+      />
 
       <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-[#1f2937]">Amazon-Zitate (Slider)</h2>
@@ -175,10 +201,12 @@ export default async function AdminStartseitePage({
       </section>
 
       <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-[#1f2937]">Social-/Instagram-Bilder</h2>
+        <h2 className="text-lg font-semibold text-[#1f2937]">Kuratierte Social-Bilder (Fallback)</h2>
         <p className="mt-2 text-xs leading-relaxed text-[#6b7280]">
-          Bilder werden unter <code className="rounded bg-[#f3f4f6] px-1">/media/homepage-social/</code>{" "}
-          gespeichert. Optional pro Bild einen Link (z. B. Instagram-Post) setzen.
+          Manuelle Galerie als Fallback, wenn kein Instagram-Feed verbunden ist oder die
+          Block-Quelle „kuratiert“ gewählt wurde. Speicherung unter{" "}
+          <code className="rounded bg-[#f3f4f6] px-1">/media/homepage-social/</code>. Optional
+          pro Bild einen Link setzen.
         </p>
 
         <SocialUploadForm />
