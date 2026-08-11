@@ -192,3 +192,8 @@ export {
   type ContentBlockShell,
   type ContentPageValues,
 } from "@/lib/content/content-page-schemas";
+export {
+  CONTENT_BLOCK_SCHEMAS,
+  parseContentBlockData,
+  resolveContentBlockSchema,
+} from "@/lib/content/block-schemas";

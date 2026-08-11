@@ -38,6 +38,44 @@ export async function listActiveProductsForStorefront() {
   });
 }
 
+/** Aktive Produkte in ID-Reihenfolge (CMS kuratierte Listen). */
+export async function listActiveProductsByIdsForStorefront(
+  productIds: string[],
+  limit = 12,
+) {
+  const ids = productIds.slice(0, Math.max(1, limit));
+  if (ids.length === 0) return [];
+  const rows = await getPrisma().product.findMany({
+    where: { id: { in: ids }, isActive: true },
+    select: {
+      ...storefrontProductCardSelect,
+      ...storefrontPrimaryCategorySelect,
+    },
+  });
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  return ids.map((id) => byId.get(id)).filter((r): r is NonNullable<typeof r> => r != null);
+}
+
+export async function listActiveProductsByCategorySlugForStorefront(
+  categorySlug: string,
+  limit = 12,
+) {
+  return getPrisma().product.findMany({
+    where: {
+      isActive: true,
+      categoryMemberships: {
+        some: { category: { slug: categorySlug, isActive: true } },
+      },
+    },
+    orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
+    take: limit,
+    select: {
+      ...storefrontProductCardSelect,
+      ...storefrontPrimaryCategorySelect,
+    },
+  });
+}
+
 export async function getActiveProductBySlug(slug: string) {
   return getPrisma().product.findFirst({
     where: { slug, isActive: true },
