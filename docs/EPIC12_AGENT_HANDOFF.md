@@ -37,7 +37,7 @@ Branch-Prefix: `cursor/epic12-slice<N>-<kurzname>-ce5b`
 
 | Slice | Inhalt | Exit |
 | --- | --- | --- |
-| **1** | ADR-0007 (oder nächste freie) + `ContentPage` / `ContentBlock` Schema, Seitentyp, Slug, SEO, `draft`/`published` | Migration; kein öffentliches Routing nötig |
+| **1** | ADR-0007 + `ContentPage` / `ContentBlock` Schema, Seitentyp, Slug, SEO, `draft`/`published` | ✅ Migration; Lesen/Zod ohne öffentliches Routing |
 | **2** | Block-Registry + Server-Component-Renderer + Zod pro Block; sichere Fallbacks | Unit-Tests Registry/Validierung |
 | **3** | Admin-Editor: Blöcke add/edit/reorder/remove, explizites Speichern | Lucide-Icons, Markengrün, mobile bedienbar |
 | **4** | Draft/Publish + signierte Preview-URL (kurzlebig); Drafts nicht in Sitemap/Nav | Preview ohne Auth-Leak |

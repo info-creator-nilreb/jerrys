@@ -650,6 +650,65 @@ model HomepageSocialImage {
   @@map("homepage_social_images")
 }
 
+/// CMS-light Seitentyp (Epic 12 / ADR-0007).
+enum ContentPageType {
+  homepage
+  content
+  legal
+}
+
+/// CMS-light Veröffentlichungsstatus (Epic 12 / ADR-0007).
+enum ContentPageStatus {
+  draft
+  published
+}
+
+/// Inhaltsseite mit SEO und Draft/Publish (Epic 12). Öffentliches Routing ab Slice 5.
+model ContentPage {
+  id     String            @id @default(cuid())
+  /// URL-Segment ohne führenden Slash; Homepage-Sentinel: `home` (öffentlich `/`).
+  slug   String            @unique
+  pageType ContentPageType @map("page_type")
+  status   ContentPageStatus @default(draft)
+
+  title String
+
+  seoTitle       String? @map("seo_title")
+  seoDescription String? @map("seo_description")
+  ogImageUrl     String? @map("og_image_url")
+  /// Optionaler Canonical-Pfad (z. B. `/impressum`); null = aus Slug abgeleitet.
+  canonicalPath  String? @map("canonical_path")
+  robotsIndex    Boolean @default(true) @map("robots_index")
+
+  /// Vorheriger Slug für Redirect-Planung (Slice 5); nicht automatisch live.
+  previousSlug String? @map("previous_slug")
+
+  publishedAt DateTime? @map("published_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  blocks ContentBlock[]
+
+  @@index([status, pageType])
+  @@map("content_pages")
+}
+
+/// Geordneter Inhaltsblock einer ContentPage (Epic 12). `data` per Block-Typ Zod-validiert (Slice 2+).
+model ContentBlock {
+  id        String   @id @default(cuid())
+  pageId    String   @map("page_id")
+  page      ContentPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  /// Registry-Key, z. B. hero, richText, faq (ADR-0007).
+  type      String
+  sortOrder Int      @default(0) @map("sort_order")
+  data      Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([pageId, sortOrder])
+  @@map("content_blocks")
+}
+
 /// Shopweite Workshop-Regeln (genau eine Zeile, id = default). Epic 5 Slice 1/3.
 model ShopWorkshopSettings {
   id String @id @default("default")
