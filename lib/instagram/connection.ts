@@ -3,6 +3,7 @@ import "server-only";
 import { appendIntegrationOutbox } from "@/features/integrations";
 import { getPrisma } from "@/lib/db/prisma";
 import { isMissingSchemaError } from "@/lib/db/prisma-error";
+import type { InstagramAuthMode } from "@/lib/instagram/auth-mode";
 import { INSTAGRAM_CONNECTION_ID } from "@/lib/instagram/config";
 import { decryptSecret, encryptSecret } from "@/lib/security/secret-crypto";
 
@@ -10,11 +11,16 @@ export type InstagramConnectionPublic = {
   connected: boolean;
   igUserId: string | null;
   username: string | null;
+  authMode: InstagramAuthMode | null;
   connectedAt: Date | null;
   tokenExpiresAt: Date | null;
   lastSyncAt: Date | null;
   lastSyncError: string | null;
 };
+
+function asAuthMode(value: string | null | undefined): InstagramAuthMode {
+  return value === "facebook" ? "facebook" : "instagram";
+}
 
 export async function getInstagramConnectionPublic(): Promise<InstagramConnectionPublic> {
   try {
@@ -26,6 +32,7 @@ export async function getInstagramConnectionPublic(): Promise<InstagramConnectio
         connected: false,
         igUserId: null,
         username: null,
+        authMode: null,
         connectedAt: null,
         tokenExpiresAt: null,
         lastSyncAt: null,
@@ -36,6 +43,7 @@ export async function getInstagramConnectionPublic(): Promise<InstagramConnectio
       connected: true,
       igUserId: row.igUserId,
       username: row.username || null,
+      authMode: asAuthMode(row.authMode),
       connectedAt: row.connectedAt,
       tokenExpiresAt: row.tokenExpiresAt,
       lastSyncAt: row.lastSyncAt,
@@ -47,6 +55,7 @@ export async function getInstagramConnectionPublic(): Promise<InstagramConnectio
         connected: false,
         igUserId: null,
         username: null,
+        authMode: null,
         connectedAt: null,
         tokenExpiresAt: null,
         lastSyncAt: null,
@@ -62,6 +71,7 @@ export async function getInstagramAccessToken(): Promise<{
   tokenExpiresAt: Date | null;
   igUserId: string;
   username: string;
+  authMode: InstagramAuthMode;
 } | null> {
   try {
     const row = await getPrisma().instagramConnection.findUnique({
@@ -73,6 +83,7 @@ export async function getInstagramAccessToken(): Promise<{
       tokenExpiresAt: row.tokenExpiresAt,
       igUserId: row.igUserId,
       username: row.username,
+      authMode: asAuthMode(row.authMode),
     };
   } catch (e) {
     if (isMissingSchemaError(e)) return null;
@@ -85,6 +96,7 @@ export async function saveInstagramConnection(input: {
   username: string;
   accessToken: string;
   tokenExpiresAt: Date | null;
+  authMode: InstagramAuthMode;
 }): Promise<void> {
   const prisma = getPrisma();
   const accessTokenEnc = encryptSecret(input.accessToken);
@@ -95,6 +107,7 @@ export async function saveInstagramConnection(input: {
         id: INSTAGRAM_CONNECTION_ID,
         igUserId: input.igUserId,
         username: input.username,
+        authMode: input.authMode,
         accessTokenEnc,
         tokenExpiresAt: input.tokenExpiresAt,
         connectedAt: new Date(),
@@ -103,6 +116,7 @@ export async function saveInstagramConnection(input: {
       update: {
         igUserId: input.igUserId,
         username: input.username,
+        authMode: input.authMode,
         accessTokenEnc,
         tokenExpiresAt: input.tokenExpiresAt,
         connectedAt: new Date(),
@@ -113,7 +127,11 @@ export async function saveInstagramConnection(input: {
       aggregateType: "instagram_connection",
       aggregateId: INSTAGRAM_CONNECTION_ID,
       eventType: "instagram.connected",
-      payload: { igUserId: input.igUserId, username: input.username },
+      payload: {
+        igUserId: input.igUserId,
+        username: input.username,
+        authMode: input.authMode,
+      },
     });
   });
 }

@@ -1,0 +1,46 @@
+import { afterEach, describe, expect, it } from "vitest";
+import { maskInstagramAppId } from "@/lib/instagram/config";
+
+describe("maskInstagramAppId", () => {
+  it("maskiert lange IDs", () => {
+    expect(maskInstagramAppId("123456789012345")).toBe("1234…2345");
+  });
+
+  it("kürzere IDs komplett maskiert", () => {
+    expect(maskInstagramAppId("123")).toBe("••••");
+  });
+});
+
+describe("getInstagramAppConfig", () => {
+  const prev = {
+    id: process.env.INSTAGRAM_APP_ID,
+    secret: process.env.INSTAGRAM_APP_SECRET,
+    site: process.env.NEXT_PUBLIC_SITE_URL,
+    auth: process.env.AUTH_URL,
+    redirect: process.env.INSTAGRAM_REDIRECT_URI,
+  };
+
+  afterEach(() => {
+    for (const [k, v] of Object.entries({
+      INSTAGRAM_APP_ID: prev.id,
+      INSTAGRAM_APP_SECRET: prev.secret,
+      NEXT_PUBLIC_SITE_URL: prev.site,
+      AUTH_URL: prev.auth,
+      INSTAGRAM_REDIRECT_URI: prev.redirect,
+    })) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+  });
+
+  it("baut Redirect aus Site-URL", async () => {
+    process.env.INSTAGRAM_APP_ID = "1111222233334444";
+    process.env.INSTAGRAM_APP_SECRET = "secret";
+    process.env.NEXT_PUBLIC_SITE_URL = "https://example.com";
+    delete process.env.INSTAGRAM_REDIRECT_URI;
+    delete process.env.AUTH_URL;
+    const { getInstagramAppConfig } = await import("@/lib/instagram/config");
+    const cfg = getInstagramAppConfig();
+    expect(cfg?.redirectUri).toBe("https://example.com/api/admin/instagram/callback");
+  });
+});

@@ -1,3 +1,4 @@
+import { getInstagramAuthMode, type InstagramAuthMode } from "@/lib/instagram/auth-mode";
 import { canonicalSiteOrigin } from "@/lib/site/canonical-origin";
 
 export const INSTAGRAM_OAUTH_STATE_COOKIE = "jerrys_ig_oauth_state";
@@ -36,4 +37,35 @@ export function getInstagramAppConfig(): InstagramAppConfig | null {
 
 export function isInstagramAppConfigured(): boolean {
   return getInstagramAppConfig() !== null;
+}
+
+/** Maskierte App-ID für Admin-Diagnose (kein Secret). */
+export function maskInstagramAppId(appId: string): string {
+  const id = appId.trim();
+  if (id.length <= 8) return "••••";
+  return `${id.slice(0, 4)}…${id.slice(-4)}`;
+}
+
+export function getInstagramConfigDiagnostics(): {
+  configured: boolean;
+  appIdMasked: string | null;
+  redirectUri: string | null;
+  authMode: InstagramAuthMode;
+} {
+  const authMode = getInstagramAuthMode();
+  const config = getInstagramAppConfig();
+  if (!config) {
+    return {
+      configured: false,
+      appIdMasked: null,
+      redirectUri: null,
+      authMode,
+    };
+  }
+  return {
+    configured: true,
+    appIdMasked: maskInstagramAppId(config.appId),
+    redirectUri: config.redirectUri,
+    authMode,
+  };
 }

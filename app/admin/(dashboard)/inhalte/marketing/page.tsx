@@ -18,7 +18,7 @@ import {
   listAllHomepageAmazonReviewsForAdmin,
   listAllHomepageSocialImagesForAdmin,
 } from "@/lib/homepage/marketing-queries";
-import { isInstagramAppConfigured } from "@/lib/instagram/config";
+import { getInstagramConfigDiagnostics } from "@/lib/instagram/config";
 import { getInstagramConnectionPublic } from "@/lib/instagram/connection";
 import { listActiveInstagramMediaCache } from "@/lib/instagram/media-queries";
 
@@ -35,6 +35,7 @@ export default async function AdminStartseitePage({
   searchParams: Promise<{ review?: string; ig?: string; msg?: string }>;
 }) {
   const { review: editingReviewId, ig, msg } = await searchParams;
+  const igDiagnostics = getInstagramConfigDiagnostics();
   const [reviews, socialImages, igConnection, igCache] = await Promise.all([
     listAllHomepageAmazonReviewsForAdmin(),
     listAllHomepageSocialImagesForAdmin(),
@@ -73,7 +74,7 @@ export default async function AdminStartseitePage({
       </div>
 
       <InstagramConnectPanel
-        configured={isInstagramAppConfigured()}
+        configured={igDiagnostics.configured}
         connected={igConnection.connected}
         username={igConnection.username}
         connectedAt={igConnection.connectedAt?.toISOString() ?? null}
@@ -81,6 +82,9 @@ export default async function AdminStartseitePage({
         lastSyncError={igConnection.lastSyncError}
         tokenExpiresAt={igConnection.tokenExpiresAt?.toISOString() ?? null}
         cachedCount={igCache.length}
+        appIdMasked={igDiagnostics.appIdMasked}
+        redirectUri={igDiagnostics.redirectUri}
+        authMode={igDiagnostics.authMode}
         flash={igFlash}
       />
 

@@ -184,15 +184,20 @@ export async function fetchInstagramMedia(
   return items;
 }
 
+/** Scope-String für Authorize-URL (kommagetrennt laut Meta). */
+const INSTAGRAM_SCOPE_QUERY = "instagram_business_basic";
+
 export function buildInstagramAuthorizeUrl(
   config: InstagramAppConfig,
   state: string,
 ): string {
-  const url = new URL("https://www.instagram.com/oauth/authorize");
+  // Business Login for Instagram — client_id = Instagram App ID
+  // (Meta-App-ID → "Invalid platform app"). Host laut Meta OAuth-Authorize-Reference.
+  const url = new URL("https://api.instagram.com/oauth/authorize");
   url.searchParams.set("client_id", config.appId);
   url.searchParams.set("redirect_uri", config.redirectUri);
   url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", "instagram_business_basic");
+  url.searchParams.set("scope", INSTAGRAM_SCOPE_QUERY);
   url.searchParams.set("state", state);
   return url.toString();
 }

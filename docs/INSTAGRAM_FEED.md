@@ -16,6 +16,23 @@ Siehe `.env.example`: `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, Site-URL, opti
 
 Meta App: Redirect URI exakt `{SITE}/api/admin/instagram/callback`. App Review für Production.
 
+### Auth-Mode und „Invalid platform app“
+
+Zwei gültige Setups:
+
+| `INSTAGRAM_AUTH_MODE` | Credentials | Meta-Produkt |
+|-----------------------|-------------|--------------|
+| `instagram` (Default) | **Instagram** App ID/Secret unter Instagram → API setup with Instagram login | Business Login for Instagram |
+| `facebook` | **Meta** App ID/Secret unter App-Einstellungen → Allgemeines | Facebook Login for Business + IG an Page |
+
+Wenn im Dashboard **Facebook Login for Business** aktiv ist und Connect mit **Invalid platform app** scheitert:
+
+1. Vercel: `INSTAGRAM_AUTH_MODE=facebook`
+2. `INSTAGRAM_APP_ID` / `INSTAGRAM_APP_SECRET` = Meta App ID + Secret (Allgemeines)
+3. Dieselbe Callback-URL unter **Facebook Login → Gültige OAuth-Redirect-URIs**
+4. Instagram Professional-Konto mit einer **Facebook-Page** verknüpfen
+5. Redeploy, erneut verbinden
+
 ## CMS
 
 Block-Felder `socialSource` (`auto` | `instagram` | `curated`) und `socialLimit`. Default `auto`: Feed wenn Cache gefüllt, sonst kuratierte Marketing-Bilder.
