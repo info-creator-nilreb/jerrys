@@ -13,6 +13,7 @@ import {
 } from "@/lib/shop/shop-settings-schemas";
 import {
   revalidateShopSettingsCache,
+  revalidateStorefrontBranding,
   updateShopSettingsCacheTag,
 } from "@/lib/shop/shop-settings-cache";
 
@@ -150,6 +151,7 @@ export async function updateShopSettingsFromInput(
 
     updateShopSettingsCacheTag();
     revalidateShopSettingsCache();
+    revalidateStorefrontBranding();
 
     return {
       ok: true,

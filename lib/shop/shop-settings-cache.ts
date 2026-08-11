@@ -1,4 +1,4 @@
-import { revalidateTag, updateTag } from "next/cache";
+import { revalidatePath, revalidateTag, updateTag } from "next/cache";
 
 /**
  * Next.js Cache-Tag für ShopSettings (ADR-0006).
@@ -14,4 +14,9 @@ export function revalidateShopSettingsCache(): void {
 /** Read-your-own-writes nach Admin-Speichern (nur Server Actions). */
 export function updateShopSettingsCacheTag(): void {
   updateTag(SHOP_SETTINGS_CACHE_TAG);
+}
+
+/** Storefront Root-Layout (CSS-Vars, Metadata, Header/Footer) nach Branding-Änderung. */
+export function revalidateStorefrontBranding(): void {
+  revalidatePath("/", "layout");
 }

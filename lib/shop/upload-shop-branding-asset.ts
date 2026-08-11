@@ -19,7 +19,11 @@ import {
   SHOP_SETTINGS_DEFAULT_ID,
   type ShopSettingsDTO,
 } from "@/lib/shop/shop-settings";
-import { revalidateShopSettingsCache } from "@/lib/shop/shop-settings-cache";
+import {
+  revalidateShopSettingsCache,
+  revalidateStorefrontBranding,
+  updateShopSettingsCacheTag,
+} from "@/lib/shop/shop-settings-cache";
 
 function shopSettingsCreateDefaults() {
   const d = JERRYS_SHOP_SETTINGS_DEFAULTS;
@@ -124,7 +128,9 @@ export async function uploadShopBrandingAsset(input: {
       await storage.deleteByUrl(previousUrl);
     }
 
+    updateShopSettingsCacheTag();
     revalidateShopSettingsCache();
+    revalidateStorefrontBranding();
     const settings = await getShopSettings();
     return { ok: true, settings, url: putUrl };
   } catch (e) {
@@ -168,7 +174,9 @@ export async function clearShopBrandingAsset(
       await storage.deleteByUrl(previousUrl);
     }
 
+    updateShopSettingsCacheTag();
     revalidateShopSettingsCache();
+    revalidateStorefrontBranding();
     return { ok: true, settings: await getShopSettings() };
   } catch (e) {
     log.error("branding_asset_clear_failed", { kind, ...errorMeta(e) });

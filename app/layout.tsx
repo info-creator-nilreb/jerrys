@@ -1,7 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Source_Sans_3 } from "next/font/google";
 import { WebVitalsReporter } from "@/components/storefront/web-vitals-reporter";
-import { canonicalSiteOrigin } from "@/lib/site/canonical-origin";
+import { getShopSettings } from "@/lib/shop/shop-settings";
+import {
+  buildShopMetadata,
+  shopThemeStyle,
+} from "@/lib/shop/storefront-branding";
 import "./globals.css";
 
 const sourceSans = Source_Sans_3({
@@ -10,37 +14,32 @@ const sourceSans = Source_Sans_3({
   display: "swap",
 });
 
-const siteOrigin = canonicalSiteOrigin();
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getShopSettings();
+  return buildShopMetadata(settings);
+}
 
-export const metadata: Metadata = {
-  ...(siteOrigin ? { metadataBase: new URL(siteOrigin) } : {}),
-  title: {
-    default: "jerry's – Katzenmöbel Made in Germany",
-    template: "%s | jerry's",
-  },
-  description:
-    "Design Katzenmöbel – in Deutschland designed und gefertigt. Hohe Qualität, besonderes Design, langlebige Materialien.",
-  icons: {
-    icon: "/branding/favicon.ico",
-  },
-  openGraph: {
-    siteName: "jerry's",
-    locale: "de_DE",
-    type: "website",
-  },
-};
+export async function generateViewport(): Promise<Viewport> {
+  const settings = await getShopSettings();
+  return {
+    themeColor: settings.primaryColor,
+  };
+}
 
-export const viewport: Viewport = {
-  themeColor: "#ffffff",
-};
-
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const settings = await getShopSettings();
+  const themeStyle = shopThemeStyle(settings);
+
   return (
-    <html lang="de" className={`${sourceSans.variable} h-full antialiased`}>
+    <html
+      lang="de"
+      className={`${sourceSans.variable} h-full antialiased`}
+      style={themeStyle}
+    >
       <body className="min-h-full flex flex-col font-sans">
         <WebVitalsReporter />
         {children}

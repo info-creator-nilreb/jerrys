@@ -1,5 +1,8 @@
+import { unstable_cache } from "next/cache";
+import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 import { getPrisma } from "@/lib/db/prisma";
 import { isMissingSchemaError, isUniqueViolationError } from "@/lib/db/prisma-error";
+import { SHOP_SETTINGS_CACHE_TAG } from "@/lib/shop/shop-settings-cache";
 import {
   JERRYS_SHOP_SETTINGS_DEFAULTS,
   SHOP_SETTINGS_DEFAULT_ID,
@@ -9,6 +12,10 @@ import {
 export type ShopSettingsDTO = ShopSettingsDefaults & {
   id: typeof SHOP_SETTINGS_DEFAULT_ID;
   updatedAt: Date | null;
+};
+
+type ShopSettingsCached = Omit<ShopSettingsDTO, "updatedAt"> & {
+  updatedAt: string | null;
 };
 
 function toDto(
@@ -93,32 +100,54 @@ const createDefaults = () => ({
   ogImageUrl: JERRYS_SHOP_SETTINGS_DEFAULTS.ogImageUrl,
 });
 
-/**
- * Liest den ShopSettings-Singleton; legt bei Bedarf die jerry’s-Default-Zeile an.
- * Kein Admin-UI in Slice 1 — nur Lese-/Seed-Pfad.
- */
-export async function getShopSettings(): Promise<ShopSettingsDTO> {
+async function loadShopSettingsFromDb(): Promise<ShopSettingsCached> {
   const prisma = getPrisma();
-  try {
-    let row = await prisma.shopSettings.findUnique({
-      where: { id: SHOP_SETTINGS_DEFAULT_ID },
-    });
-    if (!row) {
-      try {
-        row = await prisma.shopSettings.create({ data: createDefaults() });
-      } catch (e) {
-        if (isUniqueViolationError(e)) {
-          row = await prisma.shopSettings.findUnique({
-            where: { id: SHOP_SETTINGS_DEFAULT_ID },
-          });
-        } else {
-          throw e;
-        }
+  let row = await prisma.shopSettings.findUnique({
+    where: { id: SHOP_SETTINGS_DEFAULT_ID },
+  });
+  if (!row) {
+    try {
+      row = await prisma.shopSettings.create({ data: createDefaults() });
+    } catch (e) {
+      if (isUniqueViolationError(e)) {
+        row = await prisma.shopSettings.findUnique({
+          where: { id: SHOP_SETTINGS_DEFAULT_ID },
+        });
+      } else {
+        throw e;
       }
     }
-    return toDto(row);
+  }
+  const dto = toDto(row);
+  return {
+    ...dto,
+    updatedAt: dto.updatedAt ? dto.updatedAt.toISOString() : null,
+  };
+}
+
+const getCachedShopSettings = unstable_cache(
+  loadShopSettingsFromDb,
+  ["shop-settings-singleton"],
+  { tags: [SHOP_SETTINGS_CACHE_TAG] },
+);
+
+function reviveShopSettings(cached: ShopSettingsCached): ShopSettingsDTO {
+  return {
+    ...cached,
+    updatedAt: cached.updatedAt ? new Date(cached.updatedAt) : null,
+  };
+}
+
+/**
+ * Liest den ShopSettings-Singleton; legt bei Bedarf die jerry’s-Default-Zeile an.
+ * Cross-Request-Cache mit Tag `shop-settings` (ADR-0006); nach Admin-Save: `updateTag`.
+ * Bei fehlendem Schema oder unerreichbarer DB: jerry’s-Defaults (Storefront bleibt nutzbar).
+ */
+export async function getShopSettings(): Promise<ShopSettingsDTO> {
+  try {
+    return reviveShopSettings(await getCachedShopSettings());
   } catch (e) {
-    if (isMissingSchemaError(e)) {
+    if (isMissingSchemaError(e) || isDatabaseUnreachable(e)) {
       return toDto(null);
     }
     throw e;
@@ -132,6 +161,7 @@ export {
 export {
   SHOP_SETTINGS_CACHE_TAG,
   revalidateShopSettingsCache,
+  revalidateStorefrontBranding,
   updateShopSettingsCacheTag,
 } from "@/lib/shop/shop-settings-cache";
 export {
