@@ -37,11 +37,18 @@ Wenn im Dashboard **Facebook Login for Business** aktiv ist und Connect mit **In
 
 OAuth braucht eine **feste** Redirect-URL — keine Vercel-Preview-Hosts (`*-alexbs-projects-*.vercel.app`).
 
-1. Vercel Production: `NEXT_PUBLIC_SITE_URL=https://ecom-seven-livid.vercel.app` (oder Custom Domain) und/oder `INSTAGRAM_REDIRECT_URI=https://…/api/admin/instagram/callback`
+1. Vercel **Production**:  
+   `NEXT_PUBLIC_SITE_URL=https://ecom-seven-livid.vercel.app`  
+   und/oder  
+   `INSTAGRAM_REDIRECT_URI=https://ecom-seven-livid.vercel.app/api/admin/instagram/callback`
 2. Meta → App-Einstellungen → **Allgemeines** → **App-Domains**: `ecom-seven-livid.vercel.app`
 3. Meta → **Facebook Login** → **Gültige OAuth-Redirect-URIs**: exakt  
    `https://ecom-seven-livid.vercel.app/api/admin/instagram/callback`
-4. Verbinden über die **Production**-Admin-URL, nicht über einen Preview-Link
+4. Verbinden **nur** über  
+   `https://ecom-seven-livid.vercel.app/admin/inhalte/marketing`  
+   (nicht über Preview-Links — die App blockiert OAuth sonst vor dem Meta-Redirect)
+
+Die Admin-Diagnose unter Marketing zeigt Redirect-URI und Meta-App-Domain an.
 
 ## CMS
 
