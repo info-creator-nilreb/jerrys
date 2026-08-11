@@ -41,7 +41,7 @@ Branch-Prefix: `cursor/epic12-slice<N>-<kurzname>-ce5b`
 | **2** | Block-Registry + Server-Component-Renderer + Zod pro Block; sichere Fallbacks | ✅ Unit-Tests Registry/Validierung |
 | **3** | Admin-Editor: Blöcke add/edit/reorder/remove, explizites Speichern | ✅ Lucide-Icons, Markengrün, mobile bedienbar |
 | **4** | Draft/Publish + signierte Preview-URL (kurzlebig); Drafts nicht in Sitemap/Nav | ✅ Preview ohne Auth-Leak |
-| **5** | Freie Seiten-Routing, Slug-Schutz, Redirect-Konzept bei URL-Wechsel | Keine Kollision mit Systempfaden |
+| **5** | Freie Seiten-Routing, Slug-Schutz, Redirect-Konzept bei URL-Wechsel | ✅ Keine Kollision mit Systempfaden |
 | **6** | Migration Startseite + Rechtstexte + Marketing ohne URL-Bruch | Smoke aller bisherigen öffentlichen URLs |
 | **7** | Block „Gruppentermin-Kalender“ + optional PDP (Epic 5 wiederverwenden) | Eine Buchungslogik |
 

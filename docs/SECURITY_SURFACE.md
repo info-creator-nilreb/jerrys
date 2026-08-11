@@ -38,6 +38,7 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | Seiten `/admin/inhalte`, `/admin/inhalte/new`, `/admin/inhalte/[id]/edit` | Admin-Session | CMS-light Seiten/Blöcke (Epic 12); Draft/Publish; signierte Vorschau-Links |
 | Server Actions `app/admin/.../inhalte/actions.ts` | `auth()` in Action | ContentPage + ContentBlocks speichern; Publish/Unpublish; Rich-Text sanitize; Outbox `content_page.*` / `content_page.published` / `content_page.unpublished` |
 | Seite `/vorschau/inhalte/[pageId]` | Signiertes Query-Token (`CONTENT_PREVIEW_SECRET` oder `AUTH_SECRET`), TTL 30 min | CMS-Vorschau (Draft/Published); **noindex**; ungültig/abgelaufen → **404**; kein Session-Auth-Leak |
+| Catch-all `/(storefront)/[...slug]` | Öffentlich; nur `published` ContentPages | Freie CMS-URLs; Drafts → **404**; `previousSlug` → **301**; reservierte Systempfade → **404**; statische Routen (`/produkte`, `/impressum`, …) haben Vorrang |
 | Lesepfade Storefront/E-Mail/PDF/Admin-Login | Öffentlich bzw. serverseitig | `getShopSettings()` + Static-Fallbacks `/branding/*`; keine freie CSS/JS aus Admin-Eingaben (nur Hex-Farben, URLs, Text via Zod) |
 | Seiten `/admin/termine`, `/admin/termine/neu`, `/admin/termine/[id]/edit` | Admin-Session | Gruppentermine (Entwurf, Veröffentlichen, Absage); globale Storno-Frist |
 | Server Actions `app/admin/(dashboard)/termine/actions.ts` | `auth()` in Action | Termin-CRUD (nur Entwürfe), Lifecycle, Shop-Workshop-Einstellungen; Audit `workshop.session.*` |

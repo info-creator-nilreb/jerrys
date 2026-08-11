@@ -48,6 +48,13 @@ Negative / accepted trade-offs:
 - Rich text sanitization is mandatory before any public render (Slice 2+).
 - Uploads for block images use durable object storage (ADR-0008), never Vercel FS.
 
+## Public routing (Slice 5)
+
+- Catch-all App Router route `app/(storefront)/[...slug]/page.tsx` resolves published pages via `resolvePublicContentPage`.
+- Static/system segments always win over the catch-all; reserved slugs additionally return 404 in the resolver.
+- Homepage sentinel `home` redirects to `/` (CMS home rendering remains Slice 6).
+- On slug change in `upsertContentPageFromInput`, the previous slug is stored in `previousSlug` (single-hop 301). Lookup by `previousSlug` only for `status = published`.
+
 ## Preview tokens (Slice 4)
 
 - Format: `v1.<base64url(pageId)>.<expUnix>.<hmac-sha256>` (HMAC over `v1.id.exp`).

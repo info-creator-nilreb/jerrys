@@ -169,6 +169,25 @@ export async function upsertContentPageFromInput(input: {
       let id = input.id?.trim() || null;
 
       if (id) {
+        const existing = await tx.contentPage.findUnique({
+          where: { id },
+          select: { slug: true, publishedAt: true, previousSlug: true },
+        });
+        if (!existing) {
+          throw new Error("CONTENT_PAGE_NOT_FOUND");
+        }
+
+        // Bei Slug-Wechsel: alter Slug → previousSlug (ein Hop für 301).
+        let previousSlug = values.previousSlug;
+        if (existing.slug !== values.slug) {
+          previousSlug = existing.slug;
+        } else if (previousSlug == null) {
+          previousSlug = existing.previousSlug;
+        }
+        if (previousSlug === values.slug) {
+          previousSlug = null;
+        }
+
         await tx.contentPage.update({
           where: { id },
           data: {
@@ -181,13 +200,10 @@ export async function upsertContentPageFromInput(input: {
             ogImageUrl: values.ogImageUrl,
             canonicalPath: values.canonicalPath,
             robotsIndex: values.robotsIndex,
-            previousSlug: values.previousSlug,
+            previousSlug,
             publishedAt:
               values.status === "published"
-                ? (await tx.contentPage.findUnique({
-                    where: { id },
-                    select: { publishedAt: true },
-                  }))?.publishedAt ?? new Date()
+                ? existing.publishedAt ?? new Date()
                 : null,
           },
         });
@@ -203,7 +219,10 @@ export async function upsertContentPageFromInput(input: {
             ogImageUrl: values.ogImageUrl,
             canonicalPath: values.canonicalPath,
             robotsIndex: values.robotsIndex,
-            previousSlug: values.previousSlug,
+            previousSlug:
+              values.previousSlug && values.previousSlug !== values.slug
+                ? values.previousSlug
+                : null,
             publishedAt: values.status === "published" ? new Date() : null,
           },
         });
@@ -246,6 +265,9 @@ export async function upsertContentPageFromInput(input: {
     }
     return { ok: true, page };
   } catch (e) {
+    if (e instanceof Error && e.message === "CONTENT_PAGE_NOT_FOUND") {
+      return { ok: false, error: "Seite nicht gefunden." };
+    }
     if (isUniqueViolationError(e)) {
       return { ok: false, fieldErrors: { slug: "Slug bereits vergeben." } };
     }

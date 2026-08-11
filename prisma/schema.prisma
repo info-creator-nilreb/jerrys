@@ -680,7 +680,7 @@ model ContentPage {
   canonicalPath  String? @map("canonical_path")
   robotsIndex    Boolean @default(true) @map("robots_index")
 
-  /// Vorheriger Slug für Redirect-Planung (Slice 5); nicht automatisch live.
+  /// Vorheriger Slug für 301-Redirect nach URL-Wechsel (Slice 5).
   previousSlug String? @map("previous_slug")
 
   publishedAt DateTime? @map("published_at")
@@ -690,6 +690,7 @@ model ContentPage {
   blocks ContentBlock[]
 
   @@index([status, pageType])
+  @@index([previousSlug])
   @@map("content_pages")
 }
 
