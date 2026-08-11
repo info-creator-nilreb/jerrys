@@ -14,13 +14,17 @@ export {
 
 export {
   createNotConfiguredShippingLabelAdapter,
+  type InternetmarkeVoucherLayout,
   type PurchaseShippingLabelInput,
   type PurchaseShippingLabelResult,
+  type ShippingLabelAddress,
   type ShippingLabelPort,
   type ShippingLabelProviderId,
   type VoidShippingLabelInput,
   type VoidShippingLabelResult,
 } from "@/features/fulfillment/application/shipping-label-port";
+
+export { createShippingLabelPortFromEnv } from "@/features/fulfillment/application/create-shipping-label-port";
 
 export {
   createShipmentDraftForOrder,
@@ -31,3 +35,25 @@ export {
   listShipmentsForOrder,
   type ShipmentListItem,
 } from "@/features/fulfillment/application/list-shipments-for-order";
+
+export {
+  purchaseShippingLabelForShipment,
+  type PurchaseShippingLabelForShipmentInput,
+  type PurchaseShippingLabelForShipmentResult,
+} from "@/features/fulfillment/application/purchase-shipping-label-for-shipment";
+
+export {
+  voidShippingLabelForShipment,
+  type VoidShippingLabelForShipmentResult,
+} from "@/features/fulfillment/application/void-shipping-label-for-shipment";
+
+export {
+  getInternetmarkeConfig,
+  isInternetmarkeConfigured,
+  INTERNETMARKE_API_BASE_URL,
+  type InternetmarkeEnvConfig,
+} from "@/features/fulfillment/infrastructure/internetmarke-config";
+
+export { createInternetmarkeShippingLabelAdapter } from "@/features/fulfillment/infrastructure/internetmarke-shipping-label-adapter";
+
+export { toInternetmarkeCountryCode } from "@/features/fulfillment/infrastructure/internetmarke-country";
