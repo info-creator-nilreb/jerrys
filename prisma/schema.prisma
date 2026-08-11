@@ -660,6 +660,48 @@ model ShopWorkshopSettings {
   @@map("shop_workshop_settings")
 }
 
+/// Globales Shop-Branding und Geschäftsangaben (genau eine Zeile, id = default). Epic 11 / ADR-0006.
+model ShopSettings {
+  id String @id @default("default")
+
+  shopName          String  @map("shop_name")
+  shortDescription  String? @map("short_description")
+
+  /// Primärfarbe als #RRGGBB (Storefront/Admin-Akzent).
+  primaryColor      String @map("primary_color")
+  /// Hover-/Pressed-Variante als #RRGGBB.
+  primaryHoverColor String @map("primary_hover_color")
+
+  contactEmail String? @map("contact_email")
+  contactPhone String? @map("contact_phone")
+  supportEmail String? @map("support_email")
+
+  legalName      String? @map("legal_name")
+  addressLine1   String? @map("address_line1")
+  addressLine2   String? @map("address_line2")
+  addressZip     String? @map("address_zip")
+  addressCity    String? @map("address_city")
+  addressCountry String  @default("DE") @map("address_country")
+  vatId          String? @map("vat_id")
+
+  instagramUrl String? @map("instagram_url")
+  facebookUrl  String? @map("facebook_url")
+
+  /// Anzeigename im Absender (Resend/Mail); Fallback auf shopName.
+  emailFromName String? @map("email_from_name")
+
+  /// Öffentliche Asset-URLs (Object Storage ab Slice 2); null = Static-Fallback.
+  logoLightUrl String? @map("logo_light_url")
+  logoDarkUrl  String? @map("logo_dark_url")
+  faviconUrl   String? @map("favicon_url")
+  ogImageUrl   String? @map("og_image_url")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("shop_settings")
+}
+
 /// Gruppentermin (Epic 5). Kapazität und Holds werden über Zähler auf der Session geführt.
 model WorkshopSession {
   id                     String   @id @default(cuid())

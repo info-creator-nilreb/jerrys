@@ -11,6 +11,7 @@ import {
   Package,
   Percent,
   Search,
+  Settings,
   ShoppingBag,
   Store,
   Truck,
@@ -81,4 +82,8 @@ export function IconStorefront({ className }: { className?: string }) {
 
 export function IconWorkshops({ className }: { className?: string }) {
   return <CalendarDays className={className} aria-hidden strokeWidth={stroke} />;
+}
+
+export function IconSettings({ className }: { className?: string }) {
+  return <Settings className={className} aria-hidden strokeWidth={stroke} />;
 }

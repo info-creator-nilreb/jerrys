@@ -25,6 +25,15 @@ const nextConfig: NextConfig = {
         hostname: "www.paypalobjects.com",
         pathname: "/webstatic/**",
       },
+      /** Vercel Blob public URLs (ADR-0008 / Epic 11 Branding). */
+      {
+        protocol: "https",
+        hostname: "*.public.blob.vercel-storage.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.blob.vercel-storage.com",
+      },
     ],
   },
   async headers() {

@@ -3,6 +3,10 @@ import "dotenv/config";
 import { syncDefaultVariantFromProduct } from "../features/catalog";
 import { netCentsFromGross } from "../lib/catalog/pricing";
 import { getPrisma } from "../lib/db/prisma";
+import {
+  JERRYS_SHOP_SETTINGS_DEFAULTS,
+  SHOP_SETTINGS_DEFAULT_ID,
+} from "../lib/shop/shop-settings-defaults";
 
 async function syncDefaultVariantsForAllProducts(
   prisma: ReturnType<typeof getPrisma>,
@@ -95,6 +99,38 @@ async function main() {
       where: { id: "seed_mfr_jerrys" },
       create: { id: "seed_mfr_jerrys", name: "jerry's", sortOrder: 0 },
       update: { name: "jerry's", sortOrder: 0 },
+    });
+
+    const shopDefaults = JERRYS_SHOP_SETTINGS_DEFAULTS;
+    await prisma.shopSettings.upsert({
+      where: { id: SHOP_SETTINGS_DEFAULT_ID },
+      create: {
+        id: SHOP_SETTINGS_DEFAULT_ID,
+        shopName: shopDefaults.shopName,
+        shortDescription: shopDefaults.shortDescription,
+        primaryColor: shopDefaults.primaryColor,
+        primaryHoverColor: shopDefaults.primaryHoverColor,
+        contactEmail: shopDefaults.contactEmail,
+        contactPhone: shopDefaults.contactPhone,
+        supportEmail: shopDefaults.supportEmail,
+        legalName: shopDefaults.legalName,
+        addressLine1: shopDefaults.addressLine1,
+        addressLine2: shopDefaults.addressLine2,
+        addressZip: shopDefaults.addressZip,
+        addressCity: shopDefaults.addressCity,
+        addressCountry: shopDefaults.addressCountry,
+        vatId: shopDefaults.vatId,
+        instagramUrl: shopDefaults.instagramUrl,
+        facebookUrl: shopDefaults.facebookUrl,
+        emailFromName: shopDefaults.emailFromName,
+        logoLightUrl: shopDefaults.logoLightUrl,
+        logoDarkUrl: shopDefaults.logoDarkUrl,
+        faviconUrl: shopDefaults.faviconUrl,
+        ogImageUrl: shopDefaults.ogImageUrl,
+      },
+      update: {
+        // Bestehende Installationen nicht überschreiben — nur fehlende Zeile anlegen.
+      },
     });
 
     const tax = 19;
