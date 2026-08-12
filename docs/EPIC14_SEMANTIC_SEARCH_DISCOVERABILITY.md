@@ -24,6 +24,8 @@ Diese Funktionen bleiben als robuster Fallback erhalten.
 - CMS-Seiten aus Epic 12 in Sitemap/Canonical/Indexierungslogik integrieren
 - Rich Results und strukturierte Daten automatisiert testen
 
+**Status:** umgesetzt (Livegang-Paket). Siteweites JSON-LD (`SiteJsonLd`: Organization/OnlineStore + WebSite/SearchAction aus ShopSettings), BreadcrumbList an `StorefrontBreadcrumbs`, Product/Offer mit Brand-`@id`, Homepage-Metadata aus CMS, CMS-Seiten in Sitemap/`metadataForContentPage`/Brotkrümeln; Unit-Tests `tests/unit/structured-data.test.ts`.
+
 ### Slice 2 — Suchdokument und Index
 
 - öffentliches Suchdokument aus Produkttitel, Beschreibung, Kategorie, Attributen und Verfügbarkeit

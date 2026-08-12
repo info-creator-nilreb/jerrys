@@ -1,8 +1,22 @@
+import type { Metadata } from "next";
 import { ContentBlocksRenderer } from "@/components/content/content-blocks-renderer";
+import { metadataForContentPage } from "@/lib/content/content-page-metadata";
 import { getHomepageContentPage } from "@/lib/content/content-pages";
 import { storefrontMainPagePaddingClass } from "@/lib/storefront/page-below-header-padding";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Startseite: SEO/Canonical/Index aus published CMS-Homepage (Epic 12 / Epic 14 Slice 1).
+ * Fallback: Root-Metadata aus ShopSettings.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await getHomepageContentPage();
+  if (page?.status === "published") {
+    return metadataForContentPage(page);
+  }
+  return {};
+}
 
 /**
  * Startseite aus CMS (`pageType: homepage`, published).
