@@ -72,12 +72,16 @@ const mainNav: NavItem[] = [
         href: "/admin/products",
         label: "Produkte",
         isActivePath: (pathname) =>
-          pathname.startsWith("/admin/products") && !pathname.startsWith("/admin/products/import"),
+          pathname.startsWith("/admin/products") &&
+          !pathname.startsWith("/admin/products/shopify-import") &&
+          !pathname.startsWith("/admin/products/import"),
       },
       {
-        href: "/admin/products/import",
+        href: "/admin/products/shopify-import",
         label: "Shopify-Import",
-        isActivePath: (pathname) => pathname.startsWith("/admin/products/import"),
+        isActivePath: (pathname) =>
+          pathname.startsWith("/admin/products/shopify-import") ||
+          pathname.startsWith("/admin/products/import"),
       },
       {
         href: "/admin/collections",

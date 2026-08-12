@@ -3,35 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth/admin-session";
-import {
-  importShopifyProductsFromCsv,
-  type ShopifyImportProductResult,
-} from "@/features/catalog";
+import { importShopifyProductsFromCsv } from "@/features/catalog";
 import { DELIVERY_TIME_OPTIONS, type DeliveryTimeKey } from "@/lib/catalog/delivery-options";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
+import {
+  SHOPIFY_IMPORT_MAX_BYTES,
+  type ShopifyImportActionState,
+  type ShopifyImportAdminSummary,
+} from "@/app/admin/(dashboard)/products/shopify-import/import-shared";
 
 const log = createLogger("admin.shopify-import");
-
-/** Shopify-CSV-Uploads: bewusst unter typischen Server-Action-Limits. */
-export const SHOPIFY_IMPORT_MAX_BYTES = 5 * 1024 * 1024;
-
-export type ShopifyImportAdminSummary = {
-  mode: "dry-run" | "apply";
-  productCount: number;
-  validCount: number;
-  invalidCount: number;
-  createdCount: number;
-  updatedCount: number;
-  skippedCount: number;
-  dbChecked: boolean;
-  products: ShopifyImportProductResult[];
-};
-
-export type ShopifyImportActionState = {
-  error?: string;
-  ok?: boolean;
-  summary?: ShopifyImportAdminSummary;
-} | null;
 
 async function requireAdminSession(): Promise<void> {
   const session = await getAdminSession();
@@ -68,7 +49,11 @@ async function readCsvFromFormData(
     return { error: "Bitte eine Shopify-Produkt-CSV auswählen." };
   }
   const name = file.name.toLowerCase();
-  if (!name.endsWith(".csv") && file.type !== "text/csv" && file.type !== "application/vnd.ms-excel") {
+  if (
+    !name.endsWith(".csv") &&
+    file.type !== "text/csv" &&
+    file.type !== "application/vnd.ms-excel"
+  ) {
     return { error: "Nur CSV-Dateien werden unterstützt." };
   }
   if (file.size > SHOPIFY_IMPORT_MAX_BYTES) {
@@ -159,7 +144,6 @@ export async function applyShopifyCsvImport(
   const updateExisting = parseUpdateExisting(formData);
 
   try {
-    // Erst Dry-Run: bei Validierungsfehlern nichts schreiben
     const preview = await importShopifyProductsFromCsv(csv.text, {
       mode: "dry-run",
       updateExisting,

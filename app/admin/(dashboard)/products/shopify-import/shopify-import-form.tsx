@@ -1,16 +1,18 @@
 "use client";
 
-import { useId, useRef, useState, useTransition } from "react";
+import { useCallback, useId, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { FileUp, LoaderCircle } from "lucide-react";
 import { DELIVERY_TIME_OPTIONS } from "@/lib/catalog/delivery-options";
 import {
   applyShopifyCsvImport,
   previewShopifyCsvImport,
+} from "@/app/admin/(dashboard)/products/shopify-import/actions";
+import {
   SHOPIFY_IMPORT_MAX_BYTES,
   type ShopifyImportActionState,
   type ShopifyImportAdminSummary,
-} from "@/app/admin/(dashboard)/products/import/actions";
+} from "@/app/admin/(dashboard)/products/shopify-import/import-shared";
 
 function statusLabel(status: string): string {
   switch (status) {
@@ -163,10 +165,23 @@ function buildImportFormData(opts: {
   return fd;
 }
 
+function pickCsvFile(list: FileList | File[] | null): File | null {
+  if (!list || list.length === 0) return null;
+  const file = list[0]!;
+  const name = file.name.toLowerCase();
+  const okType =
+    name.endsWith(".csv") ||
+    file.type === "text/csv" ||
+    file.type === "application/vnd.ms-excel" ||
+    file.type === "";
+  return okType ? file : null;
+}
+
 export function ShopifyImportForm() {
   const formId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [dragOver, setDragOver] = useState(false);
   const [taxRatePercent, setTaxRatePercent] = useState("19");
   const [deliveryTimeKey, setDeliveryTimeKey] = useState("2-4-werktage");
   const [updateExisting, setUpdateExisting] = useState(false);
@@ -183,6 +198,22 @@ export function ShopifyImportForm() {
     (summary?.validCount ?? 0) > 0 &&
     !applyDone &&
     file != null;
+
+  const assignFile = useCallback((next: File | null, invalidMessage?: string) => {
+    if (!next) {
+      if (invalidMessage) setState({ error: invalidMessage });
+      return;
+    }
+    if (next.size > SHOPIFY_IMPORT_MAX_BYTES) {
+      setState({
+        error: `Datei zu groß (max. ${Math.round(SHOPIFY_IMPORT_MAX_BYTES / (1024 * 1024))} MB).`,
+      });
+      return;
+    }
+    setFile(next);
+    setState(null);
+    setConfirmApply(false);
+  }, []);
 
   function runPreview() {
     if (!file) {
@@ -229,21 +260,70 @@ export function ShopifyImportForm() {
             Shopify-Produkt-CSV
           </label>
           <div
-            className={`mt-2 flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-10 ${
-              pending ? "border-[#d1d5db] bg-[#f3f4f6]" : "border-[#d1d5db] bg-[#f9fafb]"
+            role="button"
+            tabIndex={0}
+            aria-label="CSV-Datei per Drag-and-Drop ablegen oder auswählen"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
+            onClick={() => {
+              if (!pending) fileInputRef.current?.click();
+            }}
+            onDragEnter={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!pending) setDragOver(true);
+            }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!pending) setDragOver(true);
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setDragOver(false);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setDragOver(false);
+              if (pending) return;
+              const picked = pickCsvFile(e.dataTransfer.files);
+              assignFile(
+                picked,
+                picked ? undefined : "Bitte eine CSV-Datei ablegen (.csv).",
+              );
+            }}
+            className={`mt-2 flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-10 transition-colors ${
+              pending
+                ? "cursor-not-allowed border-[#d1d5db] bg-[#f3f4f6]"
+                : dragOver
+                  ? "cursor-pointer border-primary bg-primary/5"
+                  : "cursor-pointer border-[#d1d5db] bg-[#f9fafb] hover:border-primary/50"
             }`}
           >
-            <FileUp className="size-8 text-[#9ca3af]" aria-hidden />
+            <FileUp
+              className={`size-8 ${dragOver ? "text-primary" : "text-[#9ca3af]"}`}
+              aria-hidden
+            />
             <p className="mt-3 text-center text-sm text-[#6b7280]">
-              Export aus Shopify Admin → Products → Export
+              CSV hierher ziehen oder Datei auswählen
             </p>
             <p className="mt-1 text-center text-xs text-[#9ca3af]">
-              Max. {Math.round(SHOPIFY_IMPORT_MAX_BYTES / (1024 * 1024))} MB · .csv
+              Shopify Admin → Products → Export · max.{" "}
+              {Math.round(SHOPIFY_IMPORT_MAX_BYTES / (1024 * 1024))} MB · .csv
             </p>
             <button
               type="button"
               disabled={pending}
-              onClick={() => fileInputRef.current?.click()}
+              onClick={(e) => {
+                e.stopPropagation();
+                fileInputRef.current?.click();
+              }}
               className="mt-4 rounded-md border border-[#e3e4e8] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb] disabled:opacity-50"
             >
               Datei auswählen
@@ -255,10 +335,12 @@ export function ShopifyImportForm() {
               accept=".csv,text/csv"
               className="sr-only"
               onChange={(e) => {
-                const f = e.target.files?.[0] ?? null;
-                setFile(f);
-                setState(null);
-                setConfirmApply(false);
+                const picked = pickCsvFile(e.target.files);
+                assignFile(
+                  picked,
+                  picked ? undefined : "Bitte eine CSV-Datei wählen (.csv).",
+                );
+                e.target.value = "";
               }}
             />
             {file ? (

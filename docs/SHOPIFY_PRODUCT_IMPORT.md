@@ -85,14 +85,15 @@ Dry-Run schreibt nichts. `--apply` ohne `--update`: bestehende Slugs/SKUs **übe
 
 ## Admin-UI
 
-Unter **Katalog → Shopify-Import** (`/admin/products/import`):
+Unter **Katalog → Shopify-Import** (`/admin/products/shopify-import`):
 
-1. CSV hochladen (max. 5 MB).
+1. CSV hochladen oder per Drag-and-Drop ablegen (max. 5 MB).
 2. Steuersatz / Lieferzeit / „Bestehende aktualisieren“ wählen.
 3. **Vorschau prüfen** (Dry-Run inkl. DB-Slug-Check).
 4. Bestätigen → **Import starten** (schreibt nur bei 0 ungültigen Produkten).
 
 Dieselbe Application-Schicht wie die CLI (`importShopifyProductsFromCsv`).
+Alte URL `/admin/products/import` leitet um.
 
 ## CLI
 
