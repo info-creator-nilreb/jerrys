@@ -3,7 +3,7 @@
 import { Plus, Trash2 } from "lucide-react";
 import { useId, useState } from "react";
 import type { ProductFormState } from "@/app/admin/(dashboard)/products/actions";
-import type { ProductAttribute } from "@/features/catalog/domain/product-attributes";
+import type { ProductAttribute } from "@/features/catalog";
 
 type Row = {
   clientId: string;

@@ -6,7 +6,7 @@ import {
   normalizeProductAttributes,
   reconcileAttributesAndFeatureBullets,
   type ProductAttribute,
-} from "@/features/catalog/domain/product-attributes";
+} from "@/features/catalog";
 
 export type PdpProductFamily = "pet" | "jewelry" | "general";
 

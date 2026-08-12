@@ -2,7 +2,7 @@ import type { getProductByIdForAdmin } from "@/lib/catalog/queries";
 import {
   normalizeProductAttributes,
   reconcileAttributesAndFeatureBullets,
-} from "@/features/catalog/domain/product-attributes";
+} from "@/features/catalog";
 
 type AdminProductRecord = NonNullable<Awaited<ReturnType<typeof getProductByIdForAdmin>>>;
 
