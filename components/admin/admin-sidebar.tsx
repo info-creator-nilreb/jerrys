@@ -110,7 +110,27 @@ const mainNav: NavItem[] = [
   },
   { href: "/admin/promotions", label: "Promotions", icon: IconPromotions },
   { href: "/admin/versand", label: "Versand", icon: IconShipping },
-  { href: "/admin/einstellungen", label: "Einstellungen", icon: IconSettings },
+  {
+    href: "/admin/einstellungen",
+    label: "Einstellungen",
+    icon: IconSettings,
+    isActivePath: (pathname) => pathname.startsWith("/admin/einstellungen"),
+    children: [
+      {
+        href: "/admin/einstellungen",
+        label: "Shop",
+        isActivePath: (pathname) =>
+          pathname === "/admin/einstellungen" ||
+          (pathname.startsWith("/admin/einstellungen/") &&
+            !pathname.startsWith("/admin/einstellungen/integrationen")),
+      },
+      {
+        href: "/admin/einstellungen/integrationen",
+        label: "Integrationen",
+        isActivePath: (pathname) => pathname.startsWith("/admin/einstellungen/integrationen"),
+      },
+    ],
+  },
 ];
 
 function userInitials(name: string, email: string): string {

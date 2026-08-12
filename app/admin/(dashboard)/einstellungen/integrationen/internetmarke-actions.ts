@@ -112,13 +112,13 @@ export async function saveInternetmarkeCredentialsAction(
         ? String((e as { responseBody?: string }).responseBody ?? "").slice(0, 160)
         : "";
     await markInternetmarkeConnectionError(msg);
-    revalidatePath("/admin/versand");
+    revalidatePath("/admin/einstellungen/integrationen");
     return {
       error: detail ? `${msg} Antwort: ${detail}` : msg,
     };
   }
 
-  revalidatePath("/admin/versand");
+  revalidatePath("/admin/einstellungen/integrationen");
   revalidatePath("/admin/orders");
   return {
     ok: true,
@@ -189,7 +189,7 @@ export async function selectInternetmarkeProductAction(
     productNameSnapshot: product.name,
   });
 
-  revalidatePath("/admin/versand");
+  revalidatePath("/admin/einstellungen/integrationen");
   revalidatePath("/admin/orders");
   return {
     ok: true,
@@ -203,7 +203,7 @@ export async function disconnectInternetmarkeAction(
 ): Promise<InternetmarkeAdminActionState> {
   await requireAdmin();
   const ok = await disconnectInternetmarkeConnection();
-  revalidatePath("/admin/versand");
+  revalidatePath("/admin/einstellungen/integrationen");
   revalidatePath("/admin/orders");
   return ok
     ? { ok: true, message: "Internetmarke-Verbindung entfernt." }

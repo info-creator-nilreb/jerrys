@@ -192,7 +192,7 @@ Siehe auch [EPIC4_RECONCILIATION.md](./EPIC4_RECONCILIATION.md).
 
 Symptoms: Admin/Command liefert `not_configured` oder `provider_rejected`; Logs mit INTERNETMARKE 401/4xx.
 
-1. Primär: **Admin → Versand → Internetmarke** — Credentials verschlüsselt in DB; Produkt aus Products API wählen (nicht manuell tippen). Optional Env-Fallback `INTERNETMARKE_*`.
+1. Primär: **Admin → Einstellungen → Integrationen → Internetmarke** — Credentials verschlüsselt in DB; Produkt aus Products API wählen (nicht manuell tippen). App-Credentials nur per Env `INTERNETMARKE_CLIENT_ID` / `INTERNETMARKE_CLIENT_SECRET`.
 2. Ohne Verbindung/Produkt: Adapter ist `not_configured` — manueller Versand bleibt möglich.
 3. **401 beim Token (`POST /user`):** Portokasse „Meine Daten → Geschäftsanwendungen“ freigeben; Entwickler-Portokasse ggf. via `it-csp@deutschepost.de`.
 4. Preise: beim Label-Kauf wird der Cent-Preis für das gewählte Produkt aus der Products API aktualisiert.

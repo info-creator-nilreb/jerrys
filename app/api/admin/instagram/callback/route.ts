@@ -28,8 +28,8 @@ function siteBase(): string {
   return getInstagramAdminSiteBase();
 }
 
-function marketingRedirect(query: Record<string, string>): NextResponse {
-  const url = new URL("/admin/inhalte/marketing", siteBase());
+function integrationsRedirect(query: Record<string, string>): NextResponse {
+  const url = new URL("/admin/einstellungen/integrationen", siteBase());
   for (const [k, v] of Object.entries(query)) url.searchParams.set(k, v);
   const res = NextResponse.redirect(url);
   res.cookies.set(INSTAGRAM_OAUTH_STATE_COOKIE, "", {
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
   const err = req.nextUrl.searchParams.get("error");
   if (err) {
     const desc = req.nextUrl.searchParams.get("error_description") ?? err;
-    return marketingRedirect({ ig: "error", msg: desc });
+    return integrationsRedirect({ ig: "error", msg: desc });
   }
 
   let code = req.nextUrl.searchParams.get("code") ?? "";
@@ -58,13 +58,13 @@ export async function GET(req: NextRequest) {
   const cookieState = req.cookies.get(INSTAGRAM_OAUTH_STATE_COOKIE)?.value;
 
   if (!code) {
-    return marketingRedirect({
+    return integrationsRedirect({
       ig: "error",
       msg: "Kein Autorisierungscode von Meta/Instagram.",
     });
   }
   if (!state || state !== cookieState || !verifyInstagramOAuthState(state)) {
-    return marketingRedirect({
+    return integrationsRedirect({
       ig: "error",
       msg: "OAuth-State ungültig oder abgelaufen. Bitte erneut verbinden.",
     });
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
 
   const config = getInstagramAppConfig();
   if (!config) {
-    return marketingRedirect({
+    return integrationsRedirect({
       ig: "error",
       msg: "Instagram App nicht konfiguriert.",
     });
@@ -123,18 +123,18 @@ export async function GET(req: NextRequest) {
     const sync = await syncInstagramMediaFeed();
     const connLabel = mode === "facebook" ? "Facebook/Instagram" : "Instagram";
     if (!sync.ok) {
-      return marketingRedirect({
+      return integrationsRedirect({
         ig: "connected",
         msg: `Verbunden (${connLabel}), aber Sync: ${sync.error}`,
       });
     }
-    return marketingRedirect({
+    return integrationsRedirect({
       ig: "connected",
       msg: `Verbunden (${connLabel}). ${sync.synced} Bilder synchronisiert.`,
     });
   } catch (e) {
     log.error("instagram_oauth_callback_failed", errorMeta(e));
-    return marketingRedirect({
+    return integrationsRedirect({
       ig: "error",
       msg: e instanceof Error ? e.message : "Verbindung fehlgeschlagen.",
     });

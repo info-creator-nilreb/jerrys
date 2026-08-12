@@ -8,7 +8,7 @@ import {
   saveInternetmarkeCredentialsAction,
   selectInternetmarkeProductAction,
   type InternetmarkeAdminActionState,
-} from "@/app/admin/(dashboard)/versand/internetmarke-actions";
+} from "@/app/admin/(dashboard)/einstellungen/integrationen/internetmarke-actions";
 
 type ProductOption = {
   productCode: number;

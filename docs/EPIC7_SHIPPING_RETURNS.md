@@ -13,6 +13,7 @@ Admins erzeugen Sendungen zu bezahlten Warenbestellungen, kaufen/voiden Labels (
 | Thema | Hinweis |
 | --- | --- |
 | `/admin/versand` | Bleibt **Versandkosten/Länder** (Checkout) — kein Label-UI |
+| `/admin/einstellungen/integrationen` | Internetmarke-Credentials + Porto-Produkt; Instagram-OAuth |
 | Manueller Versand heute | Carrier + Tracking auf Order-Status `shipped` bleibt bis Sync-Slice gültig |
 | Workshops | Keine Pflicht-Sendung für reine Terminbuchungen |
 | Provider-HTTP | Erst mit Credentials (Slice 2+) |

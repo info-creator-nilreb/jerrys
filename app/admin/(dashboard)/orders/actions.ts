@@ -366,7 +366,7 @@ export async function purchaseInternetmarkeLabelForOrderAction(
   if (!(await isInternetmarkeConfigured())) {
     return {
       error:
-        "INTERNETMARKE ist nicht konfiguriert. Unter Admin → Versand verbinden und ein Porto-Produkt wählen.",
+        "INTERNETMARKE ist nicht konfiguriert. Unter Admin → Einstellungen → Integrationen verbinden und ein Porto-Produkt wählen.",
     };
   }
 

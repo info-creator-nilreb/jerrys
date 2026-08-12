@@ -25,6 +25,7 @@ export async function disconnectInstagramAction(
   if (!(await requireAdmin())) return { error: "Nicht angemeldet." };
   try {
     await disconnectInstagramConnection();
+    revalidatePath("/admin/einstellungen/integrationen");
     revalidatePath("/admin/inhalte/marketing");
     revalidatePath("/");
     return { ok: true, message: "Instagram-Verbindung getrennt." };
@@ -41,6 +42,7 @@ export async function syncInstagramNowAction(
   void formData;
   if (!(await requireAdmin())) return { error: "Nicht angemeldet." };
   const result = await syncInstagramMediaFeed();
+  revalidatePath("/admin/einstellungen/integrationen");
   revalidatePath("/admin/inhalte/marketing");
   revalidatePath("/");
   if (!result.ok) return { error: result.error };

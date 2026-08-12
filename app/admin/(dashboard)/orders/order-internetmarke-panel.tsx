@@ -132,8 +132,11 @@ export function OrderInternetmarkePanel({
       {!configured ? (
         <p className="text-sm text-[#6b7280]">
           Nicht konfiguriert. Unter{" "}
-          <a href="/admin/versand" className="font-medium text-primary hover:underline">
-            Admin → Versand
+          <a
+            href="/admin/einstellungen/integrationen"
+            className="font-medium text-primary hover:underline"
+          >
+            Admin → Einstellungen → Integrationen
           </a>{" "}
           verbinden und ein Porto-Produkt aus der DHL-Liste wählen. Manueller Versand bleibt möglich.
         </p>
