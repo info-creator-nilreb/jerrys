@@ -193,6 +193,19 @@ export default async function ProduktDetailPage({
 
               <ProductPdpUspRow usps={display.usps} />
 
+              {product.showWorkshopCalendar ? (
+                <div className="mt-6 border-t border-(--surface-muted) pt-6">
+                  <WorkshopSessionList
+                    density="embed"
+                    showHeader
+                    title="Kommende Termine"
+                    intro="Termin wählen — Details und Buchung auf der Terminseite."
+                    headingId={`pdp-workshop-sessions-${product.slug}`}
+                    limit={6}
+                  />
+                </div>
+              ) : null}
+
               <ProductPdpPurchasePanel
                 productId={product.id}
                 currency={product.currency}
@@ -204,17 +217,6 @@ export default async function ProduktDetailPage({
           </div>
         </div>
       </div>
-
-      {product.showWorkshopCalendar ? (
-        <div className="mx-auto max-w-3xl px-4 pb-12 pt-2">
-          <WorkshopSessionList
-            density="embed"
-            showHeader
-            title="Kommende Termine"
-            limit={6}
-          />
-        </div>
-      ) : null}
 
       <ProductPdpTrustFooterBar
         freeShippingFromSubtotalGrossCents={shopShip.freeShippingFromSubtotalGrossCents}
