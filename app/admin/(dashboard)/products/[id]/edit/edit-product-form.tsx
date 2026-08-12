@@ -223,6 +223,11 @@ export function EditProductForm({
             </button>
           </div>
           {state?.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+          {state?.fieldErrors && Object.keys(state.fieldErrors).length > 0 && !state.error ? (
+            <p className="text-sm text-red-600" role="alert">
+              Speichern fehlgeschlagen — bitte markierte Felder prüfen.
+            </p>
+          ) : null}
           {savedFlash ? (
             <p className="text-sm font-medium text-primary" role="status">
               Änderungen gespeichert.

@@ -269,6 +269,7 @@ export async function updateProduct(
     featureBullets: String(formData.get("featureBullets") ?? ""),
     attributes: attributesFromFormData(formData),
     isBestseller: formData.get("isBestseller") === "on",
+    showWorkshopCalendar: formData.get("showWorkshopCalendar") === "on",
     isActive: parseIsActiveFromFormData(formData),
     categoryIds: formData.getAll("categoryIds"),
     primaryCategoryId: formData.get("primaryCategoryId"),
