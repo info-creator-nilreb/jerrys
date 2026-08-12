@@ -20,6 +20,12 @@ export default async function AdminProductsPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
+            href="/admin/products/import"
+            className="rounded-md border border-[#e3e4e8] px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
+          >
+            Shopify-Import
+          </Link>
+          <Link
             href="/admin/collections"
             className="rounded-md border border-[#e3e4e8] px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
           >

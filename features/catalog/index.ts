@@ -23,4 +23,5 @@ export {
   importShopifyProductsFromCsv,
   type ShopifyImportOptions,
   type ShopifyImportReport,
+  type ShopifyImportProductResult,
 } from "@/features/catalog/application/import-shopify-csv";

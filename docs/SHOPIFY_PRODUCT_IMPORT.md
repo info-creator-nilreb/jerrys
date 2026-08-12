@@ -83,6 +83,17 @@ Erste verkaufbare Variante (oder einzige / Default Title) → `isDefault: true`.
 
 Dry-Run schreibt nichts. `--apply` ohne `--update`: bestehende Slugs/SKUs **überspringen**. Mit `--update`: Commerce-Felder und Content überschreiben.
 
+## Admin-UI
+
+Unter **Katalog → Shopify-Import** (`/admin/products/import`):
+
+1. CSV hochladen (max. 5 MB).
+2. Steuersatz / Lieferzeit / „Bestehende aktualisieren“ wählen.
+3. **Vorschau prüfen** (Dry-Run inkl. DB-Slug-Check).
+4. Bestätigen → **Import starten** (schreibt nur bei 0 ungültigen Produkten).
+
+Dieselbe Application-Schicht wie die CLI (`importShopifyProductsFromCsv`).
+
 ## CLI
 
 ```bash
@@ -105,4 +116,3 @@ npm run catalog:import-shopify -- --file ./shopify-products.csv --apply --update
 2. Medien-Pipeline nach Blob (ADR 0008).
 3. Shopify GraphQL statt CSV (gleiche Mapper-Schicht).
 4. Redirect-Tabelle alter Storefront-URLs.
-5. Admin-UI nur als Thin Wrapper um denselben Application-Service.
