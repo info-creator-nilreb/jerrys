@@ -75,19 +75,20 @@ describe("resolvePdpDisplay", () => {
     expect(d.usps).toEqual([]);
   });
 
-  it("nutzt Pfoten-Icon nur bei Tier-Familie", () => {
+  it("zieht Herkunft aus alten Stichpunkten als Merkmal", () => {
     const d = resolvePdpDisplay({
-      slug: "design-katzenhoehle",
-      title: "Design Katzenhöhle",
+      slug: "ring",
+      title: "Ring Shell",
       leadText: null,
-      dimensionsText: "50 cm",
+      dimensionsText: null,
       weightText: null,
       materialText: null,
-      featureBullets: ["Stabil & langlebig"],
+      featureBullets: ["Herkunft: Deutschland"],
       attributes: [],
     });
-    expect(d.family).toBe("pet");
-    expect(d.propertiesIcon).toBe("paw");
-    expect(d.usps.some((u) => u.title === "Stabil & langlebig")).toBe(true);
+    expect(d.propertySpecs.some((s) => s.label === "Herkunft" && s.value === "Deutschland")).toBe(
+      true,
+    );
+    expect(d.propertyLines).toEqual([]);
   });
 });

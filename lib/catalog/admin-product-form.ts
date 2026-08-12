@@ -1,5 +1,8 @@
 import type { getProductByIdForAdmin } from "@/lib/catalog/queries";
-import { normalizeProductAttributes } from "@/features/catalog/domain/product-attributes";
+import {
+  normalizeProductAttributes,
+  reconcileAttributesAndFeatureBullets,
+} from "@/features/catalog/domain/product-attributes";
 
 type AdminProductRecord = NonNullable<Awaited<ReturnType<typeof getProductByIdForAdmin>>>;
 
@@ -10,7 +13,10 @@ export function adminProductForEditForm(product: AdminProductRecord) {
     throw new Error(`Produkt ${product.id} hat keine Default-Variante.`);
   }
 
-  const attributes = normalizeProductAttributes(product.attributes);
+  const reconciled = reconcileAttributesAndFeatureBullets(
+    normalizeProductAttributes(product.attributes),
+    product.featureBullets,
+  );
 
   return {
     id: product.id,
@@ -46,8 +52,8 @@ export function adminProductForEditForm(product: AdminProductRecord) {
     dimensionsText: product.dimensionsText,
     weightText: product.weightText,
     materialText: product.materialText,
-    featureBullets: product.featureBullets,
-    attributes,
+    featureBullets: reconciled.featureBullets,
+    attributes: reconciled.attributes,
     currency: product.currency,
     images: product.images,
     variants: product.variants.map((v) => ({

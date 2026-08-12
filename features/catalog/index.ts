@@ -26,6 +26,9 @@ export {
   parseAttributesFormText,
   attributesFromFormData,
   slugifyAttributeKey,
+  preferredAttributeKeyForLabel,
+  splitFeatureBulletsAndAttributes,
+  reconcileAttributesAndFeatureBullets,
   type ProductAttribute,
 } from "@/features/catalog/domain/product-attributes";
 export {

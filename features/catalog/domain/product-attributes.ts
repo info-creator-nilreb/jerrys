@@ -243,10 +243,93 @@ export function attributesFromFormData(formData: FormData): ProductAttribute[] {
     const values = parseAttributeValues(valuesRaw[i] ?? "");
     if (!label || values.length === 0) continue;
     let key = (keys[i] ?? "").trim().slice(0, MAX_KEY);
-    if (!key) key = slugifyAttributeKey(label);
+    if (!key) key = preferredAttributeKeyForLabel(label);
     attrs.push({ key, label, values });
   }
   return normalizeProductAttributes(attrs);
+}
+
+/** Bekannte Labels → stabile Shopify-/Custom-Keys (Import-kompatibel). */
+const LABEL_KEY_ALIASES: Record<string, string> = {
+  herkunft: "custom.herstellungsland",
+  herstellungsland: "custom.herstellungsland",
+  farbe: "custom.farbe",
+  material: "custom.material",
+  maße: "custom.ma_e",
+  masse: "custom.ma_e",
+  gewicht: "custom.gewicht",
+};
+
+export function preferredAttributeKeyForLabel(label: string): string {
+  const norm = label
+    .trim()
+    .toLowerCase()
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss");
+  const compact = norm.replace(/\s+/g, "");
+  if (LABEL_KEY_ALIASES[compact] || LABEL_KEY_ALIASES[norm]) {
+    return LABEL_KEY_ALIASES[compact] ?? LABEL_KEY_ALIASES[norm]!;
+  }
+  // ohne Umlaute-Ersetzung nochmal für „maße“
+  const raw = label.trim().toLowerCase();
+  if (raw === "maße" || raw === "masse") return "custom.ma_e";
+  if (raw === "herkunft" || raw === "herstellungsland") return "custom.herstellungsland";
+  if (raw === "farbe") return "custom.farbe";
+  if (raw === "material") return "custom.material";
+  return slugifyAttributeKey(label);
+}
+
+/**
+ * Trennt freie Stichpunkte von „Label: Wert“-Zeilen (die gehören zu Merkmalen).
+ */
+export function splitFeatureBulletsAndAttributes(bullets: string[]): {
+  freeBullets: string[];
+  attributes: ProductAttribute[];
+} {
+  const freeBullets: string[] = [];
+  const attrs: ProductAttribute[] = [];
+  for (const raw of bullets) {
+    const line = raw.trim();
+    if (!line) continue;
+    const colon = line.indexOf(":");
+    // Freie Stichpunkte haben i. d. R. keinen Label-Präfix
+    if (colon <= 0 || colon > 60) {
+      freeBullets.push(line.slice(0, 200));
+      continue;
+    }
+    const label = line.slice(0, colon).trim();
+    const values = parseAttributeValues(line.slice(colon + 1));
+    // Kein sinnvolles Label (z. B. URLs) → Stichpunkt belassen
+    if (!label || values.length === 0 || /\s{2,}/.test(label) || label.length > 40) {
+      freeBullets.push(line.slice(0, 200));
+      continue;
+    }
+    attrs.push({
+      key: preferredAttributeKeyForLabel(label),
+      label: label.slice(0, MAX_LABEL),
+      values,
+    });
+  }
+  return {
+    freeBullets: freeBullets.slice(0, 20),
+    attributes: normalizeProductAttributes(attrs),
+  };
+}
+
+/**
+ * Merkmale + Stichpunkte zusammenführen: strukturierte Zeilen wandern zu Merkmalen.
+ */
+export function reconcileAttributesAndFeatureBullets(
+  attributes: ProductAttribute[],
+  featureBullets: string[],
+): { attributes: ProductAttribute[]; featureBullets: string[] } {
+  const split = splitFeatureBulletsAndAttributes(featureBullets);
+  return {
+    attributes: mergeProductAttributes(attributes, split.attributes),
+    featureBullets: split.freeBullets,
+  };
 }
 
 /** Technische System-SKU wenn Shopify keine SKU liefert (nicht aus Titel/Handle). */

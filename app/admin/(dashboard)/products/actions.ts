@@ -9,7 +9,10 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getAdminSession } from "@/lib/auth/admin-session";
 import { syncDefaultVariantFromProduct } from "@/features/catalog";
-import { attributesFromFormData } from "@/features/catalog/domain/product-attributes";
+import {
+  attributesFromFormData,
+  reconcileAttributesAndFeatureBullets,
+} from "@/features/catalog/domain/product-attributes";
 import { replaceProductCategoryMemberships } from "@/lib/catalog/category-membership";
 import { productCategoryAssignmentSchema } from "@/lib/catalog/category-schemas";
 import { parseEuroInputToCents } from "@/lib/catalog/format";
@@ -145,6 +148,7 @@ export async function createProduct(
   }
 
   const d = parsed.data;
+  const reconciled = reconcileAttributesAndFeatureBullets(d.attributes, d.featureBullets);
   const mainGross = parseEuroInputToCents(d.priceGrossEuro)!;
   const mainNet = parseEuroInputToCents(d.priceNetEuro)!;
   const listGross = d.listPriceGrossEuro.trim() === "" ? null : parseEuroInputToCents(d.listPriceGrossEuro);
@@ -190,8 +194,8 @@ export async function createProduct(
           dimensionsText: d.dimensionsText,
           weightText: d.weightText,
           materialText: d.materialText,
-          featureBullets: d.featureBullets,
-          attributes: d.attributes,
+          featureBullets: reconciled.featureBullets,
+          attributes: reconciled.attributes,
           ...amazon,
           images: {
             create: [
@@ -294,6 +298,7 @@ export async function updateProduct(
     d.primaryCategoryId && categoryIds.includes(d.primaryCategoryId)
       ? d.primaryCategoryId
       : null;
+  const reconciled = reconcileAttributesAndFeatureBullets(d.attributes, d.featureBullets);
   const mainGross = parseEuroInputToCents(d.priceGrossEuro)!;
   const mainNet = parseEuroInputToCents(d.priceNetEuro)!;
   const listGross = d.listPriceGrossEuro.trim() === "" ? null : parseEuroInputToCents(d.listPriceGrossEuro);
@@ -350,8 +355,8 @@ export async function updateProduct(
           dimensionsText: d.dimensionsText,
           weightText: d.weightText,
           materialText: d.materialText,
-          featureBullets: d.featureBullets,
-          attributes: d.attributes,
+          featureBullets: reconciled.featureBullets,
+          attributes: reconciled.attributes,
           ...amazon,
         },
       });

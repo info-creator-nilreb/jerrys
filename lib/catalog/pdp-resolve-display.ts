@@ -2,7 +2,11 @@
  * PDP-Anzeige aus Stammdaten — keine produktfremden Hardcodes (z. B. Katzenhöhle-USPs).
  */
 
-import { normalizeProductAttributes, type ProductAttribute } from "@/features/catalog/domain/product-attributes";
+import {
+  normalizeProductAttributes,
+  reconcileAttributesAndFeatureBullets,
+  type ProductAttribute,
+} from "@/features/catalog/domain/product-attributes";
 
 export type PdpProductFamily = "pet" | "jewelry" | "general";
 
@@ -151,7 +155,11 @@ export function resolvePdpDisplay(product: {
   categoryTitles?: string[];
   categorySlugs?: string[];
 }): PdpResolvedDisplay {
-  const attributes = normalizeProductAttributes(product.attributes);
+  const reconciled = reconcileAttributesAndFeatureBullets(
+    normalizeProductAttributes(product.attributes),
+    product.featureBullets,
+  );
+  const attributes = reconciled.attributes;
   const family = resolvePdpProductFamily({
     title: product.title,
     slug: product.slug,
@@ -204,11 +212,7 @@ export function resolvePdpDisplay(product: {
   }
 
   const propertySpecs: PdpResolvedSpec[] = [];
-  const propertyLines: string[] = [];
-  for (const line of product.featureBullets) {
-    const t = line.trim();
-    if (t) propertyLines.push(t);
-  }
+  const propertyLines: string[] = [...reconciled.featureBullets];
 
   for (const attr of attributes) {
     if (usedAttrKeys.has(attr.key)) continue;
@@ -252,7 +256,7 @@ export function resolvePdpDisplay(product: {
   }
 
   // Weitere USPs aus kurzen Feature-Bullets (nicht aus „Label: Wert“-Merkmalen)
-  for (const line of product.featureBullets) {
+  for (const line of reconciled.featureBullets) {
     if (usps.length >= 3) break;
     const t = line.trim();
     if (!t || t.includes(":")) continue;

@@ -5,7 +5,9 @@ import {
   extractAttributesFromShopifyRow,
   parseAttributesFormText,
   parseMetafieldHeader,
+  reconcileAttributesAndFeatureBullets,
   slugifyAttributeKey,
+  splitFeatureBulletsAndAttributes,
   technicalImportSku,
 } from "@/features/catalog/domain/product-attributes";
 
@@ -65,6 +67,33 @@ describe("product-attributes", () => {
 
   it("slugifyAttributeKey erzeugt custom.* Keys", () => {
     expect(slugifyAttributeKey("Schmuckmaterial")).toBe("custom.schmuckmaterial");
+  });
+
+  it("wandelt Herkunft-Stichpunkt in Merkmal um", () => {
+    const { freeBullets, attributes } = splitFeatureBulletsAndAttributes([
+      "Herkunft: Deutschland",
+      "Stabil & langlebig",
+    ]);
+    expect(freeBullets).toEqual(["Stabil & langlebig"]);
+    expect(attributes).toEqual([
+      {
+        key: "custom.herstellungsland",
+        label: "Herkunft",
+        values: ["Deutschland"],
+      },
+    ]);
+  });
+
+  it("reconcile merged Merkmale und bereinigt Stichpunkte", () => {
+    const r = reconcileAttributesAndFeatureBullets(
+      [{ key: "custom.farbe", label: "Farbe", values: ["gold"] }],
+      ["Herkunft: Deutschland", "Handgemacht"],
+    );
+    expect(r.featureBullets).toEqual(["Handgemacht"]);
+    expect(r.attributes.map((a) => a.key).sort()).toEqual([
+      "custom.farbe",
+      "custom.herstellungsland",
+    ]);
   });
 
   it("erzeugt technische SKU ohne Produktname", () => {

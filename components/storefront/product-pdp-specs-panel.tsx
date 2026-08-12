@@ -128,7 +128,7 @@ export function ProductPdpSpecsPanel({ display }: { display: PdpResolvedDisplay 
                 </span>
                 <div>
                   <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-(--foreground-heading)">
-                    Eigenschaften
+                    Stichpunkte
                   </p>
                   <ul className="mt-2.5 space-y-2 text-sm leading-snug text-(--foreground-muted)">
                     {display.propertyLines.map((line, i) => (
