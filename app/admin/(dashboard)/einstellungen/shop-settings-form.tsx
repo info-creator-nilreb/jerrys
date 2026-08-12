@@ -1,6 +1,7 @@
 "use client";
 
 import { Facebook, Instagram } from "lucide-react";
+import Link from "next/link";
 import { useActionState, useMemo, useState, type ReactNode } from "react";
 import {
   saveShopSettingsAction,
@@ -217,6 +218,97 @@ export function ShopSettingsForm({ defaults }: Props) {
             </p>
           </div>
           <FieldError message={fe.shopName} />
+        </SettingsCard>
+
+        <SettingsCard
+          title="Hauptnavigation"
+          description="Wie bei Shopify: Kategorien bilden das Menü. Zusätzliche Systemlinks kannst du ein- oder ausblenden."
+        >
+          <div className="space-y-3">
+            <p className="text-sm text-[#6b7280]">
+              Aktive Hauptkategorien mit Produkten erscheinen automatisch im Header (Reihenfolge über{" "}
+              <Link href="/admin/categories" className="font-medium text-primary hover:underline">
+                Katalog → Kategorien
+              </Link>
+              , Feld Sortierung).
+            </p>
+            <label className="flex cursor-pointer items-start gap-2.5 text-sm text-[#374151]">
+              <input type="hidden" name="showAllProductsInNav" value="false" />
+              <input
+                type="checkbox"
+                name="showAllProductsInNav"
+                value="true"
+                defaultChecked={defaults.showAllProductsInNav}
+                className="checkbox-primary mt-0.5 size-4"
+              />
+              <span>
+                <span className="font-medium">„Alle Produkte“ anzeigen</span>
+                <span className="mt-0.5 block text-xs text-[#6b7280]">
+                  Link zur Katalogübersicht (/produkte)
+                </span>
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-2.5 text-sm text-[#374151]">
+              <input type="hidden" name="showTermineInNav" value="false" />
+              <input
+                type="checkbox"
+                name="showTermineInNav"
+                value="true"
+                defaultChecked={defaults.showTermineInNav}
+                className="checkbox-primary mt-0.5 size-4"
+              />
+              <span>
+                <span className="font-medium">„Termine“ anzeigen</span>
+                <span className="mt-0.5 block text-xs text-[#6b7280]">
+                  Link zum Gruppenkalender (/termine)
+                </span>
+              </span>
+            </label>
+
+            <fieldset className="mt-4 space-y-2 border-t border-[#e8eaed] pt-4">
+              <legend className="text-sm font-medium text-[#1f2937]">Desktop-Darstellung</legend>
+              <p className="text-xs text-[#6b7280]">
+                Auf schlanken Markenseiten kannst du das Desktop-Menü ausblenden. Mobil bleibt der
+                Burger, sobald Links vorhanden sind.
+              </p>
+              {(
+                [
+                  {
+                    value: "inline",
+                    title: "Sichtbar im Header",
+                    hint: "Klassische Linkzeile neben dem Logo (bisheriges Verhalten)",
+                  },
+                  {
+                    value: "burger",
+                    title: "Als Burger-Menü",
+                    hint: "Auch auf Desktop nur über das Menü-Icon öffnen",
+                  },
+                  {
+                    value: "hidden",
+                    title: "Kein Menü auf Desktop",
+                    hint: "Desktop ohne Shop-Nav; Mobil weiterhin Burger",
+                  },
+                ] as const
+              ).map((opt) => (
+                <label
+                  key={opt.value}
+                  className="flex cursor-pointer items-start gap-2.5 text-sm text-[#374151]"
+                >
+                  <input
+                    type="radio"
+                    name="desktopShopNavMode"
+                    value={opt.value}
+                    defaultChecked={defaults.desktopShopNavMode === opt.value}
+                    className="mt-1 size-3.5 accent-primary"
+                  />
+                  <span>
+                    <span className="font-medium">{opt.title}</span>
+                    <span className="mt-0.5 block text-xs text-[#6b7280]">{opt.hint}</span>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+          </div>
         </SettingsCard>
 
         <SettingsCard

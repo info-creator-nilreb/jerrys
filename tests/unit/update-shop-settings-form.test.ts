@@ -23,12 +23,19 @@ describe("shopSettingsInputFromFormData", () => {
     fd.set("instagramUrl", "https://www.instagram.com/jerrys.design/");
     fd.set("facebookUrl", "");
     fd.set("emailFromName", "jerry's");
+    fd.set("showAllProductsInNav", "false");
+    fd.append("showAllProductsInNav", "true");
+    fd.set("showTermineInNav", "false");
+    fd.set("desktopShopNavMode", "burger");
 
     const input = shopSettingsInputFromFormData(fd);
     expect(input.shopName).toBe("jerry's");
     expect(input.addressCountry).toBe("de");
     expect(input.logoLightUrl).toBeNull();
     expect(input.faviconUrl).toBeNull();
+    expect(input.showAllProductsInNav).toBe(true);
+    expect(input.showTermineInNav).toBe(false);
+    expect(input.desktopShopNavMode).toBe("burger");
 
     const parsed = parseShopSettingsUpdate({
       ...input,
@@ -39,6 +46,9 @@ describe("shopSettingsInputFromFormData", () => {
     expect(parsed.data.shopName).toBe("jerry's");
     expect(parsed.data.supportEmail).toBeNull();
     expect(parsed.data.facebookUrl).toBeNull();
+    expect(parsed.data.showAllProductsInNav).toBe(true);
+    expect(parsed.data.showTermineInNav).toBe(false);
+    expect(parsed.data.desktopShopNavMode).toBe("burger");
   });
 
   it("akzeptiert die Seed-Defaults über Form-ähnliche Strings", () => {

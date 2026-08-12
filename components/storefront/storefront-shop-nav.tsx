@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useState } from "react";
+import type { DesktopShopNavMode } from "@/lib/shop/shop-settings-defaults";
 import {
   isStorefrontShopNavLinkActive,
   type StorefrontShopNavLink,
@@ -49,22 +50,28 @@ function NavLinkList({
 
 type Props = {
   links: readonly StorefrontShopNavLink[];
+  /** Desktop: ausgeblendet, Inline-Links oder Burger. Mobil: immer Burger, sofern Links. */
+  desktopMode?: DesktopShopNavMode;
   className?: string;
 };
 
-export function StorefrontShopNav({ links, className }: Props) {
+export function StorefrontShopNav({
+  links,
+  desktopMode = "inline",
+  className,
+}: Props) {
   const pathname = usePathname();
   const menuId = useId();
   /** Menü gilt nur für die Route, in der es geöffnet wurde — schließt automatisch bei Navigation. */
   const [menuOpenForPath, setMenuOpenForPath] = useState<string | null>(null);
-  const mobileOpen = menuOpenForPath === pathname;
+  const drawerOpen = menuOpenForPath === pathname;
 
-  const closeMobile = useCallback(() => setMenuOpenForPath(null), []);
+  const closeDrawer = useCallback(() => setMenuOpenForPath(null), []);
 
   useEffect(() => {
-    if (!mobileOpen) return;
+    if (!drawerOpen) return;
     const onKeyDown = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") closeMobile();
+      if (ev.key === "Escape") closeDrawer();
     };
     document.addEventListener("keydown", onKeyDown);
     const prevOverflow = document.body.style.overflow;
@@ -73,47 +80,54 @@ export function StorefrontShopNav({ links, className }: Props) {
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = prevOverflow;
     };
-  }, [mobileOpen, closeMobile]);
+  }, [drawerOpen, closeDrawer]);
 
   if (links.length === 0) {
     return null;
   }
 
+  const showDesktopInline = desktopMode === "inline";
+  const showDesktopBurger = desktopMode === "burger";
+  /** Mobil immer Burger; Desktop nur im Burger-Modus. */
+  const burgerWrapperClass = showDesktopBurger ? "" : "md:hidden";
+
   return (
     <div className={className}>
-      <nav className="hidden md:block" aria-label="Shop">
-        <NavLinkList
-          links={links}
-          pathname={pathname}
-          className="flex flex-wrap items-center gap-x-5 gap-y-1"
-        />
-      </nav>
+      {showDesktopInline ? (
+        <nav className="hidden md:block" aria-label="Shop">
+          <NavLinkList
+            links={links}
+            pathname={pathname}
+            className="flex flex-wrap items-center gap-x-5 gap-y-1"
+          />
+        </nav>
+      ) : null}
 
-      <div className="md:hidden">
+      <div className={burgerWrapperClass}>
         <button
           type="button"
           className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-(--foreground-heading) transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-          aria-expanded={mobileOpen}
+          aria-expanded={drawerOpen}
           aria-controls={menuId}
-          aria-label={mobileOpen ? "Menü schließen" : "Menü öffnen"}
+          aria-label={drawerOpen ? "Menü schließen" : "Menü öffnen"}
           onClick={() =>
             setMenuOpenForPath((current) => (current === pathname ? null : pathname))
           }
         >
-          {mobileOpen ? (
+          {drawerOpen ? (
             <X className="size-6" aria-hidden strokeWidth={1.75} />
           ) : (
             <Menu className="size-6" aria-hidden strokeWidth={1.75} />
           )}
         </button>
 
-        {mobileOpen ? (
+        {drawerOpen ? (
           <>
             <button
               type="button"
               className="fixed inset-0 top-[var(--storefront-header-height,3.5rem)] z-[499999] bg-black/30"
               aria-label="Menü schließen"
-              onClick={closeMobile}
+              onClick={closeDrawer}
             />
             <nav
               id={menuId}
@@ -123,7 +137,7 @@ export function StorefrontShopNav({ links, className }: Props) {
               <NavLinkList
                 links={links}
                 pathname={pathname}
-                onNavigate={closeMobile}
+                onNavigate={closeDrawer}
                 className="flex flex-col gap-4"
               />
             </nav>

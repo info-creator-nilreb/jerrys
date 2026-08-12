@@ -5,16 +5,29 @@ export type StorefrontShopNavLink = {
 
 const DEFAULT_MAX_TOP_CATEGORIES = 6;
 
-/** Primärnavigation: Katalog + Top-Level-Kategorien (Epic 10 Slice 4). */
+export type StorefrontShopNavOptions = {
+  maxTopLevel?: number;
+  /** Systemlink „Alle Produkte“ — Shopify-ähnlich optional im Menü. Default true. */
+  showAllProducts?: boolean;
+  /** Systemlink „Termine“ — optional im Menü. Default true. */
+  showTermine?: boolean;
+};
+
+/** Primärnavigation: optionale Systemlinks + Top-Level-Kategorien (maßgeblich). */
 export function buildStorefrontShopNavLinks(
   categories: ReadonlyArray<{ slug: string; title: string }>,
-  options?: { maxTopLevel?: number },
+  options?: StorefrontShopNavOptions,
 ): StorefrontShopNavLink[] {
   const max = options?.maxTopLevel ?? DEFAULT_MAX_TOP_CATEGORIES;
-  const links: StorefrontShopNavLink[] = [
-    { href: "/produkte", label: "Alle Produkte" },
-    { href: "/termine", label: "Termine" },
-  ];
+  const showAllProducts = options?.showAllProducts ?? true;
+  const showTermine = options?.showTermine ?? true;
+  const links: StorefrontShopNavLink[] = [];
+  if (showAllProducts) {
+    links.push({ href: "/produkte", label: "Alle Produkte" });
+  }
+  if (showTermine) {
+    links.push({ href: "/termine", label: "Termine" });
+  }
   for (const c of categories.slice(0, max)) {
     links.push({ href: `/kategorien/${c.slug}`, label: c.title });
   }

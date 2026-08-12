@@ -24,12 +24,17 @@ const legalLinks = [
 /** Dunkles Navy wie Admin-Sidebar; helle Schrift, Primärgrün für Links. */
 export async function SiteFooter() {
   const settings = await getShopSettings();
-  let shopLinks = buildStorefrontShopNavLinks([]);
+  const navOptions = {
+    showAllProducts: settings.showAllProductsInNav,
+    showTermine: settings.showTermineInNav,
+  };
+  let shopLinks = buildStorefrontShopNavLinks([], navOptions);
   let merchandisingLinks: ReturnType<typeof resolveFooterMerchandisingLinks> = [];
   try {
     const categories = await listActiveCategoriesForNav();
     shopLinks = buildStorefrontShopNavLinks(
       categories.map((c) => ({ slug: c.slug, title: c.title })),
+      navOptions,
     );
   } catch (e) {
     if (!isDatabaseUnreachable(e)) throw e;
