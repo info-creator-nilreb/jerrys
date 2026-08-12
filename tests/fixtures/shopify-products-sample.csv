@@ -1,0 +1,5 @@
+Handle,Title,Body (HTML),Vendor,Type,Tags,Published,Option1 Name,Option1 Value,Option2 Name,Option2 Value,Option3 Name,Option3 Value,Variant SKU,Variant Grams,Variant Inventory Qty,Variant Price,Variant Compare At Price,Variant Inventory Policy,Image Src,Image Position,Image Alt Text,SEO Title,SEO Description,Status
+katzenhoehle,"Katzenhöhle Premium","<p>Gemütliche <strong>Höhle</strong> für Katzen.</p>",jerry's,Wohnen,"katze, bestseller",true,Title,Default Title,,,,,KH-001,850,12,49.90,59.90,deny,https://cdn.example.com/kh-1.jpg,1,Katzenhöhle Foto,SEO Katzenhöhle,Kurzer Teaser für die Höhle,active
+katzenhoehle,,,,,,,,,,,,,,,,,,,https://cdn.example.com/kh-2.jpg,2,Detail,,,
+tee-set,Tee-Set Duo,"<p>Zwei Tassen.</p>",jerry's,Geschirr,tee,true,Größe,Klein,,,,,TS-S,200,5,19.99,,deny,https://cdn.example.com/tee.jpg,1,Tee-Set,,Tee-Set Beschreibung,active
+tee-set,,,,,,,Größe,Groß,,,,,TS-L,280,3,24.99,29.99,deny,,,,,,,
