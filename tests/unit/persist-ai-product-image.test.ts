@@ -33,7 +33,7 @@ vi.mock("@/lib/db/prisma", () => ({
   }),
 }));
 
-import { persistAiGeneratedProductImage } from "@/features/catalog/application/persist-ai-product-image";
+import { persistAiGeneratedProductImage } from "@/features/catalog/server";
 
 /** Minimal gültiges 1x1 PNG */
 const PNG_1X1 = Buffer.from(

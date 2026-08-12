@@ -76,6 +76,10 @@ function isPublicApi(subpath) {
   if (/^(password|address|checkout-prefill)(\.[cm]?[jt]sx?)?$/.test(subpath)) {
     return true;
   }
+  // Server-only öffentliche API (z. B. Object-Storage/AI) — nicht im Node-Seed-Barrel.
+  if (/^(server)(\.[cm]?[jt]sx?)?$/.test(subpath)) {
+    return true;
+  }
   return false;
 }
 

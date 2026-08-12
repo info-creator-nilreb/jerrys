@@ -5,7 +5,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { persistAiGeneratedProductImage } from "@/features/catalog/application/persist-ai-product-image";
+import { persistAiGeneratedProductImage } from "@/features/catalog/server";
 import {
   editProductAiImageDraft,
   generateProductAiAltTextDraft,
