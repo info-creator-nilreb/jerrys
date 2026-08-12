@@ -85,3 +85,7 @@ Der Kalender kann als Block auf einer CMS-Seite (Epic 12) und optional auf ausge
 - iCal-Datei und/oder externe Kalendersynchronisation
 - Verhalten unter Mindestteilnehmerzahl (automatische Absage oder Admin-Entscheidung)
 - Refund-/Gutscheinregel bei fristgerechter Stornierung
+
+## Follow-up (separates Ticket)
+
+**Einheitlicher Checkout (Warenkorb + Workshop):** Heute zwei Pfade — Produkte über Cart/`/checkout`, Workshops über Seat-Hold/`/checkout/termine` (kein Warenkorb). UI teilt sich teilweise (`CheckoutForm`), fachlich bleiben Kapazität, Cookies, Promos/Versand und Order-Builder getrennt. **Zielbild:** ein Checkout ohne konkurrierende Flows (ggf. gemischter Warenkorb). Das ist Domänen-/Epic-Arbeit, kein PDP-Layout-Fix. PDP zeigt die kompakte Terminliste bewusst im Produktkontext (rechts neben dem Bild); Buchung bleibt bis dahin auf der Terminseite.

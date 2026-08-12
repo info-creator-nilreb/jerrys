@@ -1,6 +1,7 @@
 "use client";
 
 import type { ProductFormState } from "@/app/admin/(dashboard)/products/actions";
+import { ProductAttributesFields } from "@/app/admin/(dashboard)/products/product-attributes-fields";
 import { ProductDeliveryFields } from "@/app/admin/(dashboard)/products/product-delivery-fields";
 import { ProductGeneralFields } from "@/app/admin/(dashboard)/products/product-general-fields";
 import { ProductPricesSection } from "@/app/admin/(dashboard)/products/product-prices-section";
@@ -47,6 +48,8 @@ export function ProductFormFields({ state, manufacturers }: Props) {
           featureBullets: "",
         }}
       />
+
+      <ProductAttributesFields state={state} defaults={[]} />
 
       <ProductPricesSection
         defaultTaxPercent={19}

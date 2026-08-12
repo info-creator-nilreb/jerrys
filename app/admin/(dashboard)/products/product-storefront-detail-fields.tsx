@@ -62,6 +62,9 @@ export function ProductStorefrontDetailFields({ state, defaults }: Props) {
             </span>
           </span>
         </label>
+        {fe.showWorkshopCalendar ? (
+          <p className="text-sm text-red-600">{fe.showWorkshopCalendar}</p>
+        ) : null}
 
         <div className="flex flex-col gap-1">
           <label htmlFor="categoryTag" className="text-xs font-medium text-[#6b7280]">
@@ -145,17 +148,20 @@ export function ProductStorefrontDetailFields({ state, defaults }: Props) {
 
         <div className="flex flex-col gap-1">
           <label htmlFor="featureBullets" className="text-xs font-medium text-[#6b7280]">
-            Eigenschaften / Stichpunkte (optional, eine Zeile pro Punkt)
+            Freie Verkaufsstichpunkte (optional)
           </label>
           <textarea
             id="featureBullets"
             name="featureBullets"
-            rows={5}
+            rows={4}
             defaultValue={defaults.featureBullets}
             placeholder={"Stabil & langlebig\nPflegeleicht abwischbar"}
-            className="resize-y rounded-md border border-[#e5e7eb] bg-white px-3 py-2 font-mono text-sm"
+            className="resize-y rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
           />
-          <p className="text-xs text-[#6b7280]">Maximal 20 Zeilen, je bis 200 Zeichen.</p>
+          <p className="text-xs text-[#6b7280]">
+            Nur kurze Werbeaussagen ohne Label. Angaben wie Herkunft, Farbe oder Material gehören
+            unter <span className="font-medium">Merkmale</span>. Maximal 20 Zeilen.
+          </p>
         </div>
       </div>
     </section>

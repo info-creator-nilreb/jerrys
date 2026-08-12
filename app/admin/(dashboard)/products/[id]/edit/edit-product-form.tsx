@@ -6,6 +6,7 @@ import {
   updateProduct,
   type ProductFormState,
 } from "@/app/admin/(dashboard)/products/actions";
+import { ProductAttributesFields } from "@/app/admin/(dashboard)/products/product-attributes-fields";
 import { ProductCategoriesFields } from "@/app/admin/(dashboard)/products/product-categories-fields";
 import { ProductDeliveryFields } from "@/app/admin/(dashboard)/products/product-delivery-fields";
 import { ProductGeneralFields } from "@/app/admin/(dashboard)/products/product-general-fields";
@@ -14,6 +15,7 @@ import { ProductMediaSection } from "@/app/admin/(dashboard)/products/product-me
 import { ProductStorefrontDetailFields } from "@/app/admin/(dashboard)/products/product-storefront-detail-fields";
 import { ProductVariantsSection } from "@/app/admin/(dashboard)/products/product-variants-section";
 import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
+import type { ProductAttribute } from "@/features/catalog/domain/product-attributes";
 
 function plainDescriptionToHtml(description: string | null): string {
   if (!description?.trim()) return "";
@@ -64,6 +66,7 @@ type Product = {
   weightText: string | null;
   materialText: string | null;
   featureBullets: string[];
+  attributes: ProductAttribute[];
   currency: string;
   images: { id: string; url: string; alt: string; sortOrder: number; isCover: boolean }[];
   variants: {
@@ -158,6 +161,11 @@ export function EditProductForm({
           }}
         />
 
+        <ProductAttributesFields
+          state={state}
+          defaults={product.attributes ?? []}
+        />
+
         <ProductCategoriesFields
           categories={categories}
           defaults={{
@@ -215,6 +223,11 @@ export function EditProductForm({
             </button>
           </div>
           {state?.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+          {state?.fieldErrors && Object.keys(state.fieldErrors).length > 0 && !state.error ? (
+            <p className="text-sm text-red-600" role="alert">
+              Speichern fehlgeschlagen — bitte markierte Felder prüfen.
+            </p>
+          ) : null}
           {savedFlash ? (
             <p className="text-sm font-medium text-primary" role="status">
               Änderungen gespeichert.

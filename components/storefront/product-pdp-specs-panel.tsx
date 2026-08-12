@@ -1,11 +1,58 @@
 import type { ReactNode } from "react";
-import { Layers, PawPrint, Ruler, Scale } from "lucide-react";
+import {
+  Gem,
+  Heart,
+  Layers,
+  Leaf,
+  MapPin,
+  Palette,
+  PawPrint,
+  Ruler,
+  Scale,
+  Shield,
+  Sparkles,
+  Tag,
+  Users,
+} from "lucide-react";
+import type { PdpResolvedDisplay, PdpSpecIcon } from "@/lib/catalog/pdp-resolve-display";
 
 const specIconClass = "size-[22px] text-primary";
 
-/**
- * Produktdetails wie Mockup: dezenter Farbakzent, Line-Icons, 2-Spalten (Specs | Eigenschaften).
- */
+function SpecIcon({ name }: { name: PdpSpecIcon }) {
+  const props = { className: specIconClass, strokeWidth: 1.5 as const, "aria-hidden": true as const };
+  switch (name) {
+    case "ruler":
+      return <Ruler {...props} />;
+    case "scale":
+      return <Scale {...props} />;
+    case "layers":
+      return <Layers {...props} />;
+    case "palette":
+      return <Palette {...props} />;
+    case "map-pin":
+      return <MapPin {...props} />;
+    case "gem":
+      return <Gem {...props} />;
+    case "users":
+      return <Users {...props} />;
+    case "paw":
+      return <PawPrint {...props} />;
+    case "leaf":
+      return <Leaf {...props} />;
+    case "heart":
+      return <Heart {...props} />;
+    case "shield":
+      return <Shield {...props} />;
+    case "sparkles":
+      return <Sparkles {...props} />;
+    case "flag-de":
+      return <MapPin {...props} />;
+    case "tag":
+    default:
+      return <Tag {...props} />;
+  }
+}
+
 function SpecRow({
   icon,
   label,
@@ -19,30 +66,24 @@ function SpecRow({
     <div className="flex gap-3">
       <span className="mt-0.5 shrink-0 text-primary">{icon}</span>
       <div className="min-w-0">
-        <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-(--foreground-heading)">{label}</p>
+        <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-(--foreground-heading)">
+          {label}
+        </p>
         <p className="mt-1 text-sm leading-snug text-(--foreground-muted)">{value}</p>
       </div>
     </div>
   );
 }
 
-export function ProductPdpSpecsPanel({
-  dimensionsText,
-  weightText,
-  materialText,
-  featureBullets,
-}: {
-  dimensionsText: string | null;
-  weightText: string | null;
-  materialText: string | null;
-  featureBullets: string[];
-}) {
-  const hasLeft =
-    Boolean(dimensionsText?.trim()) || Boolean(weightText?.trim()) || Boolean(materialText?.trim());
-  const hasBullets = featureBullets.length > 0;
-  if (!hasLeft && !hasBullets) return null;
+/**
+ * Produktdetails: Specs links, Merkmale als einzelne Label/Wert-Zeilen rechts.
+ */
+export function ProductPdpSpecsPanel({ display }: { display: PdpResolvedDisplay }) {
+  const hasLeft = display.leftSpecs.length > 0;
+  const hasRight = display.propertySpecs.length > 0 || display.propertyLines.length > 0;
+  if (!hasLeft && !hasRight) return null;
 
-  const twoCols = hasLeft && hasBullets;
+  const twoCols = hasLeft && hasRight;
 
   return (
     <section
@@ -58,51 +99,48 @@ export function ProductPdpSpecsPanel({
       <div className={`mt-4 grid gap-6 ${twoCols ? "md:grid-cols-2 md:gap-8" : "grid-cols-1"}`}>
         {hasLeft ? (
           <div className="flex min-w-0 flex-col gap-4">
-            {dimensionsText?.trim() ? (
+            {display.leftSpecs.map((spec) => (
               <SpecRow
-                icon={<Ruler className={specIconClass} strokeWidth={1.5} aria-hidden />}
-                label="Maße"
-                value={dimensionsText.trim()}
+                key={spec.key}
+                icon={<SpecIcon name={spec.icon} />}
+                label={spec.label}
+                value={spec.value}
               />
-            ) : null}
-            {weightText?.trim() ? (
-              <SpecRow
-                icon={<Scale className={specIconClass} strokeWidth={1.5} aria-hidden />}
-                label="Gewicht"
-                value={weightText.trim()}
-              />
-            ) : null}
-            {materialText?.trim() ? (
-              <SpecRow
-                icon={<Layers className={specIconClass} strokeWidth={1.5} aria-hidden />}
-                label="Material"
-                value={materialText.trim()}
-              />
-            ) : null}
+            ))}
           </div>
         ) : null}
-        {hasBullets ? (
+        {hasRight ? (
           <div
-            className={`min-w-0 ${twoCols ? "border-t border-primary/15 pt-4 md:border-t-0 md:border-l md:border-primary/15 md:pl-8 md:pt-0" : "border-t-0 pt-0"}`}
+            className={`flex min-w-0 flex-col gap-4 ${twoCols ? "border-t border-primary/15 pt-4 md:border-t-0 md:border-l md:border-primary/15 md:pl-8 md:pt-0" : ""}`}
           >
-            <div className="flex items-start gap-2.5">
-              <span className="mt-0.5 shrink-0 text-primary">
-                <PawPrint className={specIconClass} strokeWidth={1.5} aria-hidden />
-              </span>
-              <div>
-                <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-(--foreground-heading)">
-                  Eigenschaften
-                </p>
-                <ul className="mt-2.5 space-y-2 text-sm leading-snug text-(--foreground-muted)">
-                  {featureBullets.map((line, i) => (
-                    <li key={`${i}-${line.slice(0, 40)}`} className="flex gap-2">
-                      <span className="mt-2 size-1 shrink-0 rounded-full bg-primary/60" aria-hidden />
-                      <span>{line}</span>
-                    </li>
-                  ))}
-                </ul>
+            {display.propertySpecs.map((spec) => (
+              <SpecRow
+                key={spec.key}
+                icon={<SpecIcon name={spec.icon} />}
+                label={spec.label}
+                value={spec.value}
+              />
+            ))}
+            {display.propertyLines.length > 0 ? (
+              <div className="flex items-start gap-2.5">
+                <span className="mt-0.5 shrink-0 text-primary">
+                  <SpecIcon name={display.propertiesIcon} />
+                </span>
+                <div>
+                  <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-(--foreground-heading)">
+                    Stichpunkte
+                  </p>
+                  <ul className="mt-2.5 space-y-2 text-sm leading-snug text-(--foreground-muted)">
+                    {display.propertyLines.map((line, i) => (
+                      <li key={`${i}-${line.slice(0, 40)}`} className="flex gap-2">
+                        <span className="mt-2 size-1 shrink-0 rounded-full bg-primary/60" aria-hidden />
+                        <span>{line}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
         ) : null}
       </div>
