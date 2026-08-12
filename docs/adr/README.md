@@ -43,3 +43,4 @@ ADRs record material decisions that constrain future implementation.
 - [ADR-0007: Content pages and CMS-light blocks](./0007-content-pages-cms-light.md)
 - [ADR-0008: Object storage (Vercel Blob)](./0008-object-storage.md)
 - [ADR-0009: Fulfillment shipments and shipping-label port](./0009-fulfillment-shipments.md)
+- [ADR-0010: AI content assistance port (OpenAI first)](./0010-ai-content-assistance-port.md)

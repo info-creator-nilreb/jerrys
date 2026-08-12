@@ -232,7 +232,7 @@ Exit criteria: drafts are private and excluded from navigation/sitemaps; publish
 
 ## Epic 13: AI-Assisted Content and Images
 
-Suggested delivery: [EPIC13_AI_CONTENT_ASSISTANCE.md](./EPIC13_AI_CONTENT_ASSISTANCE.md).
+Suggested delivery: [EPIC13_AI_CONTENT_ASSISTANCE.md](./EPIC13_AI_CONTENT_ASSISTANCE.md) · Agent handoff: [EPIC13_AGENT_HANDOFF.md](./EPIC13_AGENT_HANDOFF.md) · ADR: [0010](./adr/0010-ai-content-assistance-port.md).
 
 User stories:
 
