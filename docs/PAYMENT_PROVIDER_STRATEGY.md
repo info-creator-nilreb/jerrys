@@ -2,10 +2,11 @@
 
 ## Umsetzung jerry's (aktuell)
 
-**PayPal** über die **Orders API v2** (Server-seitig mit Client ID + Secret, OAuth, Create Order, Redirect zur PayPal-Zustimmung, **Capture** nach Rückkehr):
+**PayPal** über die **Orders API v2** (Server-seitig mit Client ID + Secret, OAuth, Create Order, Redirect/Smart Buttons/Apple Pay, **Capture** nach Zustimmung):
 
 - **PCI:** Zahlungsdaten verbleiben bei PayPal; der Shop leitet nur um.
 - **Finalisierung:** `GET /checkout/paypal-rueckkehr?token=…` (PayPal Order ID) → Capture → Lagerabzug, Status `paid`, `OrderPayment` `succeeded` (`provider: "paypal"`).
+- **Express Checkout:** Warenkorb nutzt PayPal JS SDK Smart Buttons (`components=buttons,applepay`). `POST /api/checkout/paypal/express-create` legt eine `pending_payment`-Shop-Order mit Platzhalteradresse und PayPal `shipping_preference=GET_FROM_FILE` an; `express-approve` übernimmt PayPal-/Apple-Pay-Lieferdaten und capturt über dieselbe Finalisierung (`eventSource: paypal_smart_buttons`).
 - **Webhooks (Doppel-Absicherung):** `POST /api/webhooks/paypal` mit Signaturprüfung (`PAYPAL_WEBHOOK_ID`) für u. a. `PAYMENT.CAPTURE.COMPLETED` / `CHECKOUT.ORDER.APPROVED` → dieselbe Capture-/Finalize-Pipeline (Inbox-Idempotenz).
 - **Umgebungsvariablen:** siehe [.env.example](../.env.example)
   - `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`

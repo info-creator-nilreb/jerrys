@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCartIdFromCookie, ensureCartIdAndCookie } from "@/lib/cart/cart-cookie";
@@ -127,6 +128,13 @@ export async function addToCart(
   revalidatePath("/");
   revalidatePath("/", "layout");
   return { ok: true };
+}
+
+export async function addToCartAndRedirectToExpressCart(formData: FormData) {
+  await addToCart(null, formData);
+  const provider = String(formData.get("expressProvider") ?? "paypal").trim();
+  const qs = provider === "applepay" ? "?express=applepay" : "?express=paypal";
+  redirect(`/warenkorb${qs}`);
 }
 
 async function loadCartLineForMutation(lineId: string, cartId: string) {

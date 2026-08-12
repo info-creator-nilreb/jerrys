@@ -20,9 +20,31 @@ type PayPalCapture = {
 type PurchaseUnit = {
   custom_id?: string;
   amount?: { currency_code?: string; value?: string };
+  shipping?: {
+    name?: { full_name?: string };
+    address?: {
+      address_line_1?: string;
+      address_line_2?: string;
+      admin_area_2?: string;
+      admin_area_1?: string;
+      postal_code?: string;
+      country_code?: string;
+    };
+  };
   payments?: {
     captures?: PayPalCapture[];
   };
+};
+
+export type PayPalOrderApiResponse = {
+  id?: string;
+  status?: string;
+  payer?: {
+    email_address?: string;
+    name?: { given_name?: string; surname?: string };
+    phone?: { phone_number?: { national_number?: string } };
+  };
+  purchase_units?: PurchaseUnit[];
 };
 
 export type ParsedPayPalCapture = {
@@ -37,11 +59,7 @@ export type ParsedPayPalCapture = {
  * Parst eine COMPLETED PayPal-Checkout-Order (Capture-Response oder GET).
  * Exportiert für Unit-Tests.
  */
-export function parseCapturedPayPalOrder(json: {
-  id?: string;
-  status?: string;
-  purchase_units?: PurchaseUnit[];
-}): ParsedPayPalCapture | null {
+export function parseCapturedPayPalOrder(json: PayPalOrderApiResponse): ParsedPayPalCapture | null {
   const paypalOrderId = json.id;
   const pu = json.purchase_units?.[0];
   if (!paypalOrderId || !pu) return null;
@@ -70,7 +88,10 @@ export function parseCapturedPayPalOrder(json: {
   };
 }
 
-async function fetchPayPalOrder(paypalOrderId: string, accessToken: string) {
+export async function fetchPayPalOrder(
+  paypalOrderId: string,
+  accessToken: string,
+): Promise<PayPalOrderApiResponse> {
   const res = await fetch(`${paypalApiBaseUrl()}/v2/checkout/orders/${paypalOrderId}`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -81,11 +102,7 @@ async function fetchPayPalOrder(paypalOrderId: string, accessToken: string) {
     const text = await res.text();
     throw new Error(`PayPal Order GET fehlgeschlagen (${res.status}): ${text.slice(0, 200)}`);
   }
-  return (await res.json()) as {
-    id?: string;
-    status?: string;
-    purchase_units?: PurchaseUnit[];
-  };
+  return (await res.json()) as PayPalOrderApiResponse;
 }
 
 /** Capture-ID aus bestehender PayPal-Order laden (Fallback, wenn nicht in metadata). */

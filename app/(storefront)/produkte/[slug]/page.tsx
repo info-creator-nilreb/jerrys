@@ -20,6 +20,7 @@ import { ProductPdpTrustFooterBar, ProductPdpUspRow } from "@/components/storefr
 import { WorkshopSessionList } from "@/components/storefront/workshop-session-list";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
+import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 import { absoluteUrl } from "@/lib/site/canonical-origin";
 
 export const dynamic = "force-dynamic";
@@ -222,6 +223,7 @@ export default async function ProduktDetailPage({
                 currency={product.currency}
                 listPriceGrossCents={defaultVariant.listPriceGrossCents}
                 deliveryTimeKeyFallback={defaultVariant.deliveryTimeKey}
+                payPalConfigured={isPayPalConfigured()}
                 variants={product.variants}
               />
             </article>

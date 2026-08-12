@@ -21,6 +21,7 @@ function requireOrigin(): string {
 }
 
 type PayPalLink = { href?: string; rel?: string; method?: string };
+export type PayPalShippingPreference = "NO_SHIPPING" | "GET_FROM_FILE";
 
 function approvalUrlFromCreateResponse(json: { links?: PayPalLink[] }): string | null {
   const links = json.links ?? [];
@@ -36,6 +37,7 @@ export async function createPayPalCheckoutOrder(params: {
   orderNumber: string;
   totalGrossCents: number;
   currency: string;
+  shippingPreference?: PayPalShippingPreference;
 }): Promise<{ paypalOrderId: string; approvalUrl: string | null }> {
   const origin = requireOrigin();
   const token = await getPayPalAccessToken();
@@ -44,6 +46,7 @@ export async function createPayPalCheckoutOrder(params: {
     throw new Error("Ungültige Währung für PayPal.");
   }
 
+  const shippingPreference = params.shippingPreference ?? "NO_SHIPPING";
   const body = {
     intent: "CAPTURE",
     purchase_units: [
@@ -60,7 +63,7 @@ export async function createPayPalCheckoutOrder(params: {
       brand_name: "jerry's",
       locale: "de-DE",
       landing_page: "NO_PREFERENCE",
-      shipping_preference: "NO_SHIPPING",
+      shipping_preference: shippingPreference,
       user_action: "PAY_NOW",
       return_url: `${origin}/checkout/paypal-rueckkehr`,
       cancel_url: `${origin}/checkout/paypal-abbruch`,
@@ -90,6 +93,11 @@ export async function createPayPalCheckoutOrder(params: {
   }
   /** Bei reinem Advanced-Card-Flow kann die Approve-URL fehlen; Karten-Zahlung läuft über Card Fields + Capture. */
   return { paypalOrderId, approvalUrl: approvalUrl ?? null };
+}
+
+export async function getPayPalCheckoutOrderDetails(paypalOrderId: string) {
+  const accessToken = await getPayPalAccessToken();
+  return fetchPayPalOrder(paypalOrderId.trim(), accessToken);
 }
 
 /**

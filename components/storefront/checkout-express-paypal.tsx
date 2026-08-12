@@ -1,69 +1,351 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-const btnClass =
-  "inline-flex min-h-[2.75rem] items-center justify-center rounded-md bg-[#FFC439] px-5 text-sm font-semibold text-[#003087] shadow-sm transition hover:brightness-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2";
+type PayPalButtonsInstance = {
+  isEligible?: () => boolean;
+  render: (target: HTMLElement) => Promise<void>;
+  close?: () => void;
+};
+
+type PayPalApplePayConfig = {
+  isEligible?: boolean;
+  countryCode?: string;
+  merchantCapabilities?: string[];
+  supportedNetworks?: string[];
+};
+
+type PayPalApplePaySession = {
+  config: () => Promise<PayPalApplePayConfig>;
+  validateMerchant: (options: { validationUrl: string; displayName?: string }) => Promise<{ merchantSession: unknown }>;
+  confirmOrder: (options: {
+    orderId: string;
+    token: unknown;
+    billingContact?: unknown;
+    shippingContact?: unknown;
+  }) => Promise<unknown>;
+};
+
+type PayPalExpressSdk = {
+  FUNDING?: { PAYPAL?: string };
+  Buttons?: (options: Record<string, unknown>) => PayPalButtonsInstance;
+  Applepay?: () => PayPalApplePaySession;
+};
+
+type ApplePaySessionInstance = {
+  onvalidatemerchant: ((event: { validationURL: string }) => void) | null;
+  onpaymentauthorized:
+    | ((event: { payment: { token: unknown; billingContact?: unknown; shippingContact?: unknown } }) => void)
+    | null;
+  oncancel: (() => void) | null;
+  completeMerchantValidation: (merchantSession: unknown) => void;
+  completePayment: (result: unknown) => void;
+  abort: () => void;
+  begin: () => void;
+};
+
+type ApplePaySessionConstructor = {
+  new (version: number, paymentRequest: Record<string, unknown>): ApplePaySessionInstance;
+  canMakePayments: () => boolean;
+  STATUS_SUCCESS: number;
+  STATUS_FAILURE: number;
+};
+
+function paypalExpressSdkSrc(clientId: string, currency: string): string {
+  const p = new URLSearchParams({
+    "client-id": clientId,
+    components: "buttons,applepay",
+    intent: "capture",
+    currency: currency.trim().toUpperCase(),
+    locale: "de_DE",
+    "disable-funding": "card,paylater,venmo,sepa,bancontact,blik,eps,giropay,ideal,mybank,p24,sofort",
+  });
+  return `https://www.paypal.com/sdk/js?${p.toString()}`;
+}
+
+function currentPayPal(): PayPalExpressSdk | undefined {
+  return (window as unknown as { paypal?: PayPalExpressSdk }).paypal;
+}
+
+function currentApplePaySession(): ApplePaySessionConstructor | undefined {
+  return (window as unknown as { ApplePaySession?: ApplePaySessionConstructor }).ApplePaySession;
+}
+
+function moneyStringFromGrossCents(cents: number): string {
+  return (cents / 100).toFixed(2);
+}
 
 type Props = {
-  /** Ohne PayPal-Credentials kein Express-Hinweis. */
+  /** Ohne PayPal-Credentials keine Express-Zahlung. */
   payPalConfigured: boolean;
-  /** Warenkorb: Link zum Checkout; Checkout: Scroll zu Kontakt. */
+  paypalClientId: string;
+  currency?: string;
+  totalGrossCents?: number;
+  /** Legacy-Prop: die Komponente wird heute im Warenkorb genutzt. */
   variant?: "checkout" | "cart";
 };
 
-/**
- * Nur PayPal als Express-Shortcut (kein Shop Pay / Google Pay).
- * Ohne ausgefüllte Adresse kein PayPal-Dialog – zuerst Checkout-Daten, dann kostenpflichtig bestellen.
- */
-export function CheckoutExpressPayPalOnly({ payPalConfigured, variant = "checkout" }: Props) {
-  if (!payPalConfigured) return null;
+export function CheckoutExpressPayPalOnly({
+  payPalConfigured,
+  paypalClientId,
+  currency = "EUR",
+  totalGrossCents = 0,
+}: Props) {
+  const router = useRouter();
+  const paypalContainerRef = useRef<HTMLDivElement>(null);
+  const paypalButtonsRef = useRef<PayPalButtonsInstance | null>(null);
+  const applePaySessionRef = useRef<PayPalApplePaySession | null>(null);
+  const idempotencyKeyRef = useRef<string | null>(null);
+  const [sdkError, setSdkError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [applePayConfig, setApplePayConfig] = useState<PayPalApplePayConfig | null>(null);
 
-  const goToCheckoutFields = () => {
-    document.getElementById("checkout-section-contact")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    window.requestAnimationFrame(() => {
-      document.getElementById("email")?.focus();
+  const ensureIdempotencyKey = useCallback((): string | undefined => {
+    if (!idempotencyKeyRef.current) {
+      idempotencyKeyRef.current =
+        typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : null;
+    }
+    return idempotencyKeyRef.current ?? undefined;
+  }, []);
+
+  const createExpressOrder = useCallback(async () => {
+    setSdkError(null);
+    const res = await fetch("/api/checkout/paypal/express-create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idempotencyKey: ensureIdempotencyKey() }),
     });
-  };
+    const data = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      paypalOrderId?: string;
+      orderNumber?: string;
+      error?: string;
+    };
+    if (res.status === 409 && data.orderNumber) {
+      router.push(`/checkout/erfolg?nr=${encodeURIComponent(data.orderNumber)}`);
+      throw new Error("Bestellung ist bereits abgeschlossen.");
+    }
+    if (!res.ok || !data.paypalOrderId) {
+      throw new Error(data.error ?? "PayPal Express konnte nicht gestartet werden.");
+    }
+    return data.paypalOrderId;
+  }, [ensureIdempotencyKey, router]);
 
-  const hint = (
-    <p className="max-w-md text-xs leading-snug text-[#6b7280]">
-      {variant === "cart" ? (
-        <>
-          Zum Checkout mit PayPal – dort Lieferadresse eingeben und{" "}
-          <span className="font-medium text-[#374151]">„Jetzt kostenpflichtig bestellen“</span> wählen.
-        </>
-      ) : (
-        <>
-          Bitte Kontakt- und Lieferadresse ausfüllen, dann unten{" "}
-          <span className="font-medium text-[#374151]">„Jetzt kostenpflichtig bestellen“</span> – Sie werden zu PayPal
-          weitergeleitet.
-        </>
-      )}
-    </p>
+  const approveExpressOrder = useCallback(
+    async (paypalOrderId: string, applePayShippingContact?: unknown) => {
+      const res = await fetch("/api/checkout/paypal/express-approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paypalOrderId, applePayShippingContact }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        redirectUrl?: string;
+        orderNumber?: string;
+        error?: string;
+      };
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error ?? "PayPal Express konnte nicht abgeschlossen werden.");
+      }
+      router.push(data.redirectUrl ?? `/checkout/erfolg?nr=${encodeURIComponent(data.orderNumber ?? "")}`);
+    },
+    [router],
   );
 
+  useEffect(() => {
+    setSdkError(null);
+    setApplePayConfig(null);
+    paypalButtonsRef.current?.close?.();
+    paypalButtonsRef.current = null;
+    if (paypalContainerRef.current) paypalContainerRef.current.innerHTML = "";
+
+    if (!payPalConfigured || !paypalClientId.trim()) return;
+
+    const scriptId = `paypal-js-express-checkout-${currency.trim().toUpperCase()}`;
+    let cancelled = false;
+
+    const mount = async () => {
+      const paypal = currentPayPal();
+      const host = paypalContainerRef.current;
+      if (!paypal || !host || cancelled) return;
+      if (typeof paypal.Buttons !== "function") {
+        setSdkError("PayPal Express ist in dieser Umgebung nicht verfügbar.");
+        return;
+      }
+
+      host.innerHTML = "";
+      const buttons = paypal.Buttons({
+        fundingSource: paypal.FUNDING?.PAYPAL,
+        style: { layout: "vertical", color: "gold", shape: "rect", label: "paypal", height: 44 },
+        createOrder: createExpressOrder,
+        onApprove: async (data: { orderID?: string }) => {
+          const orderId = data.orderID;
+          if (!orderId) throw new Error("PayPal Order-ID fehlt.");
+          setBusy(true);
+          try {
+            await approveExpressOrder(orderId);
+          } finally {
+            setBusy(false);
+          }
+        },
+        onCancel: () => setSdkError("PayPal Express wurde abgebrochen. Es wurde nichts abgebucht."),
+        onError: (err: unknown) => {
+          console.error(err);
+          setSdkError(err instanceof Error ? err.message : "PayPal Express ist fehlgeschlagen.");
+          setBusy(false);
+        },
+      });
+
+      if (buttons.isEligible?.() === false) {
+        setSdkError("PayPal Express ist für diese Umgebung nicht verfügbar.");
+      } else {
+        paypalButtonsRef.current = buttons;
+        await buttons.render(host);
+      }
+
+      const ApplePaySession = currentApplePaySession();
+      if (typeof paypal.Applepay === "function" && ApplePaySession?.canMakePayments() && totalGrossCents > 0) {
+        try {
+          const applepay = paypal.Applepay();
+          const config = await applepay.config();
+          if (!cancelled && config.isEligible) {
+            applePaySessionRef.current = applepay;
+            setApplePayConfig(config);
+          }
+        } catch {
+          if (!cancelled) setApplePayConfig(null);
+        }
+      }
+    };
+
+    const existing = document.getElementById(scriptId) as HTMLScriptElement | null;
+    if (existing && currentPayPal()?.Buttons) {
+      void mount();
+    } else if (existing) {
+      existing.addEventListener("load", () => void mount(), { once: true });
+    } else {
+      const script = document.createElement("script");
+      script.id = scriptId;
+      script.src = paypalExpressSdkSrc(paypalClientId.trim(), currency);
+      script.async = true;
+      script.onload = () => void mount();
+      script.onerror = () => setSdkError("PayPal-Skript konnte nicht geladen werden.");
+      document.body.appendChild(script);
+    }
+
+    return () => {
+      cancelled = true;
+      paypalButtonsRef.current?.close?.();
+      paypalButtonsRef.current = null;
+      if (paypalContainerRef.current) paypalContainerRef.current.innerHTML = "";
+    };
+  }, [approveExpressOrder, createExpressOrder, currency, payPalConfigured, paypalClientId, totalGrossCents]);
+
+  if (!payPalConfigured || !paypalClientId.trim()) return null;
+
+  const startApplePay = async () => {
+    const ApplePaySession = currentApplePaySession();
+    const applepay = applePaySessionRef.current;
+    if (!ApplePaySession || !applepay || !applePayConfig) return;
+
+    setBusy(true);
+    setSdkError(null);
+    try {
+      const session = new ApplePaySession(4, {
+        countryCode: applePayConfig.countryCode ?? "DE",
+        currencyCode: currency.trim().toUpperCase(),
+        merchantCapabilities: applePayConfig.merchantCapabilities ?? ["supports3DS"],
+        supportedNetworks: applePayConfig.supportedNetworks ?? ["visa", "masterCard", "amex", "maestro"],
+        requiredShippingContactFields: ["name", "phone", "email", "postalAddress"],
+        requiredBillingContactFields: ["postalAddress"],
+        total: {
+          label: "jerry's",
+          type: "final",
+          amount: moneyStringFromGrossCents(totalGrossCents),
+        },
+      });
+
+      session.onvalidatemerchant = async (event) => {
+        try {
+          const result = await applepay.validateMerchant({
+            validationUrl: event.validationURL,
+            displayName: "jerry's",
+          });
+          session.completeMerchantValidation(result.merchantSession);
+        } catch (e) {
+          console.error(e);
+          session.abort();
+        }
+      };
+
+      session.onpaymentauthorized = async (event) => {
+        try {
+          const orderId = await createExpressOrder();
+          await applepay.confirmOrder({
+            orderId,
+            token: event.payment.token,
+            billingContact: event.payment.billingContact,
+            shippingContact: event.payment.shippingContact,
+          });
+          await approveExpressOrder(orderId, event.payment.shippingContact);
+          session.completePayment({ status: ApplePaySession.STATUS_SUCCESS });
+        } catch (e) {
+          console.error(e);
+          setSdkError(e instanceof Error ? e.message : "Apple Pay konnte nicht abgeschlossen werden.");
+          session.completePayment({ status: ApplePaySession.STATUS_FAILURE });
+        } finally {
+          setBusy(false);
+        }
+      };
+
+      session.oncancel = () => {
+        setBusy(false);
+        setSdkError("Apple Pay wurde abgebrochen. Es wurde nichts abgebucht.");
+      };
+
+      session.begin();
+    } catch (e) {
+      setBusy(false);
+      setSdkError(e instanceof Error ? e.message : "Apple Pay konnte nicht gestartet werden.");
+    }
+  };
+
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-      {variant === "cart" ? (
-        <Link
-          href="/checkout?payment=paypal"
-          className={btnClass}
-          aria-label="Zum Checkout mit PayPal"
-        >
-          PayPal
-        </Link>
-      ) : (
+    <div className="w-full max-w-md space-y-3 text-left lg:text-right" aria-busy={busy}>
+      {applePayConfig ? (
         <button
           type="button"
-          onClick={goToCheckoutFields}
-          className={btnClass}
-          aria-label="Mit PayPal bezahlen: zuerst Kontakt- und Lieferadresse ausfüllen"
+          disabled={busy}
+          onClick={() => void startApplePay()}
+          className="flex min-h-[2.75rem] w-full items-center justify-center rounded-md bg-neutral-950 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          aria-label="Mit Apple Pay Express bezahlen"
         >
-          PayPal
+          Apple Pay
         </button>
-      )}
-      {hint}
+      ) : null}
+      <div ref={paypalContainerRef} className="min-h-[2.75rem] w-full" />
+      {sdkError ? (
+        <p className="text-xs leading-snug text-red-600" role="alert">
+          {sdkError}
+        </p>
+      ) : null}
+      <p className="text-xs leading-snug text-[#6b7280]">
+        Mit der Express-Zahlung akzeptierst du unsere{" "}
+        <Link href="/agb" target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">
+          AGB
+        </Link>
+        , die{" "}
+        <Link href="/widerruf" target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">
+          Widerrufsbelehrung
+        </Link>{" "}
+        und die{" "}
+        <Link href="/datenschutz" target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">
+          Datenschutzerklärung
+        </Link>
+        . PayPal bzw. Apple Pay übermittelt die Lieferadresse; der MVP berechnet Versand für Deutschland.
+      </p>
     </div>
   );
 }
