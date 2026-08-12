@@ -7,10 +7,7 @@ import {
   rebuildSearchIndexAction,
   type SearchIndexAdminActionState,
 } from "@/app/admin/(dashboard)/einstellungen/integrationen/search-index-actions";
-import {
-  formatIndexAgeLabel,
-  indexAgeHours,
-} from "@/features/catalog/domain/search-quality-metrics";
+import { formatIndexAgeLabel, indexAgeHours } from "@/features/catalog";
 
 export type SearchIndexPanelProps = {
   embeddingConfigured: boolean;

@@ -1,9 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getPublicProductFeedDocument } from "@/features/catalog/application/public-product-feed";
-import {
-  ifNoneMatchMatches,
-  publicProductFeedEtag,
-} from "@/features/catalog/domain/public-product-feed";
+import { ifNoneMatchMatches, publicProductFeedEtag } from "@/features/catalog";
+import { getPublicProductFeedDocument } from "@/features/catalog/server";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 import { clientIpFromRequest } from "@/lib/security/client-ip";
 import {
