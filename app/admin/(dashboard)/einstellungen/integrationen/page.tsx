@@ -8,6 +8,7 @@ import {
   buildZettleApiKeyDeepLink,
   getZettleConfigDiagnostics,
   getZettleConnectionPublic,
+  getZettleWebhookDestinationUrl,
   listRecentZettlePurchaseSyncs,
   listShopVariantsForZettleMapping,
 } from "@/features/inventory";
@@ -111,6 +112,7 @@ export default async function AdminIntegrationenPage({
         apiKeyDeepLink={zettleDiagnostics.apiKeyDeepLink || buildZettleApiKeyDeepLink()}
         webhookConfigured={zettle.webhookConfigured}
         webhookDestination={zettle.webhookDestination}
+        webhookExpectedUrl={getZettleWebhookDestinationUrl()}
         mappings={mappings.map((m) => ({
           productVariantId: m.productVariantId,
           productTitle: m.productTitle,

@@ -212,15 +212,23 @@ export class ZettleClient {
       });
     }
     const json = JSON.parse(text) as unknown;
-    const list = Array.isArray(json) ? json : [];
+    const list = Array.isArray(json)
+      ? json
+      : json &&
+          typeof json === "object" &&
+          Array.isArray((json as { subscriptions?: unknown }).subscriptions)
+        ? (json as { subscriptions: unknown[] }).subscriptions
+        : json && typeof json === "object" && Array.isArray((json as { data?: unknown }).data)
+          ? (json as { data: unknown[] }).data
+          : [];
     return list.map((raw) => {
-      const s = raw as ZettlePusherSubscription;
+      const s = raw as ZettlePusherSubscription & { signing_key?: string };
       return {
         uuid: s.uuid,
         destination: s.destination,
         eventNames: Array.isArray(s.eventNames) ? s.eventNames : [],
         status: s.status,
-        signingKey: s.signingKey,
+        signingKey: s.signingKey ?? s.signing_key,
       };
     });
   }
@@ -248,7 +256,14 @@ export class ZettleClient {
         responseBody: text.slice(0, 400),
       });
     }
-    return JSON.parse(text) as ZettlePusherSubscription;
+    const parsed = JSON.parse(text) as ZettlePusherSubscription & { signing_key?: string };
+    return {
+      uuid: parsed.uuid,
+      destination: parsed.destination,
+      eventNames: Array.isArray(parsed.eventNames) ? parsed.eventNames : [],
+      status: parsed.status,
+      signingKey: parsed.signingKey ?? parsed.signing_key,
+    };
   }
 
   async deletePusherSubscription(subscriptionUuid: string): Promise<void> {

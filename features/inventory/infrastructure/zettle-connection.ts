@@ -171,6 +171,17 @@ export async function markZettleConnectionError(message: string): Promise<void> 
   }
 }
 
+export async function clearZettleConnectionError(): Promise<void> {
+  try {
+    await getPrisma().zettleConnection.update({
+      where: { id: ZETTLE_CONNECTION_ID },
+      data: { lastSyncError: null },
+    });
+  } catch {
+    /* ignore */
+  }
+}
+
 export async function markZettlePurchaseSyncCompleted(): Promise<void> {
   await getPrisma().zettleConnection.update({
     where: { id: ZETTLE_CONNECTION_ID },
