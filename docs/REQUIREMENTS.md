@@ -55,7 +55,7 @@ Rules:
 - SKU must be unique
 - price authority is server-side only
 - **storefront header navigation** lists active **root** categories that have at least one active product; inactive or empty categories are not linked
-- **collections** remain merchandising (e.g. footer); they do not replace category browse paths
+- **collections** hold product membership; **categories** compose collections for browse/nav (ADR 0010)
 
 See also: [EPIC10_PRODUCT_CATEGORIES.md](./EPIC10_PRODUCT_CATEGORIES.md), [STOREFRONT_BREADCRUMBS.md](./STOREFRONT_BREADCRUMBS.md).
 

@@ -6,7 +6,6 @@ import { ProductLifecycleControls } from "@/app/admin/(dashboard)/products/[id]/
 import { getAiContentSettingsPublic } from "@/features/integrations";
 import { adminProductForEditForm } from "@/lib/catalog/admin-product-form";
 import { getProductByIdForAdmin, listManufacturersForAdmin } from "@/lib/catalog/queries";
-import { listCategoriesForProductPicker } from "@/lib/catalog/category-queries";
 
 export const dynamic = "force-dynamic";
 
@@ -28,21 +27,13 @@ export default async function AdminEditProductPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [product, manufacturers, categoryRows, aiSettings] = await Promise.all([
+  const [product, manufacturers, aiSettings] = await Promise.all([
     getProductByIdForAdmin(id),
     listManufacturersForAdmin(),
-    listCategoriesForProductPicker(),
     getAiContentSettingsPublic(),
   ]);
   if (!product) notFound();
   const formProduct = adminProductForEditForm(product);
-  const categories = categoryRows.map((c) => ({
-    id: c.id,
-    title: c.title,
-    slug: c.slug,
-    isActive: c.isActive,
-    parentTitle: c.parent?.title ?? null,
-  }));
 
   return (
     <div className="mx-auto max-w-4xl rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm sm:p-8">
@@ -79,7 +70,6 @@ export default async function AdminEditProductPage({
         <EditProductForm
           product={formProduct}
           manufacturers={manufacturers}
-          categories={categories}
           aiReady={aiSettings.ready}
         />
         <ProductLifecycleControls

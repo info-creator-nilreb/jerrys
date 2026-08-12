@@ -16,7 +16,7 @@ Storefront primary navigation should follow **customer mental models** (product 
 ## Nicht Ziele
 
 - Vollständiger PIM / unbegrenzte Attribut-Facetten
-- Collections abschaffen oder mit Kategorien vermischen
+- Collections abschaffen; Produkte wieder direkt an Kategorien hängen (siehe ADR 0010)
 - Mehrsprachige Kategorie-Slugs (Roadmap: DE-only bis explizit freigegeben)
 
 ## Slice 1 — ADR und Datenmodell
@@ -25,7 +25,7 @@ Storefront primary navigation should follow **customer mental models** (product 
 | --- | --- |
 | ADR | `docs/adr/0004-product-categories.md` — Taxonomie vs. Collections, Primary category, URL-Konvention |
 | Schema | `categories` (slug unique, title, description, sortOrder, isActive, optional `parentId` für max. 1 Verschachtelung in v1) |
-| Zuordnung | `product_categories` (productId, categoryId, isPrimary) |
+| Zuordnung | `category_collections` (categoryId, collectionId, sortOrder); Produkte nur über `collection_products` (ADR 0010) |
 | API | `features/catalog` — `listActiveCategoriesForNav`, `listActiveCategoryTreeForNav`, `listActiveProductsByCategorySlug` |
 
 **Exit Slice 1:** Migration deploybar; kein Storefront-UI-Zwang. **Status:** umgesetzt (`20260808142000_epic10_product_categories`).
@@ -36,7 +36,7 @@ Storefront primary navigation should follow **customer mental models** (product 
 | --- | --- |
 | Listen | `/admin/categories` — sortierbar, aktiv/inaktiv |
 | Formular | Anlegen/Bearbeiten, Slug-Validierung |
-| Produkt | Kategorie-Zuordnung am Produkt (Primary + optional weitere) |
+| Produkt | Keine direkte Kategorie-Zuordnung — Produkte in Kollektionen; Kategorie bindet Kollektionen |
 | Nav | Feld „In Hauptnavigation anzeigen“ oder implizit über `isActive` + Produktanzahl |
 
 **Exit Slice 2:** Operator kann Katalog ohne SQL strukturieren. **Status:** umgesetzt (Admin CRUD, Sidebar, Produktbearbeitung).

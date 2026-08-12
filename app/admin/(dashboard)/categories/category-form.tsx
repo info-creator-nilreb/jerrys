@@ -9,12 +9,12 @@ import {
 
 const initial: CategoryFormState = null;
 
-type ProductOption = { id: string; title: string; slug: string; isActive: boolean };
+type CollectionOption = { id: string; title: string; slug: string; isActive: boolean };
 type ParentOption = { id: string; title: string; slug: string };
 
 export function CategoryForm({
   category,
-  products,
+  collections,
   parentOptions,
   submitLabel,
 }: {
@@ -26,19 +26,17 @@ export function CategoryForm({
     sortOrder: number;
     isActive: boolean;
     parentId: string | null;
-    productIds: string[];
-    primaryProductId: string | null;
+    collectionIds: string[];
     hasChildren: boolean;
   };
-  products: ProductOption[];
+  collections: CollectionOption[];
   parentOptions: ParentOption[];
   submitLabel: string;
 }) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(saveCategory, initial);
   const fe = state?.fieldErrors ?? {};
-  const selected = new Set(category?.productIds ?? []);
-  const defaultPrimary = category?.primaryProductId ?? "";
+  const selected = new Set(category?.collectionIds ?? []);
 
   useEffect(() => {
     if (state?.ok) router.refresh();
@@ -75,7 +73,7 @@ export function CategoryForm({
             placeholder="z. B. hund"
           />
           {fe.slug ? <p className="text-xs text-red-600">{fe.slug}</p> : null}
-          <p className="text-xs text-[#9ca3af]">Storefront (Slice 3): /kategorien/[slug]</p>
+          <p className="text-xs text-[#9ca3af]">Storefront: /kategorien/[slug]</p>
         </div>
         <div className="flex flex-col gap-1">
           <label htmlFor="category-sort" className="text-xs font-medium text-[#6b7280]">
@@ -136,56 +134,47 @@ export function CategoryForm({
             className="checkbox-primary size-4"
           />
           <label htmlFor="category-active" className="text-sm text-[#374151]">
-            Aktiv (für Navigation/Listings, sobald Storefront angebunden ist)
+            Aktiv (in Navigation und Listings, wenn verknüpfte Kollektionen Produkte haben)
           </label>
         </div>
       </section>
 
       <section>
-        <h2 className="text-sm font-semibold text-[#374151]">Produkte in dieser Kategorie</h2>
+        <h2 className="text-sm font-semibold text-[#374151]">Kollektionen in dieser Kategorie</h2>
         <p className="mt-1 text-xs text-[#6b7280]">
-          Optional: Primary-Kategorie für ein Produkt markieren (pro Produkt höchstens eine Primary
-          im gesamten Katalog).
+          Produkte erscheinen hier über die ausgewählten Kollektionen (Shopify-Modell). Produkte
+          werden nur in Kollektionen zugeordnet, nicht direkt in Kategorien.
         </p>
-        {products.length === 0 ? (
-          <p className="mt-4 text-sm text-[#6b7280]">Noch keine Produkte im Katalog.</p>
+        {collections.length === 0 ? (
+          <p className="mt-4 text-sm text-[#6b7280]">
+            Noch keine Kollektionen. Lege zuerst unter Katalog → Kollektionen Produkte an und
+            verknüpfe sie hier.
+          </p>
         ) : (
           <ul className="mt-4 max-h-80 space-y-2 overflow-y-auto rounded-lg border border-[#e8eaed] p-3">
-            {products.map((p) => (
-              <li key={p.id} className="flex flex-wrap items-start gap-3">
-                <label className="flex min-w-0 flex-1 cursor-pointer items-start gap-2 text-sm text-[#374151]">
+            {collections.map((c) => (
+              <li key={c.id}>
+                <label className="flex min-w-0 cursor-pointer items-start gap-2 text-sm text-[#374151]">
                   <input
                     type="checkbox"
-                    name="productIds"
-                    value={p.id}
-                    defaultChecked={selected.has(p.id)}
+                    name="collectionIds"
+                    value={c.id}
+                    defaultChecked={selected.has(c.id)}
                     className="checkbox-primary mt-0.5 size-4"
                   />
                   <span>
-                    {p.title}
-                    {!p.isActive ? (
+                    {c.title}
+                    {!c.isActive ? (
                       <span className="ml-1 text-xs text-[#9ca3af]">(inaktiv)</span>
                     ) : null}
-                    <span className="ml-1 font-mono text-xs text-[#9ca3af]">{p.slug}</span>
+                    <span className="ml-1 font-mono text-xs text-[#9ca3af]">{c.slug}</span>
                   </span>
-                </label>
-                <label className="flex shrink-0 items-center gap-1.5 text-xs text-[#6b7280]">
-                  <input
-                    type="radio"
-                    name="primaryProductId"
-                    value={p.id}
-                    defaultChecked={defaultPrimary === p.id}
-                    className="size-3.5 accent-primary"
-                  />
-                  Primary
                 </label>
               </li>
             ))}
           </ul>
         )}
-        {fe.primaryProductId ? (
-          <p className="mt-2 text-xs text-red-600">{fe.primaryProductId}</p>
-        ) : null}
+        {fe.collectionIds ? <p className="mt-2 text-xs text-red-600">{fe.collectionIds}</p> : null}
       </section>
 
       {state?.error ? <p className="text-sm text-red-600">{state.error}</p> : null}

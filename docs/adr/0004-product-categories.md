@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (Epic 10, Slice 1)
+**Superseded** by [ADR 0010](./0010-category-via-collections.md) for product assignment (categories now compose collections). Category entity, hierarchy, and `/kategorien/*` URLs remain.
 
 ## Context
 

@@ -159,7 +159,6 @@ model Product {
   images      ProductImage[]
   variants    ProductVariant[]
   collectionMemberships CollectionProduct[]
-  categoryMemberships   ProductCategory[]
   cartLines   CartLine[]
   orderItems  OrderItem[]
   stockReservations StockReservation[]
@@ -221,6 +220,8 @@ model Collection {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
   products    CollectionProduct[]
+  /// Kategorien, die diese Kollektion in der Shop-Navigation/Listings einbinden.
+  categoryLinks CategoryCollection[]
 
   @@index([isActive, sortOrder])
   @@map("collections")
@@ -238,7 +239,7 @@ model CollectionProduct {
   @@map("collection_products")
 }
 
-/// Browse-Taxonomie (Epic 10); unabhängig von Merchandising-Collections.
+/// Browse-Taxonomie / Primary Nav (Epic 10). Produkte kommen nur über verknüpfte Kollektionen.
 model Category {
   id          String   @id @default(cuid())
   slug        String   @unique
@@ -251,24 +252,24 @@ model Category {
   children    Category[] @relation("CategoryHierarchy")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  products    ProductCategory[]
+  collections CategoryCollection[]
 
   @@index([isActive, sortOrder])
   @@index([parentId])
   @@map("categories")
 }
 
-model ProductCategory {
-  productId  String  @map("product_id")
-  categoryId String  @map("category_id")
-  isPrimary  Boolean @default(false) @map("is_primary")
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+/// Kategorie ← Kollektion (Shopify-ähnlich: Nav/IA bindet Kollektionen, nicht einzelne Produkte).
+model CategoryCollection {
+  categoryId   String @map("category_id")
+  collectionId String @map("collection_id")
+  sortOrder    Int    @default(0) @map("sort_order")
+  category     Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
 
-  @@id([productId, categoryId])
-  @@index([categoryId])
-  @@index([productId, isPrimary])
-  @@map("product_categories")
+  @@id([categoryId, collectionId])
+  @@index([collectionId])
+  @@map("category_collections")
 }
 
 /// Globale Versandkonfiguration (genau eine Zeile, id = default).

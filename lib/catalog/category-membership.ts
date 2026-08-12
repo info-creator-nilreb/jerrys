@@ -2,60 +2,58 @@ import type { Prisma } from "@/app/generated/prisma/client";
 
 type Tx = Prisma.TransactionClient;
 
-export function primaryMustBeInSet(
-  primaryId: string | null | undefined,
-  ids: string[],
-): string | null {
-  if (!primaryId) return null;
-  return ids.includes(primaryId) ? primaryId : null;
-}
-
-/** Ersetzt alle Kategorie-Zuordnungen eines Produkts (Primary max. eine). */
-export async function replaceProductCategoryMemberships(
-  tx: Tx,
-  productId: string,
-  categoryIds: string[],
-  primaryCategoryId: string | null,
-) {
-  const primary = primaryMustBeInSet(primaryCategoryId, categoryIds);
-
-  await tx.productCategory.deleteMany({ where: { productId } });
-  if (categoryIds.length === 0) return;
-
-  await tx.productCategory.createMany({
-    data: categoryIds.map((categoryId) => ({
-      productId,
-      categoryId,
-      isPrimary: primary === categoryId,
-    })),
-  });
-}
-
-/** Ersetzt Produktliste einer Kategorie; optional eine Primary-Zuordnung für ein Produkt. */
-export async function replaceCategoryProductMemberships(
+/** Ersetzt die Kollektions-Zuordnung einer Kategorie (Sortierung = Listenreihenfolge). */
+export async function replaceCategoryCollectionMemberships(
   tx: Tx,
   categoryId: string,
-  productIds: string[],
-  primaryProductId: string | null,
+  collectionIds: string[],
 ) {
-  const primary = primaryMustBeInSet(primaryProductId, productIds);
+  await tx.categoryCollection.deleteMany({ where: { categoryId } });
+  if (collectionIds.length === 0) return;
 
-  await tx.productCategory.deleteMany({ where: { categoryId } });
-
-  if (primary) {
-    await tx.productCategory.updateMany({
-      where: { productId: primary, isPrimary: true },
-      data: { isPrimary: false },
-    });
-  }
-
-  if (productIds.length === 0) return;
-
-  await tx.productCategory.createMany({
-    data: productIds.map((productId) => ({
-      productId,
+  await tx.categoryCollection.createMany({
+    data: collectionIds.map((collectionId, index) => ({
       categoryId,
-      isPrimary: primary === productId,
+      collectionId,
+      sortOrder: index,
     })),
   });
+}
+
+export type CategoryRefCandidate = {
+  slug: string;
+  title: string;
+  sortOrder?: number;
+  parentId?: string | null;
+  parent?: { slug: string; title: string } | null;
+};
+
+/** Primary-Kategorie ableiten: Root vor Kind, dann niedrigste sortOrder, dann Titel. */
+export function pickPrimaryCategoryRef<T extends CategoryRefCandidate>(
+  categories: readonly T[],
+): T | null {
+  if (categories.length === 0) return null;
+  const sorted = [...categories].sort((a, b) => {
+    const aRoot = a.parentId == null ? 0 : 1;
+    const bRoot = b.parentId == null ? 0 : 1;
+    if (aRoot !== bRoot) return aRoot - bRoot;
+    const so = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+    if (so !== 0) return so;
+    return a.title.localeCompare(b.title, "de");
+  });
+  return sorted[0] ?? null;
+}
+
+/** Dedupliziert Kategorien nach Slug (erste Wins). */
+export function uniqueCategoriesBySlug<T extends { slug: string }>(
+  categories: readonly T[],
+): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const c of categories) {
+    if (seen.has(c.slug)) continue;
+    seen.add(c.slug);
+    out.push(c);
+  }
+  return out;
 }
