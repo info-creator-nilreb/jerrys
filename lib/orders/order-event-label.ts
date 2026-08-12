@@ -12,6 +12,10 @@ export function orderEventTypeTitle(eventType: string): string {
       return "Erstattung";
     case "email.delivery":
       return "E-Mail-Versand";
+    case "shipment.returned":
+      return "Sendung Retoure";
+    case "shipment.reship_draft":
+      return "Erneute Sendung";
     default:
       return eventType;
   }
@@ -57,6 +61,15 @@ export function orderEventMetadataDescription(
       const a = et ? emailTypeLabel(et) : "";
       const b = ds ? emailSendStatusLabel(ds) : "";
       return [a, b].filter(Boolean).join(" · ");
+    }
+    case "shipment.returned": {
+      const sid = typeof m.shipmentId === "string" ? m.shipmentId : "";
+      return sid ? `Sendung ${sid.slice(0, 8)}…` : "Sendung zurück";
+    }
+    case "shipment.reship_draft": {
+      const sid = typeof m.shipmentId === "string" ? m.shipmentId : "";
+      const reused = m.reusedExisting === true ? "bestehender Entwurf" : "neuer Entwurf";
+      return sid ? `${reused} · ${sid.slice(0, 8)}…` : reused;
     }
     default:
       return "";

@@ -6,6 +6,10 @@ export const ORDER_EVENT_PLACED = "order.placed" as const;
 export const ORDER_EVENT_STATUS_CHANGED = "order.status_changed" as const;
 export const ORDER_EVENT_EMAIL_DELIVERY = "email.delivery" as const;
 export const ORDER_EVENT_REFUNDED = "order.refunded" as const;
+/** Sendung als Retoure markiert (Fulfillment, getrennt von Bestellstatus). */
+export const ORDER_EVENT_SHIPMENT_RETURNED = "shipment.returned" as const;
+/** Neuer Sendungsentwurf für erneute Versendung nach Retoure. */
+export const ORDER_EVENT_SHIPMENT_RESHIP_DRAFT = "shipment.reship_draft" as const;
 
 /**
  * Schreibt ein Ereignis in den Bestell-Auditstrom (`order_events`) und die Integrations-Outbox.

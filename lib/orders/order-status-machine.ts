@@ -27,7 +27,9 @@ const EDGES: Partial<Record<string, string[]>> = {
   draft: ["cancelled", "pending_payment"],
   processing: ["shipped", "cancelled", "refunded"],
   shipped: ["completed", "cancelled", "retoure", "refunded"],
-  retoure: ["refunded", "completed", "cancelled"],
+  /** `processing` = Vorbereitung erneuter Versand (Reship nach Retoure). */
+  retoure: ["refunded", "completed", "cancelled", "processing"],
+
   completed: ["refunded", "retoure"],
   cancelled: [],
   refunded: [],

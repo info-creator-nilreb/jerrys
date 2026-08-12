@@ -39,4 +39,24 @@ describe("evaluateOrderShipmentEligibility", () => {
       }),
     ).toMatchObject({ ok: false, reason: "already_fully_shipped" });
   });
+
+  it("erlaubt Reship nach Retoure / Versand", () => {
+    expect(
+      evaluateOrderShipmentEligibility({
+        orderStatus: "retoure",
+        fulfillmentStatus: "returned",
+        physicalItemQuantity: 1,
+        reship: true,
+      }),
+    ).toEqual({ ok: true });
+
+    expect(
+      evaluateOrderShipmentEligibility({
+        orderStatus: "shipped",
+        fulfillmentStatus: "shipped",
+        physicalItemQuantity: 1,
+        reship: true,
+      }),
+    ).toEqual({ ok: true });
+  });
 });
