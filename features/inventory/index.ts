@@ -26,6 +26,7 @@ export {
   ensureZettlePurchaseWebhook,
   removeZettlePurchaseWebhook,
   getZettleWebhookDestinationUrl,
+  resolveZettleWebhookContactEmail,
 } from "@/features/inventory/application/ensure-zettle-webhook";
 
 export {
