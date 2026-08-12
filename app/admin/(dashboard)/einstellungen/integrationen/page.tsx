@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { AiSettingsPanel } from "./ai-settings-panel";
 import { InstagramConnectPanel } from "./instagram-connect-panel";
 import { InternetmarkeSettingsPanel } from "./internetmarke-settings-panel";
 import { ZettleSettingsPanel } from "./zettle-settings-panel";
 import { getInternetmarkeConnectionPublic } from "@/features/fulfillment";
+import { getAiContentSettingsPublic } from "@/features/integrations";
 import {
   buildZettleApiKeyDeepLink,
   getZettleConfigDiagnostics,
@@ -37,13 +39,14 @@ export default async function AdminIntegrationenPage({
   const igDiagnostics = getInstagramConfigDiagnostics(requestOrigin);
   const zettleDiagnostics = getZettleConfigDiagnostics();
 
-  const [igConnection, igCache, im, zettle, mappings, recentSyncs] = await Promise.all([
+  const [igConnection, igCache, im, zettle, mappings, recentSyncs, ai] = await Promise.all([
     getInstagramConnectionPublic(),
     listActiveInstagramMediaCache(48),
     getInternetmarkeConnectionPublic(),
     getZettleConnectionPublic(),
     listShopVariantsForZettleMapping(),
     listRecentZettlePurchaseSyncs(15).catch(() => []),
+    getAiContentSettingsPublic(),
   ]);
 
   const igFlash =
@@ -61,8 +64,27 @@ export default async function AdminIntegrationenPage({
         <p className="mt-2 text-sm text-[#6b7280]">
           Externe Dienste verbinden. Marken kaufen bleibt an der Bestellung; Feed-Inhalte und
           Versandkosten pflegst du unter Marketing bzw. Versand. POS-Bestand läuft über Zettle.
+          KI-Entwürfe für Produkttexte konfigurierst du hier.
         </p>
       </div>
+
+      <AiSettingsPanel
+        configured={ai.configured}
+        enabled={ai.enabled}
+        ready={ai.ready}
+        hasDbApiKey={ai.hasDbApiKey}
+        envApiKeyConfigured={ai.envApiKeyConfigured}
+        apiKeyMasked={ai.apiKeyMasked}
+        textModel={ai.textModel}
+        visionModel={ai.visionModel}
+        imageModel={ai.imageModel}
+        moderationModel={ai.moderationModel}
+        timeoutMs={ai.timeoutMs}
+        dailyRequestLimit={ai.dailyRequestLimit}
+        requestsUsedToday={ai.requestsUsedToday}
+        lastVerifiedAt={ai.lastVerifiedAt?.toISOString() ?? null}
+        lastError={ai.lastError}
+      />
 
       <InstagramConnectPanel
         configured={igDiagnostics.configured}

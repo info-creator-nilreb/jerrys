@@ -830,6 +830,32 @@ model InternetmarkeConnection {
   @@map("internetmarke_connections")
 }
 
+/// KI-Content-Assistent (Epic 13 / ADR-0010). Singleton id = default; API-Key AES-GCM.
+model AiContentSettings {
+  id                String    @id @default("default")
+  /// false → Port verhält sich wie NotConfigured (manuelle Texte bleiben möglich).
+  enabled           Boolean   @default(true)
+  /// AES-GCM Ciphertext; optional wenn OPENAI_API_KEY in Env gesetzt ist.
+  apiKeyEnc         String?   @map("api_key_enc")
+  textModel         String    @default("gpt-4o-mini") @map("text_model")
+  visionModel       String    @default("gpt-4o-mini") @map("vision_model")
+  imageModel        String    @default("dall-e-3") @map("image_model")
+  moderationModel   String    @default("omni-moderation-latest") @map("moderation_model")
+  timeoutMs         Int       @default(30000) @map("timeout_ms")
+  /// Max. Generierungs-Requests pro UTC-Tag (0 = kein Limit).
+  dailyRequestLimit Int       @default(100) @map("daily_request_limit")
+  requestsUsedToday Int       @default(0) @map("requests_used_today")
+  /// UTC-Tag `YYYY-MM-DD` für requestsUsedToday.
+  requestsDayKey    String    @default("") @map("requests_day_key")
+  connectedAt       DateTime? @map("connected_at")
+  lastVerifiedAt    DateTime? @map("last_verified_at")
+  lastError         String?   @map("last_error") @db.Text
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@map("ai_content_settings")
+}
+
 /// Gecachte Instagram-Medien (Bilder) für Storefront/CMS — Sync, kein Live-Graph pro Request.
 model InstagramMediaCache {
   id            String    @id @default(cuid())

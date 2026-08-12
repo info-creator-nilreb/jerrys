@@ -102,6 +102,7 @@ Zentrale Konfiguration unter `/admin/einstellungen` (`ShopSettings` Singleton `i
 - Restrict production secret and database access to named operators.
 - Record access changes and rotate credentials after suspected exposure or staff/access changes.
 - Test secret rotation before go-live and document provider-specific steps.
+- OpenAI (Epic 13): optional `OPENAI_API_KEY` in Env **or** encrypted Admin key in `ai_content_settings` (AES-GCM via `INTEGRATIONS_ENCRYPTION_KEY` / `AUTH_SECRET`). Env wins over DB. Never expose keys to the browser.
 
 ## Observability
 
@@ -150,6 +151,7 @@ Create and test these before their associated feature is enabled:
 - stuck or expired workshop reservations
 - Zettle inventory discrepancy (see runbook below)
 - INTERNETMARKE/DHL label purchase failure (see runbook below)
+- KI-Content / OpenAI failure (see runbook below)
 - personal-data incident and data-subject request
 
 Concrete steps for the commerce paths already in production follow below. Features not yet shipped keep the checklist item until an owned runbook exists.
@@ -187,6 +189,16 @@ PayPal zeigt Capture/`COMPLETED`, Shop-Bestellung bleibt `pending_payment`.
 4. Erwartung: Status `paid`, Capture-Inbox `processed`, Bestätigungsmail (falls noch nicht gesendet). Bei Betrags-Mismatch Logs `paypal_amount_mismatch` — **nicht** manuell auf `paid` setzen ohne Klärung.
 
 Siehe auch [EPIC4_RECONCILIATION.md](./EPIC4_RECONCILIATION.md).
+
+### Runbook: KI-Content / OpenAI fehlgeschlagen
+
+Symptoms: Admin-Integrationen zeigt Prüfung fehlgeschlagen; Generierung `not_configured` / `rate_limited` / `provider_rejected`.
+
+1. **Admin → Einstellungen → Integrationen → KI-Content-Assistent**: aktiv? Key Env oder Admin? Tageslimit erreicht?
+2. Env: `OPENAI_API_KEY` (Vorrang), optional Modell-/Timeout-Vars — siehe `.env.example`.
+3. Encryption: `INTEGRATIONS_ENCRYPTION_KEY` bzw. `AUTH_SECRET` muss zum gespeicherten Ciphertext passen (Rotation invalidiert Admin-Key).
+4. OpenAI Dashboard: Key-Rechte, Billing, Rate-Limits.
+5. Nach Fix: „Speichern & prüfen“ (GET `/v1/models`).
 
 ### Runbook: INTERNETMARKE Label-Kauf / Auth fehlgeschlagen
 

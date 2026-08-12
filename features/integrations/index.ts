@@ -17,3 +17,73 @@ export {
   type PublicObjectPutInput,
   type PublicObjectPutResult,
 } from "@/features/integrations/domain/object-storage";
+export {
+  AI_ALLOWED_PRODUCT_FACT_KEYS,
+  AiForbiddenPromptFactsError,
+  assertSafeAiProductFacts,
+  type AiAllowedProductFactKey,
+  type AiCapability,
+  type AiGenerationMeta,
+  type AiImageEditInput,
+  type AiImageEditMode,
+  type AiImageEditResult,
+  type AiImageGenerateInput,
+  type AiImageGenerateResult,
+  type AiModerateInput,
+  type AiModerateResult,
+  type AiOperationErrorCode,
+  type AiOperationFailure,
+  type AiProductFacts,
+  type AiProviderId,
+  type AiTextGenerateInput,
+  type AiTextGenerateResult,
+  type AiTextKind,
+  type AiVisionDescribeInput,
+  type AiVisionDescribeResult,
+} from "@/features/integrations/domain/ai-content-assistance";
+export {
+  createNotConfiguredAiContentAdapter,
+  type AiContentPort,
+} from "@/features/integrations/application/ai-content-port";
+export {
+  createAiContentPort,
+  createAiContentPortFromConfig,
+} from "@/features/integrations/application/create-ai-content-port";
+export {
+  generateProductAiTextDraft,
+  normalizeAiBulletsForProductField,
+  plainTextToProductDescriptionHtml,
+  productFieldForAiTextKind,
+  type GenerateProductAiTextResult,
+  type ProductAiTextTargetField,
+} from "@/features/integrations/application/generate-product-ai-text";
+export {
+  generateProductAiAltTextDraft,
+  generateProductAiImageDraft,
+  editProductAiImageDraft,
+  type EditProductAiImageResult,
+  type GenerateProductAiAltTextResult,
+  type GenerateProductAiImageResult,
+} from "@/features/integrations/application/generate-product-ai-image";
+export {
+  buildAiImageEditPrompt,
+} from "@/features/integrations/domain/ai-image-edit-prompt";
+export { createOpenAiContentAdapter } from "@/features/integrations/infrastructure/openai-ai-content-adapter";
+export {
+  resolveOpenAiContentConfigFromEnv,
+  type OpenAiContentConfig,
+} from "@/features/integrations/infrastructure/openai-config";
+export {
+  AI_CONTENT_SETTINGS_ID,
+  clearAiContentApiKey,
+  consumeAiContentRequestQuota,
+  getAiContentSettingsPublic,
+  getAiContentSettingsSecrets,
+  markAiContentSettingsError,
+  markAiContentSettingsVerified,
+  saveAiContentSettings,
+  verifyOpenAiApiKey,
+  type AiContentSettingsPublic,
+  type AiContentSettingsSecrets,
+  type SaveAiContentSettingsInput,
+} from "@/features/integrations/infrastructure/ai-content-settings";
