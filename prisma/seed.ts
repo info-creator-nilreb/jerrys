@@ -1,6 +1,6 @@
 import { hash } from "bcryptjs";
 import "dotenv/config";
-import { syncDefaultVariantFromProduct } from "../features/catalog";
+import { syncDefaultVariantFromProduct } from "../features/catalog/application/sync-default-variant-from-product";
 import { netCentsFromGross } from "../lib/catalog/pricing";
 import { getPrisma } from "../lib/db/prisma";
 import {
