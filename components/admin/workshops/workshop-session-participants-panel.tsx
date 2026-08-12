@@ -8,6 +8,7 @@ import {
   adminCancelWorkshopBookingAction,
   setWorkshopBookingAttendanceAction,
 } from "@/app/admin/(dashboard)/termine/participant-actions";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type Props = {
   sessionId: string;
@@ -28,6 +29,7 @@ export function WorkshopSessionParticipantsPanel({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
+  const [cancelBookingId, setCancelBookingId] = useState<string | null>(null);
 
   function run(fn: () => Promise<{ ok: boolean; message?: string }>) {
     setMessage(null);
@@ -163,16 +165,7 @@ export function WorkshopSessionParticipantsPanel({
                         <button
                           type="button"
                           disabled={pending}
-                          onClick={() => {
-                            if (
-                              !window.confirm(
-                                "Buchung wirklich stornieren? Plätze werden freigegeben. Bei bezahlten Terminen wird eine PayPal-Erstattung versucht.",
-                              )
-                            ) {
-                              return;
-                            }
-                            run(() => adminCancelWorkshopBookingAction(row.id, sessionId));
-                          }}
+                          onClick={() => setCancelBookingId(row.id)}
                           className="rounded border border-red-200 px-2 py-1 text-xs font-medium text-red-800 hover:bg-red-50 disabled:opacity-60"
                         >
                           Stornieren
@@ -199,6 +192,20 @@ export function WorkshopSessionParticipantsPanel({
           </table>
         </div>
       )}
+      <ConfirmDialog
+        open={cancelBookingId != null}
+        title="Buchung stornieren?"
+        description="Buchung wirklich stornieren? Plätze werden freigegeben. Bei bezahlten Terminen wird eine PayPal-Erstattung versucht."
+        confirmLabel="Stornieren"
+        pending={pending}
+        onCancel={() => setCancelBookingId(null)}
+        onConfirm={() => {
+          const id = cancelBookingId;
+          setCancelBookingId(null);
+          if (!id) return;
+          run(() => adminCancelWorkshopBookingAction(id, sessionId));
+        }}
+      />
     </section>
   );
 }

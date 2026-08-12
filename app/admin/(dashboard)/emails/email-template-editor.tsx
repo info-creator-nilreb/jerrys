@@ -8,6 +8,7 @@ import {
   type EmailTemplateFormState,
   type EmailTemplateTestSendState,
 } from "@/app/admin/(dashboard)/emails/actions";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { EmailTemplateVariableDef } from "@/lib/email/templates/catalog";
 import { prepareEmailPreviewHtml } from "@/lib/email/templates/preview-html";
 import { renderEmailBodies, type TemplateVars } from "@/lib/email/templates/render";
@@ -48,6 +49,8 @@ export function EmailTemplateEditor({
   const [enabled, setEnabled] = useState(initialEnabled);
   const [tab, setTab] = useState<"html" | "text" | "preview">("html");
   const [testTo, setTestTo] = useState(defaultTestRecipient);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const resetFormRef = useRef<HTMLFormElement>(null);
 
   const htmlRef = useRef<HTMLTextAreaElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
@@ -304,23 +307,31 @@ export function EmailTemplateEditor({
             Code-Standard wieder her.
           </p>
           <button
-            type="submit"
-            formAction={resetEmailTemplateAction}
+            type="button"
             className="inline-flex min-h-10 items-center rounded-lg border border-[#d1d5db] bg-white px-3 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
-            onClick={(e) => {
-              if (
-                !window.confirm(
-                  "Vorlage auf den Standard zurücksetzen? Deine Anpassungen gehen verloren.",
-                )
-              ) {
-                e.preventDefault();
-              }
-            }}
+            onClick={() => setResetConfirmOpen(true)}
           >
             Auf Standard zurücksetzen
           </button>
         </div>
       </form>
+
+      <form ref={resetFormRef} action={resetEmailTemplateAction} className="hidden" aria-hidden>
+        <input type="hidden" name="key" value={templateKey} />
+      </form>
+
+      <ConfirmDialog
+        open={resetConfirmOpen}
+        title="Vorlage zurücksetzen?"
+        description="Vorlage auf den Standard zurücksetzen? Deine Anpassungen gehen verloren."
+        confirmLabel="Auf Standard zurücksetzen"
+        variant="danger"
+        onCancel={() => setResetConfirmOpen(false)}
+        onConfirm={() => {
+          setResetConfirmOpen(false);
+          resetFormRef.current?.requestSubmit();
+        }}
+      />
 
       <div className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:self-start">
         <aside className="overflow-hidden rounded-xl border border-[#e8eaed] bg-white p-4 shadow-sm">

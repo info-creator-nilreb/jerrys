@@ -7,6 +7,7 @@ import {
   deleteProductAction,
   setProductActiveAction,
 } from "@/app/admin/(dashboard)/products/lifecycle-actions";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 export function ProductLifecycleControls({
   productId,
@@ -21,6 +22,7 @@ export function ProductLifecycleControls({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   function setActive(next: boolean) {
     setError(null);
@@ -37,10 +39,7 @@ export function ProductLifecycleControls({
   }
 
   function remove() {
-    const ok = window.confirm(
-      `„${title}“ unwiderruflich löschen?\n\nBei Bestellungen oder Lagerbewegungen ist Löschen nicht möglich — dann bitte deaktivieren.`,
-    );
-    if (!ok) return;
+    setConfirmOpen(false);
     setError(null);
     setMessage(null);
     startTransition(async () => {
@@ -85,7 +84,7 @@ export function ProductLifecycleControls({
         <button
           type="button"
           disabled={pending}
-          onClick={remove}
+          onClick={() => setConfirmOpen(true)}
           className="inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
         >
           <Trash2 className="size-4" aria-hidden />
@@ -102,6 +101,15 @@ export function ProductLifecycleControls({
           {error}
         </p>
       ) : null}
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Produkt löschen?"
+        description={`„${title}“ unwiderruflich löschen?\n\nBei Bestellungen oder Lagerbewegungen ist Löschen nicht möglich — dann bitte deaktivieren.`}
+        confirmLabel="Unwiderruflich löschen"
+        pending={pending}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={remove}
+      />
     </section>
   );
 }
