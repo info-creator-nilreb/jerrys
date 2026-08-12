@@ -4,7 +4,7 @@ import {
   deleteCollections,
   setCategoriesActive,
   setCollectionsActive,
-} from "@/features/catalog";
+} from "@/features/catalog/server";
 
 describe("catalog group admin lifecycle", () => {
   it("leere Kategorien aktivieren → Fehler ohne DB", async () => {
