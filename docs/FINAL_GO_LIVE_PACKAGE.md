@@ -13,7 +13,7 @@ Verbindlicher Scope für den Production-Cutover (Stand Abstimmung Product Owner)
 | 5 | Epic 14 Semantische Suche | offen (Slice 1–2 ✅) | SEO/Schema + Suchdokument/Embedding-Index; Slices 3–5 (Hybrid, Feed, Eval) offen |
 | 6 | Confirm-Dialoge statt `window.confirm` | ✅ | `ConfirmDialog` verdrahtet |
 | 7 | PayPal Express + Apple Pay | ✅ | Warenkorb Smart Buttons + Apple Pay; PDP → Warenkorb-Express |
-| 8 | Mobile-UX-Pass | in Arbeit | Storefront + Admin Feinschliff nach Card-/Express-Änderungen |
+| 8 | Mobile-UX-Pass | ✅ | Admin-Cards + Audit-Checkliste; Storefront Touch/Safe-Area bereits abgesichert |
 | 9 | Epic-/Slice-Hinweise aus UI | ✅ | Sichtbare Copy bereinigt |
 
 ## Explizit außerhalb (bis nach Live)
