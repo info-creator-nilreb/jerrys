@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ShippingSettingsForm } from "@/app/admin/(dashboard)/versand/shipping-settings-form";
 import { getShopShippingSettingsForAdminForm } from "@/app/admin/(dashboard)/versand/actions";
 
@@ -16,8 +17,15 @@ export default async function AdminVersandPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-[#1f2937]">Versand</h1>
         <p className="mt-2 text-sm text-[#6b7280]">
-          Lieferländer und Versandkosten gelten shopweit — nicht mehr pro Produkt. Änderungen wirken sofort im
-          Checkout.
+          Lieferländer und Versandkosten gelten shopweit — nicht mehr pro Produkt. Änderungen wirken
+          sofort im Checkout. Internetmarke-Zugangsdaten und Porto-Produkt verwaltest du unter{" "}
+          <Link
+            href="/admin/einstellungen/integrationen"
+            className="font-medium text-primary hover:underline"
+          >
+            Einstellungen → Integrationen
+          </Link>
+          .
         </p>
       </div>
       <ShippingSettingsForm defaults={defaults} />

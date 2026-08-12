@@ -33,11 +33,13 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | Server Actions `app/admin/.../categories/actions.ts` | `auth()` in Action | Kategorie-CRUD, Produktzuordnung |
 | Server Actions `app/admin/.../versand/actions.ts` | `auth()` in Action | Shopweite Versandländer und -kosten |
 | Seite `/admin/einstellungen` | Admin-Session | Shop-Branding, Kontakt, Farben, Medien-Uploads (Epic 11) |
+| Seite `/admin/einstellungen/integrationen` | Admin-Session | Instagram-OAuth + Internetmarke-Credentials/Produkt |
 | Server Actions `app/admin/.../einstellungen/actions.ts` | `auth()` in Action | ShopSettings speichern; Branding-Upload/Clear (Vercel Blob); Audit via Outbox `shop_settings.*` |
+| Server Actions `app/admin/.../einstellungen/integrationen/instagram-actions.ts` | Admin-Session | Instagram trennen / manueller Sync |
+| Server Actions `app/admin/.../einstellungen/integrationen/internetmarke-actions.ts` | Admin-Session | Portokasse verbinden, Produkt wählen, trennen |
 | Seiten `/admin/inhalte`, `/admin/inhalte/new`, `/admin/inhalte/[id]/edit`, `/admin/inhalte/marketing` | Admin-Session | CMS-light inkl. Live-Vorschau (Client); Marketing Reviews/Social; `/admin/startseite` → Redirect Marketing |
 | Server Actions `app/admin/.../inhalte/actions.ts` | `auth()` in Action | ContentPage + ContentBlocks speichern; Publish/Unpublish; Rich-Text sanitize; Outbox `content_page.*` / `content_page.published` / `content_page.unpublished` |
 | Server Actions `app/admin/.../inhalte/marketing/actions.ts` | `auth()` in Action | Homepage Amazon-/Social-Pflege (früher `/admin/startseite`) |
-| Server Actions `app/admin/.../inhalte/marketing/instagram-actions.ts` | Admin-Session | Instagram trennen / manueller Sync |
 | `GET /api/admin/instagram/connect` | Admin-Session | Start Instagram OAuth (State-Cookie) |
 | `GET /api/admin/instagram/callback` | Admin-Session + OAuth-State | Code→Token, verschlüsselte Persistenz, Erst-Sync |
 | Seite `/vorschau/inhalte/[pageId]` | Signiertes Query-Token (`CONTENT_PREVIEW_SECRET` oder `AUTH_SECRET`), TTL 30 min | CMS-Vorschau (Draft/Published); **noindex**; ungültig/abgelaufen → **404**; kein Session-Auth-Leak |

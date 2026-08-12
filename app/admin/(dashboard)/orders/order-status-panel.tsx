@@ -30,9 +30,15 @@ const DIMENSIONS: AdminTripleDimension[] = ["payment", "shipping", "order"];
 export function OrderStatusPanel({
   orderId,
   order,
+  shipmentDefaults,
 }: {
   orderId: string;
   order: OrderForTriple;
+  /** Vorbelegung aus Internetmarke-Label (Tracking). */
+  shipmentDefaults?: {
+    carrier?: "DHL" | "DPD" | "UPS" | "Hermes";
+    trackingNumber?: string | null;
+  };
 }) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(updateOrderStatus, initial);
@@ -189,7 +195,7 @@ export function OrderStatusPanel({
                   name="shippingCarrier"
                   required
                   className="h-11 w-full rounded-md border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                  defaultValue="DHL"
+                  defaultValue={shipmentDefaults?.carrier ?? "DHL"}
                 >
                   <option value="DHL">DHL</option>
                   <option value="DPD">DPD</option>
@@ -208,6 +214,7 @@ export function OrderStatusPanel({
                   required
                   autoComplete="off"
                   placeholder="z. B. 003404341610940159"
+                  defaultValue={shipmentDefaults?.trackingNumber ?? ""}
                   className="h-11 w-full rounded-md border border-[#e5e7eb] px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 />
               </div>

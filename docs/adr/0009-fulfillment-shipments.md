@@ -1,9 +1,9 @@
 # ADR-0009: Fulfillment shipments and shipping-label port
 
-- Status: Accepted (Epic 7, Slice 1)
+- Status: Accepted (Epic 7, Slice 1 + Slice 3 INTERNETMARKE)
 - Date: 2026-08-11
 - Owners: Engineering
-- Epic: 7 / Slice 1
+- Epic: 7 / Slice 1–3
 
 ## Context
 
@@ -22,10 +22,12 @@ Physical goods today ship via a **manual** Admin transition on `Order` (`status 
 1. **Bounded context:** `features/fulfillment` owns shipments, label orchestration, and return/reship commands. Order aggregate keeps denormalized `shippingCarrier` / `trackingNumber` / `fulfillmentStatus` for list UI and e-mail until a later sync slice.
 2. **`shipments` table:** one or more shipments per order; status machine `draft → labeled → shipped → delivered | voided | returned` (with allowed edges documented in domain code).
 3. **Label provider enum:** `none` (manual tracking), `internetmarke`, `dhl_parcel`. Slice 1 stores the field; HTTP adapters ship in later slices behind credentials.
-4. **ShippingLabelPort** (application port): `purchaseLabel`, `voidLabel`, `fetchLabelDocument` — Slice 1 defines the TypeScript contract and a `NotConfiguredShippingLabelAdapter` that returns typed errors. No network I/O.
-5. **Private label files:** storage key on the shipment; durable private object store remains open (ADR-0008 public Blob is insufficient). Slice 1 only stores optional `labelStorageKey`.
-6. **Compatibility:** Existing Admin “Versandt” flow with carrier + tracking remains valid. Later slices may create/update a `Shipment` when that transition runs.
-7. **Out of scope for Slice 1:** Admin UI for shipments, provider HTTP, webhook ingestion, automatic INTERNETMARKE product selection, returns UI.
+4. **ShippingLabelPort** (application port): `purchaseLabel`, `voidLabel` — Slice 1 contract + `NotConfiguredShippingLabelAdapter`. Slice 3: `InternetmarkeShippingLabelAdapter` (REST only; SOAP sunset 2025-12-31) behind `createShippingLabelPortFromEnv()`.
+5. **INTERNETMARKE REST:** Base `https://api-eu.dhl.com/post/de/shipping/im/v1`. Auth `POST /user` (form-urlencoded: `grant_type=client_credentials`, `client_id`, `client_secret`, Portokasse `username`/`password`) → Bearer. Purchase `POST /app/shoppingcart/pdf?directCheckout=true` (parameter name is `directCheckout`, not `finalize`). Void `POST /app/retoure` with `{ shoppingCart: { shopOrderId } }`. Addresses use ISO-3166-1 alpha-3; product codes/prices from PPL or Products API via env.
+6. **Private label files:** storage key on the shipment; durable private object store remains open (ADR-0008 public Blob is insufficient). Adapter may return a temporary `labelDownloadUrl`; do not treat it as durable storage.
+7. **Compatibility:** Existing Admin “Versandt” flow with carrier + tracking remains valid. Later slices may create/update a `Shipment` when that transition runs.
+8. **Out of scope still:** Admin UI for label purchase, automatic product selection, DHL Parcel, webhook ingestion, private Blob persistence.
+
 
 ## Consequences
 
@@ -51,5 +53,5 @@ Negative / accepted trade-offs:
 ## Revisit when
 
 - Multi-package per order is operationally required.
-- Private Blob / document store for label PDFs is chosen.
-- INTERNETMARKE or DHL credentials are available for Slice 2+.
+- Private Blob / document store for label PDFs is chosen (`labelDownloadUrl` is ephemeral).
+- Admin UI wires `purchaseShippingLabelForShipment` / `voidShippingLabelForShipment`.

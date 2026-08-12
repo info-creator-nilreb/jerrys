@@ -10,7 +10,6 @@ import {
   setHomepageSocialImageActive,
   submitHomepageSocialImageMetaForm,
 } from "@/app/admin/(dashboard)/inhalte/marketing/actions";
-import { InstagramConnectPanel } from "@/app/admin/(dashboard)/inhalte/marketing/instagram-connect-panel";
 import { ReviewCreateForm } from "@/app/admin/(dashboard)/inhalte/marketing/review-create-form";
 import { ReviewEditForm } from "@/app/admin/(dashboard)/inhalte/marketing/review-edit-form";
 import { SocialUploadForm } from "@/app/admin/(dashboard)/inhalte/marketing/social-upload-form";
@@ -18,10 +17,7 @@ import {
   listAllHomepageAmazonReviewsForAdmin,
   listAllHomepageSocialImagesForAdmin,
 } from "@/lib/homepage/marketing-queries";
-import { headers } from "next/headers";
-import { getInstagramConfigDiagnostics } from "@/lib/instagram/config";
 import { getInstagramConnectionPublic } from "@/lib/instagram/connection";
-import { listActiveInstagramMediaCache } from "@/lib/instagram/media-queries";
 
 export const metadata: Metadata = {
   title: "Marketing-Inhalte",
@@ -33,31 +29,14 @@ const inputClass =
 export default async function AdminStartseitePage({
   searchParams,
 }: {
-  searchParams: Promise<{ review?: string; ig?: string; msg?: string }>;
+  searchParams: Promise<{ review?: string }>;
 }) {
-  const { review: editingReviewId, ig, msg } = await searchParams;
-  const headerList = await headers();
-  const requestOrigin = (() => {
-    const proto = headerList.get("x-forwarded-proto") ?? "https";
-    const host = headerList.get("x-forwarded-host") ?? headerList.get("host");
-    if (!host) return null;
-    return `${proto.split(",")[0]?.trim()}://${host.split(",")[0]?.trim()}`.replace(/\/$/, "");
-  })();
-  const igDiagnostics = getInstagramConfigDiagnostics(requestOrigin);
-  const [reviews, socialImages, igConnection, igCache] = await Promise.all([
+  const { review: editingReviewId } = await searchParams;
+  const [reviews, socialImages, igConnection] = await Promise.all([
     listAllHomepageAmazonReviewsForAdmin(),
     listAllHomepageSocialImagesForAdmin(),
     getInstagramConnectionPublic(),
-    listActiveInstagramMediaCache(48),
   ]);
-
-  const igFlash =
-    ig === "connected" || ig === "error"
-      ? {
-          kind: (ig === "connected" ? "ok" : "error") as "ok" | "error",
-          message: msg?.trim() || (ig === "connected" ? "Instagram verbunden." : "Fehler"),
-        }
-      : null;
 
   const editingReview = editingReviewId
     ? (reviews.find((r) => r.id === editingReviewId) ?? null)
@@ -76,30 +55,20 @@ export default async function AdminStartseitePage({
           Marketing-Inhalte
         </h1>
         <p className="mt-2 text-sm text-[#6b7280]">
-          Amazon-Zitate, Instagram-OAuth-Feed und kuratierte Social-Bilder für CMS-Blöcke
-          „Social/Reviews“. Layout der Startseite unter Inhalte → Startseite bearbeiten.
+          Amazon-Zitate und kuratierte Social-Bilder für CMS-Blöcke „Social/Reviews“. Instagram
+          verbinden und synchronisieren unter{" "}
+          <Link
+            href="/admin/einstellungen/integrationen"
+            className="font-medium text-primary hover:underline"
+          >
+            Einstellungen → Integrationen
+          </Link>
+          {igConnection.connected && igConnection.username
+            ? ` (verbunden als @${igConnection.username})`
+            : ""}
+          . Layout der Startseite unter Inhalte → Startseite bearbeiten.
         </p>
       </div>
-
-      <InstagramConnectPanel
-        configured={igDiagnostics.configured}
-        connected={igConnection.connected}
-        username={igConnection.username}
-        connectedAt={igConnection.connectedAt?.toISOString() ?? null}
-        lastSyncAt={igConnection.lastSyncAt?.toISOString() ?? null}
-        lastSyncError={igConnection.lastSyncError}
-        tokenExpiresAt={igConnection.tokenExpiresAt?.toISOString() ?? null}
-        cachedCount={igCache.length}
-        appIdMasked={igDiagnostics.appIdMasked}
-        redirectUri={igDiagnostics.redirectUri}
-        metaAppDomain={igDiagnostics.metaAppDomain}
-        connectAdminUrl={igDiagnostics.connectAdminUrl}
-        oauthReady={igDiagnostics.oauthReady}
-        oauthBlockReason={igDiagnostics.oauthBlockReason}
-        authMode={igDiagnostics.authMode}
-        facebookConfigId={igDiagnostics.facebookConfigId}
-        flash={igFlash}
-      />
 
       <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-[#1f2937]">Amazon-Zitate (Slider)</h2>

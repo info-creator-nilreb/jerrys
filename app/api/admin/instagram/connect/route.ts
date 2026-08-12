@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   if (!readiness.ready) {
     return NextResponse.redirect(
       new URL(
-        "/admin/inhalte/marketing?ig=error&msg=" +
+        "/admin/einstellungen/integrationen?ig=error&msg=" +
           encodeURIComponent(readiness.blockReason ?? "Instagram OAuth nicht bereit."),
         siteBase,
       ),
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
   if (!config) {
     return NextResponse.redirect(
       new URL(
-        "/admin/inhalte/marketing?ig=error&msg=" +
+        "/admin/einstellungen/integrationen?ig=error&msg=" +
           encodeURIComponent(
             "Instagram App nicht konfiguriert (INSTAGRAM_APP_ID / INSTAGRAM_APP_SECRET / Site-URL).",
           ),
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
   } catch {
     return NextResponse.redirect(
       new URL(
-        "/admin/inhalte/marketing?ig=error&msg=" +
+        "/admin/einstellungen/integrationen?ig=error&msg=" +
           encodeURIComponent("AUTH_SECRET fehlt für OAuth-State."),
         siteBase,
       ),

@@ -110,7 +110,7 @@ export function getInstagramOAuthReadiness(requestOrigin?: string | null): Insta
   }
 
   const metaAppDomain = getInstagramMetaAppDomain(config.redirectUri);
-  const connectAdminUrl = `${config.redirectUri.replace(/\/api\/admin\/instagram\/callback\/?$/, "")}/admin/inhalte/marketing`;
+  const connectAdminUrl = `${config.redirectUri.replace(/\/api\/admin\/instagram\/callback\/?$/, "")}/admin/einstellungen/integrationen`;
 
   if (isVercelPreviewDeployment() && !process.env.INSTAGRAM_REDIRECT_URI?.trim() && !process.env.NEXT_PUBLIC_SITE_URL?.trim()) {
     return {

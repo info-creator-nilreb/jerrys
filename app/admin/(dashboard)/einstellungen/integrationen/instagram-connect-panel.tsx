@@ -5,7 +5,7 @@ import {
   disconnectInstagramAction,
   syncInstagramNowAction,
   type InstagramAdminActionState,
-} from "@/app/admin/(dashboard)/inhalte/marketing/instagram-actions";
+} from "@/app/admin/(dashboard)/einstellungen/integrationen/instagram-actions";
 
 type Props = {
   configured: boolean;

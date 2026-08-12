@@ -4,11 +4,12 @@ Umsetzung des Live-Feeds für den CMS-Block **Social / Reviews** (Bilder zuerst)
 
 ## Flow
 
-1. Admin: **Inhalte → Marketing → Mit Instagram verbinden**
+1. Admin: **Einstellungen → Integrationen → Mit Instagram verbinden**
 2. OAuth (Instagram Professional / `instagram_business_basic`)
 3. Long-Lived Token verschlüsselt in `instagram_connections`
-4. Sync nach `instagram_media_cache` (Cron + manueller Button); Bilder idealerweise Blob-Spiegel
+4. Sync nach `instagram_media_cache` (Cron + manueller Button unter Integrationen); Bilder idealerweise Blob-Spiegel
 5. Storefront: bestehendes `HomepageSocialCarousel` (Desktop Embla / Mobile / Reduced-Motion-Grid)
+6. Kuratierte Fallback-Bilder und Amazon-Zitate: **Inhalte → Marketing**
 
 ## Env
 
