@@ -62,6 +62,9 @@ export function ProductStorefrontDetailFields({ state, defaults }: Props) {
             </span>
           </span>
         </label>
+        {fe.showWorkshopCalendar ? (
+          <p className="text-sm text-red-600">{fe.showWorkshopCalendar}</p>
+        ) : null}
 
         <div className="flex flex-col gap-1">
           <label htmlFor="categoryTag" className="text-xs font-medium text-[#6b7280]">
