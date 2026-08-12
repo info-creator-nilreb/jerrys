@@ -8,6 +8,7 @@ import {
 } from "@/app/admin/(dashboard)/products/actions";
 import { ProductAttributesFields } from "@/app/admin/(dashboard)/products/product-attributes-fields";
 import { ProductAiTextAssistant } from "@/app/admin/(dashboard)/products/product-ai-text-assistant";
+import { ProductAiImageAssistant } from "@/app/admin/(dashboard)/products/product-ai-image-assistant";
 import { ProductCategoriesFields } from "@/app/admin/(dashboard)/products/product-categories-fields";
 import { ProductDeliveryFields } from "@/app/admin/(dashboard)/products/product-delivery-fields";
 import { ProductGeneralFields } from "@/app/admin/(dashboard)/products/product-general-fields";
@@ -285,6 +286,18 @@ export function EditProductForm({
       />
 
       <ProductMediaSection productId={product.id} images={product.images} />
+
+      <ProductAiImageAssistant
+        productId={product.id}
+        productTitle={product.title}
+        materialText={product.materialText}
+        aiReady={aiReady}
+        existingImages={product.images.map((img) => ({
+          id: img.id,
+          url: img.url,
+          alt: img.alt,
+        }))}
+      />
     </div>
   );
 }

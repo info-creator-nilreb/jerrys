@@ -54,6 +54,12 @@ export {
   type GenerateProductAiTextResult,
   type ProductAiTextTargetField,
 } from "@/features/integrations/application/generate-product-ai-text";
+export {
+  generateProductAiAltTextDraft,
+  generateProductAiImageDraft,
+  type GenerateProductAiAltTextResult,
+  type GenerateProductAiImageResult,
+} from "@/features/integrations/application/generate-product-ai-image";
 export { createOpenAiContentAdapter } from "@/features/integrations/infrastructure/openai-ai-content-adapter";
 export {
   resolveOpenAiContentConfigFromEnv,

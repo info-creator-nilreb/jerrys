@@ -40,6 +40,7 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | Server Actions `app/admin/.../einstellungen/integrationen/zettle-actions.ts` | Admin-Session | Zettle-API-Key verbinden, Varianten-Mapping, Kauf-Sync/Retry, trennen |
 | Server Actions `app/admin/.../einstellungen/integrationen/ai-actions.ts` | Admin-Session | OpenAI-Key (AES-GCM), Modellprofile, Tageslimit; Verify via GET `/v1/models`; kein Key im Client |
 | Server Actions `app/admin/.../products/ai-product-text-actions.ts` | Admin-Session | KI-Textentwurf aus Allowlist-Fakten; keine Persistenz/Publish — Übernahme nur clientseitig ins Formular |
+| Server Actions `app/admin/.../products/ai-product-image-actions.ts` | Admin-Session | KI-Bildentwurf + Moderation; Confirm → Blob `products/{id}/…` + ProductImage; Alt-Text-Entwurf |
 | Seiten `/admin/inhalte`, `/admin/inhalte/new`, `/admin/inhalte/[id]/edit`, `/admin/inhalte/marketing` | Admin-Session | CMS-light inkl. Live-Vorschau (Client); Marketing Reviews/Social; `/admin/startseite` → Redirect Marketing |
 | Server Actions `app/admin/.../inhalte/actions.ts` | `auth()` in Action | ContentPage + ContentBlocks speichern; Publish/Unpublish; Rich-Text sanitize; Outbox `content_page.*` / `content_page.published` / `content_page.unpublished` |
 | Server Actions `app/admin/.../inhalte/marketing/actions.ts` | `auth()` in Action | Homepage Amazon-/Social-Pflege (früher `/admin/startseite`) |
