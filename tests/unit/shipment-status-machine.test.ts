@@ -20,9 +20,10 @@ describe("shipment-status-machine", () => {
     expect(isAllowedShipmentTransition("draft", "draft")).toBe(false);
   });
 
-  it("kennzeichnet Terminale und Labels", () => {
-    expect(isTerminalShipmentStatus("voided")).toBe(true);
-    expect(isTerminalShipmentStatus("draft")).toBe(false);
-    expect(shipmentStatusLabel("labeled")).toBe("Label erstellt");
+  it("erlaubt Retoure-Kanten von shipped/delivered", () => {
+    expect(isAllowedShipmentTransition("shipped", "returned")).toBe(true);
+    expect(isAllowedShipmentTransition("delivered", "returned")).toBe(true);
+    expect(isTerminalShipmentStatus("returned")).toBe(true);
+    expect(shipmentStatusLabel("returned")).toBe("Retoure");
   });
 });

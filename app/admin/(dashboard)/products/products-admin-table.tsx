@@ -8,6 +8,7 @@ import {
   bulkDeleteProductsAction,
   bulkSetProductsActiveAction,
 } from "@/app/admin/(dashboard)/products/lifecycle-actions";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { formatPrice } from "@/lib/catalog/format";
 
 export type AdminProductListRow = {
@@ -27,6 +28,7 @@ export function ProductsAdminTable({ products }: { products: AdminProductListRow
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [skipped, setSkipped] = useState<{ id: string; reason: string }[]>([]);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const allSelected = products.length > 0 && products.every((p) => selected.has(p.id));
   const selectedCount = selected.size;
@@ -76,10 +78,11 @@ export function ProductsAdminTable({ products }: { products: AdminProductListRow
 
   function deleteSelected() {
     if (selectedList.length === 0) return;
-    const ok = window.confirm(
-      `${selectedList.length} Produkt(e) unwiderruflich löschen?\n\nProdukte mit Bestellungen oder Lagerbewegungen werden übersprungen.`,
-    );
-    if (!ok) return;
+    setConfirmDeleteOpen(true);
+  }
+
+  function confirmDeleteSelected() {
+    setConfirmDeleteOpen(false);
     runBulk(() => bulkDeleteProductsAction(selectedList));
   }
 
@@ -140,7 +143,78 @@ export function ProductsAdminTable({ products }: { products: AdminProductListRow
         </ul>
       ) : null}
 
-      <div className="overflow-x-auto rounded-lg border border-[#e8eaed]">
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        title="Produkte löschen?"
+        description={`${selectedList.length} Produkt(e) unwiderruflich löschen?\n\nProdukte mit Bestellungen oder Lagerbewegungen werden übersprungen.`}
+        confirmLabel="Unwiderruflich löschen"
+        pending={pending}
+        onCancel={() => setConfirmDeleteOpen(false)}
+        onConfirm={confirmDeleteSelected}
+      />
+
+      {/* Mobile: Card-Liste */}
+      <ul className="space-y-3 md:hidden">
+        {products.map((p) => (
+          <li
+            key={p.id}
+            className="rounded-xl border border-[#e8eaed] bg-white p-4 shadow-sm"
+          >
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                className="mt-1 size-5"
+                checked={selected.has(p.id)}
+                aria-label={`${p.title} auswählen`}
+                onChange={(e) => toggleOne(p.id, e.target.checked)}
+                disabled={pending}
+              />
+              {p.thumbUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element -- Admin thumbnail
+                <img src={p.thumbUrl} alt="" className="size-14 rounded-lg object-cover" />
+              ) : (
+                <span className="flex size-14 items-center justify-center rounded-lg bg-[#f3f4f6] text-xs text-[#9ca3af]">
+                  —
+                </span>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-[#1f2937]">{p.title}</p>
+                <p className="mt-0.5 truncate font-mono text-xs text-[#6b7280]">{p.slug}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                  <span className="tabular-nums">{formatPrice(p.priceGrossCents, p.currency)}</span>
+                  {p.isActive ? (
+                    <span className="text-emerald-700">Aktiv</span>
+                  ) : (
+                    <span className="text-[#9ca3af]">Inaktiv</span>
+                  )}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+                  {p.isActive ? (
+                    <a
+                      href={`/produkte/${p.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-primary hover:underline"
+                    >
+                      Vorschau
+                      <ExternalLink className="size-3.5" aria-hidden />
+                    </a>
+                  ) : null}
+                  <Link
+                    href={`/admin/products/${p.id}/edit`}
+                    className="inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline"
+                  >
+                    Bearbeiten
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      {/* Desktop/Tablet: Tabelle */}
+      <div className="hidden overflow-x-auto rounded-lg border border-[#e8eaed] md:block">
         <table className="min-w-full text-left text-sm">
           <thead className="border-b border-[#e8eaed] bg-[#f7f8fa] text-[#374151]">
             <tr>

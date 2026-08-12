@@ -28,6 +28,13 @@ export const AI_ALLOWED_PRODUCT_FACT_KEYS = [
   "seoTitle",
   "seoDescription",
   "imageContext",
+  /** CMS-Seitenkontext (Slice 5) */
+  "pageTitle",
+  "pageType",
+  "blockType",
+  "existingHeadline",
+  "existingBody",
+  "ctaLabel",
 ] as const;
 
 export type AiAllowedProductFactKey = (typeof AI_ALLOWED_PRODUCT_FACT_KEYS)[number];
@@ -102,7 +109,19 @@ export type AiTextKind =
   | "seo_title"
   | "seo_description"
   | "bullets"
-  | "alt_text";
+  | "alt_text"
+  | "cms_hero_headline"
+  | "cms_rich_text";
+
+/** Alias — Allowlist gilt für Produkt und CMS. */
+export type AiCmsFacts = AiProductFacts;
+
+/** Wie Produkt-Fakten — gemeinsame Allowlist inkl. CMS-Keys. */
+export function assertSafeAiCmsFacts(
+  facts: Record<string, unknown>,
+): asserts facts is AiCmsFacts {
+  assertSafeAiProductFacts(facts);
+}
 
 export type AiTextGenerateInput = {
   kind: AiTextKind;

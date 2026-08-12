@@ -20,13 +20,13 @@ Stand: Epic-Nacharbeit nach Storefront-IA (Kategorien/Kollektionen). Ziel: **mob
 | --- | --- | --- | --- |
 | Navigation | **Drawer** auf Mobile, Sidebar ab Tablet | Sidebar immer sichtbar (frisst ~4–15 rem) | **Erledigt:** Mobile Drawer `<lg`, Hamburger in TopBar |
 | TopBar | Suche + Aktionen, kompakt | Suche + Glocke | **Erledigt:** Menü-Button; Suche/Glocke `min-h-11`, Input `text-base` mobil |
-| Tabellen | Card-Liste oder horizontal scroll | `overflow-x-auto` | Scroll bleibt; Zeilen klickbar; Cards als Slice 2 |
+| Tabellen | Card-Liste oder horizontal scroll | Cards `<md`, Tabelle `md+` | **Erledigt:** Admin-Index Cards (Livegang-Paket) |
 | Formulare | Sticky Save unten **volle Breite** mobil | Dock mit Sidebar-Offset | **Erledigt:** Dock `left-0` auf Mobile + Safe-Area |
 | Login | Vollbreite Form | Grid Hero + Form | Bereits responsive |
 
 ## Bewusst nicht in v1
 
-- Admin-Index **Card-Layout** statt Tabellen (größerer Aufwand; Tabellen + Scroll OK für MVP)
+- ~~Admin-Index **Card-Layout** statt Tabellen~~ (**Erledigt** Final-Go-Live-Paket)
 - ~~Storefront **Filter-Sheet** statt Inline-Toolbar~~ (**Erledigt** Epic 8 Slice 2)
 - PDP **sticky ATC-Bar** (nur wenn Conversion-Test es verlangt)
 
@@ -34,8 +34,8 @@ Stand: Epic-Nacharbeit nach Storefront-IA (Kategorien/Kollektionen). Ziel: **mob
 
 - [x] Primäraktion auf Mobile ohne Zoom erreichbar (Font ≥16 px in Inputs)
 - [x] Interaktive Flächen ~44×44 px (Storefront Cart/Nav; Admin TopBar/Nav)
-- [ ] Kein horizontaler „Layout-Bruch“ außer bewusst scrollbare Tabellen
+- [x] Kein horizontaler „Layout-Bruch“ außer bewusst scrollbare Detail-Tabellen
 - [x] Fokus sichtbar, Escape schließt Overlays
 - [x] Safe-Area unten bei sticky Docks (`env(safe-area-inset-bottom)`)
 
-Implementierung: Branch `cursor/mobile-ux-shopify-audit-21f6`.
+Implementierung: Branch `cursor/mobile-ux-shopify-audit-21f6` + `cursor/final-go-live-package-3106`.

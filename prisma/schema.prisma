@@ -163,6 +163,8 @@ model Product {
   orderItems  OrderItem[]
   stockReservations StockReservation[]
   stockMovements    StockMovement[]
+  /// Öffentliches Suchdokument / Embedding-Index (Epic 14 Slice 2).
+  searchDocument ProductSearchDocument?
 
   @@index([isActive, sortOrder])
   @@map("products")
@@ -889,6 +891,97 @@ model AiContentSettings {
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
   @@map("ai_content_settings")
+}
+
+/// Audit-Strom für KI-Generierungen (Epic 13 Slice 6). Keine Prompt-/PII-Inhalte.
+model AiContentGenerationEvent {
+  id                   String   @id @default(cuid())
+  createdAt            DateTime @default(now()) @map("created_at")
+  /// text | vision | image_generation | image_edit | moderation
+  capability           String
+  /// success | failure
+  status               String
+  errorCode            String?  @map("error_code")
+  errorMessage         String?  @map("error_message") @db.Text
+  provider             String   @default("openai")
+  model                String?
+  requestId            String?  @map("request_id")
+  inputTokens          Int?     @map("input_tokens")
+  outputTokens         Int?     @map("output_tokens")
+  totalTokens          Int?     @map("total_tokens")
+  /// Geschätzte Kosten in Mikrodollar (USD * 1e6), nur Orientierung.
+  estimatedCostMicros  Int?     @map("estimated_cost_micros")
+  adminUserId          String?  @map("admin_user_id")
+  productId            String?  @map("product_id")
+  contentPageId        String?  @map("content_page_id")
+  /// Zusätzliche nicht-sensible Metadaten (z. B. kind, mode).
+  metadata             Json?
+
+  @@index([createdAt])
+  @@index([status, createdAt])
+  @@map("ai_content_generation_events")
+}
+
+/// Indexstatus eines öffentlichen Produkt-Suchdokuments (Epic 14 Slice 2).
+enum SearchDocumentStatus {
+  pending
+  indexed
+  stale
+  error
+  /// Produkt inaktiv oder nicht indexierbar — kein Embedding.
+  excluded
+}
+
+/// Öffentliches Suchdokument inkl. providerneutralem Embedding (keine Kundendaten).
+model ProductSearchDocument {
+  id        String  @id @default(cuid())
+  productId String  @unique @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  /// Kanonischer Klartext für Index/Embedding (Titel, Beschreibung, Kategorien, …).
+  documentText String @map("document_text") @db.Text
+  /// SHA-256 über die indexrelevanten Eingaben — Re-Embed nur bei Änderung.
+  contentHash  String @map("content_hash")
+
+  status    SearchDocumentStatus @default(pending)
+  lastError String?              @map("last_error") @db.Text
+
+  /// Provider-ID (z. B. openai) — null solange kein Embedding vorliegt.
+  embeddingProvider  String?   @map("embedding_provider")
+  embeddingModel     String?   @map("embedding_model")
+  embeddingDims      Int?      @map("embedding_dims")
+  /// Float-Vektor als JSON-Array (pgvector später möglich).
+  embedding          Json?
+  embeddingUpdatedAt DateTime? @map("embedding_updated_at")
+  lastIndexedAt      DateTime? @map("last_indexed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status, updatedAt])
+  @@index([contentHash])
+  @@map("product_search_documents")
+}
+
+/// Singleton für Rebuild-/Indexstatus im Admin (Epic 14 Slice 2).
+model SearchIndexState {
+  id String @id @default("default")
+
+  lastRebuildStartedAt  DateTime? @map("last_rebuild_started_at")
+  lastRebuildFinishedAt DateTime? @map("last_rebuild_finished_at")
+  lastRebuildError      String?   @map("last_rebuild_error") @db.Text
+  /// { indexed, skippedUnchanged, excluded, errors, embeddingConfigured }
+  lastRebuildStats      Json?     @map("last_rebuild_stats")
+
+  documentsTotal   Int @default(0) @map("documents_total")
+  documentsIndexed Int @default(0) @map("documents_indexed")
+  documentsPending Int @default(0) @map("documents_pending")
+  documentsError   Int @default(0) @map("documents_error")
+  documentsExcluded Int @default(0) @map("documents_excluded")
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("search_index_state")
 }
 
 /// Gecachte Instagram-Medien (Bilder) für Storefront/CMS — Sync, kein Live-Graph pro Request.

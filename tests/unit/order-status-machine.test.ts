@@ -36,9 +36,10 @@ describe("order-status-machine", () => {
     expect(isAllowedOrderStatusTransition("shipped", "refunded")).toBe(true);
   });
 
-  it("erlaubt shipped → retoure und retoure → refunded", () => {
+  it("erlaubt shipped → retoure und retoure → refunded/processing", () => {
     expect(isAllowedOrderStatusTransition("shipped", "retoure")).toBe(true);
     expect(isAllowedOrderStatusTransition("retoure", "refunded")).toBe(true);
+    expect(isAllowedOrderStatusTransition("retoure", "processing")).toBe(true);
   });
 
   it("terminal cancelled ohne Folge", () => {

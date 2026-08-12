@@ -24,6 +24,8 @@ export function productFieldForAiTextKind(
       return "descriptionHtml";
     case "bullets":
       return "featureBullets";
+    case "cms_hero_headline":
+    case "cms_rich_text":
     default:
       return null;
   }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { ContentBlocksRenderer } from "@/components/content/content-blocks-renderer";
+import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import { metadataForContentPage } from "@/lib/content/content-page-metadata";
 import { resolvePublicContentPage } from "@/lib/content/resolve-public-content-page";
 import { storefrontMainPagePaddingClass } from "@/lib/storefront/page-below-header-padding";
@@ -39,13 +40,17 @@ export default async function PublicContentPage({ params }: PageProps) {
   }
 
   const { page } = resolved;
+  const crumbs = (
+    <StorefrontBreadcrumbs items={[{ href: "/", label: "Start" }, { label: page.title }]} />
+  );
 
   if (page.pageType === "legal") {
     return (
       <article
         className={`mx-auto max-w-3xl px-4 sm:px-6 ${storefrontMainPagePaddingClass}`}
       >
-        <header className="mb-8">
+        {crumbs}
+        <header className="mb-8 mt-6">
           <h1 className="text-3xl font-semibold tracking-tight text-(--foreground-heading) sm:text-4xl">
             {page.title}
           </h1>
@@ -59,7 +64,8 @@ export default async function PublicContentPage({ params }: PageProps) {
     <article
       className={`mx-auto max-w-5xl px-4 sm:px-6 ${storefrontMainPagePaddingClass}`}
     >
-      <header className="mb-8 max-w-3xl">
+      {crumbs}
+      <header className="mb-8 mt-6 max-w-3xl">
         <h1 className="text-3xl font-semibold tracking-tight text-(--foreground-heading) sm:text-4xl">
           {page.title}
         </h1>

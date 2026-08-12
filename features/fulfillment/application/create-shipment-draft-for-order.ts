@@ -24,14 +24,19 @@ export type CreateShipmentDraftResult =
 
 /**
  * Legt einen Shipment-Draft für eine geeignete Warenbestellung an.
- * Idempotent bzgl. bestehendem offenen Draft (gibt diesen zurück, created=false)
- * — außer `forceNew` (Reship später).
+ * Idempotent bzgl. bestehendem offenen Draft (gibt diesen zurück, created=false).
+ *
+ * `forceNew` (Reship): nutzt Reship-Eligibility (auch nach Retoure/shipped) und legt
+ * einen neuen Draft an, sofern kein offenes Label existiert. Offener Draft wird
+ * wiederverwendet (kein Doppel-Draft).
  */
 export async function createShipmentDraftForOrder(
   prisma: PrismaClient,
   orderId: string,
   options?: { forceNew?: boolean },
 ): Promise<CreateShipmentDraftResult> {
+  const forceNew = Boolean(options?.forceNew);
+
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     select: {
@@ -65,13 +70,14 @@ export async function createShipmentDraftForOrder(
     orderStatus: order.status,
     fulfillmentStatus: order.fulfillmentStatus,
     physicalItemQuantity,
+    reship: forceNew,
   });
   if (!eligibility.ok) {
     return { ok: false, error: eligibility.reason };
   }
 
   const existing = order.shipments[0];
-  if (existing && !options?.forceNew) {
+  if (existing) {
     if (existing.status === "draft") {
       return {
         ok: true,
@@ -79,6 +85,7 @@ export async function createShipmentDraftForOrder(
         shipment: { id: existing.id, orderId: order.id, status: "draft" },
       };
     }
+    // Offenes Label — auch bei Reship zuerst stornieren.
     return { ok: false, error: "open_shipment_exists" };
   }
 

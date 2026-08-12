@@ -5,9 +5,9 @@ import { parseCsv, csvRowsToObjects } from "@/features/catalog/domain/parse-csv"
 import {
   parseShopifyProductCsv,
   mapShopifyProductToCatalog,
-  planShopifyCsvImport,
   generateVariantSku,
 } from "@/features/catalog";
+import { planShopifyCsvImport } from "@/features/catalog/server";
 
 const fixturePath = path.join(
   process.cwd(),

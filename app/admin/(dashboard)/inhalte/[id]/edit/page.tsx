@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ContentPageForm } from "@/app/admin/(dashboard)/inhalte/content-page-form";
 import { ContentPageLifecycle } from "@/app/admin/(dashboard)/inhalte/content-page-lifecycle";
+import { getAiContentSettingsPublic } from "@/features/integrations";
 import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
 import { getContentPageById } from "@/lib/content/content-pages";
 import { contentPreviewAbsoluteUrl } from "@/lib/content/preview-token";
@@ -48,6 +49,8 @@ export default async function AdminInhalteEditPage({
     if (!isDatabaseUnreachable(e)) throw e;
   }
 
+  const aiSettings = await getAiContentSettingsPublic();
+
   const isHome =
     page.pageType === "homepage" ||
     page.id === HOME_PAGE_STABLE_ID ||
@@ -89,6 +92,7 @@ export default async function AdminInhalteEditPage({
       <ContentPageForm
         key={page.updatedAt.toISOString()}
         previewProducts={previewProducts}
+        aiReady={aiSettings.ready}
         initial={{
           id: page.id,
           slug: page.slug,

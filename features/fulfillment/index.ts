@@ -35,6 +35,21 @@ export {
 } from "@/features/fulfillment/application/create-shipment-draft-for-order";
 
 export {
+  createReshipmentDraftForOrder,
+  type CreateReshipmentDraftResult,
+} from "@/features/fulfillment/application/create-reshipment-draft-for-order";
+
+export {
+  markShipmentReturned,
+  type MarkShipmentReturnedResult,
+} from "@/features/fulfillment/application/mark-shipment-returned";
+
+export {
+  syncShipmentsOnOrderReturned,
+  type SyncShipmentsOnOrderReturnedResult,
+} from "@/features/fulfillment/application/sync-shipments-on-order-returned";
+
+export {
   listShipmentsForOrder,
   type ShipmentListItem,
 } from "@/features/fulfillment/application/list-shipments-for-order";

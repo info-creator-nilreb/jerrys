@@ -9,7 +9,7 @@ import { sendOrderConfirmationIfNeeded } from "@/lib/email/order-confirmation";
 import { ORDER_EVENT_PLACED } from "@/lib/orders/order-events";
 import { getPrisma } from "@/lib/db/prisma";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
-import { createPayPalCheckoutOrder } from "@/lib/payments/paypal-orders";
+import { createPayPalCheckoutOrder, type PayPalShippingPreference } from "@/lib/payments/paypal-orders";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 import { usesPaypalHostedCheckout } from "@/lib/payments/online-payment-method";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
@@ -48,6 +48,13 @@ export type CreatePendingPayPalOrderResult =
   /** Gleiche Idempotency erneut abgeschickt, Bestellung bereits erledigt (kein neuer PayPal-Start). */
   | { ok: true; paymentReady: false; orderNumber: string }
   | { ok: false; error: string; fieldErrors?: Record<string, string> };
+
+type CreatePendingPayPalOrderOptions = {
+  paypalShippingPreference?: PayPalShippingPreference;
+  orderEventChannel?: string;
+  paymentFlow?: string;
+  skipAddressBookSave?: boolean;
+};
 
 function formDataFromRequestLike(raw: Record<string, unknown>): FormData {
   const fd = new FormData();
@@ -153,21 +160,24 @@ async function saveCheckoutAddressesToAccountIfRequested(
 
 export async function createPendingPayPalOrderFromFormData(
   formData: FormData,
+  options: CreatePendingPayPalOrderOptions = {},
 ): Promise<CreatePendingPayPalOrderResult> {
   const raw = checkoutRawFromFormData(formData);
-  return createPendingPayPalOrderFromParsedRaw(raw);
+  return createPendingPayPalOrderFromParsedRaw(raw, options);
 }
 
 export async function createPendingPayPalOrderFromJsonBody(
   body: Record<string, unknown>,
+  options: CreatePendingPayPalOrderOptions = {},
 ): Promise<CreatePendingPayPalOrderResult> {
   const fd = formDataFromRequestLike(body);
   const raw = checkoutRawFromFormData(fd);
-  return createPendingPayPalOrderFromParsedRaw(raw);
+  return createPendingPayPalOrderFromParsedRaw(raw, options);
 }
 
 async function createPendingPayPalOrderFromParsedRaw(
   raw: Record<string, unknown>,
+  options: CreatePendingPayPalOrderOptions,
 ): Promise<CreatePendingPayPalOrderResult> {
   const parsed = checkoutFormSchema.safeParse(raw);
   if (!parsed.success) {
@@ -218,6 +228,7 @@ async function createPendingPayPalOrderFromParsedRaw(
           orderNumber: existing.orderNumber,
           totalGrossCents: existing.totalGrossCents,
           currency: existing.currency,
+          shippingPreference: options.paypalShippingPreference,
         });
         const approvalUrl = approvalUrlRaw ?? "";
         await getPrisma().orderPayment.create({
@@ -466,7 +477,7 @@ async function createPendingPayPalOrderFromParsedRaw(
             create: [
               {
                 eventType: ORDER_EVENT_PLACED,
-                metadata: { orderNumber, channel: "checkout" },
+                metadata: { orderNumber, channel: options.orderEventChannel ?? "checkout" },
               },
             ],
           },
@@ -513,10 +524,12 @@ async function createPendingPayPalOrderFromParsedRaw(
     orderId: newOrderId,
     orderNumber,
     lineCount: activeLines.length,
-    paymentFlow: "paypal_hosted",
+    paymentFlow: options.paymentFlow ?? "paypal_hosted",
   });
 
-  await saveCheckoutAddressesToAccountIfRequested(customerId, d);
+  if (!options.skipAddressBookSave) {
+    await saveCheckoutAddressesToAccountIfRequested(customerId, d);
+  }
 
   try {
     const { paypalOrderId, approvalUrl: approvalUrlRaw } = await createPayPalCheckoutOrder({
@@ -524,6 +537,7 @@ async function createPendingPayPalOrderFromParsedRaw(
       orderNumber,
       totalGrossCents: totalGross,
       currency: orderCurrency,
+      shippingPreference: options.paypalShippingPreference,
     });
     const approvalUrl = approvalUrlRaw ?? "";
     await getPrisma().orderPayment.create({

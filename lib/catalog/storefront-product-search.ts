@@ -1,3 +1,7 @@
+/**
+ * Lexikalische Storefront-Suche (Epic 8 Slice 3) — Fallback und Typeahead.
+ * Hybride Vollsuche (Lexik + Embeddings): `searchStorefrontProductsHybrid` (Epic 14 Slice 3).
+ */
 /** Minimale Query-Länge für Storefront-Suche (Epic 8 Slice 3). */
 export const STOREFRONT_SEARCH_MIN_LENGTH = 2;
 

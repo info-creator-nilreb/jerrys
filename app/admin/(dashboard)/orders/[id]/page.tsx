@@ -154,6 +154,16 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
     fulfillmentStatus: order.fulfillmentStatus,
     physicalItemQuantity,
   });
+  const reshipEligibility = evaluateOrderShipmentEligibility({
+    orderStatus: order.status,
+    fulfillmentStatus: order.fulfillmentStatus,
+    physicalItemQuantity,
+    reship: true,
+  });
+  const hasReturnContext =
+    order.status === "retoure" ||
+    order.fulfillmentStatus === "returned" ||
+    order.shipments.some((s) => s.status === "returned" || s.status === "voided");
   const labeledShipment = order.shipments.find(
     (s) => s.status === "labeled" && s.trackingNumber,
   );
@@ -191,6 +201,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
           orderId={order.id}
           configured={internetmarkeConfigured}
           canPrepareShipment={shipmentEligibility.ok}
+          canReship={reshipEligibility.ok && hasReturnContext}
           shipments={order.shipments}
         />
       </section>

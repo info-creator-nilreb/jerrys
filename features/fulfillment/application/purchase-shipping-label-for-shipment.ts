@@ -151,6 +151,8 @@ export async function purchaseShippingLabelForShipment(
       labelProvider: "internetmarke",
       labelExternalRef: purchased.externalRef,
       trackingNumber: purchased.trackingNumber,
+      // TODO(Epic 7): Privater Object-Store für Label-PDF — Provider-URL ist ephemeral;
+      // nach Kauf PDF laden, dauerhaft speichern, hier labelStorageKey setzen + Admin-Download-Route.
       labelStorageKey: purchased.labelStorageKey,
       labelPurchasedAt: new Date(),
     },

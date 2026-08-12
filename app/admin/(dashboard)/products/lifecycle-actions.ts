@@ -7,7 +7,7 @@ import {
   deleteProducts,
   setProductsActive,
   type ProductLifecycleResult,
-} from "@/features/catalog";
+} from "@/features/catalog/server";
 
 async function requireAdmin(): Promise<void> {
   const session = await getAdminSession();

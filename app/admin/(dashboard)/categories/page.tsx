@@ -23,13 +23,13 @@ export default async function AdminCategoriesPage() {
         <div className="flex flex-wrap gap-2">
           <Link
             href="/admin/products"
-            className="rounded-md border border-[#e3e4e8] px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
+            className="inline-flex min-h-11 items-center rounded-md border border-[#e3e4e8] px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
           >
             Zum Katalog
           </Link>
           <Link
             href="/admin/categories/new"
-            className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-(--primary-hover)"
+            className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-(--primary-hover)"
           >
             Neue Kategorie
           </Link>
@@ -45,7 +45,46 @@ export default async function AdminCategoriesPage() {
         </p>
       ) : (
         <>
-          <div className="mt-8 overflow-x-auto rounded-lg border border-[#e8eaed]">
+          <ul className="mt-8 space-y-3 md:hidden">
+            {categories.map((c) => (
+              <li
+                key={c.id}
+                className="rounded-xl border border-[#e8eaed] bg-white p-4 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-[#1f2937]">{c.title}</p>
+                    <p className="mt-0.5 truncate font-mono text-xs text-[#6b7280]">{c.slug}</p>
+                  </div>
+                  {c.isActive ? (
+                    <span className="shrink-0 text-sm text-emerald-700">Aktiv</span>
+                  ) : (
+                    <span className="shrink-0 text-sm text-[#9ca3af]">Inaktiv</span>
+                  )}
+                </div>
+                <p className="mt-2 text-xs text-[#6b7280]">
+                  {c.parent ? (
+                    <>Unter „{c.parent.title}“</>
+                  ) : c._count.children > 0 ? (
+                    <>Hauptkategorie ({c._count.children} Unterkategorien)</>
+                  ) : (
+                    <>Hauptkategorie</>
+                  )}
+                </p>
+                <p className="mt-1 text-xs text-[#6b7280]">
+                  {c._count.collections} Kollektionen · {c.linkedProductCount} Produkte*
+                </p>
+                <Link
+                  href={`/admin/categories/${c.id}/edit`}
+                  className="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline"
+                >
+                  Bearbeiten
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-8 hidden overflow-x-auto rounded-lg border border-[#e8eaed] md:block">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-[#e8eaed] bg-[#f7f8fa] text-[#374151]">
                 <tr>

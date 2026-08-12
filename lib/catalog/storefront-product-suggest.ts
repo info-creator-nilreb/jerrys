@@ -17,6 +17,10 @@ export {
   STOREFRONT_SUGGEST_DEBOUNCE_MS,
 } from "@/lib/catalog/storefront-product-suggest-shared";
 
+/**
+ * Typeahead-Vorschläge — bewusst rein lexikalisch (Epic 14 Slice 3).
+ * Kein Query-Embedding pro Tastendruck; hybride Semantik nur in der Vollsuche.
+ */
 export async function listStorefrontProductSuggestions(
   rawQuery: string,
 ): Promise<StorefrontProductSuggestion[]> {

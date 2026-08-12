@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deleteProducts, setProductsActive } from "@/features/catalog";
+import { deleteProducts, setProductsActive } from "@/features/catalog/server";
 
 describe("product admin lifecycle", () => {
   it("leere Auswahl aktivieren → Fehler ohne DB", async () => {

@@ -17,6 +17,21 @@ describe("assertSafeAiProductFacts", () => {
     ).not.toThrow();
   });
 
+  it("akzeptiert CMS-Allowlist-Fakten", () => {
+    expect(() =>
+      assertSafeAiProductFacts({
+        pageTitle: "Startseite",
+        pageType: "homepage",
+        blockType: "hero",
+        existingHeadline: "Willkommen",
+        existingBody: "Kurztext",
+        ctaLabel: "Entdecken",
+        tone: "warm",
+        language: "de",
+      }),
+    ).not.toThrow();
+  });
+
   it("lehnt unbekannte und verbotene Keys ab", () => {
     expect(() =>
       assertSafeAiProductFacts({

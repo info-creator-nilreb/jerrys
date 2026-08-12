@@ -18,12 +18,14 @@ export function ProductPdpPurchasePanel({
   currency,
   listPriceGrossCents,
   deliveryTimeKeyFallback,
+  payPalConfigured,
   variants,
 }: {
   productId: string;
   currency: string;
   listPriceGrossCents: number | null;
   deliveryTimeKeyFallback: string | null;
+  payPalConfigured: boolean;
   variants: StorefrontVariantCommerce[];
 }) {
   const initialId = variants.find((v) => v.isDefault)?.id ?? variants[0]?.id ?? "";
@@ -41,7 +43,8 @@ export function ProductPdpPurchasePanel({
   }
 
   const qtyRules = quantityRulesFromVariant(selected);
-  const canAdd = defaultAddQuantity(qtyRules) !== null;
+  const expressQuantity = defaultAddQuantity(qtyRules);
+  const canAdd = expressQuantity !== null;
   const hasStrikePrice =
     listPriceGrossCents != null && listPriceGrossCents > selected.priceGrossCents;
   const stockLine = pdpStockDeliveryLine({
@@ -132,7 +135,14 @@ export function ProductPdpPurchasePanel({
         layout="pdp"
       />
 
-      {canAdd ? <ProductExpressCheckout enabled /> : <ProductExpressCheckout enabled={false} />}
+      {payPalConfigured ? (
+        <ProductExpressCheckout
+          enabled={canAdd}
+          productId={productId}
+          productVariantId={selected.id}
+          quantity={expressQuantity ?? qtyRules.minOrderQty}
+        />
+      ) : null}
 
       <p className="text-center text-[0.7rem] leading-snug text-(--foreground-muted)">
         Im Checkout:{" "}

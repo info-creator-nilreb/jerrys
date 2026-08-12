@@ -486,3 +486,179 @@ export async function voidInternetmarkeLabelAction(
 
   return { ok: true, message: "Label / Sendung wurde storniert (Retoure beim Anbieter)." };
 }
+
+export type ReshipShipmentActionState =
+  | null
+  | { ok: true; message: string; shipmentId: string }
+  | { error: string };
+
+export type MarkShipmentReturnedActionState =
+  | null
+  | { ok: true; message: string }
+  | { error: string };
+
+/**
+ * Markiert eine Sendung (und ggf. die Bestellung) als Retoure — auditierbar.
+ */
+export async function markOrderShipmentReturnedAction(
+  _prev: MarkShipmentReturnedActionState,
+  formData: FormData,
+): Promise<MarkShipmentReturnedActionState> {
+  const session = await getAdminSession();
+  if (!session?.user) {
+    redirect("/admin/login");
+  }
+
+  const orderId = formData.get("orderId");
+  const shipmentId = formData.get("shipmentId");
+  if (typeof orderId !== "string" || !orderId.trim()) {
+    return { error: "Ungültige Bestellung." };
+  }
+  if (typeof shipmentId !== "string" || !shipmentId.trim()) {
+    return { error: "Ungültige Sendung." };
+  }
+
+  const oid = orderId.trim();
+  const sid = shipmentId.trim();
+  const prisma = getPrisma();
+
+  const order = await prisma.order.findUnique({
+    where: { id: oid },
+    select: { id: true, status: true },
+  });
+  if (!order) {
+    return { error: "Bestellung nicht gefunden." };
+  }
+
+  const { isAllowedOrderStatusTransition } = await import("@/lib/orders/order-status-machine");
+  const { createOrderEvent, ORDER_EVENT_SHIPMENT_RETURNED } = await import(
+    "@/lib/orders/order-events"
+  );
+
+  if (isAllowedOrderStatusTransition(order.status, "retoure")) {
+    const result = await applyOrderStatusTransition(prisma, oid, "retoure");
+    if (!result.ok) {
+      if (result.error === "insufficient_warehouse") {
+        return {
+          error:
+            "Lagerbestand konnte bei Retoure nicht zurückgebucht werden — bitte Bestände prüfen.",
+        };
+      }
+      return { error: "Retoure-Statuswechsel ist nicht erlaubt." };
+    }
+    await createOrderEvent(prisma, oid, ORDER_EVENT_SHIPMENT_RETURNED, {
+      shipmentId: sid,
+      via: "order_status_retoure",
+    });
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${oid}`);
+    return {
+      ok: true,
+      message: "Retoure erfasst — Sendungen und Bestellstatus wurden aktualisiert.",
+    };
+  }
+
+  const { markShipmentReturned } = await import("@/features/fulfillment");
+  const marked = await markShipmentReturned(prisma, sid);
+  if (!marked.ok) {
+    return { error: marked.message };
+  }
+  if (marked.orderId !== oid) {
+    return { error: "Sendung gehört nicht zu dieser Bestellung." };
+  }
+
+  if (!marked.alreadyReturned) {
+    await createOrderEvent(prisma, oid, ORDER_EVENT_SHIPMENT_RETURNED, {
+      shipmentId: sid,
+      via: "shipment_only",
+    });
+  }
+
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${oid}`);
+  return {
+    ok: true,
+    message: marked.alreadyReturned
+      ? "Sendung war bereits als Retoure markiert."
+      : "Sendung als Retoure markiert.",
+  };
+}
+
+/**
+ * Legt einen neuen Sendungsentwurf für erneute Versendung an (nach Retoure).
+ * Nutzt `forceNew` und schreibt ein Audit-Event; bei Bestellstatus Retoure → processing.
+ */
+export async function createReshipShipmentDraftAction(
+  _prev: ReshipShipmentActionState,
+  formData: FormData,
+): Promise<ReshipShipmentActionState> {
+  const session = await getAdminSession();
+  if (!session?.user) {
+    redirect("/admin/login");
+  }
+
+  const orderId = formData.get("orderId");
+  if (typeof orderId !== "string" || !orderId.trim()) {
+    return { error: "Ungültige Bestellung." };
+  }
+
+  const oid = orderId.trim();
+  const prisma = getPrisma();
+  const { createReshipmentDraftForOrder } = await import("@/features/fulfillment");
+  const { createOrderEvent, ORDER_EVENT_SHIPMENT_RESHIP_DRAFT } = await import(
+    "@/lib/orders/order-events"
+  );
+
+  const draft = await createReshipmentDraftForOrder(prisma, oid);
+
+  if (!draft.ok) {
+    const messages: Record<string, string> = {
+      not_found: "Bestellung nicht gefunden.",
+      no_physical_items: "Keine physischen Positionen — erneute Versendung nicht nötig.",
+      order_not_ready: "Bestellung ist für erneute Versendung nicht bereit.",
+      already_fully_shipped: "Bitte zuerst Retoure setzen oder bestehenden Entwurf prüfen.",
+      cancelled_or_refunded: "Stornierte/erstattete Bestellung.",
+      open_shipment_exists:
+        "Es gibt bereits eine offene Sendung mit Label — bitte zuerst stornieren.",
+      reship_not_applicable:
+        draft.message ??
+        "Erneute Sendung erst nach Retoure möglich (Lieferstatus Retoure setzen).",
+    };
+    return { error: messages[draft.error] ?? "Reship-Entwurf konnte nicht angelegt werden." };
+  }
+
+  await createOrderEvent(prisma, oid, ORDER_EVENT_SHIPMENT_RESHIP_DRAFT, {
+    shipmentId: draft.shipment.id,
+    reusedExisting: !draft.created,
+    forceNew: true,
+  });
+
+  const order = await prisma.order.findUnique({
+    where: { id: oid },
+    select: { status: true },
+  });
+  if (order?.status === "retoure") {
+    const transition = await applyOrderStatusTransition(prisma, oid, "processing");
+    if (!transition.ok) {
+      revalidatePath("/admin/orders");
+      revalidatePath(`/admin/orders/${oid}`);
+      return {
+        ok: true,
+        shipmentId: draft.shipment.id,
+        message:
+          "Sendungsentwurf angelegt, aber Status konnte nicht auf „In Bearbeitung“ gesetzt werden — bitte manuell prüfen.",
+      };
+    }
+  }
+
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${oid}`);
+
+  return {
+    ok: true,
+    shipmentId: draft.shipment.id,
+    message: draft.created
+      ? "Neuer Sendungsentwurf für erneute Versendung angelegt."
+      : "Bestehender Sendungsentwurf wird für die erneute Versendung genutzt.",
+  };
+}
