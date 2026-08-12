@@ -3,6 +3,7 @@ import { ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
 import { EditProductForm } from "@/app/admin/(dashboard)/products/[id]/edit/edit-product-form";
 import { ProductLifecycleControls } from "@/app/admin/(dashboard)/products/[id]/edit/product-lifecycle-controls";
+import { getAiContentSettingsPublic } from "@/features/integrations";
 import { adminProductForEditForm } from "@/lib/catalog/admin-product-form";
 import { getProductByIdForAdmin, listManufacturersForAdmin } from "@/lib/catalog/queries";
 import { listCategoriesForProductPicker } from "@/lib/catalog/category-queries";
@@ -27,10 +28,11 @@ export default async function AdminEditProductPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [product, manufacturers, categoryRows] = await Promise.all([
+  const [product, manufacturers, categoryRows, aiSettings] = await Promise.all([
     getProductByIdForAdmin(id),
     listManufacturersForAdmin(),
     listCategoriesForProductPicker(),
+    getAiContentSettingsPublic(),
   ]);
   if (!product) notFound();
   const formProduct = adminProductForEditForm(product);
@@ -73,7 +75,12 @@ export default async function AdminEditProductPage({
         )}
       </div>
       <div className="mt-8 space-y-8">
-        <EditProductForm product={formProduct} manufacturers={manufacturers} categories={categories} />
+        <EditProductForm
+          product={formProduct}
+          manufacturers={manufacturers}
+          categories={categories}
+          aiReady={aiSettings.ready}
+        />
         <ProductLifecycleControls
           productId={product.id}
           isActive={product.isActive}

@@ -7,10 +7,12 @@ type Defaults = {
   isBestseller: boolean;
   showWorkshopCalendar: boolean;
   leadText: string;
+  leadTextKey?: number;
   dimensionsText: string;
   weightText: string;
   materialText: string;
   featureBullets: string;
+  featureBulletsKey?: number;
 };
 
 type Props = {
@@ -87,6 +89,7 @@ export function ProductStorefrontDetailFields({ state, defaults }: Props) {
             Kurztext unter dem Untertitel (optional, kein HTML)
           </label>
           <textarea
+            key={defaults.leadTextKey ?? 0}
             id="leadText"
             name="leadText"
             rows={3}
@@ -151,6 +154,7 @@ export function ProductStorefrontDetailFields({ state, defaults }: Props) {
             Freie Verkaufsstichpunkte (optional)
           </label>
           <textarea
+            key={defaults.featureBulletsKey ?? 0}
             id="featureBullets"
             name="featureBullets"
             rows={4}

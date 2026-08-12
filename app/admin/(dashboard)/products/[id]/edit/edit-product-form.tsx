@@ -7,6 +7,7 @@ import {
   type ProductFormState,
 } from "@/app/admin/(dashboard)/products/actions";
 import { ProductAttributesFields } from "@/app/admin/(dashboard)/products/product-attributes-fields";
+import { ProductAiTextAssistant } from "@/app/admin/(dashboard)/products/product-ai-text-assistant";
 import { ProductCategoriesFields } from "@/app/admin/(dashboard)/products/product-categories-fields";
 import { ProductDeliveryFields } from "@/app/admin/(dashboard)/products/product-delivery-fields";
 import { ProductGeneralFields } from "@/app/admin/(dashboard)/products/product-general-fields";
@@ -92,6 +93,7 @@ export function EditProductForm({
   product,
   manufacturers,
   categories,
+  aiReady = false,
 }: {
   product: Product;
   manufacturers: Manufacturer[];
@@ -102,10 +104,19 @@ export function EditProductForm({
     isActive: boolean;
     parentTitle: string | null;
   }[];
+  aiReady?: boolean;
 }) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(updateProduct, initialState);
   const [savedFlash, setSavedFlash] = useState(false);
+  const [descriptionHtml, setDescriptionHtml] = useState(() =>
+    plainDescriptionToHtml(product.description),
+  );
+  const [descriptionKey, setDescriptionKey] = useState(0);
+  const [leadText, setLeadText] = useState(product.leadText ?? "");
+  const [leadTextKey, setLeadTextKey] = useState(0);
+  const [featureBullets, setFeatureBullets] = useState(product.featureBullets.join("\n"));
+  const [featureBulletsKey, setFeatureBulletsKey] = useState(0);
 
   useEffect(() => {
     if (!state?.ok) return;
@@ -120,11 +131,39 @@ export function EditProductForm({
     };
   }, [state?.ok, router]);
 
-  const descHtml = plainDescriptionToHtml(product.description);
+  const defaultSku =
+    product.variants.find((v) => v.isDefault)?.sku ?? product.variants[0]?.sku ?? null;
+  const categoryNames = categories
+    .filter((c) => product.categoryIds.includes(c.id))
+    .map((c) => (c.parentTitle ? `${c.parentTitle} › ${c.title}` : c.title));
 
   return (
     <div className="flex max-w-4xl flex-col gap-8 pb-28">
-      <form action={formAction} className="flex flex-col gap-8">
+      <ProductAiTextAssistant
+        aiReady={aiReady}
+        categoryNames={categoryNames}
+        defaultSku={defaultSku}
+        onApply={(target, value) => {
+          if (target === "descriptionHtml") {
+            setDescriptionHtml(value);
+            setDescriptionKey((k) => k + 1);
+            return;
+          }
+          if (target === "leadText") {
+            setLeadText(value.slice(0, 500));
+            setLeadTextKey((k) => k + 1);
+            return;
+          }
+          setFeatureBullets(value);
+          setFeatureBulletsKey((k) => k + 1);
+        }}
+      />
+
+      <form
+        id="admin-product-edit-form"
+        action={formAction}
+        className="flex flex-col gap-8"
+      >
         <input type="hidden" name="id" value={product.id} />
 
         <ProductGeneralFields
@@ -134,7 +173,8 @@ export function EditProductForm({
             title: product.title,
             slug: product.slug,
             subtitle: product.subtitle ?? "",
-            descriptionHtml: descHtml,
+            descriptionHtml,
+            descriptionKey,
             manufacturerId: product.manufacturerId,
             productNumber: product.productNumber,
             amazonRatingAverage:
@@ -153,11 +193,13 @@ export function EditProductForm({
             categoryTag: product.categoryTag ?? "",
             isBestseller: product.isBestseller,
             showWorkshopCalendar: product.showWorkshopCalendar,
-            leadText: product.leadText ?? "",
+            leadText,
+            leadTextKey,
             dimensionsText: product.dimensionsText ?? "",
             weightText: product.weightText ?? "",
             materialText: product.materialText ?? "",
-            featureBullets: product.featureBullets.join("\n"),
+            featureBullets,
+            featureBulletsKey,
           }}
         />
 

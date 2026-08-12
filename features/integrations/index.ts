@@ -46,6 +46,14 @@ export {
   createAiContentPort,
   createAiContentPortFromConfig,
 } from "@/features/integrations/application/create-ai-content-port";
+export {
+  generateProductAiTextDraft,
+  normalizeAiBulletsForProductField,
+  plainTextToProductDescriptionHtml,
+  productFieldForAiTextKind,
+  type GenerateProductAiTextResult,
+  type ProductAiTextTargetField,
+} from "@/features/integrations/application/generate-product-ai-text";
 export { createOpenAiContentAdapter } from "@/features/integrations/infrastructure/openai-ai-content-adapter";
 export {
   resolveOpenAiContentConfigFromEnv,

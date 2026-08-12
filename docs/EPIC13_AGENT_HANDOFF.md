@@ -20,14 +20,12 @@
 
 ---
 
-## Ist-Zustand (nach Slice 2)
+## Ist-Zustand (nach Slice 3)
 
-- ADR-0010 akzeptiert; Slice 1 Port + OpenAI-Adapter
-- `AiContentSettings` Singleton (verschlüsselter Key, Modelle, Tageslimit, Usage UTC)
-- Admin-Panel unter `/admin/einstellungen/integrationen`
-- `createAiContentPort()` löst DB+Env auf (Env-Key Vorrang), Quota-Wrapper
-- Allowlist `assertSafeAiProductFacts` / `AI_ALLOWED_PRODUCT_FACT_KEYS`
-- Noch **keine** Produktformular-UI und keine CMS-Übernahme
+- ADR-0010; Port + OpenAI-Adapter; Admin-Konfiguration (Slice 1–2)
+- Produkt-Textassistent auf `/admin/products/[id]/edit`: Entwurf → Vorschau → explizite Feldübernahme
+- Kein Auto-Save; SEO-Titel/-Description nur Vorschau (kein Produktfeld)
+- Noch **kein** Bildassistent und keine CMS-Übernahme
 
 ---
 
@@ -39,7 +37,7 @@ Branch-Prefix: `cursor/epic13-slice<N>-<kurzname>-e864`
 | --- | --- | --- |
 | **1** | ADR-0010 + Port + NotConfigured + OpenAI-Adapter + Fact-Allowlist + Unit-Tests | ✅ |
 | **2** | Admin-Konfiguration: Limits, Modellprofile, optional verschlüsselter Key (wie Instagram/INTERNETMARKE) | ✅ |
-| **3** | Textassistent im Produktformular: Vorschau/Diff, explizites Übernehmen einzelner Felder | kein Auto-Save |
+| **3** | Textassistent im Produktformular: Vorschau/Diff, explizites Übernehmen einzelner Felder | ✅ |
 | **4** | Bildassistent: Prompt/Quelle, Moderation, temporäre Vorschau, explizite Übernahme in Object Storage | Draft bis Confirm |
 | **5** | CMS-Integration für ausgewählte Blöcke (Text/Bild-Entwürfe) | kein Auto-Publish |
 | **6** | Betrieb: Usage-/Kostenmetriken, Quoten, verständliche Providerfehler, Audit | Exit-Kriterien Epic 13 |
@@ -59,20 +57,20 @@ Branch-Prefix: `cursor/epic13-slice<N>-<kurzname>-e864`
 
 ---
 
-## Copy-Paste — Aufgabe für neuen Agenten (Slice 3)
+## Copy-Paste — Aufgabe für neuen Agenten (Slice 4)
 
 ```
-Epic 13 Slice 3 (Textassistent Produktformular) nach Slice 2 umsetzen.
+Epic 13 Slice 4 (Bildassistent) nach Slice 3 umsetzen.
 
 Lies zuerst:
 - docs/EPIC13_AGENT_HANDOFF.md
 - docs/EPIC13_AI_CONTENT_ASSISTANCE.md
 - docs/adr/0010-ai-content-assistance-port.md
-- app/admin/(dashboard)/products/** (edit-product-form, product-general-fields, product-storefront-detail-fields)
-- createAiContentPort / assertSafeAiProductFacts aus @/features/integrations
+- docs/adr/0008-object-storage.md
+- ProductMediaSection / ObjectStorage Port
 
-Branch: cursor/epic13-slice3-product-text-assistant-e864
-Vorschau/Diff, explizites Übernehmen einzelner Felder — kein Auto-Save/Publish.
+Branch: cursor/epic13-slice4-image-assistant-e864
+Moderation vor Dauerhaft-Speichern; explizite Übernahme; kein Auto-Publish.
 Antworten auf Deutsch. Tests: npm run validate (mindestens architecture + typecheck + test:unit)
 ```
 
