@@ -139,7 +139,7 @@ export function EditProductForm({
     .map((c) => (c.parentTitle ? `${c.parentTitle} › ${c.title}` : c.title));
 
   return (
-    <div className="flex max-w-4xl flex-col gap-8 pb-28">
+    <div className="flex max-w-4xl flex-col gap-8">
       <ProductAiTextAssistant
         aiReady={aiReady}
         categoryNames={categoryNames}

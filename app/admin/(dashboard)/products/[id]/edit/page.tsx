@@ -74,7 +74,8 @@ export default async function AdminEditProductPage({
           </span>
         )}
       </div>
-      <div className="mt-8 space-y-8">
+      {/* pb-28: Platz für den sticky AdminFormActionDock — Lifecycle nicht verdecken */}
+      <div className="mt-8 flex flex-col gap-8 pb-28">
         <EditProductForm
           product={formProduct}
           manufacturers={manufacturers}
