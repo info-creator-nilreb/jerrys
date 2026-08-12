@@ -42,3 +42,10 @@ export {
   deleteProducts,
   type ProductLifecycleResult,
 } from "@/features/catalog/application/product-admin-lifecycle";
+export {
+  setCategoriesActive,
+  deleteCategories,
+  setCollectionsActive,
+  deleteCollections,
+  type CatalogGroupLifecycleResult,
+} from "@/features/catalog/application/catalog-group-admin-lifecycle";

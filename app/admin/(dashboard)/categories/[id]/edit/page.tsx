@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CategoryForm } from "@/app/admin/(dashboard)/categories/category-form";
+import { CategoryLifecycleControls } from "@/app/admin/(dashboard)/categories/[id]/edit/category-lifecycle-controls";
 import {
   getCategoryByIdForAdmin,
   listCollectionsForCategoryPicker,
@@ -35,22 +36,30 @@ export default async function AdminEditCategoryPage({ params }: { params: Promis
           Storefront: /kategorien/{category.slug} — Produkte über verknüpfte Kollektionen.
         </p>
       </div>
-      <CategoryForm
-        collections={collections}
-        parentOptions={parentOptions}
-        submitLabel="Speichern"
-        category={{
-          id: category.id,
-          title: category.title,
-          slug: category.slug,
-          description: category.description,
-          sortOrder: category.sortOrder,
-          isActive: category.isActive,
-          parentId: category.parentId,
-          collectionIds: category.collections.map((c) => c.collectionId),
-          hasChildren: category._count.children > 0,
-        }}
-      />
+      <div className="mt-8 flex flex-col gap-8 pb-28">
+        <CategoryForm
+          collections={collections}
+          parentOptions={parentOptions}
+          submitLabel="Speichern"
+          category={{
+            id: category.id,
+            title: category.title,
+            slug: category.slug,
+            description: category.description,
+            sortOrder: category.sortOrder,
+            isActive: category.isActive,
+            parentId: category.parentId,
+            collectionIds: category.collections.map((c) => c.collectionId),
+            hasChildren: category._count.children > 0,
+          }}
+        />
+        <CategoryLifecycleControls
+          categoryId={category.id}
+          isActive={category.isActive}
+          title={category.title}
+          hasChildren={category._count.children > 0}
+        />
+      </div>
     </div>
   );
 }
