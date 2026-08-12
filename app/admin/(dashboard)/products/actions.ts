@@ -8,11 +8,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getAdminSession } from "@/lib/auth/admin-session";
-import { syncDefaultVariantFromProduct } from "@/features/catalog";
 import {
   attributesFromFormData,
   reconcileAttributesAndFeatureBullets,
-} from "@/features/catalog/domain/product-attributes";
+  syncDefaultVariantFromProduct,
+} from "@/features/catalog";
 import { replaceProductCategoryMemberships } from "@/lib/catalog/category-membership";
 import { productCategoryAssignmentSchema } from "@/lib/catalog/category-schemas";
 import { parseEuroInputToCents } from "@/lib/catalog/format";

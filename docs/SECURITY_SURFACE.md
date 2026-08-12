@@ -33,10 +33,11 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | Server Actions `app/admin/.../categories/actions.ts` | `auth()` in Action | Kategorie-CRUD, Produktzuordnung |
 | Server Actions `app/admin/.../versand/actions.ts` | `auth()` in Action | Shopweite Versandländer und -kosten |
 | Seite `/admin/einstellungen` | Admin-Session | Shop-Branding, Kontakt, Farben, Medien-Uploads (Epic 11) |
-| Seite `/admin/einstellungen/integrationen` | Admin-Session | Instagram-OAuth + Internetmarke-Credentials/Produkt |
+| Seite `/admin/einstellungen/integrationen` | Admin-Session | Instagram-OAuth + Internetmarke-Credentials/Produkt + Zettle POS (API-Key) |
 | Server Actions `app/admin/.../einstellungen/actions.ts` | `auth()` in Action | ShopSettings speichern; Branding-Upload/Clear (Vercel Blob); Audit via Outbox `shop_settings.*` |
 | Server Actions `app/admin/.../einstellungen/integrationen/instagram-actions.ts` | Admin-Session | Instagram trennen / manueller Sync |
 | Server Actions `app/admin/.../einstellungen/integrationen/internetmarke-actions.ts` | Admin-Session | Portokasse verbinden, Produkt wählen, trennen |
+| Server Actions `app/admin/.../einstellungen/integrationen/zettle-actions.ts` | Admin-Session | Zettle-API-Key verbinden, Varianten-Mapping, Kauf-Sync/Retry, trennen |
 | Seiten `/admin/inhalte`, `/admin/inhalte/new`, `/admin/inhalte/[id]/edit`, `/admin/inhalte/marketing` | Admin-Session | CMS-light inkl. Live-Vorschau (Client); Marketing Reviews/Social; `/admin/startseite` → Redirect Marketing |
 | Server Actions `app/admin/.../inhalte/actions.ts` | `auth()` in Action | ContentPage + ContentBlocks speichern; Publish/Unpublish; Rich-Text sanitize; Outbox `content_page.*` / `content_page.published` / `content_page.unpublished` |
 | Server Actions `app/admin/.../inhalte/marketing/actions.ts` | `auth()` in Action | Homepage Amazon-/Social-Pflege (früher `/admin/startseite`) |
@@ -54,7 +55,8 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | `POST /api/checkout/paypal/create-order` | Öffentlich (Checkout) | Bestellung anlegen + PayPal-Order; **Rate-Limit** pro IP (`lib/security/paypal-checkout-api-rate-limit.ts`) |
 | `POST /api/checkout/paypal/capture-order` | Öffentlich (Checkout) | Capture nach Karte/Wallet; **gleiches Rate-Limit** wie create-order |
 | `POST /api/webhooks/paypal` | Öffentlich (PayPal) | PayPal-Webhooks; **Signaturpflicht** (`PAYPAL_WEBHOOK_ID` + verify-webhook-signature); Inbox-Idempotenz (`paypal_webhook` / Event-ID); Rate-Limit pro IP (`lib/security/paypal-webhook-api-rate-limit.ts`); ohne Webhook-ID → **503**; Events u. a. Capture-Complete/Approve + `PAYMENT.CAPTURE.REFUNDED` |
-| `GET`/`POST /api/internal/commerce-maintenance` | Bearer `CRON_SECRET` (Vercel Cron), Bearer/`x-commerce-maintenance-secret` (`COMMERCE_MAINTENANCE_SECRET`) | Bestandsreservierungen, Outbox, Workshops, PayPal-Reconciliation, Instagram-Feed-Sync (wenn verbunden) |
+| `GET`/`POST /api/internal/commerce-maintenance` | Bearer `CRON_SECRET` (Vercel Cron), Bearer/`x-commerce-maintenance-secret` (`COMMERCE_MAINTENANCE_SECRET`) | Bestandsreservierungen, Outbox, Workshops, PayPal-Reconciliation, Instagram-Feed-Sync, Zettle-Kauf-Pull (wenn verbunden) |
+| `POST /api/webhooks/zettle` | Öffentlich (Zettle Pusher); HMAC `X-iZettle-Signature` | `PurchaseCreated` → idempotente POS-Bestandsbuchung; Inbox `zettle_pusher` |
 | Tabelle `order_payments` | — | PSP-Versuche pro Bestellung (Prisma-Modell `OrderPayment`) |
 | Seiten unter `/admin/*` (außer Login) | Middleware + Layout `auth()` | Admin-UI |
 

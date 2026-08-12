@@ -204,6 +204,7 @@ model ProductVariant {
   orderItems        OrderItem[]
   stockReservations StockReservation[]
   stockMovements    StockMovement[]
+  zettleMapping     ZettleProductMapping?
 
   @@index([productId, isDefault])
   @@index([productId, isActive, sortOrder])
@@ -345,6 +346,17 @@ enum StockMovementReason {
   warehouse_ship
   warehouse_return
   manual_adjustment
+  /// POS-Verkauf über Zettle (Epic 6).
+  pos_sale
+  /// POS-Retoure/Refund über Zettle (Epic 6).
+  pos_refund
+}
+
+enum ZettlePurchaseSyncStatus {
+  processed
+  skipped
+  failed
+  pending_retry
 }
 
 enum IntegrationOutboxStatus {
@@ -730,6 +742,67 @@ model InstagramConnection {
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
   @@map("instagram_connections")
+}
+
+/// Zettle POS-Anbindung (Epic 6). Singleton id = default; API-Key AES-GCM wie Instagram.
+model ZettleConnection {
+  id                   String    @id @default("default")
+  /// Organisation UUID aus GET oauth.zettle.com/users/self.
+  organizationUuid     String?   @map("organization_uuid")
+  /// client_id aus dem API-Key-JWT (oder Attribution aus Env).
+  clientId             String    @map("client_id")
+  /// AES-GCM Ciphertext des API-Keys (JWT Assertion).
+  apiKeyEnc            String    @map("api_key_enc")
+  /// Optional gecachter Access-Token (AES-GCM).
+  accessTokenEnc       String?   @map("access_token_enc")
+  accessTokenExpiresAt DateTime? @map("access_token_expires_at")
+  /// Pusher-Subscription UUID (v1) für PurchaseCreated.
+  webhookSubscriptionUuid String? @map("webhook_subscription_uuid")
+  /// AES-GCM Ciphertext des Pusher signingKey.
+  webhookSigningKeyEnc    String? @map("webhook_signing_key_enc")
+  /// Öffentliche Destination-URL der Subscription.
+  webhookDestination      String? @map("webhook_destination")
+  connectedAt          DateTime  @default(now()) @map("connected_at")
+  lastVerifiedAt       DateTime? @map("last_verified_at")
+  lastPurchaseSyncAt   DateTime? @map("last_purchase_sync_at")
+  lastSyncError        String?   @map("last_sync_error") @db.Text
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  @@map("zettle_connections")
+}
+
+/// Mapping Shop-Variante ↔ Zettle Product/Variant UUID (Epic 6).
+model ZettleProductMapping {
+  id                 String         @id @default(cuid())
+  productVariantId   String         @unique @map("product_variant_id")
+  productVariant     ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+  zettleProductUuid  String         @map("zettle_product_uuid")
+  zettleVariantUuid  String         @map("zettle_variant_uuid")
+  zettleProductName  String?        @map("zettle_product_name")
+  zettleVariantName  String?        @map("zettle_variant_name")
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+
+  @@unique([zettleProductUuid, zettleVariantUuid])
+  @@index([zettleVariantUuid])
+  @@map("zettle_product_mappings")
+}
+
+/// Idempotente Verarbeitung von Zettle-Käufen (Epic 6).
+model ZettlePurchaseSync {
+  id              String                   @id @default(cuid())
+  purchaseUuid    String                   @unique @map("purchase_uuid")
+  purchaseNumber  Int?                     @map("purchase_number")
+  purchasedAt     DateTime?                @map("purchased_at")
+  status          ZettlePurchaseSyncStatus @default(failed)
+  isRefund        Boolean                  @default(false) @map("is_refund")
+  lastError       String?                  @map("last_error") @db.Text
+  processedAt     DateTime?                @map("processed_at")
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@map("zettle_purchase_syncs")
 }
 
 /// INTERNETMARKE-Anbindung (Epic 7). Singleton id = default; Secrets AES-GCM wie Instagram.

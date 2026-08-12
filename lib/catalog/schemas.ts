@@ -2,7 +2,7 @@ import { z } from "zod";
 import { parseEuroInputToCents } from "@/lib/catalog/format";
 import { centsPairMatchesTax } from "@/lib/catalog/pricing";
 import { nonEmptyString } from "@/lib/validation/form";
-import { normalizeProductAttributes } from "@/features/catalog/domain/product-attributes";
+import { normalizeProductAttributes } from "@/features/catalog";
 
 export const productSlugSchema = z
   .string()

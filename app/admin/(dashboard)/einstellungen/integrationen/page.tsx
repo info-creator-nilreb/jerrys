@@ -2,7 +2,15 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { InstagramConnectPanel } from "./instagram-connect-panel";
 import { InternetmarkeSettingsPanel } from "./internetmarke-settings-panel";
+import { ZettleSettingsPanel } from "./zettle-settings-panel";
 import { getInternetmarkeConnectionPublic } from "@/features/fulfillment";
+import {
+  buildZettleApiKeyDeepLink,
+  getZettleConfigDiagnostics,
+  getZettleConnectionPublic,
+  listRecentZettlePurchaseSyncs,
+  listShopVariantsForZettleMapping,
+} from "@/features/inventory";
 import { getInstagramConfigDiagnostics } from "@/lib/instagram/config";
 import { getInstagramConnectionPublic } from "@/lib/instagram/connection";
 import { listActiveInstagramMediaCache } from "@/lib/instagram/media-queries";
@@ -27,11 +35,15 @@ export default async function AdminIntegrationenPage({
     return `${proto.split(",")[0]?.trim()}://${host.split(",")[0]?.trim()}`.replace(/\/$/, "");
   })();
   const igDiagnostics = getInstagramConfigDiagnostics(requestOrigin);
+  const zettleDiagnostics = getZettleConfigDiagnostics();
 
-  const [igConnection, igCache, im] = await Promise.all([
+  const [igConnection, igCache, im, zettle, mappings, recentSyncs] = await Promise.all([
     getInstagramConnectionPublic(),
     listActiveInstagramMediaCache(48),
     getInternetmarkeConnectionPublic(),
+    getZettleConnectionPublic(),
+    listShopVariantsForZettleMapping(),
+    listRecentZettlePurchaseSyncs(15).catch(() => []),
   ]);
 
   const igFlash =
@@ -48,7 +60,7 @@ export default async function AdminIntegrationenPage({
         <h1 className="text-2xl font-semibold tracking-tight text-[#1f2937]">Integrationen</h1>
         <p className="mt-2 text-sm text-[#6b7280]">
           Externe Dienste verbinden. Marken kaufen bleibt an der Bestellung; Feed-Inhalte und
-          Versandkosten pflegst du unter Marketing bzw. Versand.
+          Versandkosten pflegst du unter Marketing bzw. Versand. POS-Bestand läuft über Zettle.
         </p>
       </div>
 
@@ -84,6 +96,41 @@ export default async function AdminIntegrationenPage({
         productNameSnapshot={im.productNameSnapshot}
         lastVerifiedAt={im.lastVerifiedAt?.toISOString() ?? null}
         lastError={im.lastError}
+      />
+
+      <ZettleSettingsPanel
+        connected={zettle.connected}
+        verified={zettle.verified}
+        organizationUuid={zettle.organizationUuid}
+        clientIdMasked={zettle.clientIdMasked}
+        connectedAt={zettle.connectedAt?.toISOString() ?? null}
+        lastVerifiedAt={zettle.lastVerifiedAt?.toISOString() ?? null}
+        lastPurchaseSyncAt={zettle.lastPurchaseSyncAt?.toISOString() ?? null}
+        lastSyncError={zettle.lastSyncError}
+        attributionClientIdMasked={zettle.attributionClientIdMasked}
+        apiKeyDeepLink={zettleDiagnostics.apiKeyDeepLink || buildZettleApiKeyDeepLink()}
+        webhookConfigured={zettle.webhookConfigured}
+        webhookDestination={zettle.webhookDestination}
+        mappings={mappings.map((m) => ({
+          productVariantId: m.productVariantId,
+          productTitle: m.productTitle,
+          variantTitle: m.variantTitle,
+          sku: m.sku,
+          stockQuantity: m.stockQuantity,
+          availableQuantity: m.availableQuantity,
+          zettleProductUuid: m.zettleProductUuid,
+          zettleVariantUuid: m.zettleVariantUuid,
+          zettleProductName: m.zettleProductName,
+          zettleVariantName: m.zettleVariantName,
+        }))}
+        recentSyncs={recentSyncs.map((s) => ({
+          purchaseUuid: s.purchaseUuid,
+          purchaseNumber: s.purchaseNumber,
+          purchasedAt: s.purchasedAt?.toISOString() ?? null,
+          status: s.status,
+          isRefund: s.isRefund,
+          lastError: s.lastError,
+        }))}
       />
     </div>
   );
