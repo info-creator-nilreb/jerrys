@@ -360,6 +360,19 @@ enum ZettlePurchaseSyncStatus {
   pending_retry
 }
 
+/// Shop → Zettle Inventory-Delta (Online-Verkauf / Storno / Retoure).
+enum ZettleInventoryPushKind {
+  shop_sale
+  shop_return
+}
+
+enum ZettleInventoryPushStatus {
+  pending
+  processed
+  skipped
+  failed
+}
+
 enum IntegrationOutboxStatus {
   pending
   published
@@ -804,6 +817,27 @@ model ZettlePurchaseSync {
 
   @@index([status, createdAt])
   @@map("zettle_purchase_syncs")
+}
+
+/// Idempotenter Shop→Zettle Inventory-Push (Online-Verkauf / Storno / Retoure).
+model ZettleInventoryPush {
+  id            String                     @id @default(cuid())
+  correlationId String                     @unique @map("correlation_id")
+  orderId       String?                    @map("order_id")
+  kind          ZettleInventoryPushKind
+  status        ZettleInventoryPushStatus  @default(pending)
+  /// UUID v1 für Zettle `externalUuid` (Idempotenz auf API-Seite).
+  externalUuid  String                     @map("external_uuid")
+  /// Gemappte Positionen: [{ productVariantId, zettleProductUuid, zettleVariantUuid, quantity }]
+  linesJson     Json                       @map("lines_json")
+  lastError     String?                    @map("last_error") @db.Text
+  processedAt   DateTime?                  @map("processed_at")
+  createdAt     DateTime                   @default(now()) @map("created_at")
+  updatedAt     DateTime                   @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@index([orderId])
+  @@map("zettle_inventory_pushes")
 }
 
 /// INTERNETMARKE-Anbindung (Epic 7). Singleton id = default; Secrets AES-GCM wie Instagram.

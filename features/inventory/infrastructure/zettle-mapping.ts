@@ -133,3 +133,35 @@ export async function getZettleMappingByVariantUuid(
     productId: row.productVariant.productId,
   };
 }
+
+export async function getZettleMappingsByProductVariantIds(
+  productVariantIds: string[],
+): Promise<
+  Map<
+    string,
+    {
+      zettleProductUuid: string;
+      zettleVariantUuid: string;
+    }
+  >
+> {
+  const ids = [...new Set(productVariantIds.filter(Boolean))];
+  if (ids.length === 0) return new Map();
+  const rows = await getPrisma().zettleProductMapping.findMany({
+    where: { productVariantId: { in: ids } },
+    select: {
+      productVariantId: true,
+      zettleProductUuid: true,
+      zettleVariantUuid: true,
+    },
+  });
+  return new Map(
+    rows.map((r) => [
+      r.productVariantId,
+      {
+        zettleProductUuid: r.zettleProductUuid,
+        zettleVariantUuid: r.zettleVariantUuid,
+      },
+    ]),
+  );
+}

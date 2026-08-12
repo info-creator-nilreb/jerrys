@@ -37,6 +37,16 @@ type SyncRow = {
   lastError: string | null;
 };
 
+type PushRow = {
+  correlationId: string;
+  orderId: string | null;
+  kind: string;
+  status: string;
+  lastError: string | null;
+  processedAt: string | null;
+  createdAt: string;
+};
+
 type ZettleProductOption = {
   uuid: string;
   name: string;
@@ -58,6 +68,7 @@ type Props = {
   webhookDestination: string | null;
   mappings: MappingRow[];
   recentSyncs: SyncRow[];
+  recentPushes: PushRow[];
 };
 
 function formatDe(iso: string | null): string {
@@ -80,6 +91,7 @@ function statusLabel(status: string): string {
       return "übersprungen";
     case "failed":
       return "fehlgeschlagen";
+    case "pending":
     case "pending_retry":
       return "Retry ausstehend";
     default:
@@ -193,8 +205,9 @@ export function ZettleSettingsPanel(props: Props) {
     <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-[#1f2937]">Zettle POS</h2>
       <p className="mt-2 text-sm text-[#6b7280]">
-        Private Integration per API-Key (Assertion Grant). Der Shop bleibt Bestands-Quelle;
-        POS-Käufe werden idempotent abgebucht — Zettle überschreibt den Shop-Bestand nicht.
+        Private Integration per API-Key (Assertion Grant). Der Shop bleibt Bestands-Quelle.
+        Verkäufe passen Bestände in beide Richtungen an: POS → Shop und Online-Zahlung/Storno/Retoure
+        → Zettle STORE. Kein absolutes Überschreiben aus Zettle.
       </p>
 
       <div aria-live="polite" className="mt-4 space-y-2">
@@ -367,8 +380,8 @@ export function ZettleSettingsPanel(props: Props) {
             <div className="rounded-md border border-[#e8eaed] bg-[#fafbfc] p-3">
               <h3 className="text-sm font-semibold text-[#1f2937]">Discrepancy-Report</h3>
               <p className="mt-1 text-xs text-[#6b7280]">
-                Shop-Lager vs. Zettle STORE — der Shop bleibt Quelle der Wahrheit; Abweichungen
-                nur als Hinweis.
+                Shop verfügbar vs. Zettle STORE — der Shop bleibt Quelle der Wahrheit;
+                Abweichungen nur als Hinweis.
               </p>
               {discState.discrepancy.rows.length === 0 ? (
                 <p className="mt-2 text-sm text-[#6b7280]">Keine gemappten Varianten.</p>
@@ -388,7 +401,8 @@ export function ZettleSettingsPanel(props: Props) {
                         {r.variantTitle ? ` — ${r.variantTitle}` : ""}
                       </span>
                       <span className="text-[#6b7280]">
-                        {" · "}Shop {r.shopStock}
+                        {" · "}verf. {r.shopAvailable}
+                        {" · "}Lager {r.shopStock}
                         {" · "}Zettle{" "}
                         {r.zettleTracked ? r.zettleBalance : "nicht getrackt"}
                         {r.delta != null ? ` · Δ ${r.delta > 0 ? "+" : ""}${r.delta}` : ""}
@@ -496,7 +510,7 @@ export function ZettleSettingsPanel(props: Props) {
 
           {props.recentSyncs.length > 0 ? (
             <div>
-              <h3 className="text-sm font-semibold text-[#1f2937]">Letzte Sync-Einträge</h3>
+              <h3 className="text-sm font-semibold text-[#1f2937]">Letzte POS→Shop Sync-Einträge</h3>
               <ul className="mt-3 divide-y divide-[#e8eaed] rounded-md border border-[#e8eaed]">
                 {props.recentSyncs.map((s) => (
                   <li key={s.purchaseUuid} className="px-3 py-2 text-xs text-[#6b7280]">
@@ -510,6 +524,29 @@ export function ZettleSettingsPanel(props: Props) {
                     <p className="mt-0.5 break-all font-mono text-[10px]">{s.purchaseUuid}</p>
                     {s.lastError ? (
                       <p className="mt-1 text-amber-900">{s.lastError}</p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {props.recentPushes.length > 0 ? (
+            <div>
+              <h3 className="text-sm font-semibold text-[#1f2937]">Letzte Shop→Zettle Inventory-Pushes</h3>
+              <ul className="mt-3 divide-y divide-[#e8eaed] rounded-md border border-[#e8eaed]">
+                {props.recentPushes.map((p) => (
+                  <li key={p.correlationId} className="px-3 py-2 text-xs text-[#6b7280]">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <span className="font-medium text-[#374151]">
+                        {p.kind === "shop_sale" ? "Online-Verkauf" : "Storno/Retoure"} ·{" "}
+                        {statusLabel(p.status)}
+                      </span>
+                      <span>{formatDe(p.processedAt ?? p.createdAt)}</span>
+                    </div>
+                    <p className="mt-0.5 break-all font-mono text-[10px]">{p.correlationId}</p>
+                    {p.lastError ? (
+                      <p className="mt-1 text-amber-900">{p.lastError}</p>
                     ) : null}
                   </li>
                 ))}
