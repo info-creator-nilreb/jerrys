@@ -4,9 +4,12 @@ import { useActionState, useMemo, useRef, useState } from "react";
 import {
   resetEmailTemplateAction,
   saveEmailTemplateAction,
+  sendEmailTemplateTestAction,
   type EmailTemplateFormState,
+  type EmailTemplateTestSendState,
 } from "@/app/admin/(dashboard)/emails/actions";
 import type { EmailTemplateVariableDef } from "@/lib/email/templates/catalog";
+import { prepareEmailPreviewHtml } from "@/lib/email/templates/preview-html";
 import { renderEmailBodies, type TemplateVars } from "@/lib/email/templates/render";
 
 type Props = {
@@ -20,6 +23,9 @@ type Props = {
   sampleVars: TemplateVars;
   initialPreviewHtml: string;
   initialPreviewSubject: string;
+  /** Origin der Admin-UI (Preview-Deploy), für Branding-Assets. */
+  previewAssetOrigin: string;
+  defaultTestRecipient: string;
 };
 
 export function EmailTemplateEditor({
@@ -33,12 +39,15 @@ export function EmailTemplateEditor({
   sampleVars,
   initialPreviewHtml,
   initialPreviewSubject,
+  previewAssetOrigin,
+  defaultTestRecipient,
 }: Props) {
   const [subject, setSubject] = useState(initialSubject);
   const [htmlBody, setHtmlBody] = useState(initialHtmlBody);
   const [textBody, setTextBody] = useState(initialTextBody);
   const [enabled, setEnabled] = useState(initialEnabled);
   const [tab, setTab] = useState<"html" | "text" | "preview">("html");
+  const [testTo, setTestTo] = useState(defaultTestRecipient);
 
   const htmlRef = useRef<HTMLTextAreaElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
@@ -49,6 +58,10 @@ export function EmailTemplateEditor({
     saveEmailTemplateAction,
     null,
   );
+  const [testState, testAction, testPending] = useActionState<
+    EmailTemplateTestSendState,
+    FormData
+  >(sendEmailTemplateTestAction, null);
 
   const preview = useMemo(() => {
     try {
@@ -61,6 +74,11 @@ export function EmailTemplateEditor({
       };
     }
   }, [subject, htmlBody, textBody, sampleVars, initialPreviewHtml, initialPreviewSubject]);
+
+  const previewHtml = useMemo(
+    () => prepareEmailPreviewHtml(preview.html, previewAssetOrigin),
+    [preview.html, previewAssetOrigin],
+  );
 
   function insertVariable(v: EmailTemplateVariableDef) {
     const token = v.html ? `{{{${v.path}}}}` : `{{${v.path}}}`;
@@ -121,14 +139,14 @@ export function EmailTemplateEditor({
   }
 
   return (
-    <form action={formAction} className="grid gap-4 lg:grid-cols-[1fr_16rem]">
-      <input type="hidden" name="key" value={templateKey} />
-      <input type="hidden" name="subject" value={subject} />
-      <input type="hidden" name="htmlBody" value={htmlBody} />
-      <input type="hidden" name="textBody" value={textBody} />
-      <input type="hidden" name="enabled" value={enabled ? "true" : "false"} />
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
+      <form action={formAction} className="min-w-0 space-y-4">
+        <input type="hidden" name="key" value={templateKey} />
+        <input type="hidden" name="subject" value={subject} />
+        <input type="hidden" name="htmlBody" value={htmlBody} />
+        <input type="hidden" name="textBody" value={textBody} />
+        <input type="hidden" name="enabled" value={enabled ? "true" : "false"} />
 
-      <div className="space-y-4">
         <div className="rounded-xl border border-[#e8eaed] bg-white p-4 shadow-sm sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <label className="flex items-center gap-2 text-sm text-[#374151]">
@@ -261,16 +279,17 @@ export function EmailTemplateEditor({
                 <div className="overflow-hidden rounded-lg border border-[#e8eaed] bg-[#eceef1]">
                   <iframe
                     title={`Vorschau ${name}`}
-                    srcDoc={preview.html}
+                    srcDoc={previewHtml}
                     className="h-[min(70vh,720px)] w-full bg-[#eceef1]"
-                    sandbox=""
+                    /* allow-same-origin: Bilder vom geschützten Preview-Deploy laden */
+                    sandbox="allow-same-origin allow-popups"
                   />
                 </div>
                 <details className="rounded-lg border border-[#e8eaed] bg-white p-3 text-sm">
                   <summary className="cursor-pointer font-medium text-[#374151]">
                     Text-Version
                   </summary>
-                  <pre className="mt-2 whitespace-pre-wrap font-mono text-xs text-[#4b5563]">
+                  <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs text-[#4b5563]">
                     {preview.text}
                   </pre>
                 </details>
@@ -301,32 +320,81 @@ export function EmailTemplateEditor({
             Auf Standard zurücksetzen
           </button>
         </div>
-      </div>
+      </form>
 
-      <aside className="rounded-xl border border-[#e8eaed] bg-white p-4 shadow-sm lg:sticky lg:top-4 lg:self-start">
-        <h2 className="text-sm font-semibold text-[#1f2937]">Variablen</h2>
-        <p className="mt-1 text-xs text-[#6b7280]">
-          Klicken zum Einfügen an der Cursor-Position. HTML-Fragmente nutzen{" "}
-          <code className="rounded bg-[#f3f4f6] px-1">{"{{{…}}}"}</code>.
-        </p>
-        <ul className="mt-3 max-h-[min(70vh,640px)] space-y-1.5 overflow-y-auto">
-          {variables.map((v) => (
-            <li key={v.path}>
-              <button
-                type="button"
-                onClick={() => insertVariable(v)}
-                className="w-full rounded-lg border border-transparent px-2 py-1.5 text-left transition-colors hover:border-[#e5e7eb] hover:bg-[#f7f8fa]"
-                title={v.example}
-              >
-                <span className="block font-mono text-xs text-primary">
-                  {v.html ? `{{{${v.path}}}}` : `{{${v.path}}}`}
-                </span>
-                <span className="mt-0.5 block text-xs text-[#6b7280]">{v.label}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </aside>
-    </form>
+      <div className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:self-start">
+        <aside className="overflow-hidden rounded-xl border border-[#e8eaed] bg-white p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-[#1f2937]">Variablen</h2>
+          <p className="mt-1 text-xs text-[#6b7280]">
+            Klicken zum Einfügen an der Cursor-Position. HTML-Fragmente nutzen{" "}
+            <code className="rounded bg-[#f3f4f6] px-1">{"{{{…}}}"}</code>.
+          </p>
+          <ul className="mt-3 max-h-[min(50vh,480px)] space-y-1.5 overflow-x-hidden overflow-y-auto">
+            {variables.map((v) => (
+              <li key={v.path} className="min-w-0">
+                <button
+                  type="button"
+                  onClick={() => insertVariable(v)}
+                  className="w-full min-w-0 rounded-lg border border-transparent px-2 py-1.5 text-left transition-colors hover:border-[#e5e7eb] hover:bg-[#f7f8fa]"
+                  title={v.example}
+                >
+                  <span className="block break-all font-mono text-xs text-primary">
+                    {v.html ? `{{{${v.path}}}}` : `{{${v.path}}}`}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-[#6b7280]">{v.label}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </aside>
+
+        <form
+          action={testAction}
+          className="overflow-hidden rounded-xl border border-[#e8eaed] bg-white p-4 shadow-sm"
+        >
+          <h2 className="text-sm font-semibold text-[#1f2937]">Testversand</h2>
+          <p className="mt-1 text-xs text-[#6b7280]">
+            Sendet die aktuelle Vorlage (auch ungespeichert) mit Beispieldaten.
+          </p>
+          <input type="hidden" name="key" value={templateKey} />
+          <input type="hidden" name="subject" value={subject} />
+          <input type="hidden" name="htmlBody" value={htmlBody} />
+          <input type="hidden" name="textBody" value={textBody} />
+          <label htmlFor="email-test-to" className="mt-3 block text-xs font-medium text-[#374151]">
+            Empfänger
+          </label>
+          <input
+            id="email-test-to"
+            name="to"
+            type="email"
+            required
+            value={testTo}
+            onChange={(e) => setTestTo(e.target.value)}
+            placeholder="name@example.com"
+            className="mt-1 w-full min-w-0 rounded-lg border border-[#d1d5db] px-3 py-2 text-sm text-[#1f2937] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          {testState?.fieldErrors?.to ? (
+            <p className="mt-1 text-xs text-red-600">{testState.fieldErrors.to}</p>
+          ) : null}
+          {testState?.error ? (
+            <p className="mt-2 text-xs text-red-600" role="alert">
+              {testState.error}
+            </p>
+          ) : null}
+          {testState?.ok && testState.message ? (
+            <p className="mt-2 text-xs font-medium text-primary" role="status">
+              {testState.message}
+            </p>
+          ) : null}
+          <button
+            type="submit"
+            disabled={testPending || !testTo.trim()}
+            className="mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-[#d1d5db] bg-white px-3 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb] disabled:opacity-60"
+          >
+            {testPending ? "Senden…" : "Testmail senden"}
+          </button>
+        </form>
+      </div>
+    </div>
   );
 }
