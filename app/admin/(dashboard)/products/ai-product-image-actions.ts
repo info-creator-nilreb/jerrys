@@ -33,6 +33,8 @@ export type AiImageActionState =
       temporaryImageBase64?: string | null;
       previewSrc?: string;
       draftAltText?: string;
+      /** ProductImage-ID für Alt-Text-Entwurf/Speichern. */
+      imageId?: string;
       model?: string;
     }
   | null;
@@ -380,19 +382,12 @@ export async function confirmProductAiImageAction(
 }
 
 const altSchema = z.object({
-  imageUrl: z
-    .string()
-    .trim()
-    .min(1)
-    .max(4000)
-    .refine(
-      (v) => v.startsWith("https://") || v.startsWith("http://") || v.startsWith("/"),
-      "Ungültige Bild-URL.",
-    ),
+  imageId: z.string().trim().min(1),
+  productId: z.string().trim().min(1),
   title: z.string().trim().max(200).optional(),
 });
 
-/** Alt-Text-Entwurf für ein bestehendes Galeriebild (nur Vorschau/Copy in UI). */
+/** Alt-Text-Entwurf für ein bestehendes Galeriebild (Vorschau; Speichern separat). */
 export async function generateProductAiAltFromUrlAction(
   _prev: AiImageActionState,
   formData: FormData,
@@ -400,14 +395,23 @@ export async function generateProductAiAltFromUrlAction(
   await requireAdmin();
 
   const parsed = altSchema.safeParse({
-    imageUrl: formData.get("imageUrl"),
+    imageId: formData.get("imageId"),
+    productId: formData.get("productId"),
     title: String(formData.get("title") ?? "") || undefined,
   });
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Ungültige Bild-URL." };
+    return { error: parsed.error.issues[0]?.message ?? "Ungültige Bildauswahl." };
   }
 
-  const visionUrl = await resolveImageUrlForVision(parsed.data.imageUrl);
+  const image = await getPrisma().productImage.findFirst({
+    where: { id: parsed.data.imageId, productId: parsed.data.productId },
+    select: { id: true, url: true },
+  });
+  if (!image) {
+    return { error: "Bild gehört nicht zu diesem Produkt." };
+  }
+
+  const visionUrl = await resolveImageUrlForVision(image.url);
   if (!visionUrl) {
     return {
       error:
@@ -429,6 +433,58 @@ export async function generateProductAiAltFromUrlAction(
   return {
     ok: true,
     draftAltText: result.draftAltText,
-    message: "Alt-Text-Entwurf erzeugt (noch nicht gespeichert).",
+    imageId: image.id,
+    message: "Alt-Text-Entwurf erzeugt — prüfen und speichern.",
+  };
+}
+
+const saveAltSchema = z.object({
+  imageId: z.string().trim().min(1),
+  productId: z.string().trim().min(1),
+  alt: z.string().trim().min(1).max(200),
+});
+
+/** Speichert Alt-Text dauerhaft auf ProductImage.alt. */
+export async function saveProductImageAltAction(
+  _prev: AiImageActionState,
+  formData: FormData,
+): Promise<AiImageActionState> {
+  await requireAdmin();
+
+  const parsed = saveAltSchema.safeParse({
+    imageId: formData.get("imageId"),
+    productId: formData.get("productId"),
+    alt: formData.get("alt"),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Ungültiger Alt-Text." };
+  }
+
+  const image = await getPrisma().productImage.findFirst({
+    where: { id: parsed.data.imageId, productId: parsed.data.productId },
+    select: {
+      id: true,
+      product: { select: { id: true, slug: true } },
+    },
+  });
+  if (!image) {
+    return { error: "Bild gehört nicht zu diesem Produkt." };
+  }
+
+  await getPrisma().productImage.update({
+    where: { id: image.id },
+    data: { alt: parsed.data.alt },
+  });
+
+  revalidatePath("/");
+  revalidatePath("/produkte");
+  if (image.product.slug) revalidatePath(`/produkte/${image.product.slug}`);
+  revalidatePath(`/admin/products/${image.product.id}/edit`);
+
+  return {
+    ok: true,
+    draftAltText: parsed.data.alt,
+    imageId: image.id,
+    message: "Alt-Text gespeichert.",
   };
 }

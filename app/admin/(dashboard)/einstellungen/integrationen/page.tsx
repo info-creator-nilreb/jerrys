@@ -5,7 +5,12 @@ import { InstagramConnectPanel } from "./instagram-connect-panel";
 import { InternetmarkeSettingsPanel } from "./internetmarke-settings-panel";
 import { ZettleSettingsPanel } from "./zettle-settings-panel";
 import { getInternetmarkeConnectionPublic } from "@/features/fulfillment";
-import { getAiContentSettingsPublic } from "@/features/integrations";
+import {
+  formatEstimatedCostUsd,
+  getAiContentSettingsPublic,
+  getAiContentUsageSummary,
+  listRecentAiContentGenerationEvents,
+} from "@/features/integrations";
 import {
   buildZettleApiKeyDeepLink,
   getZettleConfigDiagnostics,
@@ -39,15 +44,22 @@ export default async function AdminIntegrationenPage({
   const igDiagnostics = getInstagramConfigDiagnostics(requestOrigin);
   const zettleDiagnostics = getZettleConfigDiagnostics();
 
-  const [igConnection, igCache, im, zettle, mappings, recentSyncs, ai] = await Promise.all([
-    getInstagramConnectionPublic(),
-    listActiveInstagramMediaCache(48),
-    getInternetmarkeConnectionPublic(),
-    getZettleConnectionPublic(),
-    listShopVariantsForZettleMapping(),
-    listRecentZettlePurchaseSyncs(15).catch(() => []),
-    getAiContentSettingsPublic(),
-  ]);
+  const [igConnection, igCache, im, zettle, mappings, recentSyncs, ai, recentAiEvents] =
+    await Promise.all([
+      getInstagramConnectionPublic(),
+      listActiveInstagramMediaCache(48),
+      getInternetmarkeConnectionPublic(),
+      getZettleConnectionPublic(),
+      listShopVariantsForZettleMapping(),
+      listRecentZettlePurchaseSyncs(15).catch(() => []),
+      getAiContentSettingsPublic(),
+      listRecentAiContentGenerationEvents(15).catch(() => []),
+    ]);
+
+  const aiUsage = await getAiContentUsageSummary({
+    requestsUsedToday: ai.requestsUsedToday,
+    dailyRequestLimit: ai.dailyRequestLimit,
+  });
 
   const igFlash =
     ig === "connected" || ig === "error"
@@ -82,8 +94,24 @@ export default async function AdminIntegrationenPage({
         timeoutMs={ai.timeoutMs}
         dailyRequestLimit={ai.dailyRequestLimit}
         requestsUsedToday={ai.requestsUsedToday}
+        successToday={aiUsage.successToday}
+        failureToday={aiUsage.failureToday}
+        tokensToday={aiUsage.tokensToday}
+        estimatedCostMicrosToday={aiUsage.estimatedCostMicrosToday}
+        estimatedCostLabel={formatEstimatedCostUsd(aiUsage.estimatedCostMicrosToday)}
         lastVerifiedAt={ai.lastVerifiedAt?.toISOString() ?? null}
         lastError={ai.lastError}
+        recentEvents={recentAiEvents.map((ev) => ({
+          id: ev.id,
+          createdAt: ev.createdAt,
+          capability: ev.capability,
+          status: ev.status,
+          errorCode: ev.errorCode,
+          errorMessage: ev.errorMessage,
+          model: ev.model,
+          totalTokens: ev.totalTokens,
+          estimatedCostMicros: ev.estimatedCostMicros,
+        }))}
       />
 
       <InstagramConnectPanel

@@ -9,6 +9,7 @@ import {
   editProductAiImageAction,
   generateProductAiAltFromUrlAction,
   generateProductAiImageAction,
+  saveProductImageAltAction,
   type AiImageActionState,
 } from "@/app/admin/(dashboard)/products/ai-product-image-actions";
 
@@ -90,25 +91,36 @@ export function ProductAiImageAssistant({
     generateProductAiAltFromUrlAction,
     null as AiImageActionState,
   );
+  const [saveAltState, saveAltAction, saveAltPending] = useActionState(
+    saveProductImageAltAction,
+    null as AiImageActionState,
+  );
 
   useEffect(() => {
-    if (confirmState?.ok) {
+    if (confirmState?.ok || saveAltState?.ok) {
       router.refresh();
     }
-  }, [confirmState?.ok, router]);
+  }, [confirmState?.ok, saveAltState?.ok, router]);
 
   const draftState = workflow === "edit" ? editState : genState;
   const error =
-    genState?.error || editState?.error || confirmState?.error || altState?.error;
+    genState?.error ||
+    editState?.error ||
+    confirmState?.error ||
+    altState?.error ||
+    saveAltState?.error;
   const message =
     (!error &&
-      (confirmState?.message ||
+      (saveAltState?.message ||
+        confirmState?.message ||
         editState?.message ||
         genState?.message ||
         altState?.message)) ||
     null;
   const draftReady = Boolean(draftState?.ok && draftState.previewSrc);
-  const pending = genPending || editPending || confirmPending || altPending;
+  const pending =
+    genPending || editPending || confirmPending || altPending || saveAltPending;
+  const altDraftReady = Boolean(altState?.ok && altState.draftAltText && altState.imageId);
   const draftAltDefault =
     draftState?.draftAltText?.trim() || `${productTitle.slice(0, 80)} – Produktbild`;
   const selectedEdit = EDIT_MODES.find((m) => m.value === editMode) ?? EDIT_MODES[0]!;
@@ -413,23 +425,24 @@ export function ProductAiImageAssistant({
         <div className="mt-8 border-t border-[#e8eaed] pt-6">
           <p className="text-sm font-medium text-[#374151]">Alt-Text für bestehendes Bild</p>
           <p className="mt-1 text-xs text-[#6b7280]">
-            Erzeugt nur einen Entwurf — Speichern der Alt-Texte folgt später in der Galerie-UI.
+            Entwurf erzeugen, prüfen und dauerhaft auf dem Galeriebild speichern.
           </p>
           <form action={altAction} className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
             <input type="hidden" name="title" value={productTitle} />
+            <input type="hidden" name="productId" value={productId} />
             <div className="min-w-0 flex-1">
               <label htmlFor="ai-alt-image" className="mb-1 block text-xs font-medium text-[#6b7280]">
                 Bild wählen
               </label>
               <select
                 id="ai-alt-image"
-                name="imageUrl"
+                name="imageId"
                 required
                 disabled={!aiReady || pending}
                 className="h-11 w-full rounded-md border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60"
               >
                 {existingImages.map((img, i) => (
-                  <option key={img.id} value={img.url}>
+                  <option key={img.id} value={img.id}>
                     {img.alt?.trim() || `Bild ${i + 1}`}
                   </option>
                 ))}
@@ -443,10 +456,37 @@ export function ProductAiImageAssistant({
               {altPending ? "Erzeuge…" : "Alt-Text-Entwurf"}
             </button>
           </form>
-          {altState?.ok && altState.draftAltText ? (
-            <pre className="mt-3 whitespace-pre-wrap rounded-md bg-[#f7f8fa] p-3 text-sm text-[#1f2937]">
-              {altState.draftAltText}
-            </pre>
+          {altDraftReady ? (
+            <form action={saveAltAction} className="mt-3 space-y-3">
+              <input type="hidden" name="productId" value={productId} />
+              <input type="hidden" name="imageId" value={altState!.imageId!} />
+              <div>
+                <label
+                  htmlFor="ai-alt-draft"
+                  className="mb-1 block text-xs font-medium text-[#6b7280]"
+                >
+                  Alt-Text prüfen / bearbeiten
+                </label>
+                <input
+                  key={`${altState!.imageId}-${altState!.draftAltText}`}
+                  id="ai-alt-draft"
+                  name="alt"
+                  type="text"
+                  required
+                  maxLength={200}
+                  defaultValue={altState!.draftAltText}
+                  disabled={pending}
+                  className="h-11 w-full rounded-md border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={pending}
+                className="inline-flex min-h-11 items-center justify-center rounded-md border border-primary bg-white px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/5 disabled:opacity-60"
+              >
+                {saveAltPending ? "Speichere…" : "Alt-Text speichern"}
+              </button>
+            </form>
           ) : null}
         </div>
       ) : null}

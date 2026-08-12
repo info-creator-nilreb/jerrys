@@ -6,7 +6,7 @@ Verbindlicher Scope für den Production-Cutover (Stand Abstimmung Product Owner)
 
 | # | Thema | Status | Hinweise |
 | --- | --- | --- | --- |
-| 1 | Epic 13 KI-Content abschließen | teilweise (1–5 ✅) | Slice 5: CMS-Textentwürfe Hero/RichText; Slice 6 Betrieb/Usage + Alt-Text-Persistenz offen |
+| 1 | Epic 13 KI-Content abschließen | ✅ (1–6) | Slice 6: Usage/Kosten, Providerfehler, Audit; Alt-Text-Persistenz; CMS-Bildentwürfe optional offen |
 | 2 | Zettle bidirektional | extern | PR #102 — nicht parallel nachbauen |
 | 3 | Retoure / Reship Admin-MVP | ✅ | Sync bei Retoure, Reship-Entwurf, ConfirmDialog, Audit; private Labels später |
 | 4 | Admin Index: Card-Layout mobil | ✅ | Cards unter `md`, Tabelle ab `md` auf allen Indexseiten |

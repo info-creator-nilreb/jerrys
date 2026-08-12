@@ -857,6 +857,35 @@ model AiContentSettings {
   @@map("ai_content_settings")
 }
 
+/// Audit-Strom für KI-Generierungen (Epic 13 Slice 6). Keine Prompt-/PII-Inhalte.
+model AiContentGenerationEvent {
+  id                   String   @id @default(cuid())
+  createdAt            DateTime @default(now()) @map("created_at")
+  /// text | vision | image_generation | image_edit | moderation
+  capability           String
+  /// success | failure
+  status               String
+  errorCode            String?  @map("error_code")
+  errorMessage         String?  @map("error_message") @db.Text
+  provider             String   @default("openai")
+  model                String?
+  requestId            String?  @map("request_id")
+  inputTokens          Int?     @map("input_tokens")
+  outputTokens         Int?     @map("output_tokens")
+  totalTokens          Int?     @map("total_tokens")
+  /// Geschätzte Kosten in Mikrodollar (USD * 1e6), nur Orientierung.
+  estimatedCostMicros  Int?     @map("estimated_cost_micros")
+  adminUserId          String?  @map("admin_user_id")
+  productId            String?  @map("product_id")
+  contentPageId        String?  @map("content_page_id")
+  /// Zusätzliche nicht-sensible Metadaten (z. B. kind, mode).
+  metadata             Json?
+
+  @@index([createdAt])
+  @@index([status, createdAt])
+  @@map("ai_content_generation_events")
+}
+
 /// Gecachte Instagram-Medien (Bilder) für Storefront/CMS — Sync, kein Live-Graph pro Request.
 model InstagramMediaCache {
   id            String    @id @default(cuid())

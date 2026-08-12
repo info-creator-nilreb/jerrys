@@ -19,6 +19,7 @@ import {
   type AiVisionDescribeResult,
 } from "@/features/integrations/domain/ai-content-assistance";
 import { buildAiImageEditPrompt } from "@/features/integrations/domain/ai-image-edit-prompt";
+import { mapOpenAiHttpFailure } from "@/features/integrations/domain/ai-provider-errors";
 import type { OpenAiContentConfig } from "@/features/integrations/infrastructure/openai-config";
 
 type FetchLike = typeof fetch;
@@ -141,30 +142,8 @@ async function openaiJson(
       json = null;
     }
 
-    if (res.status === 429) {
-      return {
-        ok: false,
-        failure: failure("rate_limited", "OpenAI Rate-Limit erreicht. Bitte später erneut versuchen."),
-      };
-    }
     if (!res.ok) {
-      const msg =
-        json &&
-        typeof json === "object" &&
-        "error" in json &&
-        json.error &&
-        typeof json.error === "object" &&
-        "message" in json.error &&
-        typeof (json.error as { message: unknown }).message === "string"
-          ? (json.error as { message: string }).message
-          : `OpenAI-Fehler (HTTP ${res.status}).`;
-      return {
-        ok: false,
-        failure: failure(
-          res.status >= 400 && res.status < 500 ? "invalid_request" : "provider_rejected",
-          msg,
-        ),
-      };
+      return { ok: false, failure: mapOpenAiHttpFailure(res.status, json) };
     }
 
     return { ok: true, status: res.status, json, requestId };
@@ -172,7 +151,10 @@ async function openaiJson(
     if (e instanceof Error && e.name === "AbortError") {
       return {
         ok: false,
-        failure: failure("timeout", "OpenAI-Anfrage ist wegen Timeout abgebrochen."),
+        failure: failure(
+          "timeout",
+          "Die KI-Anfrage ist wegen Timeout abgebrochen. Timeout unter Integrationen erhöhen oder erneut versuchen.",
+        ),
       };
     }
     return {
@@ -215,30 +197,8 @@ async function openaiMultipart(
       json = null;
     }
 
-    if (res.status === 429) {
-      return {
-        ok: false,
-        failure: failure("rate_limited", "OpenAI Rate-Limit erreicht. Bitte später erneut versuchen."),
-      };
-    }
     if (!res.ok) {
-      const msg =
-        json &&
-        typeof json === "object" &&
-        "error" in json &&
-        json.error &&
-        typeof json.error === "object" &&
-        "message" in json.error &&
-        typeof (json.error as { message: unknown }).message === "string"
-          ? (json.error as { message: string }).message
-          : `OpenAI-Fehler (HTTP ${res.status}).`;
-      return {
-        ok: false,
-        failure: failure(
-          res.status >= 400 && res.status < 500 ? "invalid_request" : "provider_rejected",
-          msg,
-        ),
-      };
+      return { ok: false, failure: mapOpenAiHttpFailure(res.status, json) };
     }
 
     return { ok: true, status: res.status, json, requestId };
@@ -246,7 +206,10 @@ async function openaiMultipart(
     if (e instanceof Error && e.name === "AbortError") {
       return {
         ok: false,
-        failure: failure("timeout", "OpenAI-Anfrage ist wegen Timeout abgebrochen."),
+        failure: failure(
+          "timeout",
+          "Die KI-Anfrage ist wegen Timeout abgebrochen. Timeout unter Integrationen erhöhen oder erneut versuchen.",
+        ),
       };
     }
     return {

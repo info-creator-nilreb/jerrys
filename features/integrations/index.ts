@@ -44,6 +44,22 @@ export {
   type AiVisionDescribeResult,
 } from "@/features/integrations/domain/ai-content-assistance";
 export {
+  humanizeAiOperationFailure,
+  humanizeAiProviderMessage,
+  mapOpenAiHttpFailure,
+} from "@/features/integrations/domain/ai-provider-errors";
+export {
+  estimateAiCostMicros,
+  formatEstimatedCostUsd,
+} from "@/features/integrations/domain/ai-usage-estimate";
+export {
+  getAiContentUsageSummary,
+  listRecentAiContentGenerationEvents,
+  recordAiContentGenerationEvent,
+  type AiContentAuditEventPublic,
+  type AiContentUsageSummary,
+} from "@/features/integrations/infrastructure/ai-content-audit";
+export {
   createNotConfiguredAiContentAdapter,
   type AiContentPort,
 } from "@/features/integrations/application/ai-content-port";

@@ -20,13 +20,13 @@
 
 ---
 
-## Ist-Zustand (nach Slice 5 Start)
+## Ist-Zustand (nach Slice 6)
 
 - Slices 1–3: Port, Admin-Config, Textassistent
 - Bildassistent auf Produkt-Edit: Prompt → Moderation → Vorschau → explizite Übernahme in Vercel Blob + `ProductImage`
-- Alt-Text-Entwurf für bestehende Galeriebilder (noch ohne Alt-Editor-Persistenz)
-- Slice 5 (Start): CMS-Textentwürfe für **Hero** und **RichText** im Inhalte-Editor (`generateCmsAiTextDraft` + UI-Hook, kein Auto-Publish)
-- Noch offen: weitere CMS-Blöcke/Bildentwürfe, Usage-Dashboard (Slice 6)
+- Alt-Text-Entwurf für Galeriebilder **mit Persistenz** auf `ProductImage.alt`
+- Slice 5: CMS-Textentwürfe für **Hero** und **RichText** (kein Auto-Publish); Bild/weitere Blöcke offen
+- Slice 6: Usage-/Kostenübersicht im AI-Settings-Panel, verständliche Provider-/Quota-Fehler, Audit-Events (`AiContentGenerationEvent`)
 
 ---
 
@@ -41,9 +41,9 @@ Branch-Prefix: `cursor/epic13-slice<N>-<kurzname>-e864`
 | **3** | Textassistent im Produktformular: Vorschau/Diff, explizites Übernehmen einzelner Felder | ✅ |
 | **4** | Bildassistent: Prompt/Quelle, Moderation, temporäre Vorschau, explizite Übernahme in Object Storage | ✅ |
 | **5** | CMS-Integration für ausgewählte Blöcke (Text/Bild-Entwürfe) | ✅ Start (Hero/RichText-Text); Bild/weitere Blöcke offen |
-| **6** | Betrieb: Usage-/Kostenmetriken, Quoten, verständliche Providerfehler, Audit | Exit-Kriterien Epic 13 |
+| **6** | Betrieb: Usage-/Kostenmetriken, Quoten, verständliche Providerfehler, Audit | ✅ |
 
-**Empfehlung:** Als Nächstes Slice 2 (Konfiguration/Limits) oder Slice 3 (Text-UI), sobald ein OpenAI-Key in Preview verfügbar ist.
+**Empfehlung:** Restarbeiten Epic 13 nur noch optionale CMS-Bildentwürfe; Exit-Kriterien Betrieb erfüllt. Als Nächstes Epic 14 oder Go-Live-Gates.
 
 ---
 
@@ -58,20 +58,9 @@ Branch-Prefix: `cursor/epic13-slice<N>-<kurzname>-e864`
 
 ---
 
-## Copy-Paste — Aufgabe für neuen Agenten (Slice 5)
+## Copy-Paste — Aufgabe für neuen Agenten (Slice 6 erledigt)
 
-```
-Epic 13 Slice 5 (CMS KI-Entwürfe) nach Slice 4 umsetzen.
-
-Lies zuerst:
-- docs/EPIC13_AGENT_HANDOFF.md
-- docs/EPIC13_AI_CONTENT_ASSISTANCE.md
-- docs/EPIC12_CONTENT_PAGES_CMS.md / Admin-Inhalte-Editor
-
-Branch: cursor/epic13-slice5-cms-ai-drafts-e864
-Text-/Bildentwürfe für ausgewählte Blöcke; kein Auto-Publish.
-Antworten auf Deutsch. Tests: npm run validate (mindestens architecture + typecheck + test:unit)
-```
+Slice 6 ist umgesetzt auf `cursor/final-go-live-package-3106`. Weitere Epic-13-Arbeit: ggf. CMS-Bildentwürfe (Slice 5 Rest) oder Epic 14.
 
 ---
 
