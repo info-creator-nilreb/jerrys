@@ -250,7 +250,10 @@ export function AdminSidebar({
         )}
       </div>
 
-      <nav className="flex flex-1 flex-col overflow-y-auto py-3" aria-label="Hauptnavigation">
+      <nav
+        className="flex flex-1 flex-col overflow-y-auto py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        aria-label="Hauptnavigation"
+      >
         {mainNav.map((item) => {
           const Icon = item.icon;
           const active = itemActive(item);
