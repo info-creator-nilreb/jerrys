@@ -15,6 +15,8 @@ export { parseShopifyProductCsv } from "@/features/catalog/domain/shopify-csv";
 export {
   mapShopifyProductToCatalog,
   mapShopifyProductsToCatalog,
+  generateVariantSku,
+  skuSlugPart,
   type CatalogImportProduct,
   type MapShopifyOptions,
 } from "@/features/catalog/domain/shopify-map";

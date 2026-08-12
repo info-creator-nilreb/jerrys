@@ -83,12 +83,29 @@ Erste verkaufbare Variante (oder einzige / Default Title) → `isDefault: true`.
 
 Dry-Run schreibt nichts. `--apply` ohne `--update`: bestehende Slugs/SKUs **überspringen**. Mit `--update`: Commerce-Felder und Content überschreiben.
 
+## Kritische Bewertung (realer Shopify-Export)
+
+Typische Lücken in Shopify-CSVs (wie `products_export.csv`):
+
+| Problem | Auswirkung | Umgang jetzt |
+| --- | --- | --- |
+| Leere `Variant SKU` | Früher Hard-Error | SKU aus Handle + Option generieren |
+| Kein `Variant Inventory Qty` | Bestand unbekannt | Bestand 0 + Warnung |
+| Metafields (Material, Maße, Lieferzeit) | Extra-Spalten | → `materialText` / `dimensionsText` / Lieferzeit-Heuristik |
+| Google Product Category vs Type | Keine Shop-Kategorie | Warnung, kein Auto-Create |
+| CDN-Bilder / HEIC | Nicht dauerhaft / nicht unterstützter Typ | Optional spiegeln; HEIC überspringen |
+| Tags | Kein Tag-Modell | Warnung |
+
+**Entwurf:** Unvollständige Datensätze können als **inaktiv** importiert werden (`allowIncompleteAsDraft` / Admin-Checkbox / CLI `--draft`).
+
+**Bilder:** Beim Apply optional Download → Vercel Blob (wenn `BLOB_READ_WRITE_TOKEN`) sonst `public/media/product-uploads/` (ephemeral auf Vercel — Blob bevorzugen).
+
 ## Admin-UI
 
 Unter **Katalog → Shopify-Import** (`/admin/products/shopify-import`):
 
 1. CSV hochladen oder per Drag-and-Drop ablegen (max. 5 MB).
-2. Steuersatz / Lieferzeit / „Bestehende aktualisieren“ wählen.
+2. Optionen: Steuersatz, Lieferzeit, bestehende aktualisieren, **Entwurf**, **Bilder spiegeln**.
 3. **Vorschau prüfen** (Dry-Run inkl. DB-Slug-Check).
 4. Bestätigen → **Import starten** (schreibt nur bei 0 ungültigen Produkten).
 

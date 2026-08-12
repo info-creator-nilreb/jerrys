@@ -154,6 +154,8 @@ function buildImportFormData(opts: {
   taxRatePercent: string;
   deliveryTimeKey: string;
   updateExisting: boolean;
+  allowIncompleteAsDraft: boolean;
+  mirrorImages: boolean;
   confirmApply?: boolean;
 }): FormData {
   const fd = new FormData();
@@ -161,6 +163,8 @@ function buildImportFormData(opts: {
   fd.set("taxRatePercent", opts.taxRatePercent);
   fd.set("deliveryTimeKey", opts.deliveryTimeKey);
   if (opts.updateExisting) fd.set("updateExisting", "true");
+  if (opts.allowIncompleteAsDraft) fd.set("allowIncompleteAsDraft", "true");
+  if (opts.mirrorImages) fd.set("mirrorImages", "true");
   if (opts.confirmApply) fd.set("confirmApply", "true");
   return fd;
 }
@@ -185,6 +189,8 @@ export function ShopifyImportForm() {
   const [taxRatePercent, setTaxRatePercent] = useState("19");
   const [deliveryTimeKey, setDeliveryTimeKey] = useState("2-4-werktage");
   const [updateExisting, setUpdateExisting] = useState(false);
+  const [allowIncompleteAsDraft, setAllowIncompleteAsDraft] = useState(true);
+  const [mirrorImages, setMirrorImages] = useState(true);
   const [confirmApply, setConfirmApply] = useState(false);
   const [state, setState] = useState<ShopifyImportActionState>(null);
   const [pending, startTransition] = useTransition();
@@ -227,6 +233,8 @@ export function ShopifyImportForm() {
       taxRatePercent,
       deliveryTimeKey,
       updateExisting,
+      allowIncompleteAsDraft,
+      mirrorImages,
     });
     startTransition(async () => {
       const next = await previewShopifyCsvImport(null, fd);
@@ -243,6 +251,8 @@ export function ShopifyImportForm() {
       taxRatePercent,
       deliveryTimeKey,
       updateExisting,
+      allowIncompleteAsDraft,
+      mirrorImages,
       confirmApply: true,
     });
     startTransition(async () => {
@@ -412,6 +422,48 @@ export function ShopifyImportForm() {
             <span className="font-medium">Bestehende Produkte aktualisieren</span>
             <span className="mt-0.5 block text-[#6b7280]">
               Treffer über Slug (Handle). Ohne Haken werden vorhandene Slugs übersprungen.
+            </span>
+          </span>
+        </label>
+
+        <label className="flex items-start gap-3 text-sm text-[#374151]">
+          <input
+            type="checkbox"
+            checked={allowIncompleteAsDraft}
+            disabled={pending}
+            onChange={(e) => {
+              setAllowIncompleteAsDraft(e.target.checked);
+              setState(null);
+              setConfirmApply(false);
+            }}
+            className="mt-0.5 size-4 rounded border-[#d1d5db] text-primary focus:ring-primary"
+          />
+          <span>
+            <span className="font-medium">Unvollständige als Entwurf (inaktiv)</span>
+            <span className="mt-0.5 block text-[#6b7280]">
+              Fehlende Shopify-SKUs werden generiert; fehlende Preise/Bestände → Entwurf statt
+              Abbruch.
+            </span>
+          </span>
+        </label>
+
+        <label className="flex items-start gap-3 text-sm text-[#374151]">
+          <input
+            type="checkbox"
+            checked={mirrorImages}
+            disabled={pending}
+            onChange={(e) => {
+              setMirrorImages(e.target.checked);
+              setState(null);
+              setConfirmApply(false);
+            }}
+            className="mt-0.5 size-4 rounded border-[#d1d5db] text-primary focus:ring-primary"
+          />
+          <span>
+            <span className="font-medium">Bilder herunterladen und ablegen</span>
+            <span className="mt-0.5 block text-[#6b7280]">
+              Shopify-CDN → Vercel Blob (falls konfiguriert) oder lokal unter{" "}
+              <code className="text-xs">/media/product-uploads/</code>. HEIC wird übersprungen.
             </span>
           </span>
         </label>

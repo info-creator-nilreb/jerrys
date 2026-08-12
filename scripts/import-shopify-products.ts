@@ -3,7 +3,7 @@
  *
  * Usage:
  *   npm run catalog:import-shopify -- --file ./export.csv
- *   npm run catalog:import-shopify -- --file ./export.csv --out ./tmp/report.json
+ *   npm run catalog:import-shopify -- --file ./export.csv --draft --mirror-images
  *   npm run catalog:import-shopify -- --file ./export.csv --apply --update --tax 19
  */
 import fs from "node:fs";
@@ -34,6 +34,8 @@ Optional:
   --out <path>           Report als JSON speichern
   --apply                In die DB schreiben (sonst Dry-Run)
   --update               Bestehende Slugs/SKUs aktualisieren
+  --draft                Unvollständige als Entwurf (inaktiv); SKUs generieren
+  --mirror-images        Bilder von Shopify-CDN spiegeln (Blob/lokal)
   --tax 7|19             Steuersatz (Default 19, Brutto-Annahme)
   --delivery <key>       ${DELIVERY_TIME_OPTIONS.map((o) => o.value).join(" | ")}
   --help                 Diese Hilfe
@@ -62,6 +64,8 @@ async function main() {
 
   const apply = hasFlag(argv, "--apply");
   const updateExisting = hasFlag(argv, "--update");
+  const allowIncompleteAsDraft = hasFlag(argv, "--draft");
+  const mirrorImages = hasFlag(argv, "--mirror-images");
   const taxRaw = argValue(argv, "--tax") ?? "19";
   const tax = Number(taxRaw);
   if (tax !== 7 && tax !== 19) {
@@ -82,6 +86,8 @@ async function main() {
     updateExisting,
     taxRatePercent: tax as 7 | 19,
     deliveryTimeKey: deliveryRaw as DeliveryTimeKey,
+    allowIncompleteAsDraft,
+    mirrorImages,
   });
 
   const summary = {

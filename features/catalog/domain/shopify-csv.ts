@@ -1,36 +1,5 @@
 import { csvRowsToObjects, parseCsv } from "@/features/catalog/domain/parse-csv";
 
-/** Rohe Shopify-Produktzeile (CSV-Spalten, englische Export-Header). */
-export type ShopifyCsvRow = {
-  Handle: string;
-  Title: string;
-  "Body (HTML)": string;
-  Vendor: string;
-  Type: string;
-  Tags: string;
-  Published: string;
-  Status: string;
-  "Option1 Name": string;
-  "Option1 Value": string;
-  "Option2 Name": string;
-  "Option2 Value": string;
-  "Option3 Name": string;
-  "Option3 Value": string;
-  "Variant SKU": string;
-  "Variant Grams": string;
-  "Variant Inventory Qty": string;
-  "Variant Price": string;
-  "Variant Compare At Price": string;
-  "Variant Inventory Policy": string;
-  "Image Src": string;
-  "Image Position": string;
-  "Image Alt Text": string;
-  "Variant Image": string;
-  "SEO Title": string;
-  "SEO Description": string;
-  [key: string]: string;
-};
-
 export type ShopifyParsedImage = {
   url: string;
   alt: string | null;
@@ -48,17 +17,28 @@ export type ShopifyParsedVariant = {
   variantImageUrl: string | null;
 };
 
+export type ShopifyParsedMetafields = {
+  material: string;
+  dimensions: string;
+  deliveryNote: string;
+  color: string;
+  countryOfOrigin: string;
+};
+
 export type ShopifyParsedProduct = {
   handle: string;
   title: string;
   bodyHtml: string;
   vendor: string;
+  /** Shopify „Type“ (frei); nicht Google Product Category. */
   productType: string;
+  googleProductCategory: string;
   tags: string[];
   published: boolean;
   status: string;
   seoTitle: string;
   seoDescription: string;
+  metafields: ShopifyParsedMetafields;
   variants: ShopifyParsedVariant[];
   images: ShopifyParsedImage[];
 };
@@ -68,6 +48,21 @@ function cell(row: Record<string, string>, ...keys: string[]): string {
     if (key in row && row[key] != null) return String(row[key]).trim();
   }
   return "";
+}
+
+/** Metafield-Spalten: bevorzugt `custom.*`, sonst erster Treffer. */
+function metafieldCell(row: Record<string, string>, needle: string): string {
+  const lower = needle.toLowerCase();
+  let fallback = "";
+  for (const [key, value] of Object.entries(row)) {
+    const v = String(value ?? "").trim();
+    if (!v) continue;
+    const k = key.toLowerCase();
+    if (!k.includes(lower)) continue;
+    if (k.includes("metafields.custom.")) return v;
+    if (!fallback) fallback = v;
+  }
+  return fallback;
 }
 
 function parseTags(raw: string): string[] {
@@ -94,6 +89,33 @@ function optionValues(row: Record<string, string>): string[] {
   ].filter(Boolean);
 }
 
+function emptyMetafields(): ShopifyParsedMetafields {
+  return {
+    material: "",
+    dimensions: "",
+    deliveryNote: "",
+    color: "",
+    countryOfOrigin: "",
+  };
+}
+
+function readMetafields(row: Record<string, string>): ShopifyParsedMetafields {
+  return {
+    material: metafieldCell(row, "custom.material") || metafieldCell(row, ".material)"),
+    dimensions:
+      metafieldCell(row, "custom.ma_e") ||
+      metafieldCell(row, "custom.masse") ||
+      metafieldCell(row, "maße") ||
+      metafieldCell(row, "ma_e"),
+    deliveryNote:
+      metafieldCell(row, "custom.lieferzeit") || metafieldCell(row, "lieferzeit"),
+    color: metafieldCell(row, "custom.farbe") || metafieldCell(row, "color-pattern"),
+    countryOfOrigin:
+      metafieldCell(row, "custom.herstellungsland") ||
+      metafieldCell(row, "herstellungsland"),
+  };
+}
+
 /**
  * Gruppiert Shopify-CSV-Zeilen nach Handle.
  * Produktfelder kommen aus der ersten Zeile mit Titel; Varianten/Bilder aus allen Zeilen.
@@ -115,11 +137,13 @@ export function parseShopifyProductCsv(csvText: string): ShopifyParsedProduct[] 
         bodyHtml: "",
         vendor: "",
         productType: "",
+        googleProductCategory: "",
         tags: [],
         published: true,
         status: "",
         seoTitle: "",
         seoDescription: "",
+        metafields: emptyMetafields(),
         variants: [],
         images: [],
       };
@@ -132,17 +156,18 @@ export function parseShopifyProductCsv(csvText: string): ShopifyParsedProduct[] 
       product.title = title;
       product.bodyHtml = cell(raw, "Body (HTML)", "Body HTML");
       product.vendor = cell(raw, "Vendor");
-      product.productType = cell(raw, "Type", "Product Category");
+      product.productType = cell(raw, "Type");
+      product.googleProductCategory = cell(raw, "Product Category");
       product.tags = parseTags(cell(raw, "Tags"));
       product.published = isPublished(raw);
       product.status = cell(raw, "Status") || (product.published ? "active" : "draft");
       product.seoTitle = cell(raw, "SEO Title");
       product.seoDescription = cell(raw, "SEO Description");
+      product.metafields = readMetafields(raw);
     } else if (!product.title && title) {
       product.title = title;
     }
 
-    // Spätere Zeilen können Published/Status noch setzen, wenn erste Bild-only war
     if (!product.title) {
       if (cell(raw, "Status") || cell(raw, "Published")) {
         product.published = isPublished(raw);
@@ -150,24 +175,36 @@ export function parseShopifyProductCsv(csvText: string): ShopifyParsedProduct[] 
       }
     }
 
+    // Metafields können auf Folgetzeilen fehlen — erste nicht-leere Werte behalten
+    const mf = readMetafields(raw);
+    for (const key of Object.keys(mf) as (keyof ShopifyParsedMetafields)[]) {
+      if (!product.metafields[key] && mf[key]) product.metafields[key] = mf[key];
+    }
+
     const sku = cell(raw, "Variant SKU");
-    const price = cell(raw, "Variant Price");
+    const price = cell(raw, "Variant Price") || cell(raw, "Price / Deutschland");
+    const opts = optionValues(raw);
     const hasVariantSignal =
       Boolean(sku) ||
       Boolean(price) ||
-      Boolean(cell(raw, "Option1 Value")) ||
+      Boolean(opts.length) ||
       cell(raw, "Variant Inventory Qty") !== "";
 
     if (hasVariantSignal) {
-      const already = sku
-        ? product.variants.some((v) => v.sku === sku)
-        : false;
+      const optionKey = opts.join("\0");
+      const already = product.variants.some((v) => {
+        if (sku && v.sku === sku) return true;
+        if (!sku && v.optionValues.join("\0") === optionKey && optionKey !== "") return true;
+        return false;
+      });
       if (!already) {
         product.variants.push({
           sku,
-          optionValues: optionValues(raw),
+          optionValues: opts,
           price,
-          compareAtPrice: cell(raw, "Variant Compare At Price"),
+          compareAtPrice:
+            cell(raw, "Variant Compare At Price") ||
+            cell(raw, "Compare At Price / Deutschland"),
           inventoryQty: cell(raw, "Variant Inventory Qty"),
           grams: cell(raw, "Variant Grams"),
           inventoryPolicy: cell(raw, "Variant Inventory Policy"),

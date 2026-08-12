@@ -6,11 +6,16 @@ import {
   parseShopifyProductCsv,
   mapShopifyProductToCatalog,
   planShopifyCsvImport,
+  generateVariantSku,
 } from "@/features/catalog";
 
 const fixturePath = path.join(
   process.cwd(),
   "tests/fixtures/shopify-products-sample.csv",
+);
+const realExportPath = path.join(
+  process.cwd(),
+  "tests/fixtures/shopify-products-export-real.csv",
 );
 
 describe("parseCsv", () => {
@@ -46,6 +51,20 @@ describe("parseShopifyProductCsv", () => {
     expect(tea.variants).toHaveLength(2);
     expect(tea.variants.map((v) => v.sku)).toEqual(["TS-S", "TS-L"]);
   });
+
+  it("parst echten Shopify-Export mit leeren SKUs und Metafields", () => {
+    const csv = readFileSync(realExportPath, "utf8");
+    const products = parseShopifyProductCsv(csv);
+    expect(products).toHaveLength(3);
+    const armband = products[0]!;
+    expect(armband.title).toContain("Armband Candy");
+    expect(armband.variants).toHaveLength(2);
+    expect(armband.variants.every((v) => v.sku === "")).toBe(true);
+    expect(armband.variants[0]!.price).toBe("16.00");
+    expect(armband.metafields.material).toMatch(/Resin/i);
+    expect(armband.metafields.deliveryNote).toMatch(/Werktagen/i);
+    expect(armband.images.length).toBeGreaterThanOrEqual(1);
+  });
 });
 
 describe("mapShopifyProductToCatalog", () => {
@@ -76,18 +95,26 @@ describe("mapShopifyProductToCatalog", () => {
     expect(tea.variants[1]!.listPriceGrossCents).toBe(2999);
   });
 
-  it("meldet fehlende SKU als Fehler", () => {
+  it("generiert SKU wenn Shopify-SKU fehlt", () => {
     const mapped = mapShopifyProductToCatalog({
       handle: "broken",
       title: "Broken",
       bodyHtml: "",
       vendor: "",
       productType: "",
+      googleProductCategory: "",
       tags: [],
       published: true,
       status: "active",
       seoTitle: "",
       seoDescription: "",
+      metafields: {
+        material: "",
+        dimensions: "",
+        deliveryNote: "",
+        color: "",
+        countryOfOrigin: "",
+      },
       variants: [
         {
           sku: "",
@@ -102,7 +129,72 @@ describe("mapShopifyProductToCatalog", () => {
       ],
       images: [],
     });
-    expect(mapped.errors.some((e) => e.includes("SKU"))).toBe(true);
+    expect(mapped.errors).toEqual([]);
+    expect(mapped.variants[0]!.sku).toBe("broken");
+    expect(mapped.variants[0]!.skuGenerated).toBe(true);
+    expect(mapped.warnings.some((w) => w.includes("generiert"))).toBe(true);
+  });
+
+  it("mappt realen Export mit generierten SKUs und Metafields", () => {
+    const csv = readFileSync(realExportPath, "utf8");
+    const planned = planShopifyCsvImport(csv, { allowIncompleteAsDraft: true });
+    expect(planned.every((p) => p.errors.length === 0)).toBe(true);
+    expect(planned[0]!.variants).toHaveLength(2);
+    expect(planned[0]!.variants[0]!.sku).toContain("armband-candy");
+    expect(planned[0]!.materialText).toMatch(/Resin/i);
+    // SKU-Generierung allein hält Produkte aktiv (Shopify Status active)
+    expect(planned[0]!.isActive).toBe(true);
+    expect(planned[0]!.deliveryTimeKey).toBe("2-4-werktage");
+  });
+
+  it("legt fehlenden Preis als Entwurf ab wenn erlaubt", () => {
+    const mapped = mapShopifyProductToCatalog(
+      {
+        handle: "no-price",
+        title: "Ohne Preis",
+        bodyHtml: "",
+        vendor: "",
+        productType: "",
+        googleProductCategory: "",
+        tags: [],
+        published: true,
+        status: "active",
+        seoTitle: "",
+        seoDescription: "",
+        metafields: {
+          material: "",
+          dimensions: "",
+          deliveryNote: "",
+          color: "",
+          countryOfOrigin: "",
+        },
+        variants: [
+          {
+            sku: "NP-1",
+            optionValues: ["Default Title"],
+            price: "",
+            compareAtPrice: "",
+            inventoryQty: "0",
+            grams: "",
+            inventoryPolicy: "deny",
+            variantImageUrl: null,
+          },
+        ],
+        images: [],
+      },
+      { allowIncompleteAsDraft: true },
+    );
+    expect(mapped.errors).toEqual([]);
+    expect(mapped.importAsDraft).toBe(true);
+    expect(mapped.isActive).toBe(false);
+    expect(mapped.variants[0]!.priceGrossCents).toBe(0);
+  });
+});
+
+describe("generateVariantSku", () => {
+  it("hängt Suffix bei Kollisionen an", () => {
+    const used = new Set<string>(["ring-shell"]);
+    expect(generateVariantSku("ring-shell", [], 0, used)).toBe("ring-shell-2");
   });
 });
 

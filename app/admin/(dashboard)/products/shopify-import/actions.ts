@@ -41,6 +41,11 @@ function parseUpdateExisting(formData: FormData): boolean {
   return v === "on" || v === "true" || v === "1";
 }
 
+function parseFlag(formData: FormData, name: string): boolean {
+  const v = formData.get(name);
+  return v === "on" || v === "true" || v === "1";
+}
+
 async function readCsvFromFormData(
   formData: FormData,
 ): Promise<{ text: string } | { error: string }> {
@@ -105,6 +110,8 @@ export async function previewShopifyCsvImport(
   if (deliveryTimeKey == null) return { error: "Ungültige Lieferzeit." };
 
   const updateExisting = parseUpdateExisting(formData);
+  const allowIncompleteAsDraft = parseFlag(formData, "allowIncompleteAsDraft");
+  const mirrorImages = parseFlag(formData, "mirrorImages");
 
   try {
     const report = await importShopifyProductsFromCsv(csv.text, {
@@ -113,6 +120,8 @@ export async function previewShopifyCsvImport(
       taxRatePercent,
       deliveryTimeKey,
       checkExistingInDb: true,
+      allowIncompleteAsDraft,
+      mirrorImages,
     });
     return { ok: true, summary: toSummary(report) };
   } catch (e) {
@@ -142,6 +151,8 @@ export async function applyShopifyCsvImport(
   if (deliveryTimeKey == null) return { error: "Ungültige Lieferzeit." };
 
   const updateExisting = parseUpdateExisting(formData);
+  const allowIncompleteAsDraft = parseFlag(formData, "allowIncompleteAsDraft");
+  const mirrorImages = parseFlag(formData, "mirrorImages");
 
   try {
     const preview = await importShopifyProductsFromCsv(csv.text, {
@@ -150,6 +161,8 @@ export async function applyShopifyCsvImport(
       taxRatePercent,
       deliveryTimeKey,
       checkExistingInDb: true,
+      allowIncompleteAsDraft,
+      mirrorImages,
     });
     if (preview.invalidCount > 0) {
       return {
@@ -166,6 +179,8 @@ export async function applyShopifyCsvImport(
       updateExisting,
       taxRatePercent,
       deliveryTimeKey,
+      allowIncompleteAsDraft,
+      mirrorImages,
     });
 
     revalidatePath("/admin/products");

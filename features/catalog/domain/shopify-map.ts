@@ -24,6 +24,7 @@ export type CatalogImportVariant = {
   listPriceNetCents: number | null;
   stockQuantity: number;
   availableQuantity: number;
+  skuGenerated: boolean;
 };
 
 export type CatalogImportProduct = {
@@ -36,8 +37,13 @@ export type CatalogImportProduct = {
   productType: string | null;
   tags: string[];
   isActive: boolean;
+  /** true wenn unvollständig und als Entwurf (inaktiv) importierbar. */
+  importAsDraft: boolean;
   leadText: string | null;
   weightText: string | null;
+  materialText: string | null;
+  dimensionsText: string | null;
+  featureBullets: string[];
   deliveryTimeKey: DeliveryTimeKey;
   taxRatePercent: 7 | 19;
   variants: CatalogImportVariant[];
@@ -52,6 +58,11 @@ export type MapShopifyOptions = {
   deliveryTimeKey?: DeliveryTimeKey;
   /** SEO Description → leadText, wenn leer und kurz genug. */
   mapSeoDescriptionToLeadText?: boolean;
+  /**
+   * Unvollständige Datensätze (fehlende SKU/Preis/Bilder) als Entwurf (inaktiv) zulassen.
+   * Harte Fehler bleiben: kein Titel / ungültiger Slug.
+   */
+  allowIncompleteAsDraft?: boolean;
 };
 
 function decimalToCents(raw: string): number | null {
@@ -78,16 +89,70 @@ function isDefaultVariant(optionValues: string[], index: number, total: number):
   return index === 0;
 }
 
+/** SKU-tauglicher Slug-Teil (ASCII). */
+export function skuSlugPart(raw: string): string {
+  return raw
+    .toLowerCase()
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
+
+export function generateVariantSku(
+  handle: string,
+  optionValues: string[],
+  index: number,
+  used: Set<string>,
+): string {
+  const opt = optionValues
+    .filter((v) => v && v.toLowerCase() !== "default title")
+    .map(skuSlugPart)
+    .filter(Boolean)
+    .join("-");
+  const handlePart = skuSlugPart(handle) || "import";
+  let base = opt ? `${handlePart}-${opt}` : handlePart;
+  if (!base) base = `import-${index + 1}`;
+  base = base.slice(0, 80);
+  let candidate = base;
+  let n = 2;
+  while (used.has(candidate)) {
+    candidate = `${base.slice(0, 70)}-${n}`;
+    n += 1;
+  }
+  used.add(candidate);
+  return candidate;
+}
+
+function guessDeliveryTimeKey(note: string): DeliveryTimeKey | null {
+  const t = note.toLowerCase();
+  if (!t) return null;
+  if (/\b1\s*[-–]\s*2\b/.test(t) && /werktag/.test(t)) return "1-2-werktage";
+  if (/\b2\s*[-–]\s*4\b/.test(t) && /werktag/.test(t)) return "2-4-werktage";
+  if (/\b3\s*[-–]\s*5\b/.test(t) && /werktag/.test(t)) return "2-4-werktage";
+  if (/\b5\s*[-–]\s*7\b/.test(t) && /werktag/.test(t)) return "5-7-werktage";
+  if (/1\s*[-–]\s*2\s*wochen/.test(t)) return "1-2-wochen";
+  return null;
+}
+
 export function mapShopifyProductToCatalog(
   source: ShopifyParsedProduct,
   options: MapShopifyOptions = {},
 ): CatalogImportProduct {
   const taxRatePercent = options.taxRatePercent ?? 19;
-  const deliveryTimeKey =
+  const allowDraft = Boolean(options.allowIncompleteAsDraft);
+  const fallbackDelivery =
     options.deliveryTimeKey ??
     (DELIVERY_TIME_OPTIONS.find((o) => o.value === "2-4-werktage")?.value as DeliveryTimeKey);
+  let deliveryTimeKey: DeliveryTimeKey = fallbackDelivery;
   const warnings: string[] = [];
   const errors: string[] = [];
+  let softIncomplete = false;
 
   const slugResult = productSlugSchema.safeParse(source.handle);
   const slug = slugResult.success ? slugResult.data : source.handle;
@@ -116,7 +181,11 @@ export function mapShopifyProductToCatalog(
 
   if (source.productType.trim()) {
     warnings.push(
-      `Product Type „${source.productType}“: kein Auto-Mapping auf Category (siehe Mapping-Datei).`,
+      `Product Type „${source.productType}“: kein Auto-Mapping auf Category.`,
+    );
+  } else if (source.googleProductCategory.trim()) {
+    warnings.push(
+      `Google Product Category „${source.googleProductCategory}“ — nicht als Shop-Kategorie gemappt.`,
     );
   }
   if (source.tags.length > 0) {
@@ -125,20 +194,71 @@ export function mapShopifyProductToCatalog(
     );
   }
 
+  const materialText = source.metafields.material.trim() || null;
+  const dimensionsText = source.metafields.dimensions.trim() || null;
+  const featureBullets: string[] = [];
+  if (source.metafields.color.trim()) {
+    featureBullets.push(`Farbe: ${source.metafields.color.trim()}`.slice(0, 200));
+  }
+  if (source.metafields.countryOfOrigin.trim()) {
+    featureBullets.push(
+      `Herkunft: ${source.metafields.countryOfOrigin.trim()}`.slice(0, 200),
+    );
+  }
+  if (materialText) warnings.push("Metafield Material → materialText.");
+  if (dimensionsText) warnings.push("Metafield Maße → dimensionsText.");
+
+  if (source.metafields.deliveryNote.trim()) {
+    const guessed = guessDeliveryTimeKey(source.metafields.deliveryNote);
+    if (guessed) {
+      deliveryTimeKey = guessed;
+      warnings.push(
+        `Lieferzeit-Metafield „${source.metafields.deliveryNote}“ → ${guessed}.`,
+      );
+    } else {
+      warnings.push(
+        `Lieferzeit-Metafield „${source.metafields.deliveryNote}“ — Default ${deliveryTimeKey} belassen.`,
+      );
+    }
+  }
+
   const variants: CatalogImportVariant[] = [];
   let weightText: string | null = null;
+  const usedSkus = new Set<string>();
+  let missingInventoryColumn = false;
 
   source.variants.forEach((v, index) => {
-    const sku = v.sku.trim();
+    let sku = v.sku.trim();
+    let skuGenerated = false;
     if (!sku) {
-      errors.push(`Variante #${index + 1}: SKU fehlt.`);
-      return;
+      sku = generateVariantSku(source.handle, v.optionValues, index, usedSkus);
+      skuGenerated = true;
+      warnings.push(
+        `Variante #${index + 1}: keine Shopify-SKU — generiert als „${sku}“.`,
+      );
+    } else if (usedSkus.has(sku)) {
+      const next = generateVariantSku(source.handle, v.optionValues, index, usedSkus);
+      warnings.push(`Variante #${index + 1}: doppelte SKU „${sku}“ → „${next}“.`);
+      sku = next;
+      skuGenerated = true;
+    } else {
+      usedSkus.add(sku);
     }
-    const gross = decimalToCents(v.price);
+
+    let gross = decimalToCents(v.price);
     if (gross == null) {
-      errors.push(`Variante ${sku}: ungültiger Preis „${v.price}“.`);
-      return;
+      if (allowDraft) {
+        gross = 0;
+        warnings.push(
+          `Variante ${sku}: Preis fehlt/ungültig („${v.price}“) — 0,00 € als Entwurf.`,
+        );
+        softIncomplete = true;
+      } else {
+        errors.push(`Variante ${sku}: ungültiger Preis „${v.price}“.`);
+        return;
+      }
     }
+
     const compare = decimalToCents(v.compareAtPrice);
     let listGross: number | null = null;
     let listNet: number | null = null;
@@ -151,13 +271,24 @@ export function mapShopifyProductToCatalog(
 
     const qtyRaw = v.inventoryQty.trim();
     let qty = 0;
-    if (qtyRaw !== "") {
+    if (qtyRaw === "") {
+      missingInventoryColumn = true;
+    } else {
       const n = Number(qtyRaw);
       if (!Number.isFinite(n) || !Number.isInteger(n) || n < 0) {
-        errors.push(`Variante ${sku}: ungültiger Bestand „${v.inventoryQty}“.`);
-        return;
+        if (allowDraft) {
+          warnings.push(
+            `Variante ${sku}: ungültiger Bestand „${v.inventoryQty}“ — 0 als Entwurf.`,
+          );
+          softIncomplete = true;
+          qty = 0;
+        } else {
+          errors.push(`Variante ${sku}: ungültiger Bestand „${v.inventoryQty}“.`);
+          return;
+        }
+      } else {
+        qty = n;
       }
-      qty = n;
     }
 
     if (v.inventoryPolicy.toLowerCase() === "continue") {
@@ -166,7 +297,9 @@ export function mapShopifyProductToCatalog(
       );
     }
     if (v.variantImageUrl) {
-      warnings.push(`Variante ${sku}: Variant Image — kein Varianten-Medienmodell; am Produkt prüfen.`);
+      warnings.push(
+        `Variante ${sku}: Variant Image — kein Varianten-Medienmodell; am Produkt prüfen.`,
+      );
     }
 
     const isDefault = isDefaultVariant(v.optionValues, index, source.variants.length);
@@ -181,7 +314,7 @@ export function mapShopifyProductToCatalog(
       sku,
       title: variantTitle(v.optionValues),
       isDefault,
-      isActive: source.published,
+      isActive: true,
       sortOrder: index,
       priceGrossCents: gross,
       priceNetCents: netCentsFromGross(gross, taxRatePercent),
@@ -190,16 +323,43 @@ export function mapShopifyProductToCatalog(
       listPriceNetCents: listNet,
       stockQuantity: qty,
       availableQuantity: qty,
+      skuGenerated,
     });
   });
 
+  if (missingInventoryColumn) {
+    warnings.push(
+      "Kein/leeres „Variant Inventory Qty“ im Export — Bestand auf 0 gesetzt (Shopify-Export oft ohne Qty).",
+    );
+  }
+
   if (variants.length === 0) {
-    errors.push("Keine Varianten mit gültiger SKU/Preis.");
+    if (allowDraft && source.title.trim() && slugResult.success) {
+      const sku = generateVariantSku(source.handle, [], 0, usedSkus);
+      variants.push({
+        sku,
+        title: null,
+        isDefault: true,
+        isActive: true,
+        sortOrder: 0,
+        priceGrossCents: 0,
+        priceNetCents: 0,
+        taxRatePercent,
+        listPriceGrossCents: null,
+        listPriceNetCents: null,
+        stockQuantity: 0,
+        availableQuantity: 0,
+        skuGenerated: true,
+      });
+      warnings.push(`Keine Variantenzeile — Platzhalter-SKU „${sku}“ als Entwurf.`);
+      softIncomplete = true;
+    } else {
+      errors.push("Keine Varianten mit gültiger SKU/Preis.");
+    }
   } else if (!variants.some((v) => v.isDefault)) {
     variants[0]!.isDefault = true;
     warnings.push("Keine Default-Variante erkannt — erste Variante als Default gesetzt.");
   } else {
-    // Genau eine Default-Variante
     let seen = false;
     for (const v of variants) {
       if (v.isDefault) {
@@ -217,14 +377,33 @@ export function mapShopifyProductToCatalog(
   }));
 
   if (images.length === 0) {
-    warnings.push("Keine Bilder — Cover fehlt (Admin verlangt Cover beim manuellen Anlegen).");
+    warnings.push("Keine Bilder — Cover fehlt.");
   } else {
     warnings.push(
-      "Bild-URLs zeigen noch auf Shopify-CDN; für Produktion nach Object Storage spiegeln.",
+      "Bild-URLs von Shopify: beim Apply optional lokal/Blob spiegeln (HEIC wird übersprungen).",
     );
   }
 
-  const productNumber = variants[0]?.sku ?? null;
+  const productNumber = variants.find((v) => !v.skuGenerated)?.sku ?? variants[0]?.sku ?? null;
+
+  // Entwurf: Shopify-Draft ODER unvollständig mit Option
+  const shopifyInactive =
+    !source.published || source.status.toLowerCase() === "draft" || source.status.toLowerCase() === "archived";
+  let importAsDraft = shopifyInactive;
+  let isActive = source.published && !shopifyInactive;
+
+  if (softIncomplete && allowDraft) {
+    importAsDraft = true;
+    isActive = false;
+    warnings.push("Unvollständig — wird als Entwurf (inaktiv) importiert.");
+  } else if (softIncomplete && !allowDraft) {
+    // Generierte SKUs allein sind Warnung, kein Hard-Error mehr
+    // Fehlende Preise ohne Draft-Flag erzeugen bereits errors oben
+  }
+
+  if (importAsDraft) {
+    for (const v of variants) v.isActive = false;
+  }
 
   return {
     sourceHandle: source.handle,
@@ -235,9 +414,13 @@ export function mapShopifyProductToCatalog(
     productNumber,
     productType: source.productType.trim() || null,
     tags: source.tags,
-    isActive: source.published,
+    isActive,
+    importAsDraft,
     leadText,
     weightText,
+    materialText,
+    dimensionsText,
+    featureBullets,
     deliveryTimeKey,
     taxRatePercent,
     variants,

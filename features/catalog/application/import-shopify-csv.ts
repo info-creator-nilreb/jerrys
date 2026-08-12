@@ -18,6 +18,8 @@ export type ShopifyImportOptions = MapShopifyOptions & {
    * Default true; bei fehlender DB wird still auf reines Mapping zurückgefallen.
    */
   checkExistingInDb?: boolean;
+  /** Remote-Bilder (Shopify-CDN) nach Blob/lokal spiegeln (nur apply). */
+  mirrorImages?: boolean;
 };
 
 export type ShopifyImportProductResult = {
@@ -113,9 +115,60 @@ async function ensureManufacturerId(name: string | null): Promise<string | null>
   return created.id;
 }
 
+async function resolveImagesForProduct(
+  draft: CatalogImportProduct,
+  productId: string,
+  mirrorImages: boolean,
+): Promise<{ url: string; alt: string; sortOrder: number; isCover: boolean }[]> {
+  const out: { url: string; alt: string; sortOrder: number; isCover: boolean }[] = [];
+  const mirrorMod = mirrorImages
+    ? await import("@/features/catalog/application/mirror-remote-product-image")
+    : null;
+
+  for (const img of draft.images) {
+    let url = img.url;
+    if (mirrorMod && /^https?:\/\//i.test(img.url)) {
+      const mirrored = await mirrorMod.mirrorRemoteProductImage(img.url, productId);
+      if (mirrored.ok) {
+        url = mirrored.url;
+        draft.warnings.push(`Bild gespiegelt (${mirrored.storage}): ${img.url.slice(0, 60)}…`);
+      } else {
+        draft.warnings.push(`Bild nicht gespiegelt: ${mirrored.error}`);
+        if (!mirrored.keepRemoteUrl) continue;
+      }
+    }
+    out.push({
+      url,
+      alt: img.alt?.trim() || draft.title,
+      sortOrder: img.sortOrder,
+      isCover: img.isCover,
+    });
+  }
+  if (out.length > 0 && !out.some((i) => i.isCover)) {
+    out[0]!.isCover = true;
+  }
+  return out;
+}
+
+function productContentData(draft: CatalogImportProduct, description: string | null, manufacturerId: string | null) {
+  return {
+    title: draft.title,
+    description,
+    manufacturerId,
+    productNumber: draft.productNumber,
+    isActive: draft.isActive,
+    leadText: draft.leadText,
+    weightText: draft.weightText,
+    materialText: draft.materialText,
+    dimensionsText: draft.dimensionsText,
+    featureBullets: draft.featureBullets,
+  };
+}
+
 async function applyOne(
   draft: CatalogImportProduct,
   updateExisting: boolean,
+  mirrorImages: boolean,
 ): Promise<ShopifyImportProductResult> {
   const prisma = getPrisma();
   const base: Omit<ShopifyImportProductResult, "status" | "message"> = {
@@ -162,109 +215,93 @@ async function applyOne(
 
   try {
     if (!existing) {
-      await prisma.$transaction(async (tx) => {
-        const product = await tx.product.create({
-          data: {
-            slug: draft.slug,
-            title: draft.title,
-            description,
-            manufacturerId,
-            productNumber: draft.productNumber,
-            isActive: draft.isActive,
-            leadText: draft.leadText,
-            weightText: draft.weightText,
-            currency: "EUR",
-          },
-        });
-        for (const v of draft.variants) {
-          await tx.productVariant.create({
-            data: {
-              productId: product.id,
-              sku: v.sku,
-              title: v.title,
-              isDefault: v.isDefault,
-              isActive: v.isActive,
-              sortOrder: v.sortOrder,
-              priceGrossCents: v.priceGrossCents,
-              priceNetCents: v.priceNetCents,
-              taxRatePercent: v.taxRatePercent,
-              listPriceGrossCents: v.listPriceGrossCents,
-              listPriceNetCents: v.listPriceNetCents,
-              stockQuantity: v.stockQuantity,
-              availableQuantity: v.availableQuantity,
-              deliveryTimeKey: draft.deliveryTimeKey,
-            },
-          });
-        }
-        for (const img of draft.images) {
-          await tx.productImage.create({
-            data: {
-              productId: product.id,
-              url: img.url,
-              alt: img.alt?.trim() || draft.title,
-              sortOrder: img.sortOrder,
-              isCover: img.isCover,
-            },
-          });
-        }
-      });
-      return { ...base, status: "created" };
-    }
-
-    await prisma.$transaction(async (tx) => {
-      await tx.product.update({
-        where: { id: existing.id },
+      const product = await prisma.product.create({
         data: {
-          title: draft.title,
-          description,
-          manufacturerId,
-          productNumber: draft.productNumber,
-          isActive: draft.isActive,
-          leadText: draft.leadText,
-          weightText: draft.weightText,
+          slug: draft.slug,
+          currency: "EUR",
+          ...productContentData(draft, description, manufacturerId),
         },
       });
-
       for (const v of draft.variants) {
-        const found = existing.variants.find((x) => x.sku === v.sku);
-        const data = {
-          title: v.title,
-          isDefault: v.isDefault,
-          isActive: v.isActive,
-          sortOrder: v.sortOrder,
-          priceGrossCents: v.priceGrossCents,
-          priceNetCents: v.priceNetCents,
-          taxRatePercent: v.taxRatePercent,
-          listPriceGrossCents: v.listPriceGrossCents,
-          listPriceNetCents: v.listPriceNetCents,
-          stockQuantity: v.stockQuantity,
-          availableQuantity: v.availableQuantity,
-          deliveryTimeKey: draft.deliveryTimeKey,
-        };
-        if (found) {
-          await tx.productVariant.update({ where: { id: found.id }, data });
-        } else {
-          await tx.productVariant.create({
-            data: { productId: existing.id, sku: v.sku, ...data },
-          });
-        }
-      }
-
-      await tx.productImage.deleteMany({ where: { productId: existing.id } });
-      for (const img of draft.images) {
-        await tx.productImage.create({
+        await prisma.productVariant.create({
           data: {
-            productId: existing.id,
-            url: img.url,
-            alt: img.alt?.trim() || draft.title,
-            sortOrder: img.sortOrder,
-            isCover: img.isCover,
+            productId: product.id,
+            sku: v.sku,
+            title: v.title,
+            isDefault: v.isDefault,
+            isActive: v.isActive,
+            sortOrder: v.sortOrder,
+            priceGrossCents: v.priceGrossCents,
+            priceNetCents: v.priceNetCents,
+            taxRatePercent: v.taxRatePercent,
+            listPriceGrossCents: v.listPriceGrossCents,
+            listPriceNetCents: v.listPriceNetCents,
+            stockQuantity: v.stockQuantity,
+            availableQuantity: v.availableQuantity,
+            deliveryTimeKey: draft.deliveryTimeKey,
           },
         });
       }
+      const images = await resolveImagesForProduct(draft, product.id, mirrorImages);
+      for (const img of images) {
+        await prisma.productImage.create({
+          data: { productId: product.id, ...img },
+        });
+      }
+      return {
+        ...base,
+        status: "created",
+        warnings: draft.warnings,
+        imageCount: images.length,
+        message: draft.importAsDraft ? "Als Entwurf (inaktiv) angelegt." : undefined,
+      };
+    }
+
+    await prisma.product.update({
+      where: { id: existing.id },
+      data: productContentData(draft, description, manufacturerId),
     });
 
-    return { ...base, status: "updated" };
+    for (const v of draft.variants) {
+      const found = existing.variants.find((x) => x.sku === v.sku);
+      const data = {
+        title: v.title,
+        isDefault: v.isDefault,
+        isActive: v.isActive,
+        sortOrder: v.sortOrder,
+        priceGrossCents: v.priceGrossCents,
+        priceNetCents: v.priceNetCents,
+        taxRatePercent: v.taxRatePercent,
+        listPriceGrossCents: v.listPriceGrossCents,
+        listPriceNetCents: v.listPriceNetCents,
+        stockQuantity: v.stockQuantity,
+        availableQuantity: v.availableQuantity,
+        deliveryTimeKey: draft.deliveryTimeKey,
+      };
+      if (found) {
+        await prisma.productVariant.update({ where: { id: found.id }, data });
+      } else {
+        await prisma.productVariant.create({
+          data: { productId: existing.id, sku: v.sku, ...data },
+        });
+      }
+    }
+
+    await prisma.productImage.deleteMany({ where: { productId: existing.id } });
+    const images = await resolveImagesForProduct(draft, existing.id, mirrorImages);
+    for (const img of images) {
+      await prisma.productImage.create({
+        data: { productId: existing.id, ...img },
+      });
+    }
+
+    return {
+      ...base,
+      status: "updated",
+      warnings: draft.warnings,
+      imageCount: images.length,
+      message: draft.importAsDraft ? "Als Entwurf (inaktiv) aktualisiert." : undefined,
+    };
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     return { ...base, status: "error", errors: [...draft.errors, message] };
@@ -286,6 +323,7 @@ export async function importShopifyProductsFromCsv(
   let validCount = 0;
   let invalidCount = 0;
   let dbChecked = false;
+  const mirrorImages = Boolean(options.mirrorImages);
 
   if (options.mode === "dry-run") {
     const wantDb = options.checkExistingInDb !== false;
@@ -305,13 +343,20 @@ export async function importShopifyProductsFromCsv(
       }
       validCount += 1;
 
+      const draftNote = draft.importAsDraft
+        ? ["Würde als Entwurf (inaktiv) gespeichert."]
+        : [];
+      const mirrorNote = mirrorImages
+        ? ["Bilder würden beim Import gespiegelt (Blob oder lokal)."]
+        : [];
+
       if (!wantDb) {
         products.push({
           handle: draft.sourceHandle,
           slug: draft.slug,
           status: "ok",
           errors: [],
-          warnings: draft.warnings,
+          warnings: [...draft.warnings, ...draftNote, ...mirrorNote],
           variantCount: draft.variants.length,
           imageCount: draft.images.length,
         });
@@ -327,6 +372,8 @@ export async function importShopifyProductsFromCsv(
           errors: [],
           warnings: [
             ...draft.warnings,
+            ...draftNote,
+            ...mirrorNote,
             "Keine DB-Prüfung möglich (Verbindung/Env) — nur Mapping validiert.",
           ],
           variantCount: draft.variants.length,
@@ -342,7 +389,7 @@ export async function importShopifyProductsFromCsv(
           slug: draft.slug,
           status: "would_create",
           errors: [],
-          warnings: draft.warnings,
+          warnings: [...draft.warnings, ...draftNote, ...mirrorNote],
           variantCount: draft.variants.length,
           imageCount: draft.images.length,
         });
@@ -352,7 +399,7 @@ export async function importShopifyProductsFromCsv(
           slug: draft.slug,
           status: "would_update",
           errors: [],
-          warnings: draft.warnings,
+          warnings: [...draft.warnings, ...draftNote, ...mirrorNote],
           variantCount: draft.variants.length,
           imageCount: draft.images.length,
         });
@@ -373,7 +420,7 @@ export async function importShopifyProductsFromCsv(
   } else {
     dbChecked = true;
     for (const draft of mapped) {
-      const result = await applyOne(draft, Boolean(options.updateExisting));
+      const result = await applyOne(draft, Boolean(options.updateExisting), mirrorImages);
       products.push(result);
       if (result.status === "invalid") invalidCount += 1;
       else validCount += 1;
