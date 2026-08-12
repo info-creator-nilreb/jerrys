@@ -7,7 +7,7 @@ import {
 } from "@/lib/storefront/shop-nav-links";
 
 describe("buildStorefrontShopNavLinks", () => {
-  it("liefert Alle Produkte und Termine ohne Kategorien", () => {
+  it("liefert Alle Produkte und Termine ohne Kategorien (Default)", () => {
     expect(buildStorefrontShopNavLinks([])).toEqual([
       { href: "/produkte", label: "Alle Produkte" },
       { href: "/termine", label: "Termine" },
@@ -24,6 +24,24 @@ describe("buildStorefrontShopNavLinks", () => {
     expect(links[1]).toEqual({ href: "/termine", label: "Termine" });
     expect(links[2]).toEqual({ href: "/kategorien/kat-0", label: "Kat 0" });
     expect(links[7]).toEqual({ href: "/kategorien/kat-5", label: "Kat 5" });
+  });
+
+  it("blendet Alle Produkte und Termine per Options aus", () => {
+    const links = buildStorefrontShopNavLinks([{ slug: "katzen", title: "Katzen" }], {
+      showAllProducts: false,
+      showTermine: false,
+    });
+    expect(links).toEqual([{ href: "/kategorien/katzen", label: "Katzen" }]);
+  });
+
+  it("kann nur Termine ausblenden", () => {
+    const links = buildStorefrontShopNavLinks([{ slug: "katzen", title: "Katzen" }], {
+      showTermine: false,
+    });
+    expect(links).toEqual([
+      { href: "/produkte", label: "Alle Produkte" },
+      { href: "/kategorien/katzen", label: "Katzen" },
+    ]);
   });
 });
 

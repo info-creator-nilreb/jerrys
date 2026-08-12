@@ -68,6 +68,8 @@ export const shopSettingsValuesSchema = z.object({
   logoDarkUrl: optionalHttpsUrl,
   faviconUrl: optionalHttpsUrl,
   ogImageUrl: optionalHttpsUrl,
+  showAllProductsInNav: z.boolean(),
+  showTermineInNav: z.boolean(),
 });
 
 export type ShopSettingsValues = z.infer<typeof shopSettingsValuesSchema>;

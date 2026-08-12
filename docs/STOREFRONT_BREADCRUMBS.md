@@ -41,7 +41,7 @@ Cookie wird in der **Middleware** aus dem Pfad gesetzt (`/kategorien/[slug]`, `/
 
 ## Navigation (Slice 4)
 
-- Header: `Alle Produkte` + bis zu **6** aktive Root-Kategorien mit mindestens einem sichtbaren Produkt
+- Header: optionale Systemlinks `Alle Produkte` / `Termine` (ShopSettings) + bis zu **6** aktive Root-Kategorien mit mindestens einem sichtbaren Produkt
 - Footer: gleiche Shop-Links + optional separate Zeile **Kollektionen** (nur aktive mit Produkten)
 
 Implementierung: [`lib/storefront/shop-nav-links.ts`](../lib/storefront/shop-nav-links.ts), [`lib/storefront/browse-context.ts`](../lib/storefront/browse-context.ts).

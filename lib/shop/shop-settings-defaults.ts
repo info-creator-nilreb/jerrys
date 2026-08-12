@@ -26,6 +26,8 @@ export type ShopSettingsDefaults = {
   logoDarkUrl: string | null;
   faviconUrl: string | null;
   ogImageUrl: string | null;
+  showAllProductsInNav: boolean;
+  showTermineInNav: boolean;
 };
 
 export const JERRYS_SHOP_SETTINGS_DEFAULTS: ShopSettingsDefaults = {
@@ -51,6 +53,8 @@ export const JERRYS_SHOP_SETTINGS_DEFAULTS: ShopSettingsDefaults = {
   logoDarkUrl: null,
   faviconUrl: null,
   ogImageUrl: null,
+  showAllProductsInNav: true,
+  showTermineInNav: true,
 };
 
 /** Client-sichere DTO-Form (ohne next/cache / Prisma). */

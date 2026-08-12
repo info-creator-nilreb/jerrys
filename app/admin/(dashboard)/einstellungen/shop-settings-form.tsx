@@ -1,6 +1,7 @@
 "use client";
 
 import { Facebook, Instagram } from "lucide-react";
+import Link from "next/link";
 import { useActionState, useMemo, useState, type ReactNode } from "react";
 import {
   saveShopSettingsAction,
@@ -217,6 +218,53 @@ export function ShopSettingsForm({ defaults }: Props) {
             </p>
           </div>
           <FieldError message={fe.shopName} />
+        </SettingsCard>
+
+        <SettingsCard
+          title="Hauptnavigation"
+          description="Wie bei Shopify: Kategorien bilden das Menü. Zusätzliche Systemlinks kannst du ein- oder ausblenden."
+        >
+          <div className="space-y-3">
+            <p className="text-sm text-[#6b7280]">
+              Aktive Hauptkategorien mit Produkten erscheinen automatisch im Header (Reihenfolge über{" "}
+              <Link href="/admin/categories" className="font-medium text-primary hover:underline">
+                Katalog → Kategorien
+              </Link>
+              , Feld Sortierung).
+            </p>
+            <label className="flex cursor-pointer items-start gap-2.5 text-sm text-[#374151]">
+              <input type="hidden" name="showAllProductsInNav" value="false" />
+              <input
+                type="checkbox"
+                name="showAllProductsInNav"
+                value="true"
+                defaultChecked={defaults.showAllProductsInNav}
+                className="checkbox-primary mt-0.5 size-4"
+              />
+              <span>
+                <span className="font-medium">„Alle Produkte“ anzeigen</span>
+                <span className="mt-0.5 block text-xs text-[#6b7280]">
+                  Link zur Katalogübersicht (/produkte)
+                </span>
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-2.5 text-sm text-[#374151]">
+              <input type="hidden" name="showTermineInNav" value="false" />
+              <input
+                type="checkbox"
+                name="showTermineInNav"
+                value="true"
+                defaultChecked={defaults.showTermineInNav}
+                className="checkbox-primary mt-0.5 size-4"
+              />
+              <span>
+                <span className="font-medium">„Termine“ anzeigen</span>
+                <span className="mt-0.5 block text-xs text-[#6b7280]">
+                  Link zum Gruppenkalender (/termine)
+                </span>
+              </span>
+            </label>
+          </div>
         </SettingsCard>
 
         <SettingsCard

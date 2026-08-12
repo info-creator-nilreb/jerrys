@@ -134,7 +134,7 @@ export function CategoryForm({
             className="checkbox-primary size-4"
           />
           <label htmlFor="category-active" className="text-sm text-[#374151]">
-            Aktiv (in Navigation und Listings, wenn verknüpfte Kollektionen Produkte haben)
+            Aktiv (erscheint in der Header-Navigation, wenn verknüpfte Kollektionen Produkte haben)
           </label>
         </div>
       </section>

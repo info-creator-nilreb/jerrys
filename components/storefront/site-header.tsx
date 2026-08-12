@@ -21,11 +21,16 @@ export async function SiteHeader() {
     getStorefrontCartBadgeCount(),
     getShopSettings(),
   ]);
-  let shopNavLinks = buildStorefrontShopNavLinks([]);
+  const navOptions = {
+    showAllProducts: settings.showAllProductsInNav,
+    showTermine: settings.showTermineInNav,
+  };
+  let shopNavLinks = buildStorefrontShopNavLinks([], navOptions);
   try {
     const categories = await listActiveCategoriesForNav();
     shopNavLinks = buildStorefrontShopNavLinks(
       categories.map((c) => ({ slug: c.slug, title: c.title })),
+      navOptions,
     );
   } catch (e) {
     if (!isDatabaseUnreachable(e)) throw e;

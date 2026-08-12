@@ -127,6 +127,8 @@ async function main() {
         logoDarkUrl: shopDefaults.logoDarkUrl,
         faviconUrl: shopDefaults.faviconUrl,
         ogImageUrl: shopDefaults.ogImageUrl,
+        showAllProductsInNav: shopDefaults.showAllProductsInNav,
+        showTermineInNav: shopDefaults.showTermineInNav,
       },
       update: {
         // Bestehende Installationen nicht überschreiben — nur fehlende Zeile anlegen.

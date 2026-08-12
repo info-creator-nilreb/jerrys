@@ -40,6 +40,8 @@ function toDto(
     logoDarkUrl: string | null;
     faviconUrl: string | null;
     ogImageUrl: string | null;
+    showAllProductsInNav: boolean;
+    showTermineInNav: boolean;
     updatedAt: Date;
   } | null,
 ): ShopSettingsDTO {
@@ -70,6 +72,8 @@ function toDto(
     logoDarkUrl: row.logoDarkUrl,
     faviconUrl: row.faviconUrl,
     ogImageUrl: row.ogImageUrl,
+    showAllProductsInNav: row.showAllProductsInNav,
+    showTermineInNav: row.showTermineInNav,
     updatedAt: row.updatedAt,
   };
 }
@@ -97,6 +101,8 @@ const createDefaults = () => ({
   logoDarkUrl: JERRYS_SHOP_SETTINGS_DEFAULTS.logoDarkUrl,
   faviconUrl: JERRYS_SHOP_SETTINGS_DEFAULTS.faviconUrl,
   ogImageUrl: JERRYS_SHOP_SETTINGS_DEFAULTS.ogImageUrl,
+  showAllProductsInNav: JERRYS_SHOP_SETTINGS_DEFAULTS.showAllProductsInNav,
+  showTermineInNav: JERRYS_SHOP_SETTINGS_DEFAULTS.showTermineInNav,
 });
 
 async function loadShopSettingsFromDb(): Promise<ShopSettingsCached> {
