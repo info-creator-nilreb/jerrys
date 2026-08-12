@@ -124,5 +124,22 @@ describe("ai content settings", () => {
       fetchImpl,
     });
     expect(result).toMatchObject({ ok: false });
+    expect(fetchImpl).toHaveBeenCalledWith(
+      expect.stringContaining("/models/gpt-4o-mini"),
+      expect.any(Object),
+    );
+  });
+
+  it("verifyOpenAiApiKey nutzt Moderations-Fallback wenn Model-Lookup scheitert", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("missing", { status: 404 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ results: [] }), { status: 200 }));
+    const result = await verifyOpenAiApiKey({
+      apiKey: "sk-ok",
+      fetchImpl,
+    });
+    expect(result).toMatchObject({ ok: true });
+    expect(String(fetchImpl.mock.calls[1]?.[0])).toContain("/moderations");
   });
 });

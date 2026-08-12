@@ -98,7 +98,8 @@ export async function saveAiContentSettingsAction(
 
   const verify = await verifyOpenAiApiKey({
     apiKey: secrets.apiKey,
-    timeoutMs: Math.min(secrets.timeoutMs, 15_000),
+    model: secrets.textModel,
+    timeoutMs: Math.max(secrets.timeoutMs, 30_000),
   });
 
   if (!verify.ok) {

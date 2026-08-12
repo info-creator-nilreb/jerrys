@@ -394,20 +394,26 @@ export async function consumeAiContentRequestQuota(): Promise<
   }
 }
 
-/** Prüft API-Key per GET /v1/models (kein Content-Prompt). */
+/**
+ * Prüft API-Key leichtgewichtig — nicht GET /v1/models (komplette Liste, oft Timeout).
+ * Primär: GET /v1/models/{model}; Fallback: POST /v1/moderations mit kurzem Text.
+ */
 export async function verifyOpenAiApiKey(options: {
   apiKey: string;
   baseUrl?: string;
+  /** Bevorzugtes Modell für den Lookup (Default: gpt-4o-mini). */
+  model?: string;
   timeoutMs?: number;
   fetchImpl?: typeof fetch;
 }): Promise<{ ok: true } | { ok: false; message: string }> {
   const baseUrl = (options.baseUrl ?? "https://api.openai.com/v1").replace(/\/+$/, "");
-  const timeoutMs = options.timeoutMs ?? 15_000;
+  const timeoutMs = options.timeoutMs ?? 30_000;
   const fetchImpl = options.fetchImpl ?? fetch;
+  const model = encodeURIComponent((options.model?.trim() || "gpt-4o-mini").slice(0, 120));
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetchImpl(`${baseUrl}/models`, {
+    const res = await fetchImpl(`${baseUrl}/models/${model}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${options.apiKey}` },
       signal: controller.signal,
@@ -415,13 +421,35 @@ export async function verifyOpenAiApiKey(options: {
     if (res.status === 401 || res.status === 403) {
       return { ok: false, message: "OpenAI-API-Key ungültig oder ohne Berechtigung." };
     }
-    if (!res.ok) {
-      return { ok: false, message: `OpenAI-Prüfung fehlgeschlagen (HTTP ${res.status}).` };
+    if (res.ok) return { ok: true };
+
+    // Fallback: Moderations-Endpoint (klein, zuverlässig für Key-Validierung).
+    const mod = await fetchImpl(`${baseUrl}/moderations`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${options.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ input: "ping" }),
+      signal: controller.signal,
+    });
+    if (mod.status === 401 || mod.status === 403) {
+      return { ok: false, message: "OpenAI-API-Key ungültig oder ohne Berechtigung." };
+    }
+    if (!mod.ok) {
+      return {
+        ok: false,
+        message: `OpenAI-Prüfung fehlgeschlagen (HTTP ${mod.status}).`,
+      };
     }
     return { ok: true };
   } catch (e) {
     if (e instanceof Error && e.name === "AbortError") {
-      return { ok: false, message: "OpenAI-Prüfung wegen Timeout abgebrochen." };
+      return {
+        ok: false,
+        message:
+          "OpenAI-Prüfung wegen Timeout abgebrochen. Netzwerk/Firewall prüfen oder Timeout erhöhen und erneut speichern.",
+      };
     }
     return {
       ok: false,
