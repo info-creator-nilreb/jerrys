@@ -9,7 +9,7 @@ Confirmed decisions:
 - Architecture: modular monolith, not microservices
 - Deployment: Vercel remains the application platform
 - Workshops: live sessions with capacity, temporary holds, online payment, and cancellation
-- Inventory: this shop is the source of truth; Zettle is a downstream POS channel
+- Inventory: this shop is the source of truth; Zettle is a POS channel with bidirectional sale/return deltas (never absolute overwrite from Zettle)
 - Payments: Stripe and PayPal use one provider-neutral payment core
 - Shipping: INTERNETMARKE for suitable Deutsche Post products, optionally DHL Parcel for packages
 
@@ -113,13 +113,14 @@ Exit criteria: concurrent requests cannot confirm the last seat twice; multiple 
 
 ## Epic 6: Zettle POS
 
-**Status:** Slices 1–4 umgesetzt (Verbindung, Cron-Pull, Webhook, Discrepancy).  
+**Status:** Slices 1–5 umgesetzt (Verbindung, Cron-Pull, Webhook, Discrepancy, Shop↔Zettle Verkaufs-Deltas).  
 Suggested delivery: [EPIC6_ZETTLE_POS.md](./EPIC6_ZETTLE_POS.md).
 
 User stories:
 
 - As an operator, I can map shop variants to Zettle products.
 - As an operator, POS purchases reduce the shop-owned inventory through idempotent movements.
+- As an operator, online sales / returns adjust Zettle STORE inventory for mapped variants.
 - As an admin, I can inspect and retry synchronization failures.
 - As an operator, I receive discrepancy reports.
 

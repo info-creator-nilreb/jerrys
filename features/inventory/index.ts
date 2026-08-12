@@ -36,6 +36,13 @@ export {
 } from "@/features/inventory/application/build-zettle-discrepancy-report";
 
 export {
+  enqueueZettleShopInventoryPush,
+  enqueueAndProcessZettleInventoryForOrder,
+  processZettleInventoryPushes,
+  listRecentZettleInventoryPushes,
+} from "@/features/inventory/application/push-zettle-inventory";
+
+export {
   buildZettleApiKeyDeepLink,
   getZettleAttributionClientId,
   getZettleConfigDiagnostics,

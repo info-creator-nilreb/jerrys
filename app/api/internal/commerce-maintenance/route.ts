@@ -4,6 +4,7 @@ import { publishIntegrationOutboxBatch } from "@/features/integrations";
 import {
   expireStaleStockReservations,
   getZettleConnectionPublic,
+  processZettleInventoryPushes,
   syncZettlePurchases,
 } from "@/features/inventory";
 import { runWorkshopMaintenance } from "@/features/workshops";
@@ -54,7 +55,10 @@ async function runZettleSyncIfConnected() {
     return { skipped: true as const, reason: "not_connected" };
   }
   try {
-    const result = await syncZettlePurchases({ lookbackDays: 3, limit: 50 });
+    const [result, pushes] = await Promise.all([
+      syncZettlePurchases({ lookbackDays: 3, limit: 50 }),
+      processZettleInventoryPushes({ limit: 40 }),
+    ]);
     return {
       skipped: false as const,
       ok: true as const,
@@ -62,6 +66,7 @@ async function runZettleSyncIfConnected() {
       processed: result.processed,
       skippedPurchases: result.skipped,
       failed: result.failed,
+      inventoryPushes: pushes,
     };
   } catch (e) {
     return {

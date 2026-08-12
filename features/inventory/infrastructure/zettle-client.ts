@@ -56,6 +56,21 @@ export type ZettleInventoryVariantBalance = {
   locationUuid: string | null;
 };
 
+export type ZettleInventoryLocation = {
+  inventoryUuid: string;
+  inventoryType: string;
+  name: string | null;
+  defaultInventory: boolean;
+};
+
+export type ZettleInventoryChange = {
+  productUuid: string;
+  variantUuid: string;
+  fromLocationUuid: string;
+  toLocationUuid: string;
+  change: number;
+};
+
 export type ZettlePusherSubscription = {
   uuid: string;
   destination: string;
@@ -178,6 +193,75 @@ export class ZettleClient {
       });
     }
     return JSON.parse(text) as ZettlePurchase;
+  }
+
+  /** Inventar-Locations (STORE/SOLD/SUPPLIER/BIN). Scope READ:PRODUCT. */
+  async listInventories(): Promise<ZettleInventoryLocation[]> {
+    const res = await fetch(`${ZETTLE_INVENTORY_API_BASE_URL}/inventories`, {
+      headers: await this.headers(),
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      throw Object.assign(new Error(`Zettle Inventories laden fehlgeschlagen (${res.status}).`), {
+        responseBody: text.slice(0, 300),
+      });
+    }
+    const json = JSON.parse(text) as unknown;
+    const list = Array.isArray(json) ? json : [];
+    return list
+      .map((raw) => {
+        const row = raw as {
+          inventoryUuid?: string;
+          uuid?: string;
+          inventoryType?: string;
+          type?: string;
+          name?: string;
+          defaultInventory?: boolean;
+        };
+        const inventoryUuid = row.inventoryUuid || row.uuid;
+        const inventoryType = row.inventoryType || row.type;
+        if (!inventoryUuid || !inventoryType) return null;
+        return {
+          inventoryUuid,
+          inventoryType,
+          name: row.name ?? null,
+          defaultInventory: Boolean(row.defaultInventory),
+        } satisfies ZettleInventoryLocation;
+      })
+      .filter((x): x is ZettleInventoryLocation => x != null);
+  }
+
+  /**
+   * Bestand verschieben (z. B. STORE→SOLD bei Online-Verkauf).
+   * Scope WRITE:PRODUCT. Response oft 200 mit Balances oder 204.
+   */
+  async moveInventoryBalances(input: {
+    changes: ZettleInventoryChange[];
+    externalUuid?: string;
+  }): Promise<void> {
+    if (input.changes.length === 0) return;
+    const body: Record<string, unknown> = {
+      changes: input.changes.map((c) => ({
+        productUuid: c.productUuid,
+        variantUuid: c.variantUuid,
+        fromLocationUuid: c.fromLocationUuid,
+        toLocationUuid: c.toLocationUuid,
+        change: c.change,
+      })),
+    };
+    if (input.externalUuid) body.externalUuid = input.externalUuid;
+
+    const res = await fetch(`${ZETTLE_INVENTORY_API_BASE_URL}/organizations/self/inventory`, {
+      method: "PUT",
+      headers: await this.headers(true),
+      body: JSON.stringify(body),
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      throw Object.assign(new Error(`Zettle Inventory-Update fehlgeschlagen (${res.status}).`), {
+        responseBody: text.slice(0, 400),
+      });
+    }
   }
 
   /** STORE-Inventory-Balances (Discrepancy). Scope WRITE:PRODUCT empfohlen. */
