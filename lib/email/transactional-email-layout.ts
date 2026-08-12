@@ -50,7 +50,7 @@ function brandingOrDefault(
 }
 
 /** Logo-`<img>` nur bei gültiger absoluter URL; sonst Textmarke. */
-function transactionalLogoBlock(branding: TransactionalEmailBranding): string {
+export function transactionalLogoBlock(branding: TransactionalEmailBranding): string {
   const home = absUrl("/");
   const shopName = escapeHtmlForEmail(branding.shopName);
   const logoUrl = branding.logoAbsoluteUrl;
@@ -82,7 +82,11 @@ function heroIconHtml(variant: TransactionalHeroVariant): string {
   return `<span style="font-size:36px;line-height:1;display:inline-block" aria-hidden="true">${emoji}</span>`;
 }
 
-function ctaButton(href: string, label: string, branding: TransactionalEmailBranding): string {
+export function transactionalCtaButton(
+  href: string,
+  label: string,
+  branding: TransactionalEmailBranding,
+): string {
   const safeHref = escapeHtmlForEmail(href);
   const safeLabel = escapeHtmlForEmail(label);
   const primary = branding.primary;
@@ -114,7 +118,7 @@ function footerUspRow(): string {
   return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:8px;border-top:1px solid ${footerDivider}"><tr>${item(lock, "Sicher bezahlen")}${item(truck, "Schneller Versand")}${item(mail, "Kundenservice")}</tr></table>`;
 }
 
-function emailFooterBlock(branding: TransactionalEmailBranding): string {
+export function transactionalEmailFooterBlock(branding: TransactionalEmailBranding): string {
   const impressum = absUrl("/impressum");
   const datenschutz = absUrl("/datenschutz");
   const social = footerSocialRow(branding);
@@ -144,9 +148,29 @@ export function wrapTransactionalEmailHtml(p: TransactionalEmailWrapParams): str
   const circleBg = heroCircleBg();
   const icon = heroIconHtml(p.variant);
   const logoBlock = transactionalLogoBlock(branding);
-  const mainCard = `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:${maxWidth}px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid ${cardBorderNeutral}"><tr><td style="padding:32px 28px 28px;font-family:Arial,Helvetica,sans-serif;color:${text};background-color:#ffffff"><table role="presentation" width="100%" cellspacing="0" cellpadding="0">${logoBlock}<tr><td align="center" style="padding:4px 0 22px"><table role="presentation" cellspacing="0" cellpadding="0"><tr><td align="center" valign="middle" style="width:84px;height:84px;border-radius:50%;background:${circleBg};border:1px solid ${cardBorderNeutral};line-height:0;padding:16px">${icon}</td></tr></table></td></tr><tr><td style="font-size:22px;font-weight:700;color:#1f2937;line-height:1.35;text-align:center;padding-bottom:12px">${escapeHtmlForEmail(p.heading)}</td></tr><tr><td style="font-size:15px;line-height:1.55;color:${text};text-align:center;padding:0 4px 24px">${escapeHtmlForEmail(p.intro)}</td></tr><tr><td>${p.bodyHtml}</td></tr><tr><td align="center">${ctaButton(p.cta.href, p.cta.label, branding)}</td></tr></table></td></tr></table>`;
+  const mainCard = `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:${maxWidth}px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid ${cardBorderNeutral}"><tr><td style="padding:32px 28px 28px;font-family:Arial,Helvetica,sans-serif;color:${text};background-color:#ffffff"><table role="presentation" width="100%" cellspacing="0" cellpadding="0">${logoBlock}<tr><td align="center" style="padding:4px 0 22px"><table role="presentation" cellspacing="0" cellpadding="0"><tr><td align="center" valign="middle" style="width:84px;height:84px;border-radius:50%;background:${circleBg};border:1px solid ${cardBorderNeutral};line-height:0;padding:16px">${icon}</td></tr></table></td></tr><tr><td style="font-size:22px;font-weight:700;color:#1f2937;line-height:1.35;text-align:center;padding-bottom:12px">${escapeHtmlForEmail(p.heading)}</td></tr><tr><td style="font-size:15px;line-height:1.55;color:${text};text-align:center;padding:0 4px 24px">${escapeHtmlForEmail(p.intro)}</td></tr><tr><td>${p.bodyHtml}</td></tr><tr><td align="center">${transactionalCtaButton(p.cta.href, p.cta.label, branding)}</td></tr></table></td></tr></table>`;
 
-  return `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta http-equiv="x-ua-compatible" content="ie=edge"/><title>${escapeHtmlForEmail(p.documentTitle)}</title></head><body style="margin:0;padding:0;background:${pageBg}"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${pageBg}"><tr><td align="center" style="padding:24px 12px">${mainCard}</td></tr><tr><td align="center" style="padding:0 12px 24px">${emailFooterBlock(branding)}</td></tr></table></body></html>`;
+  return `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta http-equiv="x-ua-compatible" content="ie=edge"/><title>${escapeHtmlForEmail(p.documentTitle)}</title></head><body style="margin:0;padding:0;background:${pageBg}"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${pageBg}"><tr><td align="center" style="padding:24px 12px">${mainCard}</td></tr><tr><td align="center" style="padding:0 12px 24px">${transactionalEmailFooterBlock(branding)}</td></tr></table></body></html>`;
+}
+
+/**
+ * HTML-Shell für editierbare Templates: Logo/Footer/CTA als {{{…}}}-Platzhalter,
+ * Heading/Intro/Body als feste oder variable Inhalte.
+ */
+export function buildEditableTransactionalShell(params: {
+  variant: TransactionalHeroVariant;
+  /** Kann {{…}}-Platzhalter enthalten; wird nicht zusätzlich escapet. */
+  documentTitle: string;
+  heading: string;
+  intro: string;
+  bodyHtml: string;
+}): string {
+  const { text, pageBg, maxWidth, cardBorderNeutral } = TRANSACTIONAL_EMAIL_DESIGN;
+  const circleBg = heroCircleBg();
+  const icon = heroIconHtml(params.variant);
+  const mainCard = `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:${maxWidth}px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid ${cardBorderNeutral}"><tr><td style="padding:32px 28px 28px;font-family:Arial,Helvetica,sans-serif;color:${text};background-color:#ffffff"><table role="presentation" width="100%" cellspacing="0" cellpadding="0">{{{shop.logo_html}}}<tr><td align="center" style="padding:4px 0 22px"><table role="presentation" cellspacing="0" cellpadding="0"><tr><td align="center" valign="middle" style="width:84px;height:84px;border-radius:50%;background:${circleBg};border:1px solid ${cardBorderNeutral};line-height:0;padding:16px">${icon}</td></tr></table></td></tr><tr><td style="font-size:22px;font-weight:700;color:#1f2937;line-height:1.35;text-align:center;padding-bottom:12px">${params.heading}</td></tr><tr><td style="font-size:15px;line-height:1.55;color:${text};text-align:center;padding:0 4px 24px">${params.intro}</td></tr><tr><td>${params.bodyHtml}</td></tr><tr><td align="center">{{{email.cta_html}}}</td></tr></table></td></tr></table>`;
+
+  return `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta http-equiv="x-ua-compatible" content="ie=edge"/><title>${params.documentTitle}</title></head><body style="margin:0;padding:0;background:${pageBg}"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${pageBg}"><tr><td align="center" style="padding:24px 12px">${mainCard}</td></tr><tr><td align="center" style="padding:0 12px 24px">{{{shop.footer_html}}}</td></tr></table></body></html>`;
 }
 
 export function grayInfoCard(innerHtml: string): string {

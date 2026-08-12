@@ -1,54 +1,42 @@
 import { customerAuthEmailActionUrl } from "@/lib/email/customer-auth-email-link";
 import { sendTransactionalEmail } from "@/lib/email/provider";
-import {
-  grayInfoCard,
-  wrapTransactionalEmailHtml,
-} from "@/lib/email/transactional-email-layout";
 import { escapeHtmlForEmail } from "@/lib/email/template-utils";
+import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
+import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
 import { createLogger } from "@/lib/logging/logger";
 import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
+import type { EmailTemplateKey } from "@/lib/email/templates/catalog";
 
 const log = createLogger("email.customer-auth");
 
 export type CustomerAuthEmailKind = "email_verify" | "magic_link" | "password_reset";
 
-function customerAuthCopy(
-  kind: CustomerAuthEmailKind,
-  shopName: string,
-): { subject: string; heading: string; intro: string; cta: string; pathPrefix: string } {
-  switch (kind) {
-    case "email_verify":
-      return {
-        subject: `Bitte E-Mail bestätigen — ${shopName}`,
-        heading: "E-Mail bestätigen",
-        intro: "Bitte bestätige deine E-Mail-Adresse, um dein Kundenkonto zu aktivieren.",
-        cta: "E-Mail bestätigen",
-        pathPrefix: "/konto/verifizieren",
-      };
-    case "magic_link":
-      return {
-        subject: `Dein Anmelde-Link — ${shopName}`,
-        heading: "Magic Link",
-        intro: `Mit diesem Link meldest du dich sicher bei ${shopName} an. Der Link ist eine Stunde gültig.`,
-        cta: "Jetzt anmelden",
-        pathPrefix: "/konto/magic-link",
-      };
-    case "password_reset":
-      return {
-        subject: `Passwort zurücksetzen — ${shopName}`,
-        heading: "Passwort zurücksetzen",
-        intro: "Du hast das Zurücksetzen deines Passworts angefordert. Der Link ist eine Stunde gültig.",
-        cta: "Neues Passwort wählen",
-        pathPrefix: "/konto/passwort-zuruecksetzen",
-      };
-  }
-}
+const AUTH_META: Record<
+  CustomerAuthEmailKind,
+  { cta: string; pathPrefix: string; templateKey: EmailTemplateKey }
+> = {
+  email_verify: {
+    cta: "E-Mail bestätigen",
+    pathPrefix: "/konto/verifizieren",
+    templateKey: "email_verify",
+  },
+  magic_link: {
+    cta: "Jetzt anmelden",
+    pathPrefix: "/konto/magic-link",
+    templateKey: "magic_link",
+  },
+  password_reset: {
+    cta: "Neues Passwort wählen",
+    pathPrefix: "/konto/passwort-zuruecksetzen",
+    templateKey: "password_reset",
+  },
+};
 
 export type CustomerAuthEmailSendResult =
   | { ok: true }
   | {
       ok: false;
-      reason: "missing_site_url" | "provider_unconfigured" | "provider_error";
+      reason: "missing_site_url" | "provider_unconfigured" | "provider_error" | "disabled";
     };
 
 export async function sendCustomerAuthEmail(params: {
@@ -57,7 +45,7 @@ export async function sendCustomerAuthEmail(params: {
   rawToken: string;
 }): Promise<CustomerAuthEmailSendResult> {
   const branding = await resolveTransactionalEmailBranding();
-  const meta = customerAuthCopy(params.kind, branding.shopName);
+  const meta = AUTH_META[params.kind];
   const href = customerAuthEmailActionUrl(meta.pathPrefix, params.rawToken, {
     tokenInHash: params.kind === "email_verify",
   });
@@ -66,35 +54,22 @@ export async function sendCustomerAuthEmail(params: {
     return { ok: false, reason: "missing_site_url" };
   }
 
-  const bodyHtml = grayInfoCard(
-    `<p style="margin:0">Wenn du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.</p>`,
+  const vars = mergeTemplateVars(
+    buildShopTemplateVars(branding, { href, label: meta.cta }),
+    {},
   );
 
-  const html = wrapTransactionalEmailHtml({
-    variant: "account",
-    documentTitle: meta.subject,
-    heading: meta.heading,
-    intro: meta.intro,
-    bodyHtml,
-    cta: { href, label: meta.cta },
-    branding,
-  });
-
-  const text = [
-    meta.heading,
-    "",
-    meta.intro,
-    "",
-    `${meta.cta}: ${href}`,
-    "",
-    "Wenn du diese Anfrage nicht gestellt hast, ignoriere diese E-Mail.",
-  ].join("\n");
+  const rendered = await renderStoredEmailTemplate(meta.templateKey, vars);
+  if (!rendered.enabled) {
+    log.warn("customer_auth_email_disabled", { kind: params.kind });
+    return { ok: false, reason: "disabled" };
+  }
 
   const result = await sendTransactionalEmail({
     to: params.to,
-    subject: meta.subject,
-    text,
-    html,
+    subject: rendered.subject,
+    text: rendered.text,
+    html: rendered.html,
   });
 
   if (result.status === "sent") {

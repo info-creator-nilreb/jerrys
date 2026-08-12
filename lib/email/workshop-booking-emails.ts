@@ -10,15 +10,11 @@ import {
   upsertOrderEmailDeliveryLog,
 } from "@/lib/email/order-email-log";
 import { sendTransactionalEmail } from "@/lib/email/provider";
-import {
-  grayInfoCard,
-  wrapTransactionalEmailHtml,
-} from "@/lib/email/transactional-email-layout";
+import { grayInfoCard } from "@/lib/email/transactional-email-layout";
 import { escapeHtmlForEmail, publicSiteBaseUrl } from "@/lib/email/template-utils";
-import {
-  resolveTransactionalEmailBranding,
-  type TransactionalEmailBranding,
-} from "@/lib/shop/email-branding";
+import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
+import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
+import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
 import { formatWorkshopSessionDateTime } from "@/lib/workshop/format-session-datetime";
 import {
   buildWorkshopBookingIcs,
@@ -83,8 +79,7 @@ async function loadBookingById(bookingId: string): Promise<BookingEmailRow | nul
 }
 
 function icalInputFromRow(row: BookingEmailRow): WorkshopBookingIcalInput {
-  const seats =
-    row.seatCount === 1 ? "1 Platz" : `${row.seatCount} Plätze`;
+  const seats = row.seatCount === 1 ? "1 Platz" : `${row.seatCount} Plätze`;
   return {
     bookingId: row.id,
     title: row.sessionTitleSnapshot,
@@ -119,124 +114,6 @@ function calendarDownloadPath(bookingId: string): string {
   return `/konto/termine/${encodeURIComponent(bookingId)}/calendar`;
 }
 
-function buildConfirmationBodies(
-  row: BookingEmailRow,
-  greetingName: string,
-  branding: TransactionalEmailBranding,
-): { subject: string; text: string; html: string } {
-  const when = formatWorkshopSessionDateTime(
-    row.sessionStartsAtSnapshot,
-    row.sessionTimezoneSnapshot,
-  );
-  const seats =
-    row.seatCount === 1 ? "1 Platz" : `${row.seatCount} Plätze`;
-  const priceLine =
-    row.unitPriceCentsSnapshot > 0
-      ? formatPrice(row.unitPriceCentsSnapshot * row.seatCount, row.currencySnapshot)
-      : "Kostenlos";
-
-  const detailUrl = bookingDetailUrl(row.id);
-  const subject = `Terminbestätigung: ${row.sessionTitleSnapshot}`;
-  const shopName = branding.shopName;
-
-  const text = [
-    `Hallo ${greetingName},`,
-    "",
-    `dein Workshop-Termin bei ${shopName} ist bestätigt.`,
-    "",
-    row.sessionTitleSnapshot,
-    when,
-    `Ort: ${row.sessionLocationSnapshot}`,
-    `Plätze: ${seats}`,
-    `Preis: ${priceLine}`,
-    "",
-    "Im Anhang findest du einen Kalendereintrag (.ics).",
-    "",
-    `Termin im Konto: ${detailUrl}`,
-    "",
-    "Liebe Grüße",
-    shopName,
-  ].join("\n");
-
-  const bodyInner = grayInfoCard(
-    [
-      `<strong style="font-size:16px;color:#1f2937">${escapeHtmlForEmail(row.sessionTitleSnapshot)}</strong>`,
-      `<p style="margin:12px 0 0">${escapeHtmlForEmail(when)}</p>`,
-      `<p style="margin:8px 0 0"><strong>Ort:</strong> ${escapeHtmlForEmail(row.sessionLocationSnapshot)}</p>`,
-      `<p style="margin:8px 0 0"><strong>Plätze:</strong> ${escapeHtmlForEmail(seats)}</p>`,
-      `<p style="margin:8px 0 0"><strong>Preis:</strong> ${escapeHtmlForEmail(priceLine)}</p>`,
-    ].join(""),
-  );
-
-  const html = wrapTransactionalEmailHtml({
-    variant: "workshop",
-    documentTitle: subject,
-    heading: "Dein Termin ist bestätigt",
-    intro: "Wir freuen uns auf dich — speichere den Termin am besten direkt in deinem Kalender.",
-    bodyHtml: bodyInner,
-    cta: { href: detailUrl, label: "Termin im Konto ansehen" },
-    branding,
-  });
-
-  return { subject, text, html };
-}
-
-function buildCancellationBodies(
-  row: BookingEmailRow,
-  greetingName: string,
-  branding: TransactionalEmailBranding,
-): { subject: string; text: string; html: string } {
-  const when = formatWorkshopSessionDateTime(
-    row.sessionStartsAtSnapshot,
-    row.sessionTimezoneSnapshot,
-  );
-  const termineUrl = (() => {
-    const base = publicSiteBaseUrl();
-    const path = "/konto/termine";
-    return base ? `${base}${path}` : path;
-  })();
-
-  const subject = `Termin storniert: ${row.sessionTitleSnapshot}`;
-
-  const text = [
-    `Hallo ${greetingName},`,
-    "",
-    "deine Workshop-Buchung wurde storniert.",
-    "",
-    row.sessionTitleSnapshot,
-    when,
-    `Ort: ${row.sessionLocationSnapshot}`,
-    "",
-    "Bei kostenpflichtigen Buchungen bearbeiten wir Erstattungen gesondert, sofern eine Zahlung erfolgt ist.",
-    "",
-    `Weitere Termine: ${termineUrl}`,
-    "",
-    "Liebe Grüße",
-    branding.shopName,
-  ].join("\n");
-
-  const bodyInner = grayInfoCard(
-    [
-      `<strong style="font-size:16px;color:#1f2937">${escapeHtmlForEmail(row.sessionTitleSnapshot)}</strong>`,
-      `<p style="margin:12px 0 0">${escapeHtmlForEmail(when)}</p>`,
-      `<p style="margin:8px 0 0"><strong>Ort:</strong> ${escapeHtmlForEmail(row.sessionLocationSnapshot)}</p>`,
-      `<p style="margin:12px 0 0;font-size:13px;color:#5c5c5c">Bei kostenpflichtigen Buchungen bearbeiten wir Erstattungen gesondert, sofern eine Zahlung erfolgt ist.</p>`,
-    ].join(""),
-  );
-
-  const html = wrapTransactionalEmailHtml({
-    variant: "workshop",
-    documentTitle: subject,
-    heading: "Termin storniert",
-    intro: "Deine Buchung ist nicht mehr aktiv. Wir hoffen, dich bald bei einem anderen Termin zu sehen.",
-    bodyHtml: bodyInner,
-    cta: { href: termineUrl, label: "Termine im Konto" },
-    branding,
-  });
-
-  return { subject, text, html };
-}
-
 async function resolveGreetingName(orderId: string | null, contactEmail: string): Promise<string> {
   if (!orderId) return "du";
   const order = await getPrisma().order.findUnique({
@@ -268,15 +145,52 @@ export async function sendWorkshopBookingConfirmationIfNeeded(
 
   const greetingName = await resolveGreetingName(row.orderId, row.contactEmail);
   const branding = await resolveTransactionalEmailBranding();
-  const { subject, text, html } = buildConfirmationBodies(row, greetingName, branding);
+  const when = formatWorkshopSessionDateTime(
+    row.sessionStartsAtSnapshot,
+    row.sessionTimezoneSnapshot,
+  );
+  const seats = row.seatCount === 1 ? "1 Platz" : `${row.seatCount} Plätze`;
+  const priceLine =
+    row.unitPriceCentsSnapshot > 0
+      ? formatPrice(row.unitPriceCentsSnapshot * row.seatCount, row.currencySnapshot)
+      : "Kostenlos";
+  const detailUrl = bookingDetailUrl(row.id);
+
+  const detailsHtml = grayInfoCard(
+    [
+      `<strong style="font-size:16px;color:#1f2937">${escapeHtmlForEmail(row.sessionTitleSnapshot)}</strong>`,
+      `<p style="margin:12px 0 0">${escapeHtmlForEmail(when)}</p>`,
+      `<p style="margin:8px 0 0"><strong>Ort:</strong> ${escapeHtmlForEmail(row.sessionLocationSnapshot)}</p>`,
+      `<p style="margin:8px 0 0"><strong>Plätze:</strong> ${escapeHtmlForEmail(seats)}</p>`,
+      `<p style="margin:8px 0 0"><strong>Preis:</strong> ${escapeHtmlForEmail(priceLine)}</p>`,
+    ].join(""),
+  );
+
+  const vars = mergeTemplateVars(
+    buildShopTemplateVars(branding, { href: detailUrl, label: "Termin im Konto ansehen" }),
+    {
+      customer: { first_name: greetingName },
+      workshop: {
+        title: row.sessionTitleSnapshot,
+        when,
+        location: row.sessionLocationSnapshot,
+        seats,
+        price: priceLine,
+        details_html: detailsHtml,
+      },
+    },
+  );
+
+  const rendered = await renderStoredEmailTemplate("workshop_booking_confirmation", vars);
+  if (!rendered.enabled && !options?.force) return;
 
   let result: Awaited<ReturnType<typeof sendTransactionalEmail>>;
   try {
     result = await sendTransactionalEmail({
       to: row.contactEmail,
-      subject,
-      text,
-      html,
+      subject: rendered.subject,
+      text: rendered.text,
+      html: rendered.html,
       attachments: [icsAttachment(row)],
     });
   } catch (e) {
@@ -315,15 +229,48 @@ export async function sendWorkshopBookingCancelledForBookingId(
 
   const greetingName = await resolveGreetingName(row.orderId, row.contactEmail);
   const branding = await resolveTransactionalEmailBranding();
-  const { subject, text, html } = buildCancellationBodies(row, greetingName, branding);
+  const when = formatWorkshopSessionDateTime(
+    row.sessionStartsAtSnapshot,
+    row.sessionTimezoneSnapshot,
+  );
+  const termineUrl = (() => {
+    const base = publicSiteBaseUrl();
+    const path = "/konto/termine";
+    return base ? `${base}${path}` : path;
+  })();
+
+  const detailsHtml = grayInfoCard(
+    [
+      `<strong style="font-size:16px;color:#1f2937">${escapeHtmlForEmail(row.sessionTitleSnapshot)}</strong>`,
+      `<p style="margin:12px 0 0">${escapeHtmlForEmail(when)}</p>`,
+      `<p style="margin:8px 0 0"><strong>Ort:</strong> ${escapeHtmlForEmail(row.sessionLocationSnapshot)}</p>`,
+      `<p style="margin:12px 0 0;font-size:13px;color:#5c5c5c">Bei kostenpflichtigen Buchungen bearbeiten wir Erstattungen gesondert, sofern eine Zahlung erfolgt ist.</p>`,
+    ].join(""),
+  );
+
+  const vars = mergeTemplateVars(
+    buildShopTemplateVars(branding, { href: termineUrl, label: "Termine im Konto" }),
+    {
+      customer: { first_name: greetingName },
+      workshop: {
+        title: row.sessionTitleSnapshot,
+        when,
+        location: row.sessionLocationSnapshot,
+        details_html: detailsHtml,
+      },
+    },
+  );
+
+  const rendered = await renderStoredEmailTemplate("workshop_booking_cancelled", vars);
+  if (!rendered.enabled) return;
 
   let result: Awaited<ReturnType<typeof sendTransactionalEmail>>;
   try {
     result = await sendTransactionalEmail({
       to: row.contactEmail,
-      subject,
-      text,
-      html,
+      subject: rendered.subject,
+      text: rendered.text,
+      html: rendered.html,
     });
   } catch (e) {
     result = {
@@ -368,8 +315,7 @@ export async function buildWorkshopBookingIcsForCustomer(input: {
     endsAt: row.session.endsAt,
     timezone: row.sessionTimezoneSnapshot,
     location: row.sessionLocationSnapshot,
-    description:
-      row.seatCount === 1 ? "1 Platz" : `${row.seatCount} Plätze`,
+    description: row.seatCount === 1 ? "1 Platz" : `${row.seatCount} Plätze`,
   });
 
   return { filename: "jerrys-workshop.ics", body: ics };

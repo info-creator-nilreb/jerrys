@@ -12,6 +12,7 @@ import {
   IconContents,
   IconCustomers,
   IconDashboard,
+  IconEmails,
   IconOrders,
   IconPromotions,
   IconSettings,
@@ -109,6 +110,7 @@ const mainNav: NavItem[] = [
     ],
   },
   { href: "/admin/promotions", label: "Promotions", icon: IconPromotions },
+  { href: "/admin/emails", label: "E-Mails", icon: IconEmails },
   { href: "/admin/versand", label: "Versand", icon: IconShipping },
   {
     href: "/admin/einstellungen",
