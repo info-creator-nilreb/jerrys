@@ -1,4 +1,8 @@
 import { notFound } from "next/navigation";
+import {
+  pickPrimaryCategoryRef,
+  uniqueCategoriesBySlug,
+} from "@/lib/catalog/category-membership";
 import { getActiveProductBySlug } from "@/lib/catalog/queries";
 import { resolvePdpDisplay } from "@/lib/catalog/pdp-resolve-display";
 import { pickDefaultVariant } from "@/lib/catalog/default-variant-storefront";
@@ -30,6 +34,11 @@ function textPreviewFromHtml(html: string | null | undefined, max = 160): string
 function displayFromProduct(
   product: NonNullable<Awaited<ReturnType<typeof getActiveProductBySlug>>>,
 ) {
+  const linkedCategories = uniqueCategoriesBySlug(
+    product.collectionMemberships.flatMap((m) =>
+      m.collection.categoryLinks.map((l) => l.category),
+    ),
+  );
   return resolvePdpDisplay({
     slug: product.slug,
     title: product.title,
@@ -39,8 +48,8 @@ function displayFromProduct(
     materialText: product.materialText,
     featureBullets: product.featureBullets,
     attributes: product.attributes,
-    categoryTitles: product.categoryMemberships.map((m) => m.category.title),
-    categorySlugs: product.categoryMemberships.map((m) => m.category.slug),
+    categoryTitles: linkedCategories.map((c) => c.title),
+    categorySlugs: linkedCategories.map((c) => c.slug),
   });
 }
 
@@ -99,11 +108,13 @@ export default async function ProduktDetailPage({
 
   const titleCrumb = truncateBreadcrumbLabel(product.title);
 
-  const primaryRow = product.categoryMemberships.find((m) => m.isPrimary);
-  const primaryCategory = primaryRow?.category ?? null;
-  const categoryBySlug = new Map(
-    product.categoryMemberships.map((m) => [m.category.slug, m.category] as const),
+  const linkedCategories = uniqueCategoriesBySlug(
+    product.collectionMemberships.flatMap((m) =>
+      m.collection.categoryLinks.map((l) => l.category),
+    ),
   );
+  const primaryCategory = pickPrimaryCategoryRef(linkedCategories);
+  const categoryBySlug = new Map(linkedCategories.map((c) => [c.slug, c] as const));
   const collectionTitleBySlug = new Map(
     product.collectionMemberships.map((m) => [m.collection.slug, m.collection.title] as const),
   );

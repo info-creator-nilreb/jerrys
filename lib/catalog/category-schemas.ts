@@ -7,6 +7,15 @@ export const categorySlugSchema = z
   .toLowerCase()
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Nur Kleinbuchstaben, Ziffern und Bindestriche.");
 
+const collectionIdsField = z
+  .union([z.string(), z.array(z.string())])
+  .optional()
+  .transform((v) => {
+    if (v == null) return [] as string[];
+    const arr = Array.isArray(v) ? v : [v];
+    return [...new Set(arr.map((s) => s.trim()).filter(Boolean))];
+  });
+
 export const categoryUpsertSchema = z.object({
   id: z.preprocess(
     (v) => (v == null || v === "" ? undefined : String(v)),
@@ -29,33 +38,5 @@ export const categoryUpsertSchema = z.object({
     (v) => (v == null || v === "" ? null : String(v)),
     z.string().min(1).nullable(),
   ),
-  productIds: z
-    .union([z.string(), z.array(z.string())])
-    .optional()
-    .transform((v) => {
-      if (v == null) return [] as string[];
-      const arr = Array.isArray(v) ? v : [v];
-      return [...new Set(arr.map((s) => s.trim()).filter(Boolean))];
-    }),
-  primaryProductId: z.preprocess(
-    (v) => (v == null || v === "" ? null : String(v)),
-    z.string().min(1).nullable().optional(),
-  ),
-});
-
-const categoryIdsField = z
-  .union([z.string(), z.array(z.string())])
-  .optional()
-  .transform((v) => {
-    if (v == null) return [] as string[];
-    const arr = Array.isArray(v) ? v : [v];
-    return [...new Set(arr.map((s) => s.trim()).filter(Boolean))];
-  });
-
-export const productCategoryAssignmentSchema = z.object({
-  categoryIds: categoryIdsField,
-  primaryCategoryId: z.preprocess(
-    (v) => (v == null || v === "" ? null : String(v)),
-    z.string().min(1).nullable().optional(),
-  ),
+  collectionIds: collectionIdsField,
 });

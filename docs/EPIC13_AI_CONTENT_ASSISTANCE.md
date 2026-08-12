@@ -1,6 +1,7 @@
 # Epic 13 — KI-gestützte Content- und Bildwerkzeuge
 
-Referenz: [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md#epic-13-ai-assisted-content-and-images)
+Referenz: [PLATFORM_ROADMAP.md](./PLATFORM_ROADMAP.md#epic-13-ai-assisted-content-and-images)  
+Agent-Handoff: [EPIC13_AGENT_HANDOFF.md](./EPIC13_AGENT_HANDOFF.md) · ADR: [0010-ai-content-assistance-port.md](./adr/0010-ai-content-assistance-port.md)
 
 ## Zielbild
 
@@ -26,10 +27,10 @@ KI unterstützt Admins bei Produkttexten, SEO-Inhalten, Alt-Texten sowie Bildgen
 
 ## Vorgeschlagene Slices
 
-1. **ADR und Provider-Port:** Text-, Vision-, Image-Generation und Moderation als getrennte Fähigkeiten; OpenAI-Adapter.
-2. **Admin-Konfiguration:** Provider, Modellprofile, Limits und verschlüsselte Server-Keys; keine Secrets im Client/DB-Klartext.
-3. **Textassistent:** Produktformular mit Vorschau/Diff und explizitem Übernehmen einzelner Felder.
-4. **Bildassistent:** Upload/Quellbild, Prompt, Vorschau, Moderation, explizite Übernahme in dauerhaften Medienspeicher.
+1. **ADR und Provider-Port:** Text-, Vision-, Image-Generation und Moderation als getrennte Fähigkeiten; OpenAI-Adapter. ✅ (Slice 1)
+2. **Admin-Konfiguration:** Provider, Modellprofile, Limits und verschlüsselte Server-Keys; keine Secrets im Client/DB-Klartext. ✅ (Slice 2)
+3. **Textassistent:** Produktformular mit Vorschau/Diff und explizitem Übernehmen einzelner Felder. ✅ (Slice 3)
+4. **Bildassistent:** Upload/Quellbild, Prompt, Vorschau, Moderation, explizite Übernahme in dauerhaften Medienspeicher. ✅ (Slice 4)
 5. **CMS-Integration:** Text-/Bildentwürfe für ausgewählte Blöcke, weiterhin ohne Auto-Publish.
 6. **Betrieb:** Usage-/Kostenmetriken, Timeouts, Retry nur für sichere Requests, Quoten und verständliche Providerfehler.
 

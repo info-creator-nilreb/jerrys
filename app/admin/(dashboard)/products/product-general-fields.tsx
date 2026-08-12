@@ -26,6 +26,8 @@ type Props = {
     slug: string;
     subtitle: string;
     descriptionHtml: string;
+    /** Remount-Key wenn KI-Beschreibung übernommen wird. */
+    descriptionKey?: number;
     manufacturerId: string | null;
     productNumber: string | null;
     amazonRatingAverage: string;
@@ -126,6 +128,7 @@ export function ProductGeneralFields({ state, manufacturers, defaults }: Props) 
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium text-[#6b7280]">Beschreibung</span>
           <ProductDescriptionEditor
+            key={defaults.descriptionKey ?? 0}
             name="descriptionHtml"
             defaultHtml={defaults.descriptionHtml}
             error={fe.descriptionHtml}

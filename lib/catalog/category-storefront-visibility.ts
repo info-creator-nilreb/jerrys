@@ -1,17 +1,27 @@
 /**
- * Storefront-Regeln für Kategorien (Epic 10) — rein testbar, ohne Prisma.
- * Abgleich mit `listActiveCategoriesForNav` und Kategorie-Listing-Seiten.
+ * Storefront-Regeln für Kategorien — rein testbar, ohne Prisma.
+ * Produkte einer Kategorie kommen nur über verknüpfte aktive Kollektionen.
  */
 
-/** Mindestens ein aktives Shop-Produkt in der Zuordnung (Spiegel der Prisma-Filter). */
-export const categoryHasActiveProductMembership = {
-  product: { isActive: true },
+/** Mindestens ein aktives Shop-Produkt in einer aktiven verknüpften Kollektion. */
+export const categoryHasActiveProductViaCollections = {
+  collections: {
+    some: {
+      collection: {
+        isActive: true,
+        products: { some: { product: { isActive: true } } },
+      },
+    },
+  },
 } as const;
+
+/** @deprecated Alias — gleiche Semantik wie `categoryHasActiveProductViaCollections`. */
+export const categoryHasActiveProductMembership = categoryHasActiveProductViaCollections;
 
 export type CategoryNavCandidate = {
   isActive: boolean;
   parentId: string | null;
-  /** Mindestens ein aktives Produkt (direkt oder aggregiert). */
+  /** Mindestens ein aktives Produkt (über Kollektionen). */
   hasActiveProduct: boolean;
 };
 

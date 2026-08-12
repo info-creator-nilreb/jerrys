@@ -1,14 +1,43 @@
 import { getPrisma } from "@/lib/db/prisma";
-import { categoryHasActiveProductMembership } from "@/lib/catalog/category-storefront-visibility";
+import { categoryHasActiveProductViaCollections } from "@/lib/catalog/category-storefront-visibility";
 import { storefrontProductCardSelect } from "@/lib/catalog/queries";
 
+const activeViaCollections = categoryHasActiveProductViaCollections;
+
 export async function listCategoriesForAdmin() {
-  return getPrisma().category.findMany({
+  const rows = await getPrisma().category.findMany({
     orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
     include: {
       parent: { select: { id: true, title: true } },
-      _count: { select: { products: true, children: true } },
+      collections: {
+        select: {
+          collection: {
+            select: {
+              _count: {
+                select: {
+                  products: { where: { product: { isActive: true } } },
+                },
+              },
+            },
+          },
+        },
+      },
+      _count: { select: { collections: true, children: true } },
     },
+  });
+
+  return rows.map((c) => {
+    const productIdEstimate = c.collections.reduce(
+      (sum, link) => sum + link.collection._count.products,
+      0,
+    );
+    const { collections, ...rest } = c;
+    void collections;
+    return {
+      ...rest,
+      /** Summe aktiver Produkte über verknüpfte Kollektionen (ohne Dedup; Anzeige). */
+      linkedProductCount: productIdEstimate,
+    };
   });
 }
 
@@ -17,9 +46,15 @@ export async function getCategoryByIdForAdmin(id: string) {
     where: { id },
     include: {
       parent: { select: { id: true, title: true, slug: true } },
-      products: {
-        orderBy: [{ isPrimary: "desc" }, { product: { title: "asc" } }],
-        select: { productId: true, isPrimary: true },
+      collections: {
+        orderBy: [{ sortOrder: "asc" }, { collection: { title: "asc" } }],
+        select: {
+          collectionId: true,
+          sortOrder: true,
+          collection: {
+            select: { id: true, title: true, slug: true, isActive: true },
+          },
+        },
       },
       _count: { select: { children: true } },
     },
@@ -38,37 +73,25 @@ export async function listRootCategoriesForParentPicker(excludeCategoryId?: stri
   });
 }
 
-export async function listProductsForCategoryPicker() {
-  return getPrisma().product.findMany({
+export async function listCollectionsForCategoryPicker() {
+  return getPrisma().collection.findMany({
     orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
     select: { id: true, title: true, slug: true, isActive: true },
   });
 }
 
-export async function listCategoriesForProductPicker() {
-  return getPrisma().category.findMany({
-    orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      isActive: true,
-      parent: { select: { title: true } },
-    },
-  });
-}
+const activeProductInLinkedCollection = {
+  isActive: true,
+  products: { some: { product: { isActive: true } } },
+} as const;
 
-const activeProductOnCategory = categoryHasActiveProductMembership;
-
-/** Aktive Root-Kategorien für Navigation (Slice 4); Slice 1 — Daten-API. */
+/** Aktive Root-Kategorien für Navigation. */
 export async function listActiveCategoriesForNav() {
   return getPrisma().category.findMany({
     where: {
       isActive: true,
       parentId: null,
-      products: {
-        some: activeProductOnCategory,
-      },
+      ...activeViaCollections,
     },
     orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
     select: {
@@ -78,8 +101,8 @@ export async function listActiveCategoriesForNav() {
       description: true,
       _count: {
         select: {
-          products: {
-            where: activeProductOnCategory,
+          collections: {
+            where: { collection: activeProductInLinkedCollection },
           },
         },
       },
@@ -87,19 +110,19 @@ export async function listActiveCategoriesForNav() {
   });
 }
 
-/** Aktive Kategorie inkl. Unterkategorien (eine Ebene) für spätere Nav-Erweiterung. */
+/** Aktive Kategorie inkl. Unterkategorien (eine Ebene) für Nav-Erweiterung. */
 export async function listActiveCategoryTreeForNav() {
   return getPrisma().category.findMany({
     where: {
       isActive: true,
       parentId: null,
       OR: [
-        { products: { some: activeProductOnCategory } },
+        activeViaCollections,
         {
           children: {
             some: {
               isActive: true,
-              products: { some: activeProductOnCategory },
+              ...activeViaCollections,
             },
           },
         },
@@ -114,7 +137,7 @@ export async function listActiveCategoryTreeForNav() {
       children: {
         where: {
           isActive: true,
-          products: { some: activeProductOnCategory },
+          ...activeViaCollections,
         },
         orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
         select: {
@@ -124,14 +147,18 @@ export async function listActiveCategoryTreeForNav() {
           description: true,
           _count: {
             select: {
-              products: { where: activeProductOnCategory },
+              collections: {
+                where: { collection: activeProductInLinkedCollection },
+              },
             },
           },
         },
       },
       _count: {
         select: {
-          products: { where: activeProductOnCategory },
+          collections: {
+            where: { collection: activeProductInLinkedCollection },
+          },
         },
       },
     },
@@ -140,10 +167,10 @@ export async function listActiveCategoryTreeForNav() {
 
 /** Aktive Kategorien mit mindestens einem sichtbaren Produkt (Storefront-Index). */
 export async function listActiveCategoriesForStorefrontIndex() {
-  return getPrisma().category.findMany({
+  const rows = await getPrisma().category.findMany({
     where: {
       isActive: true,
-      products: { some: activeProductOnCategory },
+      ...activeViaCollections,
     },
     orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
     select: {
@@ -153,16 +180,37 @@ export async function listActiveCategoriesForStorefrontIndex() {
       description: true,
       parentId: true,
       parent: { select: { title: true, slug: true } },
-      _count: {
+      collections: {
+        where: { collection: { isActive: true } },
         select: {
-          products: { where: activeProductOnCategory },
+          collection: {
+            select: {
+              products: {
+                where: { product: { isActive: true } },
+                select: { productId: true },
+              },
+            },
+          },
         },
       },
     },
   });
+
+  return rows.map((c) => {
+    const ids = new Set<string>();
+    for (const link of c.collections) {
+      for (const p of link.collection.products) ids.add(p.productId);
+    }
+    const { collections, ...rest } = c;
+    void collections;
+    return {
+      ...rest,
+      productCount: ids.size,
+    };
+  });
 }
 
-/** Produkte einer aktiven Kategorie (Storefront-Karten), per Slug. */
+/** Produkte einer aktiven Kategorie (über verknüpfte Kollektionen), per Slug. */
 export async function listActiveProductsByCategorySlug(slug: string) {
   const category = await getPrisma().category.findFirst({
     where: { slug, isActive: true },
@@ -174,13 +222,21 @@ export async function listActiveProductsByCategorySlug(slug: string) {
       parent: {
         select: { slug: true, title: true },
       },
-      products: {
-        where: activeProductOnCategory,
-        orderBy: [{ product: { sortOrder: "asc" } }, { product: { title: "asc" } }],
+      collections: {
+        where: { collection: { isActive: true } },
+        orderBy: [{ sortOrder: "asc" }, { collection: { sortOrder: "asc" } }],
         select: {
-          isPrimary: true,
-          product: {
-            select: storefrontProductCardSelect,
+          collection: {
+            select: {
+              products: {
+                where: { product: { isActive: true } },
+                orderBy: [{ sortOrder: "asc" }, { product: { title: "asc" } }],
+                select: {
+                  sortOrder: true,
+                  product: { select: storefrontProductCardSelect },
+                },
+              },
+            },
           },
         },
       },
@@ -189,8 +245,23 @@ export async function listActiveProductsByCategorySlug(slug: string) {
 
   if (!category) return null;
 
+  const seen = new Set<string>();
+  const products: Array<(typeof category.collections)[number]["collection"]["products"][number]["product"]> =
+    [];
+  for (const link of category.collections) {
+    for (const row of link.collection.products) {
+      if (seen.has(row.product.id)) continue;
+      seen.add(row.product.id);
+      products.push(row.product);
+    }
+  }
+
   return {
-    ...category,
-    products: category.products.map((row) => row.product),
+    id: category.id,
+    slug: category.slug,
+    title: category.title,
+    description: category.description,
+    parent: category.parent,
+    products,
   };
 }

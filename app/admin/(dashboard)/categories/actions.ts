@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getAdminSession } from "@/lib/auth/admin-session";
-import { replaceCategoryProductMemberships } from "@/lib/catalog/category-membership";
+import { replaceCategoryCollectionMemberships } from "@/lib/catalog/category-membership";
 import { categoryUpsertSchema } from "@/lib/catalog/category-schemas";
 import { getPrisma } from "@/lib/db/prisma";
 
@@ -35,6 +35,7 @@ function isUniqueConstraintError(e: unknown): boolean {
 function revalidateCategoryPaths(slug: string) {
   revalidatePath("/admin/categories");
   revalidatePath(`/kategorien/${slug}`);
+  revalidatePath("/kategorien");
 }
 
 async function validateParentId(
@@ -79,8 +80,7 @@ export async function saveCategory(
     sortOrder: formData.get("sortOrder") ?? 0,
     isActive: formData.get("isActive") ?? undefined,
     parentId: formData.get("parentId"),
-    productIds: formData.getAll("productIds"),
-    primaryProductId: formData.get("primaryProductId"),
+    collectionIds: formData.getAll("collectionIds"),
   });
   if (!parsed.success) {
     return { fieldErrors: fieldErrorsFromZod(parsed.error) };
@@ -100,22 +100,12 @@ export async function saveCategory(
     return { fieldErrors: { parentId: parentError } };
   }
 
-  if (d.primaryProductId && !d.productIds.includes(d.primaryProductId)) {
-    return {
-      fieldErrors: {
-        primaryProductId: "Primary-Produkt muss in der Produktliste ausgewählt sein.",
-      },
-    };
-  }
-
-  const existingProducts = await getPrisma().product.findMany({
-    where: { id: { in: d.productIds } },
+  const existingCollections = await getPrisma().collection.findMany({
+    where: { id: { in: d.collectionIds } },
     select: { id: true },
   });
-  const validProductIds = new Set(existingProducts.map((p) => p.id));
-  const productIds = d.productIds.filter((id) => validProductIds.has(id));
-  const primaryProductId =
-    d.primaryProductId && productIds.includes(d.primaryProductId) ? d.primaryProductId : null;
+  const validCollectionIds = new Set(existingCollections.map((c) => c.id));
+  const collectionIds = d.collectionIds.filter((id) => validCollectionIds.has(id));
 
   try {
     if (d.id) {
@@ -139,14 +129,14 @@ export async function saveCategory(
             parentId: d.parentId,
           },
         });
-        await replaceCategoryProductMemberships(tx, d.id!, productIds, primaryProductId);
+        await replaceCategoryCollectionMemberships(tx, d.id!, collectionIds);
       });
 
       revalidateCategoryPaths(d.slug);
       if (prev.slug !== d.slug) {
         revalidatePath(`/kategorien/${prev.slug}`);
       }
-      revalidatePath("/admin/products");
+      revalidatePath("/admin/collections");
       return { ok: true };
     }
 
@@ -161,12 +151,12 @@ export async function saveCategory(
           parentId: d.parentId,
         },
       });
-      await replaceCategoryProductMemberships(tx, cat.id, productIds, primaryProductId);
+      await replaceCategoryCollectionMemberships(tx, cat.id, collectionIds);
       return cat;
     });
 
     revalidateCategoryPaths(created.slug);
-    revalidatePath("/admin/products");
+    revalidatePath("/admin/collections");
     redirect(`/admin/categories/${created.id}/edit`);
   } catch (e) {
     if (isUniqueConstraintError(e)) {

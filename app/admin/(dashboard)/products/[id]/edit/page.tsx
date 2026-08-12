@@ -3,9 +3,9 @@ import { ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
 import { EditProductForm } from "@/app/admin/(dashboard)/products/[id]/edit/edit-product-form";
 import { ProductLifecycleControls } from "@/app/admin/(dashboard)/products/[id]/edit/product-lifecycle-controls";
+import { getAiContentSettingsPublic } from "@/features/integrations";
 import { adminProductForEditForm } from "@/lib/catalog/admin-product-form";
 import { getProductByIdForAdmin, listManufacturersForAdmin } from "@/lib/catalog/queries";
-import { listCategoriesForProductPicker } from "@/lib/catalog/category-queries";
 
 export const dynamic = "force-dynamic";
 
@@ -27,20 +27,13 @@ export default async function AdminEditProductPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [product, manufacturers, categoryRows] = await Promise.all([
+  const [product, manufacturers, aiSettings] = await Promise.all([
     getProductByIdForAdmin(id),
     listManufacturersForAdmin(),
-    listCategoriesForProductPicker(),
+    getAiContentSettingsPublic(),
   ]);
   if (!product) notFound();
   const formProduct = adminProductForEditForm(product);
-  const categories = categoryRows.map((c) => ({
-    id: c.id,
-    title: c.title,
-    slug: c.slug,
-    isActive: c.isActive,
-    parentTitle: c.parent?.title ?? null,
-  }));
 
   return (
     <div className="mx-auto max-w-4xl rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm sm:p-8">
@@ -72,8 +65,13 @@ export default async function AdminEditProductPage({
           </span>
         )}
       </div>
-      <div className="mt-8 space-y-8">
-        <EditProductForm product={formProduct} manufacturers={manufacturers} categories={categories} />
+      {/* pb-28: Platz für den sticky AdminFormActionDock — Lifecycle nicht verdecken */}
+      <div className="mt-8 flex flex-col gap-8 pb-28">
+        <EditProductForm
+          product={formProduct}
+          manufacturers={manufacturers}
+          aiReady={aiSettings.ready}
+        />
         <ProductLifecycleControls
           productId={product.id}
           isActive={product.isActive}

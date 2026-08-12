@@ -33,8 +33,10 @@ function isUniqueConstraintError(e: unknown): boolean {
 
 function revalidateCollectionPaths(slug: string) {
   revalidatePath("/admin/collections");
+  revalidatePath("/admin/categories");
   revalidatePath("/kollektionen");
   revalidatePath(`/kollektionen/${slug}`);
+  revalidatePath("/kategorien");
   revalidatePath("/produkte");
 }
 

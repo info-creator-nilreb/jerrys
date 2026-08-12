@@ -35,7 +35,7 @@ describe("listActiveProductsByCategorySlug (Integration, gemockte DB)", () => {
       title: "Leer",
       description: null,
       parent: null,
-      products: [],
+      collections: [],
     });
     const { listActiveProductsByCategorySlug } = await import(
       "@/lib/catalog/category-queries"
@@ -44,17 +44,28 @@ describe("listActiveProductsByCategorySlug (Integration, gemockte DB)", () => {
     expect(row?.products).toEqual([]);
   });
 
-  it("mappt aktive Produkte aus der Zuordnung", async () => {
+  it("mappt und dedupliziert aktive Produkte aus verknüpften Kollektionen", async () => {
     findFirstMock.mockResolvedValue({
       id: "c1",
       slug: "katzen",
       title: "Katzen",
       description: "…",
       parent: null,
-      products: [
+      collections: [
         {
-          isPrimary: true,
-          product: { id: "p1", slug: "design-katzenhoehle", title: "Höhle" },
+          collection: {
+            products: [
+              { sortOrder: 0, product: { id: "p1", slug: "design-katzenhoehle", title: "Höhle" } },
+              { sortOrder: 1, product: { id: "p2", slug: "napf", title: "Napf" } },
+            ],
+          },
+        },
+        {
+          collection: {
+            products: [
+              { sortOrder: 0, product: { id: "p1", slug: "design-katzenhoehle", title: "Höhle" } },
+            ],
+          },
         },
       ],
     });
@@ -64,6 +75,7 @@ describe("listActiveProductsByCategorySlug (Integration, gemockte DB)", () => {
     const row = await listActiveProductsByCategorySlug("katzen");
     expect(row?.products).toEqual([
       { id: "p1", slug: "design-katzenhoehle", title: "Höhle" },
+      { id: "p2", slug: "napf", title: "Napf" },
     ]);
   });
 });

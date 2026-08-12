@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -7,7 +8,8 @@ import {
   type ProductFormState,
 } from "@/app/admin/(dashboard)/products/actions";
 import { ProductAttributesFields } from "@/app/admin/(dashboard)/products/product-attributes-fields";
-import { ProductCategoriesFields } from "@/app/admin/(dashboard)/products/product-categories-fields";
+import { ProductAiTextAssistant } from "@/app/admin/(dashboard)/products/product-ai-text-assistant";
+import { ProductAiImageAssistant } from "@/app/admin/(dashboard)/products/product-ai-image-assistant";
 import { ProductDeliveryFields } from "@/app/admin/(dashboard)/products/product-delivery-fields";
 import { ProductGeneralFields } from "@/app/admin/(dashboard)/products/product-general-fields";
 import { ProductPricesSection } from "@/app/admin/(dashboard)/products/product-prices-section";
@@ -79,8 +81,7 @@ type Product = {
     availableQuantity: number;
     stockQuantity: number;
   }[];
-  categoryIds: string[];
-  primaryCategoryId: string | null;
+  collectionTitles: string[];
 };
 
 const initialState: ProductFormState = null;
@@ -91,21 +92,23 @@ const saveBtnClass =
 export function EditProductForm({
   product,
   manufacturers,
-  categories,
+  aiReady = false,
 }: {
   product: Product;
   manufacturers: Manufacturer[];
-  categories: {
-    id: string;
-    title: string;
-    slug: string;
-    isActive: boolean;
-    parentTitle: string | null;
-  }[];
+  aiReady?: boolean;
 }) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(updateProduct, initialState);
   const [savedFlash, setSavedFlash] = useState(false);
+  const [descriptionHtml, setDescriptionHtml] = useState(() =>
+    plainDescriptionToHtml(product.description),
+  );
+  const [descriptionKey, setDescriptionKey] = useState(0);
+  const [leadText, setLeadText] = useState(product.leadText ?? "");
+  const [leadTextKey, setLeadTextKey] = useState(0);
+  const [featureBullets, setFeatureBullets] = useState(product.featureBullets.join("\n"));
+  const [featureBulletsKey, setFeatureBulletsKey] = useState(0);
 
   useEffect(() => {
     if (!state?.ok) return;
@@ -120,11 +123,36 @@ export function EditProductForm({
     };
   }, [state?.ok, router]);
 
-  const descHtml = plainDescriptionToHtml(product.description);
+  const defaultSku =
+    product.variants.find((v) => v.isDefault)?.sku ?? product.variants[0]?.sku ?? null;
 
   return (
-    <div className="flex max-w-4xl flex-col gap-8 pb-28">
-      <form action={formAction} className="flex flex-col gap-8">
+    <div className="flex max-w-4xl flex-col gap-8">
+      <ProductAiTextAssistant
+        aiReady={aiReady}
+        categoryNames={product.collectionTitles}
+        defaultSku={defaultSku}
+        onApply={(target, value) => {
+          if (target === "descriptionHtml") {
+            setDescriptionHtml(value);
+            setDescriptionKey((k) => k + 1);
+            return;
+          }
+          if (target === "leadText") {
+            setLeadText(value.slice(0, 500));
+            setLeadTextKey((k) => k + 1);
+            return;
+          }
+          setFeatureBullets(value);
+          setFeatureBulletsKey((k) => k + 1);
+        }}
+      />
+
+      <form
+        id="admin-product-edit-form"
+        action={formAction}
+        className="flex flex-col gap-8"
+      >
         <input type="hidden" name="id" value={product.id} />
 
         <ProductGeneralFields
@@ -134,7 +162,8 @@ export function EditProductForm({
             title: product.title,
             slug: product.slug,
             subtitle: product.subtitle ?? "",
-            descriptionHtml: descHtml,
+            descriptionHtml,
+            descriptionKey,
             manufacturerId: product.manufacturerId,
             productNumber: product.productNumber,
             amazonRatingAverage:
@@ -153,11 +182,13 @@ export function EditProductForm({
             categoryTag: product.categoryTag ?? "",
             isBestseller: product.isBestseller,
             showWorkshopCalendar: product.showWorkshopCalendar,
-            leadText: product.leadText ?? "",
+            leadText,
+            leadTextKey,
             dimensionsText: product.dimensionsText ?? "",
             weightText: product.weightText ?? "",
             materialText: product.materialText ?? "",
-            featureBullets: product.featureBullets.join("\n"),
+            featureBullets,
+            featureBulletsKey,
           }}
         />
 
@@ -166,14 +197,24 @@ export function EditProductForm({
           defaults={product.attributes ?? []}
         />
 
-        <ProductCategoriesFields
-          categories={categories}
-          defaults={{
-            categoryIds: product.categoryIds,
-            primaryCategoryId: product.primaryCategoryId,
-          }}
-          fieldErrors={state?.fieldErrors}
-        />
+        <section className="rounded-lg border border-[#e8eaed] bg-[#fafbfc] p-4">
+          <h2 className="text-sm font-semibold text-[#374151]">Kategorien &amp; Kollektionen</h2>
+          <p className="mt-1 text-xs text-[#6b7280]">
+            Produkte werden in{" "}
+            <Link href="/admin/collections" className="font-medium text-primary hover:underline">
+              Kollektionen
+            </Link>{" "}
+            zugeordnet. Kategorien in der Shop-Navigation binden diese Kollektionen — nicht einzelne
+            Produkte.
+          </p>
+          {product.collectionTitles.length > 0 ? (
+            <p className="mt-3 text-sm text-[#374151]">
+              Aktuell in: {product.collectionTitles.join(", ")}
+            </p>
+          ) : (
+            <p className="mt-3 text-sm text-[#9ca3af]">Noch keiner Kollektion zugeordnet.</p>
+          )}
+        </section>
 
         <ProductPricesSection
           defaultTaxPercent={product.taxRatePercent}
@@ -243,6 +284,18 @@ export function EditProductForm({
       />
 
       <ProductMediaSection productId={product.id} images={product.images} />
+
+      <ProductAiImageAssistant
+        productId={product.id}
+        productTitle={product.title}
+        materialText={product.materialText}
+        aiReady={aiReady}
+        existingImages={product.images.map((img) => ({
+          id: img.id,
+          url: img.url,
+          alt: img.alt,
+        }))}
+      />
     </div>
   );
 }

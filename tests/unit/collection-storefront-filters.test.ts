@@ -128,15 +128,27 @@ describe("filterProductsByPriceEuroRange", () => {
 });
 
 describe("filterProductsByPrimaryCategorySlug", () => {
-  it("filters by primary category slug", () => {
+  it("filters by primary category slug derived from collections", () => {
     const products = [
       mapProductWithPrimaryCategory({
         ...card({ id: "a", title: "A" }),
-        categoryMemberships: [{ category: { slug: "x", title: "X" } }],
+        collectionMemberships: [
+          {
+            collection: {
+              categoryLinks: [{ category: { slug: "x", title: "X", sortOrder: 0, parentId: null } }],
+            },
+          },
+        ],
       }),
       mapProductWithPrimaryCategory({
         ...card({ id: "b", title: "B" }),
-        categoryMemberships: [{ category: { slug: "y", title: "Y" } }],
+        collectionMemberships: [
+          {
+            collection: {
+              categoryLinks: [{ category: { slug: "y", title: "Y", sortOrder: 0, parentId: null } }],
+            },
+          },
+        ],
       }),
     ];
     const out = filterProductsByPrimaryCategorySlug(products, "y");

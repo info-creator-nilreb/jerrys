@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CategoryForm } from "@/app/admin/(dashboard)/categories/category-form";
 import {
-  listProductsForCategoryPicker,
+  listCollectionsForCategoryPicker,
   listRootCategoriesForParentPicker,
 } from "@/lib/catalog/category-queries";
 
@@ -12,8 +12,8 @@ export const metadata = {
 };
 
 export default async function AdminNewCategoryPage() {
-  const [products, parentOptions] = await Promise.all([
-    listProductsForCategoryPicker(),
+  const [collections, parentOptions] = await Promise.all([
+    listCollectionsForCategoryPicker(),
     listRootCategoriesForParentPicker(),
   ]);
 
@@ -26,7 +26,7 @@ export default async function AdminNewCategoryPage() {
         <h1 className="mt-4 text-xl font-semibold text-[#1f2937] sm:text-2xl">Neue Kategorie</h1>
       </div>
       <CategoryForm
-        products={products}
+        collections={collections}
         parentOptions={parentOptions}
         submitLabel="Kategorie anlegen"
       />
