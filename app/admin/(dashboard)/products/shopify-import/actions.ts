@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth/admin-session";
-import { importShopifyProductsFromCsv } from "@/features/catalog";
+import { importShopifyProductsFromCsv } from "@/features/catalog/server";
 import { DELIVERY_TIME_OPTIONS, type DeliveryTimeKey } from "@/lib/catalog/delivery-options";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 import {

@@ -11,8 +11,8 @@ import { getAdminSession } from "@/lib/auth/admin-session";
 import {
   attributesFromFormData,
   reconcileAttributesAndFeatureBullets,
-  syncDefaultVariantFromProduct,
 } from "@/features/catalog";
+import { syncDefaultVariantFromProduct } from "@/features/catalog/server";
 import { parseEuroInputToCents } from "@/lib/catalog/format";
 import {
   createProductFormSchema,
