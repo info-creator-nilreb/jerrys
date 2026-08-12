@@ -3,10 +3,6 @@ import {
   createShipmentDraftForOrder,
   type CreateShipmentDraftResult,
 } from "@/features/fulfillment/application/create-shipment-draft-for-order";
-import {
-  createOrderEvent,
-  ORDER_EVENT_SHIPMENT_RESHIP_DRAFT,
-} from "@/lib/orders/order-events";
 
 export type CreateReshipmentDraftResult =
   | Extract<CreateShipmentDraftResult, { ok: true }>
@@ -27,6 +23,7 @@ export type CreateReshipmentDraftResult =
  * Admin-Reship nach Retoure: neuer Shipment-Draft mit `forceNew: true`.
  * Voraussetzung: Bestellung ist Retoure / Fulfillment returned / mind. eine
  * returned|voided Sendung — sonst kein Reship-Kontext.
+ * Audit (`shipment.reship_draft`) schreibt der Admin-Action-Layer.
  */
 export async function createReshipmentDraftForOrder(
   prisma: PrismaClient,
@@ -63,15 +60,5 @@ export async function createReshipmentDraftForOrder(
     };
   }
 
-  const draft = await createShipmentDraftForOrder(prisma, orderId, { forceNew: true });
-  if (!draft.ok) return draft;
-
-  if (draft.created) {
-    await createOrderEvent(prisma, orderId, ORDER_EVENT_SHIPMENT_RESHIP_DRAFT, {
-      shipmentId: draft.shipment.id,
-      reusedExisting: false,
-    });
-  }
-
-  return draft;
+  return createShipmentDraftForOrder(prisma, orderId, { forceNew: true });
 }
