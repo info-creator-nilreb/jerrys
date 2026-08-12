@@ -7,7 +7,7 @@ import {
   deleteCategories,
   setCategoriesActive,
   type CatalogGroupLifecycleResult,
-} from "@/features/catalog";
+} from "@/features/catalog/server";
 import { getPrisma } from "@/lib/db/prisma";
 
 async function requireAdmin(): Promise<void> {
