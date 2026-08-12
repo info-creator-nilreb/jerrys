@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   deleteZettleMappingAction,
@@ -89,7 +89,6 @@ function statusLabel(status: string): string {
 
 export function ZettleSettingsPanel(props: Props) {
   const router = useRouter();
-  const [products, setProducts] = useState<ZettleProductOption[]>([]);
   const [saveState, saveAction, savePending] = useActionState(
     saveZettleApiKeyAction,
     null as ZettleAdminActionState,
@@ -126,12 +125,6 @@ export function ZettleSettingsPanel(props: Props) {
     disconnectZettleAction,
     null as ZettleAdminActionState,
   );
-
-  useEffect(() => {
-    if (loadState?.products?.length) {
-      setProducts(loadState.products);
-    }
-  }, [loadState?.products]);
 
   useEffect(() => {
     if (
@@ -178,6 +171,7 @@ export function ZettleSettingsPanel(props: Props) {
     disconnectState?.message;
 
   const variantOptions = useMemo(() => {
+    const products: ZettleProductOption[] = loadState?.products ?? [];
     const opts: Array<{ value: string; label: string }> = [];
     for (const p of products) {
       for (const v of p.variants) {
@@ -190,7 +184,7 @@ export function ZettleSettingsPanel(props: Props) {
       }
     }
     return opts;
-  }, [products]);
+  }, [loadState?.products]);
 
   const mappedCount = props.mappings.filter((m) => m.zettleVariantUuid).length;
   const failedSyncs = props.recentSyncs.filter((s) => s.status === "failed").length;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   purchaseInternetmarkeLabelForOrderAction,
@@ -132,12 +133,12 @@ export function OrderInternetmarkePanel({
       {!configured ? (
         <p className="text-sm text-[#6b7280]">
           Nicht konfiguriert. Unter{" "}
-          <a
+          <Link
             href="/admin/einstellungen/integrationen"
             className="font-medium text-primary hover:underline"
           >
             Admin → Einstellungen → Integrationen
-          </a>{" "}
+          </Link>{" "}
           verbinden und ein Porto-Produkt aus der DHL-Liste wählen. Manueller Versand bleibt möglich.
         </p>
       ) : null}

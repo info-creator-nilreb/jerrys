@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   disconnectInternetmarkeAction,
@@ -52,7 +52,6 @@ function formatEuro(cents: number): string {
 
 export function InternetmarkeSettingsPanel(props: Props) {
   const router = useRouter();
-  const [products, setProducts] = useState<ProductOption[]>([]);
   const [saveState, saveAction, savePending] = useActionState(
     saveInternetmarkeCredentialsAction,
     null as InternetmarkeAdminActionState,
@@ -70,11 +69,7 @@ export function InternetmarkeSettingsPanel(props: Props) {
     null as InternetmarkeAdminActionState,
   );
 
-  useEffect(() => {
-    if (loadState?.products?.length) {
-      setProducts(loadState.products);
-    }
-  }, [loadState?.products]);
+  const products: ProductOption[] = loadState?.products ?? [];
 
   useEffect(() => {
     if (saveState?.ok || selectState?.ok || disconnectState?.ok) {

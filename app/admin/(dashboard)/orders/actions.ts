@@ -411,7 +411,7 @@ export async function purchaseInternetmarkeLabelForOrderAction(
   }
 
   const config = await resolveInternetmarkeConfig();
-  let productCode = config?.productCode;
+  const productCode = config?.productCode;
   let totalCents = config?.productPriceCents;
   if (config?.clientId && productCode != null) {
     const livePrice = await findInternetmarkeProductPriceCents(config.clientId, productCode);
