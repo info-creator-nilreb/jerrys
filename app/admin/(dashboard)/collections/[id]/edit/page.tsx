@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CollectionForm } from "@/app/admin/(dashboard)/collections/collection-form";
+import { CollectionLifecycleControls } from "@/app/admin/(dashboard)/collections/[id]/edit/collection-lifecycle-controls";
 import {
   getCollectionByIdForAdmin,
   listProductsForCollectionPicker,
@@ -42,19 +43,26 @@ export default async function AdminEditCollectionPage({ params }: { params: Prom
           </Link>
         ) : null}
       </div>
-      <CollectionForm
-        products={products}
-        submitLabel="Speichern"
-        collection={{
-          id: collection.id,
-          title: collection.title,
-          slug: collection.slug,
-          description: collection.description,
-          sortOrder: collection.sortOrder,
-          isActive: collection.isActive,
-          productIds: collection.products.map((p) => p.productId),
-        }}
-      />
+      <div className="mt-8 flex flex-col gap-8 pb-28">
+        <CollectionForm
+          products={products}
+          submitLabel="Speichern"
+          collection={{
+            id: collection.id,
+            title: collection.title,
+            slug: collection.slug,
+            description: collection.description,
+            sortOrder: collection.sortOrder,
+            isActive: collection.isActive,
+            productIds: collection.products.map((p) => p.productId),
+          }}
+        />
+        <CollectionLifecycleControls
+          collectionId={collection.id}
+          isActive={collection.isActive}
+          title={collection.title}
+        />
+      </div>
     </div>
   );
 }
