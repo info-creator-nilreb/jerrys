@@ -13,7 +13,11 @@ export type TransactionalEmailBranding = {
   shopName: string;
   primary: string;
   primaryStrong: string;
-  /** Absolute Logo-URL oder null → Textmarke im Layout. */
+  /**
+   * Absolute http(s)-URL des hellen Logos aus Shop-Einstellungen
+   * (Gmail/Outlook brauchen öffentliche absolute URLs, kein localhost).
+   * null → Textmarke im Layout.
+   */
   logoAbsoluteUrl: string | null;
   instagramUrl: string | null;
   footerIdentityLine: string;
@@ -32,17 +36,34 @@ function footerIdentityFromSettings(settings: ShopSettingsDTO): string {
   return parts.join(" · ");
 }
 
+/**
+ * Logo für E-Mail-Clients: zuerst hochgeladenes Settings-Logo (https),
+ * sonst Fallback unter `/branding/…` absolut über die öffentliche Site-URL.
+ */
+export function resolveEmailLogoAbsoluteUrl(settings: ShopSettingsDTO): string | null {
+  const uploaded = settings.logoLightUrl?.trim() || null;
+  if (uploaded) {
+    if (/^https:\/\//i.test(uploaded)) return uploaded;
+    // Manche Storage-URLs kommen als http — Clients blocken Mixed Content oft.
+    if (/^http:\/\//i.test(uploaded)) return uploaded.replace(/^http:\/\//i, "https://");
+    if (uploaded.startsWith("/")) {
+      return absoluteUrlForEmail(uploaded);
+    }
+  }
+  const fallbackPath = resolveShopBrandingAssetUrl(settings, "logoLight");
+  return absoluteUrlForEmail(fallbackPath);
+}
+
 export function transactionalEmailBrandingFromSettings(
   settings: ShopSettingsDTO,
 ): TransactionalEmailBranding {
   const shopName = settings.shopName || JERRYS_SHOP_SETTINGS_DEFAULTS.shopName;
-  const logoPathOrUrl = resolveShopBrandingAssetUrl(settings, "logoLight");
   return {
     shopName,
     primary: settings.primaryColor || JERRYS_SHOP_SETTINGS_DEFAULTS.primaryColor,
     primaryStrong:
       settings.primaryHoverColor || JERRYS_SHOP_SETTINGS_DEFAULTS.primaryHoverColor,
-    logoAbsoluteUrl: absoluteUrlForEmail(logoPathOrUrl),
+    logoAbsoluteUrl: resolveEmailLogoAbsoluteUrl(settings),
     instagramUrl: settings.instagramUrl?.trim() || null,
     footerIdentityLine: footerIdentityFromSettings(settings),
     emailFromName:

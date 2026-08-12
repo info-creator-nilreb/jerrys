@@ -1,4 +1,3 @@
-import { formatPrice } from "@/lib/catalog/format";
 import { getPrisma } from "@/lib/db/prisma";
 import { EMAIL_ORDER_SHIPPED } from "@/lib/email/email-types";
 import {
@@ -12,12 +11,14 @@ import {
 } from "@/lib/email/order-email-line-items";
 import { sendTransactionalEmail } from "@/lib/email/provider";
 import {
-  buildOrderItemsTableHtml,
-  grayInfoCard,
-  TRANSACTIONAL_EMAIL_DESIGN,
-  wrapTransactionalEmailHtml,
-} from "@/lib/email/transactional-email-layout";
-import { escapeHtmlForEmail, publicSiteBaseUrl } from "@/lib/email/template-utils";
+  orderItemsHtml,
+  orderItemsText,
+  orderNumberCardHtml,
+  shippingDetailsHtml,
+} from "@/lib/email/templates/order-fragments";
+import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
+import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
+import { publicSiteBaseUrl } from "@/lib/email/template-utils";
 import { buildInvoicePdfBuffer } from "@/lib/invoice/build-invoice-pdf";
 import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
 import { buildCarrierTrackingUrl, shippingCarrierLabel } from "@/lib/shipping/carrier-tracking";
@@ -55,7 +56,7 @@ export async function sendOrderShippedIfNeeded(
         contentType: "application/pdf",
       };
     } catch {
-      // PDF optional — Mail ohne Anhang, Fehler nur implizit über fehlenden Anhang
+      // PDF optional — Mail ohne Anhang
     }
   }
 
@@ -73,81 +74,52 @@ export async function sendOrderShippedIfNeeded(
       ? `${shippingCarrierLabel(order.shippingCarrier)} · ${order.trackingNumber.trim()}`
       : null;
 
-  const lines = order.items
-    .map(
-      (i) =>
-        `- ${i.productTitleSnapshot} × ${i.quantity}: ${formatPrice(i.lineTotalGrossCents, i.currency)}`,
-    )
-    .join("\n");
+  const lineItems = orderItemsToEmailLineItems(order.items);
 
-  const subject = `Deine Bestellung ${order.orderNumber} wurde versendet`;
-  const textParts = [
-    `Hallo ${order.shippingFirstName},`,
-    "",
-    "gute Neuigkeiten: deine Bestellung wurde versendet und ist auf dem Weg zu dir.",
-    "",
-    `Bestellnummer: ${order.orderNumber}`,
-  ];
-  if (carrierLine) {
-    textParts.push("", "Versand:", carrierLine);
-  }
-  if (trackUrl) {
-    textParts.push("", `Sendung verfolgen: ${trackUrl}`);
-  }
-  if (order.invoiceNumber) {
-    textParts.push("", `Rechnungsnummer: ${order.invoiceNumber}`);
-  }
-  textParts.push(
-    "",
-    "Positionen:",
-    lines,
-    "",
-    `Zur Bestellung: ${successUrl}`,
-    "",
-    "Liebe Grüße",
-    branding.shopName,
-  );
-  const text = textParts.join("\n");
-
-  const { textMuted, divider } = TRANSACTIONAL_EMAIL_DESIGN;
-  const orderNumCard = grayInfoCard(
-    `<strong style="font-size:13px;letter-spacing:0.02em;color:${textMuted}">Bestellnummer</strong><br/><span style="font-size:17px;font-weight:700;color:#1f2937">#${escapeHtmlForEmail(order.orderNumber)}</span>`,
+  const vars = mergeTemplateVars(
+    buildShopTemplateVars(branding, {
+      cta: { href: successUrl, label: "Zur Bestellung" },
+      heroVariant: "shipping",
+    }),
+    {
+      customer: { first_name: order.shippingFirstName },
+      order: {
+        number: order.orderNumber,
+        carrier_line: carrierLine ?? "",
+        tracking_url: trackUrl ?? "",
+        invoice_number: order.invoiceNumber ?? "",
+        invoice_note: pdfAttachment ? " (PDF angehängt)" : "",
+        number_card_html: orderNumberCardHtml(order.orderNumber),
+        items_html: orderItemsHtml(lineItems),
+        shipping_details_html: shippingDetailsHtml({
+          carrierLine,
+          trackUrl,
+          invoiceNumber: order.invoiceNumber,
+          invoiceAttached: Boolean(pdfAttachment),
+          primaryColor: branding.primary,
+        }),
+        items_text: orderItemsText(
+          order.items.map((i) => ({
+            productTitleSnapshot: i.productTitleSnapshot,
+            quantity: i.quantity,
+            lineTotalGrossCents: i.lineTotalGrossCents,
+            currency: i.currency,
+          })),
+        ),
+      },
+    },
   );
 
-  const itemsHtml = buildOrderItemsTableHtml(orderItemsToEmailLineItems(order.items), formatPrice);
-
-  let shipHtml = "";
-  if (carrierLine) {
-    shipHtml += `<p style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1f2937"><strong>Versand:</strong> ${escapeHtmlForEmail(carrierLine)}</p>`;
-  }
-  if (trackUrl) {
-    shipHtml += `<p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1f2937"><a href="${escapeHtmlForEmail(trackUrl)}" style="color:${branding.primary};font-weight:600">Sendung verfolgen</a></p>`;
-  }
-  if (order.invoiceNumber) {
-    shipHtml += `<p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:${textMuted}">Rechnungsnummer: ${escapeHtmlForEmail(order.invoiceNumber)}${pdfAttachment ? " (PDF angehängt)" : ""}</p>`;
-  }
-
-  const hintHtml = `<p style="margin:16px 0 0;padding-top:14px;border-top:1px solid ${divider};font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:${textMuted}">Rückfragen über die Kontaktdaten im Impressum.</p>`;
-
-  const bodyHtml = `${orderNumCard}${itemsHtml}${shipHtml}${hintHtml}`;
-
-  const html = wrapTransactionalEmailHtml({
-    variant: "shipping",
-    documentTitle: subject,
-    heading: "Deine Bestellung ist unterwegs!",
-    intro: "Gute Neuigkeiten: deine Bestellung wurde versendet und ist jetzt auf dem Weg zu dir.",
-    bodyHtml,
-    cta: { href: successUrl, label: "Zur Bestellung" },
-    branding,
-  });
+  const rendered = await renderStoredEmailTemplate("order_shipped", vars);
+  if (!rendered.enabled && !options?.force) return;
 
   let result: Awaited<ReturnType<typeof sendTransactionalEmail>>;
   try {
     result = await sendTransactionalEmail({
       to: order.email,
-      subject,
-      text,
-      html,
+      subject: rendered.subject,
+      text: rendered.text,
+      html: rendered.html,
       attachments: pdfAttachment ? [pdfAttachment] : undefined,
     });
   } catch (e) {

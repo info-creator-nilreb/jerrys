@@ -21,11 +21,15 @@ const VERIFY_EMAIL_MISSING_SITE_URL_MESSAGE =
 const VERIFY_EMAIL_NOT_CONFIGURED_MESSAGE =
   "E-Mail-Versand ist derzeit nicht eingerichtet. Bitte wende dich an den Shop-Betreiber.";
 
+const VERIFY_EMAIL_DISABLED_MESSAGE =
+  "Die Bestätigungs-E-Mail ist derzeit deaktiviert. Bitte wende dich an den Shop-Betreiber.";
+
 function messageForVerifyEmailSendFailure(
-  reason: "missing_site_url" | "provider_unconfigured" | "provider_error",
+  reason: "missing_site_url" | "provider_unconfigured" | "provider_error" | "disabled",
 ): string {
   if (reason === "provider_unconfigured") return VERIFY_EMAIL_NOT_CONFIGURED_MESSAGE;
   if (reason === "missing_site_url") return VERIFY_EMAIL_MISSING_SITE_URL_MESSAGE;
+  if (reason === "disabled") return VERIFY_EMAIL_DISABLED_MESSAGE;
   return VERIFY_EMAIL_SEND_FAILED_MESSAGE;
 }
 
@@ -123,7 +127,7 @@ async function issueAndSendToken(params: {
   | { ok: true }
   | {
       ok: false;
-      reason: "missing_site_url" | "provider_unconfigured" | "provider_error";
+      reason: "missing_site_url" | "provider_unconfigured" | "provider_error" | "disabled";
     }
 > {
   const prisma = getPrisma();
