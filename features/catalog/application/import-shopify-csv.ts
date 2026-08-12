@@ -121,20 +121,33 @@ async function resolveImagesForProduct(
   mirrorImages: boolean,
 ): Promise<{ url: string; alt: string; sortOrder: number; isCover: boolean }[]> {
   const out: { url: string; alt: string; sortOrder: number; isCover: boolean }[] = [];
-  const mirrorMod = mirrorImages
-    ? await import("@/features/catalog/application/mirror-remote-product-image")
-    : null;
+  let mirrorMod: typeof import("@/features/catalog/application/mirror-remote-product-image") | null =
+    null;
+  if (mirrorImages) {
+    try {
+      mirrorMod = await import("@/features/catalog/application/mirror-remote-product-image");
+    } catch {
+      draft.warnings.push(
+        "Bild-Spiegel-Modul nicht ladbar — Shopify-URLs werden übernommen.",
+      );
+      mirrorMod = null;
+    }
+  }
 
   for (const img of draft.images) {
     let url = img.url;
     if (mirrorMod && /^https?:\/\//i.test(img.url)) {
-      const mirrored = await mirrorMod.mirrorRemoteProductImage(img.url, productId);
-      if (mirrored.ok) {
-        url = mirrored.url;
-        draft.warnings.push(`Bild gespiegelt (${mirrored.storage}): ${img.url.slice(0, 60)}…`);
-      } else {
-        draft.warnings.push(`Bild nicht gespiegelt: ${mirrored.error}`);
-        if (!mirrored.keepRemoteUrl) continue;
+      try {
+        const mirrored = await mirrorMod.mirrorRemoteProductImage(img.url, productId);
+        if (mirrored.ok) {
+          url = mirrored.url;
+          draft.warnings.push(`Bild gespiegelt (${mirrored.storage}).`);
+        } else {
+          draft.warnings.push(`Bild nicht gespiegelt: ${mirrored.error}`);
+          // keepRemoteUrl default true — Remote-URL behalten, Produkt trotzdem mit Bild
+        }
+      } catch {
+        draft.warnings.push("Bild-Spiegelung abgebrochen — Shopify-URL belassen.");
       }
     }
     out.push({

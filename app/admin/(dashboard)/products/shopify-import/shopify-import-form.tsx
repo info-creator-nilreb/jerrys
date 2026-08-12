@@ -462,8 +462,9 @@ export function ShopifyImportForm() {
           <span>
             <span className="font-medium">Bilder herunterladen und ablegen</span>
             <span className="mt-0.5 block text-[#6b7280]">
-              Shopify-CDN → Vercel Blob (falls konfiguriert) oder lokal unter{" "}
-              <code className="text-xs">/media/product-uploads/</code>. HEIC wird übersprungen.
+              Auf Vercel nur mit Blob (<code className="text-xs">BLOB_READ_WRITE_TOKEN</code>).
+              Sonst bleiben Shopify-CDN-URLs erhalten (Storefront kann sie anzeigen). HEIC wird
+              übersprungen.
             </span>
           </span>
         </label>

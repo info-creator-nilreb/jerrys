@@ -20,13 +20,21 @@ function guessMimeFromUrl(url: string): string | null {
   return null;
 }
 
+/** Vercel/Lambda: nur /tmp beschreibbar — lokale public/-Writes scheitern. */
+function localPublicWritesAllowed(): boolean {
+  if (process.env.VERCEL === "1" || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    return false;
+  }
+  return true;
+}
+
 export type MirrorRemoteImageResult =
   | { ok: true; url: string; storage: "blob" | "local" }
   | { ok: false; error: string; keepRemoteUrl?: boolean };
 
 /**
- * Lädt ein Remote-Bild (Shopify-CDN) und legt es in Blob (wenn konfiguriert)
- * oder unter `public/media/product-uploads/{productId}/` ab.
+ * Lädt ein Remote-Bild (Shopify-CDN) und legt es in Blob ab (bevorzugt).
+ * Lokaler Fallback nur außerhalb von Vercel. Wirft nie — bei Fehler Remote behalten.
  */
 export async function mirrorRemoteProductImage(
   remoteUrl: string,
@@ -81,7 +89,14 @@ export async function mirrorRemoteProductImage(
     }
   }
 
-  const buf = Buffer.from(await res.arrayBuffer());
+  let buf: Buffer;
+  try {
+    buf = Buffer.from(await res.arrayBuffer());
+  } catch (e) {
+    log.warn("image_buffer_failed", { remoteUrl, ...errorMeta(e) });
+    return { ok: false, error: "Bild konnte nicht gelesen werden.", keepRemoteUrl: true };
+  }
+
   if (buf.byteLength === 0) {
     return { ok: false, error: "Leeres Bild.", keepRemoteUrl: true };
   }
@@ -110,16 +125,48 @@ export async function mirrorRemoteProductImage(
       });
       return { ok: true, url: put.url, storage: "blob" };
     } catch (e) {
-      log.warn("blob_put_failed_fallback_local", { productId, ...errorMeta(e) });
+      log.warn("blob_put_failed", { productId, ...errorMeta(e) });
+      // Auf Vercel kein lokaler Fallback — Remote behalten
+      if (!localPublicWritesAllowed()) {
+        return {
+          ok: false,
+          error: "Blob-Upload fehlgeschlagen — Shopify-URL belassen.",
+          keepRemoteUrl: true,
+        };
+      }
     }
+  } else if (!localPublicWritesAllowed()) {
+    return {
+      ok: false,
+      error:
+        "Kein BLOB_READ_WRITE_TOKEN — auf Vercel können Bilder nicht lokal abgelegt werden; Shopify-URL belassen.",
+      keepRemoteUrl: true,
+    };
   }
 
-  const dir = path.join(process.cwd(), "public", "media", "product-uploads", productId);
-  await mkdir(dir, { recursive: true });
-  await writeFile(path.join(dir, filename), buf);
-  return {
-    ok: true,
-    url: `/media/product-uploads/${productId}/${filename}`,
-    storage: "local",
-  };
+  if (!localPublicWritesAllowed()) {
+    return {
+      ok: false,
+      error: "Lokales Ablegen auf dieser Plattform nicht möglich — Shopify-URL belassen.",
+      keepRemoteUrl: true,
+    };
+  }
+
+  try {
+    const dir = path.join(process.cwd(), "public", "media", "product-uploads", productId);
+    await mkdir(dir, { recursive: true });
+    await writeFile(path.join(dir, filename), buf);
+    return {
+      ok: true,
+      url: `/media/product-uploads/${productId}/${filename}`,
+      storage: "local",
+    };
+  } catch (e) {
+    log.warn("local_write_failed", { productId, ...errorMeta(e) });
+    return {
+      ok: false,
+      error: "Lokales Ablegen fehlgeschlagen — Shopify-URL belassen.",
+      keepRemoteUrl: true,
+    };
+  }
 }

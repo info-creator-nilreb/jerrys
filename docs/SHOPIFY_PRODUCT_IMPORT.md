@@ -98,7 +98,8 @@ Typische Lücken in Shopify-CSVs (wie `products_export.csv`):
 
 **Entwurf:** Unvollständige Datensätze können als **inaktiv** importiert werden (`allowIncompleteAsDraft` / Admin-Checkbox / CLI `--draft`).
 
-**Bilder:** Beim Apply optional Download → Vercel Blob (wenn `BLOB_READ_WRITE_TOKEN`) sonst `public/media/product-uploads/` (ephemeral auf Vercel — Blob bevorzugen).
+**Bilder:** Beim Apply optional Download → **Vercel Blob** (wenn `BLOB_READ_WRITE_TOKEN`).
+Auf Vercel kein Schreiben nach `public/` (read-only) — ohne Blob bleiben **Shopify-CDN-URLs** in der DB (Storefront: `cdn.shopify.com` in `remotePatterns`). HEIC wird übersprungen.
 
 ## Admin-UI
 
