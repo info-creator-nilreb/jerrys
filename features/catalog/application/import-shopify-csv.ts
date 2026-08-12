@@ -25,6 +25,10 @@ export type ShopifyImportOptions = MapShopifyOptions & {
 export type ShopifyImportProductResult = {
   handle: string;
   slug: string;
+  /** Nach create/update gesetzt — für Admin-Links. */
+  productId?: string;
+  /** Shop-PDP nur bei aktiven Produkten erreichbar. */
+  isActive?: boolean;
   status:
     | "ok"
     | "invalid"
@@ -264,6 +268,8 @@ async function applyOne(
       return {
         ...base,
         status: "created",
+        productId: product.id,
+        isActive: draft.isActive,
         warnings: draft.warnings,
         imageCount: images.length,
         message: draft.importAsDraft ? "Als Entwurf (inaktiv) angelegt." : undefined,
@@ -311,6 +317,8 @@ async function applyOne(
     return {
       ...base,
       status: "updated",
+      productId: existing.id,
+      isActive: draft.isActive,
       warnings: draft.warnings,
       imageCount: images.length,
       message: draft.importAsDraft ? "Als Entwurf (inaktiv) aktualisiert." : undefined,

@@ -201,12 +201,32 @@ export function ProductsAdminTable({ products }: { products: AdminProductListRow
                   )}
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <Link
-                    href={`/admin/products/${p.id}/edit`}
-                    className="font-medium text-primary hover:underline"
-                  >
-                    Bearbeiten
-                  </Link>
+                  <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+                    {p.isActive ? (
+                      <a
+                        href={`/produkte/${p.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+                      >
+                        Vorschau
+                        <ExternalLink className="size-3.5" aria-hidden />
+                      </a>
+                    ) : (
+                      <span
+                        className="text-[#9ca3af]"
+                        title="Produkt ist inaktiv — Shop-Seite erst nach Aktivierung erreichbar"
+                      >
+                        Keine Vorschau
+                      </span>
+                    )}
+                    <Link
+                      href={`/admin/products/${p.id}/edit`}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      Bearbeiten
+                    </Link>
+                  </div>
                 </td>
               </tr>
             ))}

@@ -6,6 +6,8 @@ export const SHOPIFY_IMPORT_MAX_BYTES = 5 * 1024 * 1024;
 export type ShopifyImportProductRow = {
   handle: string;
   slug: string;
+  productId?: string;
+  isActive?: boolean;
   status:
     | "ok"
     | "invalid"

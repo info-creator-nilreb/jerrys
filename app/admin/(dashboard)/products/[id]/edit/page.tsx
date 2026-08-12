@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
 import { EditProductForm } from "@/app/admin/(dashboard)/products/[id]/edit/edit-product-form";
 import { ProductLifecycleControls } from "@/app/admin/(dashboard)/products/[id]/edit/product-lifecycle-controls";
@@ -60,9 +61,10 @@ export default async function AdminEditProductPage({
             href={`/produkte/${product.slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-medium text-primary hover:underline"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
           >
             Shop-Vorschau
+            <ExternalLink className="size-3.5" aria-hidden />
           </a>
         ) : (
           <span className="text-sm text-[#9ca3af]" title="Nach Aktivierung im Shop erreichbar">

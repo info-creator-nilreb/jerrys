@@ -2,7 +2,7 @@
 
 import { useCallback, useId, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { FileUp, LoaderCircle } from "lucide-react";
+import { ExternalLink, FileUp, LoaderCircle } from "lucide-react";
 import { DELIVERY_TIME_OPTIONS } from "@/lib/catalog/delivery-options";
 import {
   applyShopifyCsvImport,
@@ -92,6 +92,8 @@ function ResultTable({ summary }: { summary: ShopifyImportAdminSummary }) {
     return <p className="mt-6 text-sm text-[#6b7280]">Keine Produkte in der CSV erkannt.</p>;
   }
 
+  const showLinks = summary.mode === "apply";
+
   return (
     <div className="mt-6 overflow-x-auto rounded-lg border border-[#e8eaed]">
       <table className="min-w-full text-left text-sm">
@@ -102,6 +104,9 @@ function ResultTable({ summary }: { summary: ShopifyImportAdminSummary }) {
             <th className="px-3 py-2.5 font-medium">Varianten</th>
             <th className="px-3 py-2.5 font-medium">Bilder</th>
             <th className="px-3 py-2.5 font-medium">Hinweise</th>
+            {showLinks ? (
+              <th className="px-3 py-2.5 font-medium text-right">Links</th>
+            ) : null}
           </tr>
         </thead>
         <tbody className="divide-y divide-[#e8eaed]">
@@ -115,6 +120,9 @@ function ResultTable({ summary }: { summary: ShopifyImportAdminSummary }) {
               row.warnings.length > 3
                 ? ` (+${row.warnings.length - 3} weitere Warnungen)`
                 : "";
+            const canLink =
+              Boolean(row.productId) &&
+              (row.status === "created" || row.status === "updated");
             return (
               <tr key={`${row.handle}-${row.status}-${row.slug}`} className="bg-white align-top">
                 <td className="px-3 py-2.5">
@@ -140,6 +148,40 @@ function ResultTable({ summary }: { summary: ShopifyImportAdminSummary }) {
                     </ul>
                   )}
                 </td>
+                {showLinks ? (
+                  <td className="px-3 py-2.5 text-right">
+                    {canLink ? (
+                      <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+                        {row.isActive ? (
+                          <a
+                            href={`/produkte/${row.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+                          >
+                            Vorschau
+                            <ExternalLink className="size-3.5" aria-hidden />
+                          </a>
+                        ) : (
+                          <span
+                            className="text-[#9ca3af]"
+                            title="Produkt ist inaktiv — nach Aktivierung im Shop erreichbar"
+                          >
+                            Keine Vorschau
+                          </span>
+                        )}
+                        <Link
+                          href={`/admin/products/${row.productId}/edit`}
+                          className="font-medium text-primary hover:underline"
+                        >
+                          Bearbeiten
+                        </Link>
+                      </div>
+                    ) : (
+                      <span className="text-[#9ca3af]">—</span>
+                    )}
+                  </td>
+                ) : null}
               </tr>
             );
           })}
