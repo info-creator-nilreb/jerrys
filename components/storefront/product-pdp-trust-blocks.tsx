@@ -1,5 +1,6 @@
-import { Headphones, Heart, Leaf, Truck } from "lucide-react";
+import { Gem, Headphones, Heart, Leaf, PawPrint, Shield, Sparkles, Truck } from "lucide-react";
 import { formatPriceWholeEurosWhenInteger } from "@/lib/catalog/format";
+import type { PdpResolvedUsp, PdpSpecIcon } from "@/lib/catalog/pdp-resolve-display";
 
 const lineIconClass = "size-[22px] shrink-0 text-primary";
 
@@ -19,39 +20,92 @@ function FlagDe() {
 /** Einheitliche Höhe für Icon/Flaggen-Slot, damit Überschriften bündig starten. */
 const uspIconSlotClass = "flex h-11 w-11 shrink-0 items-center justify-center";
 
-/** Drei USPs nebeneinander (Mockup), ruhig, nicht dominant. */
-export function ProductPdpUspRow({ className = "" }: { className?: string }) {
+function UspIcon({ name }: { name: PdpSpecIcon }) {
+  if (name === "flag-de") return <FlagDe />;
+  const circle =
+    `${uspIconSlotClass} rounded-full border border-(--surface-muted) bg-white text-primary shadow-sm`;
+  const iconProps = {
+    className: "size-[22px] stroke-[1.5]",
+    "aria-hidden": true as const,
+  };
+  switch (name) {
+    case "leaf":
+      return (
+        <span className={circle}>
+          <Leaf {...iconProps} />
+        </span>
+      );
+    case "heart":
+      return (
+        <span className={circle}>
+          <Heart {...iconProps} />
+        </span>
+      );
+    case "gem":
+      return (
+        <span className={circle}>
+          <Gem {...iconProps} />
+        </span>
+      );
+    case "paw":
+      return (
+        <span className={circle}>
+          <PawPrint {...iconProps} />
+        </span>
+      );
+    case "shield":
+      return (
+        <span className={circle}>
+          <Shield {...iconProps} />
+        </span>
+      );
+    case "sparkles":
+    default:
+      return (
+        <span className={circle}>
+          <Sparkles {...iconProps} />
+        </span>
+      );
+  }
+}
+
+/**
+ * USPs aus Produktdaten (Herkunft, Theme-Label, Feature-Bullets).
+ * Ohne Daten: nichts rendern — keine hartcodierten Katzen-/Schmuck-Texte.
+ */
+export function ProductPdpUspRow({
+  usps,
+  className = "",
+}: {
+  usps: PdpResolvedUsp[];
+  className?: string;
+}) {
+  if (usps.length === 0) return null;
+
+  const cols =
+    usps.length === 1
+      ? "sm:grid-cols-1"
+      : usps.length === 2
+        ? "sm:grid-cols-2"
+        : "sm:grid-cols-3";
+
   return (
     <ul
-      className={`mt-6 grid grid-cols-1 gap-8 border-t border-(--surface-muted) pt-6 text-center sm:grid-cols-3 sm:gap-6 sm:pt-5 ${className}`}
+      className={`mt-6 grid grid-cols-1 gap-8 border-t border-(--surface-muted) pt-6 text-center ${cols} sm:gap-6 sm:pt-5 ${className}`}
     >
-      <li className="flex flex-col items-center gap-2 sm:items-center">
-        <div className={uspIconSlotClass}>
-          <FlagDe />
-        </div>
-        <div className="max-w-[14rem]">
-          <p className="text-sm font-semibold text-(--foreground-heading)">Made in Germany</p>
-          <p className="mt-1 text-xs leading-snug text-(--foreground-muted)">Hochwertige Qualität</p>
-        </div>
-      </li>
-      <li className="flex flex-col items-center gap-2">
-        <span className={`${uspIconSlotClass} rounded-full border border-(--surface-muted) bg-white text-primary shadow-sm`}>
-          <Leaf className="size-[22px] stroke-[1.5]" aria-hidden />
-        </span>
-        <div className="max-w-[14rem]">
-          <p className="text-sm font-semibold text-(--foreground-heading)">Sicher & geborgen</p>
-          <p className="mt-1 text-xs leading-snug text-(--foreground-muted)">Geschützter Rückzugsort</p>
-        </div>
-      </li>
-      <li className="flex flex-col items-center gap-2">
-        <span className={`${uspIconSlotClass} rounded-full border border-(--surface-muted) bg-white text-primary shadow-sm`}>
-          <Heart className="size-[22px] stroke-[1.5]" aria-hidden />
-        </span>
-        <div className="max-w-[14rem]">
-          <p className="text-sm font-semibold text-(--foreground-heading)">Stilvoll & zeitlos</p>
-          <p className="mt-1 text-xs leading-snug text-(--foreground-muted)">Passt in jedes Zuhause</p>
-        </div>
-      </li>
+      {usps.map((usp) => (
+        <li key={usp.id} className="flex flex-col items-center gap-2">
+          <div className={uspIconSlotClass}>
+            <UspIcon name={usp.icon} />
+          </div>
+          <div className="max-w-[14rem]">
+            <p className="text-sm font-semibold text-(--foreground-heading)">{usp.title}</p>
+            {usp.subtitle ? (
+              <p className="mt-1 text-xs leading-snug text-(--foreground-muted)">{usp.subtitle}</p>
+            ) : null}
+          </div>
+        </li>
+      ))}
     </ul>
   );
 }
@@ -81,7 +135,8 @@ export function ProductPdpTrustFooterBar({
             {showFreeFrom ? (
               <>
                 <span className="text-(--foreground-muted)"> · </span>
-                ab {formatPriceWholeEurosWhenInteger(freeShippingFromSubtotalGrossCents, "EUR")} Bestellwert
+                ab {formatPriceWholeEurosWhenInteger(freeShippingFromSubtotalGrossCents, "EUR")}{" "}
+                Bestellwert
               </>
             ) : null}
           </p>

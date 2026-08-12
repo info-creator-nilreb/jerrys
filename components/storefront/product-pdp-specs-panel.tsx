@@ -1,13 +1,58 @@
 import type { ReactNode } from "react";
-import { Layers, ListTree, PawPrint, Ruler, Scale } from "lucide-react";
-import type { ProductAttribute } from "@/features/catalog/domain/product-attributes";
-import { normalizeProductAttributes } from "@/features/catalog/domain/product-attributes";
+import {
+  Gem,
+  Heart,
+  Layers,
+  Leaf,
+  MapPin,
+  Palette,
+  PawPrint,
+  Ruler,
+  Scale,
+  Shield,
+  Sparkles,
+  Tag,
+  Users,
+} from "lucide-react";
+import type { PdpResolvedDisplay, PdpSpecIcon } from "@/lib/catalog/pdp-resolve-display";
 
 const specIconClass = "size-[22px] text-primary";
 
-/**
- * Produktdetails wie Mockup: dezenter Farbakzent, Line-Icons, 2-Spalten (Specs | Eigenschaften).
- */
+function SpecIcon({ name }: { name: PdpSpecIcon }) {
+  const props = { className: specIconClass, strokeWidth: 1.5 as const, "aria-hidden": true as const };
+  switch (name) {
+    case "ruler":
+      return <Ruler {...props} />;
+    case "scale":
+      return <Scale {...props} />;
+    case "layers":
+      return <Layers {...props} />;
+    case "palette":
+      return <Palette {...props} />;
+    case "map-pin":
+      return <MapPin {...props} />;
+    case "gem":
+      return <Gem {...props} />;
+    case "users":
+      return <Users {...props} />;
+    case "paw":
+      return <PawPrint {...props} />;
+    case "leaf":
+      return <Leaf {...props} />;
+    case "heart":
+      return <Heart {...props} />;
+    case "shield":
+      return <Shield {...props} />;
+    case "sparkles":
+      return <Sparkles {...props} />;
+    case "flag-de":
+      return <MapPin {...props} />;
+    case "tag":
+    default:
+      return <Tag {...props} />;
+  }
+}
+
 function SpecRow({
   icon,
   label,
@@ -30,38 +75,13 @@ function SpecRow({
   );
 }
 
-export function ProductPdpSpecsPanel({
-  dimensionsText,
-  weightText,
-  materialText,
-  featureBullets,
-  attributes = [],
-}: {
-  dimensionsText: string | null;
-  weightText: string | null;
-  materialText: string | null;
-  featureBullets: string[];
-  attributes?: ProductAttribute[] | unknown;
-}) {
-  const attrs = normalizeProductAttributes(attributes).filter((attr) => {
-    // Feste Spec-Felder nicht doppelt anzeigen
-    if (materialText?.trim() && attr.key === "custom.material") {
-      return false;
-    }
-    if (
-      dimensionsText?.trim() &&
-      (attr.key === "custom.ma_e" || attr.key === "custom.masse")
-    ) {
-      return false;
-    }
-    return true;
-  });
-  const hasLeft =
-    Boolean(dimensionsText?.trim()) ||
-    Boolean(weightText?.trim()) ||
-    Boolean(materialText?.trim()) ||
-    attrs.length > 0;
-  const hasBullets = featureBullets.length > 0;
+/**
+ * Produktdetails aus Stammdaten: Specs links, Eigenschaften rechts.
+ * Icons richten sich nach Merkmal bzw. Produktfamilie (kein festes Pfoten-Icon).
+ */
+export function ProductPdpSpecsPanel({ display }: { display: PdpResolvedDisplay }) {
+  const hasLeft = display.leftSpecs.length > 0;
+  const hasBullets = display.propertyLines.length > 0;
   if (!hasLeft && !hasBullets) return null;
 
   const twoCols = hasLeft && hasBullets;
@@ -80,33 +100,12 @@ export function ProductPdpSpecsPanel({
       <div className={`mt-4 grid gap-6 ${twoCols ? "md:grid-cols-2 md:gap-8" : "grid-cols-1"}`}>
         {hasLeft ? (
           <div className="flex min-w-0 flex-col gap-4">
-            {dimensionsText?.trim() ? (
+            {display.leftSpecs.map((spec) => (
               <SpecRow
-                icon={<Ruler className={specIconClass} strokeWidth={1.5} aria-hidden />}
-                label="Maße"
-                value={dimensionsText.trim()}
-              />
-            ) : null}
-            {weightText?.trim() ? (
-              <SpecRow
-                icon={<Scale className={specIconClass} strokeWidth={1.5} aria-hidden />}
-                label="Gewicht"
-                value={weightText.trim()}
-              />
-            ) : null}
-            {materialText?.trim() ? (
-              <SpecRow
-                icon={<Layers className={specIconClass} strokeWidth={1.5} aria-hidden />}
-                label="Material"
-                value={materialText.trim()}
-              />
-            ) : null}
-            {attrs.map((attr) => (
-              <SpecRow
-                key={attr.key}
-                icon={<ListTree className={specIconClass} strokeWidth={1.5} aria-hidden />}
-                label={attr.label}
-                value={attr.values.join(", ")}
+                key={spec.key}
+                icon={<SpecIcon name={spec.icon} />}
+                label={spec.label}
+                value={spec.value}
               />
             ))}
           </div>
@@ -117,14 +116,14 @@ export function ProductPdpSpecsPanel({
           >
             <div className="flex items-start gap-2.5">
               <span className="mt-0.5 shrink-0 text-primary">
-                <PawPrint className={specIconClass} strokeWidth={1.5} aria-hidden />
+                <SpecIcon name={display.propertiesIcon} />
               </span>
               <div>
                 <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-(--foreground-heading)">
                   Eigenschaften
                 </p>
                 <ul className="mt-2.5 space-y-2 text-sm leading-snug text-(--foreground-muted)">
-                  {featureBullets.map((line, i) => (
+                  {display.propertyLines.map((line, i) => (
                     <li key={`${i}-${line.slice(0, 40)}`} className="flex gap-2">
                       <span className="mt-2 size-1 shrink-0 rounded-full bg-primary/60" aria-hidden />
                       <span>{line}</span>

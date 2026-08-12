@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getActiveProductBySlug } from "@/lib/catalog/queries";
-import { resolvePdpLeadText, resolvePdpSpecs } from "@/lib/catalog/pdp-resolve-display";
+import { resolvePdpDisplay } from "@/lib/catalog/pdp-resolve-display";
 import { pickDefaultVariant } from "@/lib/catalog/default-variant-storefront";
 import {
   resolveProductBreadcrumbItems,
@@ -27,6 +27,23 @@ function textPreviewFromHtml(html: string | null | undefined, max = 160): string
   return plain.length <= max ? plain : `${plain.slice(0, max - 1)}…`;
 }
 
+function displayFromProduct(
+  product: NonNullable<Awaited<ReturnType<typeof getActiveProductBySlug>>>,
+) {
+  return resolvePdpDisplay({
+    slug: product.slug,
+    title: product.title,
+    leadText: product.leadText,
+    dimensionsText: product.dimensionsText,
+    weightText: product.weightText,
+    materialText: product.materialText,
+    featureBullets: product.featureBullets,
+    attributes: product.attributes,
+    categoryTitles: product.categoryMemberships.map((m) => m.category.title),
+    categorySlugs: product.categoryMemberships.map((m) => m.category.slug),
+  });
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -37,8 +54,9 @@ export async function generateMetadata({
   if (!product) {
     return { title: "Produkt" };
   }
+  const display = displayFromProduct(product);
   const desc =
-    resolvePdpLeadText(product) || product.subtitle || textPreviewFromHtml(product.description);
+    display.leadText || product.subtitle || textPreviewFromHtml(product.description);
   const cover = product.images[0];
   const ogImage = cover ? [{ url: absoluteUrl(cover.url), alt: cover.alt }] : undefined;
   return {
@@ -76,8 +94,8 @@ export default async function ProduktDetailPage({
   const defaultVariant = pickDefaultVariant(product);
   if (!defaultVariant || product.variants.length === 0) notFound();
 
-  const specs = resolvePdpSpecs(product);
-  const leadDisplay = resolvePdpLeadText(product);
+  const display = displayFromProduct(product);
+  const leadDisplay = display.leadText;
 
   const titleCrumb = truncateBreadcrumbLabel(product.title);
 
@@ -96,12 +114,7 @@ export default async function ProduktDetailPage({
   const jsonLdDescription =
     leadDisplay || product.subtitle || textPreviewFromHtml(product.description);
 
-  const hasSpecsPanel =
-    Boolean(specs.dimensionsText?.trim()) ||
-    Boolean(specs.weightText?.trim()) ||
-    Boolean(specs.materialText?.trim()) ||
-    specs.featureBullets.length > 0 ||
-    (Array.isArray(specs.attributes) && specs.attributes.length > 0);
+  const hasSpecsPanel = display.leftSpecs.length > 0 || display.propertyLines.length > 0;
 
   return (
     <>
@@ -176,17 +189,9 @@ export default async function ProduktDetailPage({
                 </p>
               ) : null}
 
-              {hasSpecsPanel ? (
-                <ProductPdpSpecsPanel
-                  dimensionsText={specs.dimensionsText}
-                  weightText={specs.weightText}
-                  materialText={specs.materialText}
-                  featureBullets={specs.featureBullets}
-                  attributes={specs.attributes}
-                />
-              ) : null}
+              {hasSpecsPanel ? <ProductPdpSpecsPanel display={display} /> : null}
 
-              <ProductPdpUspRow />
+              <ProductPdpUspRow usps={display.usps} />
 
               <ProductPdpPurchasePanel
                 productId={product.id}
