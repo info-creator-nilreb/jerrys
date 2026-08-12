@@ -13,3 +13,8 @@ export {
   type SearchIndexStatusPublic,
   type SearchRebuildStats,
 } from "@/features/catalog/application/sync-product-search-index";
+export {
+  searchStorefrontProductsHybrid,
+  type HybridStorefrontSearchMeta,
+  type HybridStorefrontSearchResult,
+} from "@/features/catalog/application/hybrid-storefront-search";

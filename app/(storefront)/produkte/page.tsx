@@ -18,6 +18,7 @@ import {
   filterAndSortCollectionProducts,
   parseCollectionSort,
 } from "@/lib/catalog/collection-storefront-sort";
+import { searchStorefrontProductsHybrid } from "@/features/catalog/server";
 import {
   filterProductsByStorefrontSearch,
   parseStorefrontSearchQuery,
@@ -107,7 +108,18 @@ export default async function ProduktePage({
   }
 
   const catalogProducts = products.map(mapProductWithPrimaryCategory);
-  const searchedProducts = filterProductsByStorefrontSearch(catalogProducts, searchQuery);
+  // Hybride Vollsuche (Lexik + Cosine); bei Index-/Providerausfall lexikalischer Fallback.
+  // Kategorie/Verfügbarkeit bleiben autoritative Filter danach — Typeahead bleibt lexikalisch.
+  let searchedProducts = catalogProducts;
+  if (searchQuery) {
+    try {
+      const hybrid = await searchStorefrontProductsHybrid(catalogProducts, searchQuery);
+      searchedProducts = hybrid.products;
+    } catch (e) {
+      if (!isDatabaseUnreachable(e)) throw e;
+      searchedProducts = filterProductsByStorefrontSearch(catalogProducts, searchQuery);
+    }
+  }
   const afterCategory = filterProductsByPrimaryCategorySlug(
     searchedProducts,
     listingFilters.categorySlug,
@@ -117,6 +129,7 @@ export default async function ProduktePage({
     listingFilters.priceMinEuros,
     listingFilters.priceMaxEuros,
   );
+  // Bei aktiver Suche und Default-Sort: Hybrid-Ranking behalten (filterAndSort lässt Reihenfolge).
   const filteredProducts = filterAndSortCollectionProducts(afterPrice, {
     sort,
     onlyAvailable: listingFilters.onlyAvailable,

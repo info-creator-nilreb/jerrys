@@ -49,3 +49,20 @@ export {
   type BuiltProductSearchDocument,
   type ProductSearchDocumentSource,
 } from "@/features/catalog/domain/product-search-document";
+export {
+  HYBRID_LEXICAL_WEIGHT,
+  HYBRID_MIN_SCORE,
+  HYBRID_MIN_SEMANTIC_SCORE,
+  HYBRID_SEMANTIC_WEIGHT,
+  combineHybridScore,
+  cosineSimilarity,
+  isHybridHit,
+  lexicalMatchScore,
+  orderProductsByRankedIds,
+  parseEmbeddingVector,
+  rankHybridCandidates,
+  type HybridCandidateScores,
+  type HybridFallbackReason,
+  type HybridRankMode,
+  type HybridSearchableProduct,
+} from "@/features/catalog/domain/hybrid-product-search";

@@ -42,6 +42,8 @@ Diese Funktionen bleiben als robuster Fallback erhalten.
 - nachvollziehbares Ranking, Grenzwerte und Fallback bei Provider-/Indexausfall
 - Typeahead bleibt schnell und darf keine teure Generierung pro Tastendruck auslösen
 
+**Status:** umgesetzt (Livegang-Paket). Domain-Ranking (`hybrid-product-search`: Cosine, Lexik-Score, Hybrid-Gewichte/Grenzen); Application `searchStorefrontProductsHybrid` lädt gespeicherte Embeddings, erzeugt **ein** Query-Embedding für die Vollsuche, fällt bei NotConfigured/Providerfehler/leerem Index auf Lexik zurück; Storefront `/produkte?q=` verdrahtet; Typeahead (`product-suggest`) bewusst rein lexikalisch; Unit-Tests `hybrid-product-search`, `hybrid-storefront-search`.
+
 ### Slice 4 — KI-freundlicher öffentlicher Katalog
 
 - `/llms.txt` präzisieren und auf kanonische öffentliche Ressourcen verweisen

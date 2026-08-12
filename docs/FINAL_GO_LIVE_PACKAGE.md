@@ -10,7 +10,7 @@ Verbindlicher Scope für den Production-Cutover (Stand Abstimmung Product Owner)
 | 2 | Zettle bidirektional | extern | PR #102 — nicht parallel nachbauen |
 | 3 | Retoure / Reship Admin-MVP | ✅ | Sync bei Retoure, Reship-Entwurf, ConfirmDialog, Audit; private Labels später |
 | 4 | Admin Index: Card-Layout mobil | ✅ | Cards unter `md`, Tabelle ab `md` auf allen Indexseiten |
-| 5 | Epic 14 Semantische Suche | offen (Slice 1–2 ✅) | SEO/Schema + Suchdokument/Embedding-Index; Slices 3–5 (Hybrid, Feed, Eval) offen |
+| 5 | Epic 14 Semantische Suche | offen (Slice 1–3 ✅) | SEO/Schema + Index + hybride Storefront-Suche; Slices 4–5 (Feed, Eval) offen |
 | 6 | Confirm-Dialoge statt `window.confirm` | ✅ | `ConfirmDialog` verdrahtet |
 | 7 | PayPal Express + Apple Pay | ✅ | Warenkorb Smart Buttons + Apple Pay; PDP → Warenkorb-Express |
 | 8 | Mobile-UX-Pass | ✅ | Admin-Cards + Audit-Checkliste; Storefront Touch/Safe-Area bereits abgesichert |
