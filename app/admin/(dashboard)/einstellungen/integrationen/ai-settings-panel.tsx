@@ -202,6 +202,11 @@ export function AiSettingsPanel(props: Props) {
               defaultValue={props.imageModel}
               className="h-11 w-full rounded-md border border-[#e5e7eb] px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary"
             />
+            <p className="mt-1 text-xs text-[#6b7280]">
+              Bearbeitung (Freistellen/Lifestyle) nutzt{" "}
+              <code className="text-[11px]">gpt-image-1</code> bzw.{" "}
+              <code className="text-[11px]">OPENAI_IMAGE_EDIT_MODEL</code>.
+            </p>
           </div>
           <div>
             <label

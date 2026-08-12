@@ -32,6 +32,12 @@ describe("NotConfiguredAiContentAdapter", () => {
 
     const image = await port.generateImage({ prompt: "Kerze auf Tisch" });
     expect(image).toMatchObject({ ok: false, error: "not_configured" });
+
+    const edited = await port.editImage({
+      mode: "cutout",
+      source: { bytes: Buffer.from([1]), contentType: "image/png", filename: "x.png" },
+    });
+    expect(edited).toMatchObject({ ok: false, error: "not_configured" });
   });
 });
 
@@ -57,6 +63,7 @@ describe("createAiContentPort / resolveOpenAiContentConfigFromEnv", () => {
       textModel: "gpt-test",
       visionModel: "gpt-4o-mini",
       imageModel: "dall-e-3",
+      imageEditModel: "gpt-image-1",
       moderationModel: "omni-moderation-latest",
     });
   });

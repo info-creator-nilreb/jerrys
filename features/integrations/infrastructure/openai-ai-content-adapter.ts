@@ -4,6 +4,8 @@ import {
   AiForbiddenPromptFactsError,
   type AiCapability,
   type AiGenerationMeta,
+  type AiImageEditInput,
+  type AiImageEditResult,
   type AiImageGenerateInput,
   type AiImageGenerateResult,
   type AiModerateInput,
@@ -16,6 +18,7 @@ import {
   type AiVisionDescribeInput,
   type AiVisionDescribeResult,
 } from "@/features/integrations/domain/ai-content-assistance";
+import { buildAiImageEditPrompt } from "@/features/integrations/domain/ai-image-edit-prompt";
 import type { OpenAiContentConfig } from "@/features/integrations/infrastructure/openai-config";
 
 type FetchLike = typeof fetch;
@@ -24,6 +27,7 @@ const CAPABILITIES: readonly AiCapability[] = [
   "text",
   "vision",
   "image_generation",
+  "image_edit",
   "moderation",
 ];
 
@@ -123,6 +127,80 @@ async function openaiJson(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    const requestId = res.headers.get("x-request-id");
+    let json: unknown = null;
+    try {
+      json = await res.json();
+    } catch {
+      json = null;
+    }
+
+    if (res.status === 429) {
+      return {
+        ok: false,
+        failure: failure("rate_limited", "OpenAI Rate-Limit erreicht. Bitte später erneut versuchen."),
+      };
+    }
+    if (!res.ok) {
+      const msg =
+        json &&
+        typeof json === "object" &&
+        "error" in json &&
+        json.error &&
+        typeof json.error === "object" &&
+        "message" in json.error &&
+        typeof (json.error as { message: unknown }).message === "string"
+          ? (json.error as { message: string }).message
+          : `OpenAI-Fehler (HTTP ${res.status}).`;
+      return {
+        ok: false,
+        failure: failure(
+          res.status >= 400 && res.status < 500 ? "invalid_request" : "provider_rejected",
+          msg,
+        ),
+      };
+    }
+
+    return { ok: true, status: res.status, json, requestId };
+  } catch (e) {
+    if (e instanceof Error && e.name === "AbortError") {
+      return {
+        ok: false,
+        failure: failure("timeout", "OpenAI-Anfrage ist wegen Timeout abgebrochen."),
+      };
+    }
+    return {
+      ok: false,
+      failure: failure(
+        "provider_rejected",
+        e instanceof Error ? e.message : "OpenAI-Anfrage fehlgeschlagen.",
+      ),
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function openaiMultipart(
+  config: OpenAiContentConfig,
+  path: string,
+  form: FormData,
+  fetchImpl: FetchLike,
+): Promise<
+  | { ok: true; status: number; json: unknown; requestId: string | null }
+  | { ok: false; failure: AiOperationFailure }
+> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), config.timeoutMs);
+  try {
+    const res = await fetchImpl(`${config.baseUrl}${path}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+      },
+      body: form,
       signal: controller.signal,
     });
     const requestId = res.headers.get("x-request-id");
@@ -375,6 +453,62 @@ export function createOpenAiContentAdapter(options: {
         temporaryImageUrl,
         temporaryImageBase64,
         meta: buildMeta(config, "image_generation", config.imageModel, res.requestId, null),
+      };
+    },
+
+    async editImage(input: AiImageEditInput): Promise<AiImageEditResult> {
+      if (!input.source?.bytes?.length) {
+        return failure("invalid_request", "Quellbild fehlt.");
+      }
+      const factsResult = safeFactsOrFailure(input.facts);
+      if (!factsResult.ok) return factsResult;
+
+      const built = buildAiImageEditPrompt({
+        mode: input.mode,
+        prompt: input.prompt,
+        facts: factsResult.facts,
+      });
+      if (!built.ok) {
+        return failure("invalid_request", built.message);
+      }
+
+      const form = new FormData();
+      form.set("model", config.imageEditModel);
+      form.set("prompt", built.prompt);
+      form.set("n", "1");
+      form.set("size", input.size ?? "1024x1024");
+      if (built.transparentBackground) {
+        form.set("background", "transparent");
+      }
+      // GPT Image liefert oft b64; dall-e-2 akzeptiert response_format.
+      if (config.imageEditModel.startsWith("dall-e")) {
+        form.set("response_format", "b64_json");
+      }
+      const blob = new Blob([new Uint8Array(input.source.bytes)], {
+        type: input.source.contentType || "image/png",
+      });
+      form.set(
+        "image",
+        blob,
+        input.source.filename || "source.png",
+      );
+
+      const res = await openaiMultipart(config, "/images/edits", form, fetchImpl);
+      if (!res.ok) return res.failure;
+
+      const data = (res.json as { data?: Array<{ url?: string; b64_json?: string }> })?.data;
+      const first = Array.isArray(data) ? data[0] : undefined;
+      const temporaryImageUrl = first?.url?.trim() || null;
+      const temporaryImageBase64 = first?.b64_json?.trim() || null;
+      if (!temporaryImageUrl && !temporaryImageBase64) {
+        return failure("provider_rejected", "OpenAI lieferte kein bearbeitetes Bild.");
+      }
+
+      return {
+        ok: true,
+        temporaryImageUrl,
+        temporaryImageBase64,
+        meta: buildMeta(config, "image_edit", config.imageEditModel, res.requestId, null),
       };
     },
 

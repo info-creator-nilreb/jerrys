@@ -4,6 +4,7 @@ import { createAiContentPort } from "@/features/integrations/application/create-
 import {
   assertSafeAiProductFacts,
   type AiGenerationMeta,
+  type AiImageEditMode,
   type AiProductFacts,
 } from "@/features/integrations/domain/ai-content-assistance";
 
@@ -171,4 +172,94 @@ export async function generateProductAiAltTextDraft(input: {
   }
 
   return { ok: true, draftAltText: result.draftAltText, meta: result.meta };
+}
+
+export type EditProductAiImageResult = GenerateProductAiImageResult;
+
+/**
+ * Bearbeitet ein bestehendes Produktbild (Freistellen, Lifestyle, …) inkl. Moderation.
+ */
+export async function editProductAiImageDraft(input: {
+  mode: AiImageEditMode;
+  sourceBytes: Buffer;
+  sourceContentType: string;
+  sourceFilename: string;
+  prompt?: string | null;
+  facts?: AiProductFacts;
+  size?: "1024x1024" | "1024x1536" | "1536x1024";
+}): Promise<EditProductAiImageResult> {
+  if (!input.sourceBytes?.length) {
+    return { ok: false, error: "Quellbild fehlt.", code: "invalid_request" };
+  }
+
+  if (input.facts) {
+    try {
+      assertSafeAiProductFacts(input.facts as Record<string, unknown>);
+    } catch (e) {
+      return {
+        ok: false,
+        error: e instanceof Error ? e.message : "Ungültige Prompt-Fakten.",
+        code: "invalid_request",
+      };
+    }
+  }
+
+  const port = await createAiContentPort();
+  if (!port.isConfigured() || !port.supports("image_edit")) {
+    return {
+      ok: false,
+      error:
+        "KI-Bildbearbeitung ist nicht konfiguriert. Bitte unter Einstellungen → Integrationen OpenAI einrichten (Images Edit / gpt-image).",
+      code: "not_configured",
+    };
+  }
+
+  const edited = await port.editImage({
+    mode: input.mode,
+    source: {
+      bytes: input.sourceBytes,
+      contentType: input.sourceContentType,
+      filename: input.sourceFilename,
+    },
+    prompt: input.prompt,
+    facts: input.facts,
+    size: input.size ?? "1024x1024",
+  });
+
+  if (!edited.ok) {
+    return { ok: false, error: edited.message, code: edited.error };
+  }
+
+  const previewSrc = previewSrcFromResult(edited);
+  if (!previewSrc) {
+    return { ok: false, error: "OpenAI lieferte kein bearbeitetes Bild.", code: "provider_rejected" };
+  }
+
+  let moderation = { flagged: false, categories: [] as string[] };
+  let moderationMeta: AiGenerationMeta | null = null;
+
+  if (port.supports("moderation")) {
+    const mod = await port.moderate({ imageUrl: previewSrc });
+    if (mod.ok) {
+      moderation = { flagged: mod.flagged, categories: mod.categories };
+      moderationMeta = mod.meta;
+      if (mod.flagged) {
+        return {
+          ok: false,
+          error: `Bearbeitetes Bild wurde von der Moderation blockiert (${mod.categories.join(", ") || "policy"}).`,
+          code: "moderation_blocked",
+        };
+      }
+    }
+  }
+
+  return {
+    ok: true,
+    temporaryImageUrl: edited.temporaryImageUrl,
+    temporaryImageBase64: edited.temporaryImageBase64,
+    previewSrc,
+    moderation,
+    meta: edited.meta,
+    moderationMeta,
+  };
 }

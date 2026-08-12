@@ -8,6 +8,7 @@ const baseConfig: OpenAiContentConfig = {
   textModel: "gpt-4o-mini",
   visionModel: "gpt-4o-mini",
   imageModel: "dall-e-3",
+  imageEditModel: "gpt-image-1",
   moderationModel: "omni-moderation-latest",
   timeoutMs: 5_000,
 };
@@ -107,5 +108,27 @@ describe("createOpenAiContentAdapter", () => {
     if (!result.ok) return;
     expect(result.temporaryImageUrl).toBe("https://example.com/tmp.png");
     expect(result.meta.capability).toBe("image_generation");
+  });
+
+  it("bearbeitet Quellbild per /images/edits", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({ data: [{ b64_json: "aaa" }] }),
+    );
+    const port = createOpenAiContentAdapter({ config: baseConfig, fetchImpl });
+    expect(port.supports("image_edit")).toBe(true);
+    const result = await port.editImage({
+      mode: "cutout",
+      source: {
+        bytes: Buffer.from([1, 2, 3, 4]),
+        contentType: "image/png",
+        filename: "source.png",
+      },
+      facts: { title: "Kerze" },
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.temporaryImageBase64).toBe("aaa");
+    expect(result.meta.capability).toBe("image_edit");
+    expect(String(fetchImpl.mock.calls[0]?.[0] as unknown as string)).toContain("/images/edits");
   });
 });

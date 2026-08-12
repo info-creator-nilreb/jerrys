@@ -7,14 +7,18 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { persistAiGeneratedProductImage } from "@/features/catalog";
 import {
+  editProductAiImageDraft,
   generateProductAiAltTextDraft,
   generateProductAiImageDraft,
+  type AiImageEditMode,
   type AiProductFacts,
 } from "@/features/integrations";
 import { getAdminSession } from "@/lib/auth/admin-session";
+import { MAX_UPLOAD_BYTES } from "@/lib/admin/upload-image";
 import { getPrisma } from "@/lib/db/prisma";
 import {
   detectImageFormat,
+  extForImageFormat,
   mimeForImageFormat,
 } from "@/lib/shop/branding-asset-validation";
 import { absoluteUrl } from "@/lib/site/canonical-origin";
@@ -64,6 +68,79 @@ async function resolveImageUrlForVision(url: string): Promise<string | null> {
 async function requireAdmin() {
   const session = await getAdminSession();
   if (!session?.user) redirect("/admin/login");
+}
+
+async function loadSourceImageBytes(
+  url: string,
+): Promise<
+  | { ok: true; bytes: Buffer; contentType: string; filename: string }
+  | { ok: false; error: string }
+> {
+  const trimmed = url.trim();
+  if (!trimmed) return { ok: false, error: "Quellbild-URL fehlt." };
+
+  if (trimmed.startsWith("/media/")) {
+    const abs = path.join(process.cwd(), "public", trimmed.replace(/^\//, ""));
+    if (!existsSync(abs)) {
+      return { ok: false, error: "Lokales Quellbild nicht gefunden." };
+    }
+    try {
+      const bytes = await readFile(abs);
+      const format = detectImageFormat(bytes);
+      if (!format || format === "svg" || format === "ico") {
+        return { ok: false, error: "Quellbild-Format nicht unterstützt." };
+      }
+      return {
+        ok: true,
+        bytes,
+        contentType: mimeForImageFormat(format),
+        filename: `source.${extForImageFormat(format)}`,
+      };
+    } catch {
+      return { ok: false, error: "Lokales Quellbild konnte nicht gelesen werden." };
+    }
+  }
+
+  const fetchUrl =
+    trimmed.startsWith("http://") || trimmed.startsWith("https://")
+      ? trimmed
+      : trimmed.startsWith("/")
+        ? absoluteUrl(trimmed)
+        : null;
+  if (!fetchUrl) {
+    return { ok: false, error: "Ungültige Quellbild-URL." };
+  }
+
+  try {
+    const res = await fetch(fetchUrl, {
+      redirect: "follow",
+      headers: { Accept: "image/*,*/*;q=0.8" },
+      signal: AbortSignal.timeout(25_000),
+    });
+    if (!res.ok) {
+      return { ok: false, error: `Quellbild nicht ladbar (HTTP ${res.status}).` };
+    }
+    const bytes = Buffer.from(await res.arrayBuffer());
+    if (!bytes.length) return { ok: false, error: "Leeres Quellbild." };
+    if (bytes.byteLength > MAX_UPLOAD_BYTES) {
+      return {
+        ok: false,
+        error: `Quellbild zu groß (max. ${MAX_UPLOAD_BYTES / (1024 * 1024)} MB).`,
+      };
+    }
+    const format = detectImageFormat(bytes);
+    if (!format || format === "svg" || format === "ico") {
+      return { ok: false, error: "Quellbild-Format nicht unterstützt (JPEG/PNG/WEBP)." };
+    }
+    return {
+      ok: true,
+      bytes,
+      contentType: mimeForImageFormat(format),
+      filename: `source.${extForImageFormat(format)}`,
+    };
+  } catch {
+    return { ok: false, error: "Download des Quellbilds fehlgeschlagen." };
+  }
 }
 
 const generateSchema = z.object({
@@ -144,6 +221,103 @@ export async function generateProductAiImageAction(
     draftAltText,
     model: result.meta.model,
     message: "Entwurf bereit — bitte prüfen und erst dann übernehmen.",
+  };
+}
+
+const editSchema = z.object({
+  productId: z.string().trim().min(1),
+  sourceImageUrl: z.string().trim().min(1).max(4000),
+  mode: z.enum(["cutout", "lifestyle", "studio", "background_replace", "custom"]),
+  prompt: z.string().trim().max(2000).optional(),
+  size: z.enum(["1024x1024", "1024x1536", "1536x1024"]).default("1024x1024"),
+  title: z.string().trim().max(200).optional(),
+  materials: z.string().trim().max(500).optional(),
+});
+
+/**
+ * Bearbeitet ein bestehendes Galeriebild (Freistellen, Lifestyle, …). Speichert nichts dauerhaft.
+ */
+export async function editProductAiImageAction(
+  _prev: AiImageActionState,
+  formData: FormData,
+): Promise<AiImageActionState> {
+  await requireAdmin();
+
+  const parsed = editSchema.safeParse({
+    productId: formData.get("productId"),
+    sourceImageUrl: formData.get("sourceImageUrl"),
+    mode: formData.get("mode"),
+    prompt: String(formData.get("prompt") ?? "").trim() || undefined,
+    size: formData.get("size") || "1024x1024",
+    title: String(formData.get("title") ?? "") || undefined,
+    materials: String(formData.get("materials") ?? "") || undefined,
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Ungültige Eingaben." };
+  }
+
+  const product = await getPrisma().product.findUnique({
+    where: { id: parsed.data.productId },
+    select: { id: true, title: true, materialText: true },
+  });
+  if (!product) {
+    return { error: "Produkt nicht gefunden." };
+  }
+
+  const belongs = await getPrisma().productImage.findFirst({
+    where: { productId: product.id, url: parsed.data.sourceImageUrl },
+    select: { id: true },
+  });
+  if (!belongs) {
+    return { error: "Quellbild gehört nicht zu diesem Produkt." };
+  }
+
+  const loaded = await loadSourceImageBytes(parsed.data.sourceImageUrl);
+  if (!loaded.ok) {
+    return { error: loaded.error };
+  }
+
+  const facts: AiProductFacts = {
+    title: parsed.data.title || product.title,
+    language: "de",
+    tone: "sachlich, warm, boutique",
+  };
+  if (parsed.data.materials || product.materialText) {
+    facts.materials = parsed.data.materials || product.materialText || undefined;
+  }
+
+  const result = await editProductAiImageDraft({
+    mode: parsed.data.mode as AiImageEditMode,
+    sourceBytes: loaded.bytes,
+    sourceContentType: loaded.contentType,
+    sourceFilename: loaded.filename,
+    prompt: parsed.data.prompt,
+    facts,
+    size: parsed.data.size,
+  });
+
+  if (!result.ok) {
+    return { error: result.error };
+  }
+
+  let draftAltText = `${(parsed.data.title || product.title).slice(0, 80)} – Produktbild`;
+  const alt = await generateProductAiAltTextDraft({
+    imageUrl: result.previewSrc,
+    facts: { title: facts.title, language: "de" },
+  });
+  if (alt.ok) {
+    draftAltText = alt.draftAltText.slice(0, 200);
+  }
+
+  return {
+    ok: true,
+    temporaryImageUrl: result.temporaryImageUrl,
+    temporaryImageBase64: result.temporaryImageBase64,
+    previewSrc: result.previewSrc,
+    draftAltText,
+    model: result.meta.model,
+    message: "Bearbeiteter Entwurf bereit — bitte prüfen und erst dann übernehmen.",
   };
 }
 

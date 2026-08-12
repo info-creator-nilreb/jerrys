@@ -1,5 +1,7 @@
 import type {
   AiCapability,
+  AiImageEditInput,
+  AiImageEditResult,
   AiImageGenerateInput,
   AiImageGenerateResult,
   AiModerateInput,
@@ -22,6 +24,7 @@ export type AiContentPort = {
   generateText(input: AiTextGenerateInput): Promise<AiTextGenerateResult>;
   describeImage(input: AiVisionDescribeInput): Promise<AiVisionDescribeResult>;
   generateImage(input: AiImageGenerateInput): Promise<AiImageGenerateResult>;
+  editImage(input: AiImageEditInput): Promise<AiImageEditResult>;
   moderate(input: AiModerateInput): Promise<AiModerateResult>;
 };
 
@@ -59,6 +62,9 @@ export function createNotConfiguredAiContentAdapter(): AiContentPort {
       return notConfiguredFailure();
     },
     async generateImage() {
+      return notConfiguredFailure();
+    },
+    async editImage() {
       return notConfiguredFailure();
     },
     async moderate() {

@@ -9,6 +9,7 @@ export type AiCapability =
   | "text"
   | "vision"
   | "image_generation"
+  | "image_edit"
   | "moderation";
 
 /** Erlaubte Produkt-/CMS-Fakten für Prompt-Bau (kein DB-Dump). */
@@ -151,6 +152,38 @@ export type AiImageGenerateSuccess = {
 };
 
 export type AiImageGenerateResult = AiImageGenerateSuccess | AiOperationFailure;
+
+/** Bearbeitungsmodus für bestehende Produktbilder (Epic 13). */
+export type AiImageEditMode =
+  | "cutout"
+  | "lifestyle"
+  | "studio"
+  | "background_replace"
+  | "custom";
+
+export type AiImageEditSource = {
+  bytes: Buffer;
+  contentType: string;
+  filename: string;
+};
+
+export type AiImageEditInput = {
+  mode: AiImageEditMode;
+  source: AiImageEditSource;
+  /** Zusatzprompt (Pflicht bei background_replace/custom, optional sonst). */
+  prompt?: string | null;
+  facts?: AiProductFacts;
+  size?: "1024x1024" | "1024x1536" | "1536x1024";
+};
+
+export type AiImageEditSuccess = {
+  ok: true;
+  temporaryImageUrl: string | null;
+  temporaryImageBase64: string | null;
+  meta: AiGenerationMeta;
+};
+
+export type AiImageEditResult = AiImageEditSuccess | AiOperationFailure;
 
 export type AiModerateInput = {
   text?: string | null;

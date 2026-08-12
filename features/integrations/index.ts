@@ -24,6 +24,9 @@ export {
   type AiAllowedProductFactKey,
   type AiCapability,
   type AiGenerationMeta,
+  type AiImageEditInput,
+  type AiImageEditMode,
+  type AiImageEditResult,
   type AiImageGenerateInput,
   type AiImageGenerateResult,
   type AiModerateInput,
@@ -57,9 +60,14 @@ export {
 export {
   generateProductAiAltTextDraft,
   generateProductAiImageDraft,
+  editProductAiImageDraft,
+  type EditProductAiImageResult,
   type GenerateProductAiAltTextResult,
   type GenerateProductAiImageResult,
 } from "@/features/integrations/application/generate-product-ai-image";
+export {
+  buildAiImageEditPrompt,
+} from "@/features/integrations/domain/ai-image-edit-prompt";
 export { createOpenAiContentAdapter } from "@/features/integrations/infrastructure/openai-ai-content-adapter";
 export {
   resolveOpenAiContentConfigFromEnv,

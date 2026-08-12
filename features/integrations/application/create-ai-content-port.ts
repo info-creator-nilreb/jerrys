@@ -3,6 +3,7 @@ import {
   type AiContentPort,
 } from "@/features/integrations/application/ai-content-port";
 import type {
+  AiImageEditResult,
   AiImageGenerateResult,
   AiModerateResult,
   AiTextGenerateResult,
@@ -49,6 +50,11 @@ function withDailyQuota(port: AiContentPort): AiContentPort {
       if (!q.ok) return q;
       return port.generateImage(input);
     },
+    async editImage(input): Promise<AiImageEditResult> {
+      const q = await guardQuota();
+      if (!q.ok) return q;
+      return port.editImage(input);
+    },
     async moderate(input): Promise<AiModerateResult> {
       const q = await guardQuota();
       if (!q.ok) return q;
@@ -83,6 +89,9 @@ export async function createAiContentPort(
     textModel: secrets.textModel,
     visionModel: secrets.visionModel,
     imageModel: secrets.imageModel,
+    imageEditModel:
+      env.OPENAI_IMAGE_EDIT_MODEL?.trim() ||
+      (secrets.imageModel.startsWith("gpt-image") ? secrets.imageModel : "gpt-image-1"),
     moderationModel: secrets.moderationModel,
     timeoutMs: secrets.timeoutMs,
   };
