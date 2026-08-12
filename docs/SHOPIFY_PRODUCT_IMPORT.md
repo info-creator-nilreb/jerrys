@@ -31,7 +31,7 @@ CSV ist Transport, nicht die Architektur. Die Quelle der Wahrheit nach Import is
 | `SEO Title` | — | **Kein** Produkt-SEO-Feld; Warnung. Meta nutzt `title` + `leadText`. |
 | `SEO Description` | `leadText` (optional) | Nur wenn `leadText` leer und Länge ≤ 500; sonst Warnung. |
 | erste `Variant SKU` | `productNumber` | Nur wenn gesetzt; sonst `null`. |
-| Kategorie-/Custom-Metafelder | `attributes` JSON | Spalten `Label (product.metafields…)` → `{ key, label, values[] }` analog Shopify-Merkmale. |
+| Kategorie-/Custom-Metafelder | `attributes` JSON | Spalten `Label (product.metafields…)` → `{ key, label, values[] }`. Admin: eine Zeile pro Merkmal (Label + Werte sichtbar, Key versteckt). |
 | `custom.material` / `custom.ma_e` | zusätzlich `materialText` / `dimensionsText` | PDP-Kurzinfos bleiben. |
 
 Shop-eigene Felder ohne Shopify-Äquivalent (Default / manuell):
