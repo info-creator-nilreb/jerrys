@@ -55,7 +55,7 @@ export function WorkshopSessionAdminList({ sessions }: { sessions: AdminWorkshop
             type="button"
             disabled={pending || selectedDraftCount === 0}
             onClick={publishSelected}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-(--primary-hover) disabled:opacity-60"
+            className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-(--primary-hover) disabled:opacity-60"
           >
             {pending ? "Veröffentliche …" : "Auswahl veröffentlichen"}
           </button>
@@ -67,7 +67,53 @@ export function WorkshopSessionAdminList({ sessions }: { sessions: AdminWorkshop
         </p>
       ) : null}
 
-      <div className="overflow-x-auto rounded-lg border border-[#e8eaed]">
+      <ul className="space-y-3 md:hidden">
+        {sessions.map((s) => {
+          const isDraft = s.status === "draft";
+          return (
+            <li
+              key={s.id}
+              className="rounded-xl border border-[#e8eaed] bg-white p-4 shadow-sm"
+            >
+              <div className="flex items-start gap-3">
+                {isDraft ? (
+                  <input
+                    type="checkbox"
+                    checked={selected.has(s.id)}
+                    aria-label={`${s.title} auswählen`}
+                    onChange={(e) => toggleOne(s.id, e.target.checked)}
+                    className="mt-1 size-5 rounded border-[#d1d5db]"
+                    disabled={pending}
+                  />
+                ) : (
+                  <span className="mt-1 size-5 shrink-0" aria-hidden />
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="font-medium text-[#1f2937]">{s.title}</p>
+                    <WorkshopSessionStatusBadge status={s.status} label={s.statusLabel} />
+                  </div>
+                  <p className="mt-1 text-xs text-[#6b7280]">
+                    {formatWorkshopSessionDateTime(s.startsAt, s.timezone)}
+                  </p>
+                  <p className="mt-0.5 text-xs text-[#6b7280]">{s.locationLabel}</p>
+                  <p className="mt-1 text-xs tabular-nums text-[#6b7280]">
+                    {s.confirmedSeatCount + s.heldSeatCount}/{s.capacity} Plätze
+                  </p>
+                  <Link
+                    href={`/admin/termine/${s.id}/edit`}
+                    className="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline"
+                  >
+                    Bearbeiten
+                  </Link>
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+
+      <div className="hidden overflow-x-auto rounded-lg border border-[#e8eaed] md:block">
         <table className="min-w-full text-left text-sm">
           <thead className="border-b border-[#e8eaed] bg-[#f7f8fa] text-[#374151]">
             <tr>
