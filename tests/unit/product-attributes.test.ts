@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  attributesFromFormData,
   attributesToFormText,
   extractAttributesFromShopifyRow,
   parseAttributesFormText,
   parseMetafieldHeader,
+  slugifyAttributeKey,
   technicalImportSku,
 } from "@/features/catalog/domain/product-attributes";
 
@@ -37,13 +39,32 @@ describe("product-attributes", () => {
     );
   });
 
-  it("roundtrip Formulartext", () => {
+  it("roundtrip Formulartext (Legacy)", () => {
     const text = attributesToFormText([
       { key: "custom.farbe", label: "Farbe", values: ["gold", "beige"] },
     ]);
     expect(parseAttributesFormText(text)).toEqual([
       { key: "custom.farbe", label: "Farbe", values: ["gold", "beige"] },
     ]);
+  });
+
+  it("liest Admin-Zeilen aus FormData", () => {
+    const fd = new FormData();
+    fd.append("attributeKey", "custom.farbe");
+    fd.append("attributeLabel", "Farbe");
+    fd.append("attributeValues", "beige, gold");
+    fd.append("attributeKey", "");
+    fd.append("attributeLabel", "Design");
+    fd.append("attributeValues", "Band");
+    const attrs = attributesFromFormData(fd);
+    expect(attrs).toEqual([
+      { key: "custom.farbe", label: "Farbe", values: ["beige", "gold"] },
+      { key: "custom.design", label: "Design", values: ["Band"] },
+    ]);
+  });
+
+  it("slugifyAttributeKey erzeugt custom.* Keys", () => {
+    expect(slugifyAttributeKey("Schmuckmaterial")).toBe("custom.schmuckmaterial");
   });
 
   it("erzeugt technische SKU ohne Produktname", () => {

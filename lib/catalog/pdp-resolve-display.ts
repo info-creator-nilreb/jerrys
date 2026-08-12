@@ -41,9 +41,11 @@ export type PdpResolvedDisplay = {
   dimensionsText: string | null;
   weightText: string | null;
   materialText: string | null;
-  /** Linke Spalte: Maße / Gewicht / Material (+ ggf. weitere kurze Specs). */
+  /** Linke Spalte: Maße / Gewicht / Material. */
   leftSpecs: PdpResolvedSpec[];
-  /** Rechte Spalte „Eigenschaften“: Bullets + übrige Merkmale. */
+  /** Rechte Spalte: Merkmale als einzelne Label/Wert-Zeilen. */
+  propertySpecs: PdpResolvedSpec[];
+  /** Freie Stichpunkte (falls gepflegt). */
   propertyLines: string[];
   propertiesIcon: PdpSpecIcon;
   family: PdpProductFamily;
@@ -201,6 +203,7 @@ export function resolvePdpDisplay(product: {
     });
   }
 
+  const propertySpecs: PdpResolvedSpec[] = [];
   const propertyLines: string[] = [];
   for (const line of product.featureBullets) {
     const t = line.trim();
@@ -209,20 +212,23 @@ export function resolvePdpDisplay(product: {
 
   for (const attr of attributes) {
     if (usedAttrKeys.has(attr.key)) continue;
-    // Theme-Farbe und reine Technik nicht als Eigenschaft
     if (attr.key === "theme.label_color") continue;
-    if (attr.key === "theme.label") continue; // erscheint als USP
+    if (attr.key === "theme.label") continue;
     const label =
       attr.key.includes("herstellungsland") || /herkunft/i.test(attr.label)
         ? "Herkunft"
         : attr.label;
-    const line = `${label}: ${attr.values.join(", ")}`;
-    if (!propertyLines.includes(line)) propertyLines.push(line);
+    propertySpecs.push({
+      key: attr.key,
+      label,
+      value: attr.values.join(", "),
+      icon: iconForAttributeKey(attr.key, label),
+    });
   }
 
   const origin =
     attrValues(attributes, "custom.herstellungsland", "herstellungsland") ||
-    propertyLines.find((l) => /^herkunft\s*:/i.test(l))?.replace(/^herkunft\s*:\s*/i, "") ||
+    propertySpecs.find((s) => s.key.includes("herstellungsland"))?.value ||
     null;
 
   const usps: PdpResolvedUsp[] = [];
@@ -265,6 +271,7 @@ export function resolvePdpDisplay(product: {
     weightText,
     materialText,
     leftSpecs,
+    propertySpecs,
     propertyLines,
     propertiesIcon: propertiesIconForFamily(family),
     family,

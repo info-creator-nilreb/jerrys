@@ -15,7 +15,6 @@ import { ProductMediaSection } from "@/app/admin/(dashboard)/products/product-me
 import { ProductStorefrontDetailFields } from "@/app/admin/(dashboard)/products/product-storefront-detail-fields";
 import { ProductVariantsSection } from "@/app/admin/(dashboard)/products/product-variants-section";
 import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
-import { attributesToFormText } from "@/features/catalog/domain/product-attributes";
 import type { ProductAttribute } from "@/features/catalog/domain/product-attributes";
 
 function plainDescriptionToHtml(description: string | null): string {
@@ -164,7 +163,7 @@ export function EditProductForm({
 
         <ProductAttributesFields
           state={state}
-          defaultText={attributesToFormText(product.attributes ?? [])}
+          defaults={product.attributes ?? []}
         />
 
         <ProductCategoriesFields

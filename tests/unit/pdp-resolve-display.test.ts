@@ -46,8 +46,10 @@ describe("resolvePdpDisplay", () => {
     });
 
     expect(d.leftSpecs.map((s) => s.label)).toEqual(["Gewicht", "Material"]);
-    expect(d.propertyLines).toContain("Herkunft: Deutschland");
-    expect(d.propertyLines).toContain("Farbe: gold");
+    expect(d.propertySpecs.some((s) => s.label === "Herkunft" && s.value === "Deutschland")).toBe(
+      true,
+    );
+    expect(d.propertySpecs.some((s) => s.label === "Farbe" && s.value === "gold")).toBe(true);
     expect(d.propertiesIcon).toBe("gem");
     expect(d.usps.some((u) => u.title === "Made in Germany" && u.icon === "flag-de")).toBe(
       true,
@@ -68,6 +70,7 @@ describe("resolvePdpDisplay", () => {
       attributes: [],
     });
     expect(d.leftSpecs).toEqual([]);
+    expect(d.propertySpecs).toEqual([]);
     expect(d.propertyLines).toEqual([]);
     expect(d.usps).toEqual([]);
   });

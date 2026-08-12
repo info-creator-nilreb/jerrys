@@ -49,7 +49,7 @@ export function ProductFormFields({ state, manufacturers }: Props) {
         }}
       />
 
-      <ProductAttributesFields state={state} defaultText="" />
+      <ProductAttributesFields state={state} defaults={[]} />
 
       <ProductPricesSection
         defaultTaxPercent={19}

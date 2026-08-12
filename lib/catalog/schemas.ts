@@ -2,7 +2,7 @@ import { z } from "zod";
 import { parseEuroInputToCents } from "@/lib/catalog/format";
 import { centsPairMatchesTax } from "@/lib/catalog/pricing";
 import { nonEmptyString } from "@/lib/validation/form";
-import { parseAttributesFormText } from "@/features/catalog/domain/product-attributes";
+import { normalizeProductAttributes } from "@/features/catalog/domain/product-attributes";
 
 export const productSlugSchema = z
   .string()
@@ -60,10 +60,17 @@ const featureBulletsField = z.string().transform((raw) =>
     .map((l) => (l.length > 200 ? l.slice(0, 200) : l)),
 );
 
-/** Merkmale: Zeilen `key|Label: wert1, wert2` oder `Label: wert1, wert2`. */
-const attributesField = z.string().transform((raw) =>
-  parseAttributesFormText(String(raw ?? "")),
-);
+/** Merkmale aus Admin-Zeilen (key/label/values). */
+const attributesField = z
+  .array(
+    z.object({
+      key: z.string().trim().min(1).max(120),
+      label: z.string().trim().min(1).max(120),
+      values: z.array(z.string().trim().min(1).max(120)).min(1).max(20),
+    }),
+  )
+  .max(40)
+  .transform((rows) => normalizeProductAttributes(rows));
 
 function refineStorefrontTextLengths(
   data: {
@@ -124,7 +131,7 @@ const sharedProductFields = {
   weightText: optionalText,
   materialText: optionalText,
   featureBullets: featureBulletsField,
-  attributesText: attributesField,
+  attributes: attributesField,
   /** Rohwerte aus Formular; Validierung in refineAmazonFields */
   amazonRatingAverage: z.string(),
   amazonRatingCount: z.string(),

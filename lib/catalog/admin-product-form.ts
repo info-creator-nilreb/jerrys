@@ -1,8 +1,5 @@
 import type { getProductByIdForAdmin } from "@/lib/catalog/queries";
-import {
-  attributesToFormText,
-  normalizeProductAttributes,
-} from "@/features/catalog/domain/product-attributes";
+import { normalizeProductAttributes } from "@/features/catalog/domain/product-attributes";
 
 type AdminProductRecord = NonNullable<Awaited<ReturnType<typeof getProductByIdForAdmin>>>;
 
@@ -51,7 +48,6 @@ export function adminProductForEditForm(product: AdminProductRecord) {
     materialText: product.materialText,
     featureBullets: product.featureBullets,
     attributes,
-    attributesText: attributesToFormText(attributes),
     currency: product.currency,
     images: product.images,
     variants: product.variants.map((v) => ({

@@ -114,7 +114,7 @@ export default async function ProduktDetailPage({
   const jsonLdDescription =
     leadDisplay || product.subtitle || textPreviewFromHtml(product.description);
 
-  const hasSpecsPanel = display.leftSpecs.length > 0 || display.propertyLines.length > 0;
+  const hasSpecsPanel = display.leftSpecs.length > 0 || display.propertySpecs.length > 0 || display.propertyLines.length > 0;
 
   return (
     <>

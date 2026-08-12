@@ -24,6 +24,8 @@ export {
   normalizeProductAttributes,
   attributesToFormText,
   parseAttributesFormText,
+  attributesFromFormData,
+  slugifyAttributeKey,
   type ProductAttribute,
 } from "@/features/catalog/domain/product-attributes";
 export {

@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getAdminSession } from "@/lib/auth/admin-session";
 import { syncDefaultVariantFromProduct } from "@/features/catalog";
+import { attributesFromFormData } from "@/features/catalog/domain/product-attributes";
 import { replaceProductCategoryMemberships } from "@/lib/catalog/category-membership";
 import { productCategoryAssignmentSchema } from "@/lib/catalog/category-schemas";
 import { parseEuroInputToCents } from "@/lib/catalog/format";
@@ -130,7 +131,7 @@ export async function createProduct(
     weightText: String(formData.get("weightText") ?? ""),
     materialText: String(formData.get("materialText") ?? ""),
     featureBullets: String(formData.get("featureBullets") ?? ""),
-    attributesText: String(formData.get("attributesText") ?? ""),
+    attributes: attributesFromFormData(formData),
     isBestseller: formData.get("isBestseller") === "on",
     showWorkshopCalendar: formData.get("showWorkshopCalendar") === "on",
     imageUrl: formData.get("imageUrl"),
@@ -190,7 +191,7 @@ export async function createProduct(
           weightText: d.weightText,
           materialText: d.materialText,
           featureBullets: d.featureBullets,
-          attributes: d.attributesText,
+          attributes: d.attributes,
           ...amazon,
           images: {
             create: [
@@ -262,7 +263,7 @@ export async function updateProduct(
     weightText: String(formData.get("weightText") ?? ""),
     materialText: String(formData.get("materialText") ?? ""),
     featureBullets: String(formData.get("featureBullets") ?? ""),
-    attributesText: String(formData.get("attributesText") ?? ""),
+    attributes: attributesFromFormData(formData),
     isBestseller: formData.get("isBestseller") === "on",
     isActive: parseIsActiveFromFormData(formData),
     categoryIds: formData.getAll("categoryIds"),
@@ -350,7 +351,7 @@ export async function updateProduct(
           weightText: d.weightText,
           materialText: d.materialText,
           featureBullets: d.featureBullets,
-          attributes: d.attributesText,
+          attributes: d.attributes,
           ...amazon,
         },
       });

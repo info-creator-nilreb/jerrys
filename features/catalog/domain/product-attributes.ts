@@ -198,15 +198,7 @@ export function parseAttributesFormText(raw: string): ProductAttribute[] {
       key = left.slice(0, pipe).trim();
       label = left.slice(pipe + 1).trim() || key;
     } else {
-      key = left
-        .toLowerCase()
-        .replace(/ä/g, "ae")
-        .replace(/ö/g, "oe")
-        .replace(/ü/g, "ue")
-        .replace(/ß/g, "ss")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-        .slice(0, MAX_KEY);
+      key = slugifyAttributeKey(left);
     }
     if (!key) continue;
     attrs.push({ key, label: label.slice(0, MAX_LABEL), values });
@@ -218,6 +210,43 @@ export function attributesToFormText(attrs: ProductAttribute[]): string {
   return normalizeProductAttributes(attrs)
     .map((a) => `${a.key}|${a.label}: ${a.values.join(", ")}`)
     .join("\n");
+}
+
+/** Stabilen Key aus Label erzeugen (für manuell angelegte Merkmale ohne Shopify-Key). */
+export function slugifyAttributeKey(label: string): string {
+  const slug = label
+    .toLowerCase()
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, MAX_KEY - 7);
+  return slug ? `custom.${slug}` : `custom.merkmal`;
+}
+
+/**
+ * Admin-Formular: parallele Felder `attributeKey[]`, `attributeLabel[]`, `attributeValues[]`.
+ * Shopify-/Import-Keys bleiben im Hidden-Field; Label und Werte sind sichtbar.
+ */
+export function attributesFromFormData(formData: FormData): ProductAttribute[] {
+  const keys = formData.getAll("attributeKey").map((v) => String(v ?? ""));
+  const labels = formData.getAll("attributeLabel").map((v) => String(v ?? ""));
+  const valuesRaw = formData.getAll("attributeValues").map((v) => String(v ?? ""));
+  const len = Math.max(keys.length, labels.length, valuesRaw.length);
+  const attrs: ProductAttribute[] = [];
+  for (let i = 0; i < len && attrs.length < MAX_ATTRIBUTES; i++) {
+    const label = (labels[i] ?? "").trim().slice(0, MAX_LABEL);
+    const values = parseAttributeValues(valuesRaw[i] ?? "");
+    if (!label || values.length === 0) continue;
+    let key = (keys[i] ?? "").trim().slice(0, MAX_KEY);
+    if (!key) key = slugifyAttributeKey(label);
+    attrs.push({ key, label, values });
+  }
+  return normalizeProductAttributes(attrs);
 }
 
 /** Technische System-SKU wenn Shopify keine SKU liefert (nicht aus Titel/Handle). */
