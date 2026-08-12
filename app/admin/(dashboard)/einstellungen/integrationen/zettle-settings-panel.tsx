@@ -56,6 +56,8 @@ type Props = {
   apiKeyDeepLink: string;
   webhookConfigured: boolean;
   webhookDestination: string | null;
+  /** Geplante Destination aus Env (auch wenn noch nicht in DB). */
+  webhookExpectedUrl: string | null;
   mappings: MappingRow[];
   recentSyncs: SyncRow[];
 };
@@ -268,13 +270,21 @@ export function ZettleSettingsPanel(props: Props) {
               ) : (
                 <span className="font-medium text-amber-800">nicht eingerichtet</span>
               )}
-              {props.webhookDestination ? (
+              {(props.webhookDestination || props.webhookExpectedUrl) ? (
                 <>
                   {" · "}
-                  <code className="break-all text-[10px]">{props.webhookDestination}</code>
+                  <code className="break-all text-[10px]">
+                    {props.webhookDestination ?? props.webhookExpectedUrl}
+                  </code>
                 </>
               ) : null}
             </p>
+            {!props.webhookConfigured ? (
+              <p className="text-amber-900">
+                Bitte „Webhook einrichten“ klicken (Signing-Key wird dann gespeichert). Ohne Webhook
+                greift weiterhin der manuelle/Cron Kauf-Sync.
+              </p>
+            ) : null}
             <p>
               Mappings: {mappedCount}/{props.mappings.length}
               {failedSyncs > 0 ? ` · ${failedSyncs} Sync-Fehler` : ""}
