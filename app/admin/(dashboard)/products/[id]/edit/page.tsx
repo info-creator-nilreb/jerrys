@@ -43,15 +43,33 @@ export default async function AdminEditProductPage({
 
   return (
     <div className="mx-auto max-w-4xl rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm sm:p-8">
-      <p className="text-sm text-[#6b7280]">
-        <Link href="/admin/products" className="font-medium text-primary hover:underline">
-          ← Zurück zum Katalog
-        </Link>
-      </p>
-      <h1 className="mt-4 text-xl font-semibold tracking-tight text-[#1f2937] sm:text-2xl">
-        Produkt bearbeiten
-      </h1>
-      <p className="mt-1 text-sm text-[#6b7280]">{product.title}</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-sm text-[#6b7280]">
+            <Link href="/admin/products" className="font-medium text-primary hover:underline">
+              ← Zurück zum Katalog
+            </Link>
+          </p>
+          <h1 className="mt-4 text-xl font-semibold tracking-tight text-[#1f2937] sm:text-2xl">
+            Produkt bearbeiten
+          </h1>
+          <p className="mt-1 text-sm text-[#6b7280]">{product.title}</p>
+        </div>
+        {product.isActive ? (
+          <a
+            href={`/produkte/${product.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            Shop-Vorschau
+          </a>
+        ) : (
+          <span className="text-sm text-[#9ca3af]" title="Nach Aktivierung im Shop erreichbar">
+            Shop-Vorschau (inaktiv)
+          </span>
+        )}
+      </div>
       <div className="mt-8 space-y-8">
         <EditProductForm product={formProduct} manufacturers={manufacturers} categories={categories} />
         <ProductLifecycleControls
