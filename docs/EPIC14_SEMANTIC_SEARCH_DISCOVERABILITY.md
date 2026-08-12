@@ -33,6 +33,8 @@ Diese Funktionen bleiben als robuster Fallback erhalten.
 - Indexstatus, Fehler und Rebuild im Admin sichtbar
 - inaktive Produkte, Draft-Seiten und personenbezogene Daten strikt ausschließen
 
+**Status:** umgesetzt (Livegang-Paket). Prisma `ProductSearchDocument` + `SearchIndexState`; Document-Builder (`features/catalog/domain/product-search-document.ts`) nur für aktive Produkte ohne Kundendaten; Sync/Rebuild (`sync-product-search-index`); Embedding-Port + NotConfigured + OpenAI `/embeddings` hinter `features/integrations` (Credentials analog KI-Content, eigener Port); Admin-Panel unter Einstellungen → Integrationen; Unit-Tests `product-search-document`, `embedding-port`, `sync-product-search-index`. Hybride Storefront-Suche folgt in Slice 3.
+
 ### Slice 3 — Hybride Suche
 
 - lexikalische Suche + semantische Ähnlichkeit + Geschäftsfilter

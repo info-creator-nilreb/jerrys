@@ -163,6 +163,8 @@ model Product {
   orderItems  OrderItem[]
   stockReservations StockReservation[]
   stockMovements    StockMovement[]
+  /// Öffentliches Suchdokument / Embedding-Index (Epic 14 Slice 2).
+  searchDocument ProductSearchDocument?
 
   @@index([isActive, sortOrder])
   @@map("products")
@@ -884,6 +886,68 @@ model AiContentGenerationEvent {
   @@index([createdAt])
   @@index([status, createdAt])
   @@map("ai_content_generation_events")
+}
+
+/// Indexstatus eines öffentlichen Produkt-Suchdokuments (Epic 14 Slice 2).
+enum SearchDocumentStatus {
+  pending
+  indexed
+  stale
+  error
+  /// Produkt inaktiv oder nicht indexierbar — kein Embedding.
+  excluded
+}
+
+/// Öffentliches Suchdokument inkl. providerneutralem Embedding (keine Kundendaten).
+model ProductSearchDocument {
+  id        String  @id @default(cuid())
+  productId String  @unique @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  /// Kanonischer Klartext für Index/Embedding (Titel, Beschreibung, Kategorien, …).
+  documentText String @map("document_text") @db.Text
+  /// SHA-256 über die indexrelevanten Eingaben — Re-Embed nur bei Änderung.
+  contentHash  String @map("content_hash")
+
+  status    SearchDocumentStatus @default(pending)
+  lastError String?              @map("last_error") @db.Text
+
+  /// Provider-ID (z. B. openai) — null solange kein Embedding vorliegt.
+  embeddingProvider  String?   @map("embedding_provider")
+  embeddingModel     String?   @map("embedding_model")
+  embeddingDims      Int?      @map("embedding_dims")
+  /// Float-Vektor als JSON-Array (pgvector später möglich).
+  embedding          Json?
+  embeddingUpdatedAt DateTime? @map("embedding_updated_at")
+  lastIndexedAt      DateTime? @map("last_indexed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status, updatedAt])
+  @@index([contentHash])
+  @@map("product_search_documents")
+}
+
+/// Singleton für Rebuild-/Indexstatus im Admin (Epic 14 Slice 2).
+model SearchIndexState {
+  id String @id @default("default")
+
+  lastRebuildStartedAt  DateTime? @map("last_rebuild_started_at")
+  lastRebuildFinishedAt DateTime? @map("last_rebuild_finished_at")
+  lastRebuildError      String?   @map("last_rebuild_error") @db.Text
+  /// { indexed, skippedUnchanged, excluded, errors, embeddingConfigured }
+  lastRebuildStats      Json?     @map("last_rebuild_stats")
+
+  documentsTotal   Int @default(0) @map("documents_total")
+  documentsIndexed Int @default(0) @map("documents_indexed")
+  documentsPending Int @default(0) @map("documents_pending")
+  documentsError   Int @default(0) @map("documents_error")
+  documentsExcluded Int @default(0) @map("documents_excluded")
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("search_index_state")
 }
 
 /// Gecachte Instagram-Medien (Bilder) für Storefront/CMS — Sync, kein Live-Graph pro Request.

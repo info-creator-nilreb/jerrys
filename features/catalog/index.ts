@@ -43,3 +43,9 @@ export {
   deleteProducts,
   type ProductLifecycleResult,
 } from "@/features/catalog/application/product-admin-lifecycle";
+export {
+  buildProductSearchDocument,
+  resolveSearchAvailability,
+  type BuiltProductSearchDocument,
+  type ProductSearchDocumentSource,
+} from "@/features/catalog/domain/product-search-document";

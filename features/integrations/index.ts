@@ -113,3 +113,26 @@ export {
   type AiContentSettingsSecrets,
   type SaveAiContentSettingsInput,
 } from "@/features/integrations/infrastructure/ai-content-settings";
+export {
+  type EmbeddingFailure,
+  type EmbeddingMeta,
+  type EmbeddingOperationErrorCode,
+  type EmbeddingProviderId,
+  type EmbeddingUsage,
+  type EmbedTextsInput,
+  type EmbedTextsResult,
+  type EmbedTextsSuccess,
+} from "@/features/integrations/domain/embeddings";
+export {
+  createNotConfiguredEmbeddingAdapter,
+  type EmbeddingPort,
+} from "@/features/integrations/application/embedding-port";
+export {
+  createEmbeddingPort,
+  createEmbeddingPortFromConfig,
+} from "@/features/integrations/application/create-embedding-port";
+export {
+  createOpenAiEmbeddingAdapter,
+  resolveOpenAiEmbeddingConfigFromEnv,
+  type OpenAiEmbeddingConfig,
+} from "@/features/integrations/infrastructure/openai-embedding-adapter";

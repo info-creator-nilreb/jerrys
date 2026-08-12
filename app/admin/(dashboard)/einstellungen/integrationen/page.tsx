@@ -3,7 +3,9 @@ import { headers } from "next/headers";
 import { AiSettingsPanel } from "./ai-settings-panel";
 import { InstagramConnectPanel } from "./instagram-connect-panel";
 import { InternetmarkeSettingsPanel } from "./internetmarke-settings-panel";
+import { SearchIndexPanel } from "./search-index-panel";
 import { ZettleSettingsPanel } from "./zettle-settings-panel";
+import { getSearchIndexStatusPublic } from "@/features/catalog/server";
 import { getInternetmarkeConnectionPublic } from "@/features/fulfillment";
 import {
   formatEstimatedCostUsd,
@@ -44,7 +46,7 @@ export default async function AdminIntegrationenPage({
   const igDiagnostics = getInstagramConfigDiagnostics(requestOrigin);
   const zettleDiagnostics = getZettleConfigDiagnostics();
 
-  const [igConnection, igCache, im, zettle, mappings, recentSyncs, ai, recentAiEvents] =
+  const [igConnection, igCache, im, zettle, mappings, recentSyncs, ai, recentAiEvents, searchIndex] =
     await Promise.all([
       getInstagramConnectionPublic(),
       listActiveInstagramMediaCache(48),
@@ -54,6 +56,7 @@ export default async function AdminIntegrationenPage({
       listRecentZettlePurchaseSyncs(15).catch(() => []),
       getAiContentSettingsPublic(),
       listRecentAiContentGenerationEvents(15).catch(() => []),
+      getSearchIndexStatusPublic(),
     ]);
 
   const aiUsage = await getAiContentUsageSummary({
@@ -112,6 +115,22 @@ export default async function AdminIntegrationenPage({
           totalTokens: ev.totalTokens,
           estimatedCostMicros: ev.estimatedCostMicros,
         }))}
+      />
+
+      <SearchIndexPanel
+        embeddingConfigured={searchIndex.embeddingConfigured}
+        embeddingProvider={searchIndex.embeddingProvider}
+        embeddingModel={searchIndex.embeddingModel}
+        documentsTotal={searchIndex.documentsTotal}
+        documentsIndexed={searchIndex.documentsIndexed}
+        documentsPending={searchIndex.documentsPending}
+        documentsError={searchIndex.documentsError}
+        documentsExcluded={searchIndex.documentsExcluded}
+        activeProductsWithoutDocument={searchIndex.activeProductsWithoutDocument}
+        lastRebuildStartedAt={searchIndex.lastRebuildStartedAt?.toISOString() ?? null}
+        lastRebuildFinishedAt={searchIndex.lastRebuildFinishedAt?.toISOString() ?? null}
+        lastRebuildError={searchIndex.lastRebuildError}
+        operatorHint={searchIndex.operatorHint}
       />
 
       <InstagramConnectPanel
