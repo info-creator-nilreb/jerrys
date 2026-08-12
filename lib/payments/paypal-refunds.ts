@@ -202,4 +202,4 @@ export async function refundPayPalCapture(params: {
   };
 }
 
-export { moneyStringFromGrossCents, fetchPayPalOrder };
+export { moneyStringFromGrossCents };
