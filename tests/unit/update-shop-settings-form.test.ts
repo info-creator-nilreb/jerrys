@@ -26,6 +26,7 @@ describe("shopSettingsInputFromFormData", () => {
     fd.set("showAllProductsInNav", "false");
     fd.append("showAllProductsInNav", "true");
     fd.set("showTermineInNav", "false");
+    fd.set("desktopShopNavMode", "burger");
 
     const input = shopSettingsInputFromFormData(fd);
     expect(input.shopName).toBe("jerry's");
@@ -34,6 +35,7 @@ describe("shopSettingsInputFromFormData", () => {
     expect(input.faviconUrl).toBeNull();
     expect(input.showAllProductsInNav).toBe(true);
     expect(input.showTermineInNav).toBe(false);
+    expect(input.desktopShopNavMode).toBe("burger");
 
     const parsed = parseShopSettingsUpdate({
       ...input,
@@ -46,6 +48,7 @@ describe("shopSettingsInputFromFormData", () => {
     expect(parsed.data.facebookUrl).toBeNull();
     expect(parsed.data.showAllProductsInNav).toBe(true);
     expect(parsed.data.showTermineInNav).toBe(false);
+    expect(parsed.data.desktopShopNavMode).toBe("burger");
   });
 
   it("akzeptiert die Seed-Defaults über Form-ähnliche Strings", () => {

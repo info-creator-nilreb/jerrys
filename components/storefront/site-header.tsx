@@ -45,7 +45,10 @@ export async function SiteHeader() {
     >
       <div className="flex w-full items-center gap-2 px-4 py-3 md:gap-3 md:px-6 md:py-3.5 lg:px-8 xl:px-10">
         <div className="flex min-w-0 flex-1 items-center">
-          <StorefrontShopNav links={shopNavLinks} />
+          <StorefrontShopNav
+            links={shopNavLinks}
+            desktopMode={settings.desktopShopNavMode}
+          />
         </div>
         <Link href="/" className="shrink-0" aria-label={shopName}>
           {/* unoptimized: Branding-URLs (static/Blob) ohne veralteten Image-Optimizer-Cache */}

@@ -999,6 +999,8 @@ model ShopSettings {
   showAllProductsInNav Boolean @default(true) @map("show_all_products_in_nav")
   /// Header-/Footer-Shop-Nav: festes Systemlink „Termine“.
   showTermineInNav Boolean @default(true) @map("show_termine_in_nav")
+  /// Desktop-Header: hidden | inline | burger (Mobil bleibt Burger, sofern Links existieren).
+  desktopShopNavMode String @default("inline") @map("desktop_shop_nav_mode")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

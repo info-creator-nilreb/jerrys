@@ -4,6 +4,20 @@
  */
 export const SHOP_SETTINGS_DEFAULT_ID = "default" as const;
 
+/** Desktop-Darstellung der Shop-Hauptnavigation. */
+export const DESKTOP_SHOP_NAV_MODES = ["hidden", "inline", "burger"] as const;
+export type DesktopShopNavMode = (typeof DESKTOP_SHOP_NAV_MODES)[number];
+
+export function isDesktopShopNavMode(value: unknown): value is DesktopShopNavMode {
+  return (
+    value === "hidden" || value === "inline" || value === "burger"
+  );
+}
+
+export function parseDesktopShopNavMode(value: unknown): DesktopShopNavMode {
+  return isDesktopShopNavMode(value) ? value : "inline";
+}
+
 export type ShopSettingsDefaults = {
   shopName: string;
   shortDescription: string;
@@ -28,6 +42,7 @@ export type ShopSettingsDefaults = {
   ogImageUrl: string | null;
   showAllProductsInNav: boolean;
   showTermineInNav: boolean;
+  desktopShopNavMode: DesktopShopNavMode;
 };
 
 export const JERRYS_SHOP_SETTINGS_DEFAULTS: ShopSettingsDefaults = {
@@ -55,6 +70,7 @@ export const JERRYS_SHOP_SETTINGS_DEFAULTS: ShopSettingsDefaults = {
   ogImageUrl: null,
   showAllProductsInNav: true,
   showTermineInNav: true,
+  desktopShopNavMode: "inline",
 };
 
 /** Client-sichere DTO-Form (ohne next/cache / Prisma). */

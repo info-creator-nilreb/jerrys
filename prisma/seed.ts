@@ -129,6 +129,7 @@ async function main() {
         ogImageUrl: shopDefaults.ogImageUrl,
         showAllProductsInNav: shopDefaults.showAllProductsInNav,
         showTermineInNav: shopDefaults.showTermineInNav,
+        desktopShopNavMode: shopDefaults.desktopShopNavMode,
       },
       update: {
         // Bestehende Installationen nicht überschreiben — nur fehlende Zeile anlegen.

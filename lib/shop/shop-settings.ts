@@ -7,6 +7,7 @@ import { isMissingSchemaError, isUniqueViolationError } from "@/lib/db/prisma-er
 import { SHOP_SETTINGS_CACHE_TAG } from "@/lib/shop/shop-settings-cache-tag";
 import {
   JERRYS_SHOP_SETTINGS_DEFAULTS,
+  parseDesktopShopNavMode,
   SHOP_SETTINGS_DEFAULT_ID,
   type ShopSettingsDTO,
 } from "@/lib/shop/shop-settings-defaults";
@@ -42,6 +43,7 @@ function toDto(
     ogImageUrl: string | null;
     showAllProductsInNav: boolean;
     showTermineInNav: boolean;
+    desktopShopNavMode: string;
     updatedAt: Date;
   } | null,
 ): ShopSettingsDTO {
@@ -74,6 +76,7 @@ function toDto(
     ogImageUrl: row.ogImageUrl,
     showAllProductsInNav: row.showAllProductsInNav,
     showTermineInNav: row.showTermineInNav,
+    desktopShopNavMode: parseDesktopShopNavMode(row.desktopShopNavMode),
     updatedAt: row.updatedAt,
   };
 }
@@ -103,6 +106,7 @@ const createDefaults = () => ({
   ogImageUrl: JERRYS_SHOP_SETTINGS_DEFAULTS.ogImageUrl,
   showAllProductsInNav: JERRYS_SHOP_SETTINGS_DEFAULTS.showAllProductsInNav,
   showTermineInNav: JERRYS_SHOP_SETTINGS_DEFAULTS.showTermineInNav,
+  desktopShopNavMode: JERRYS_SHOP_SETTINGS_DEFAULTS.desktopShopNavMode,
 });
 
 async function loadShopSettingsFromDb(): Promise<ShopSettingsCached> {

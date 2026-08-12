@@ -6,7 +6,10 @@ import {
   SHOP_SETTINGS_DEFAULT_ID,
   type ShopSettingsDTO,
 } from "@/lib/shop/shop-settings";
-import { JERRYS_SHOP_SETTINGS_DEFAULTS } from "@/lib/shop/shop-settings-defaults";
+import {
+  JERRYS_SHOP_SETTINGS_DEFAULTS,
+  parseDesktopShopNavMode,
+} from "@/lib/shop/shop-settings-defaults";
 import {
   parseShopSettingsUpdate,
   type ShopSettingsValues,
@@ -76,6 +79,7 @@ export function shopSettingsInputFromFormData(formData: FormData): Record<string
     ogImageUrl: null,
     showAllProductsInNav: formCheckbox(formData, "showAllProductsInNav"),
     showTermineInNav: formCheckbox(formData, "showTermineInNav"),
+    desktopShopNavMode: parseDesktopShopNavMode(formData.get("desktopShopNavMode")),
   };
 }
 
@@ -106,6 +110,7 @@ function createDefaultsRow(values: ShopSettingsValues) {
     ogImageUrl: d.ogImageUrl,
     showAllProductsInNav: values.showAllProductsInNav,
     showTermineInNav: values.showTermineInNav,
+    desktopShopNavMode: values.desktopShopNavMode,
   };
 }
 
@@ -149,6 +154,7 @@ export async function updateShopSettingsFromInput(
           emailFromName: values.emailFromName,
           showAllProductsInNav: values.showAllProductsInNav,
           showTermineInNav: values.showTermineInNav,
+          desktopShopNavMode: values.desktopShopNavMode,
         },
       });
       await appendIntegrationOutbox(tx, {
@@ -161,6 +167,7 @@ export async function updateShopSettingsFromInput(
           primaryHoverColor: values.primaryHoverColor,
           showAllProductsInNav: values.showAllProductsInNav,
           showTermineInNav: values.showTermineInNav,
+          desktopShopNavMode: values.desktopShopNavMode,
         },
       });
     });

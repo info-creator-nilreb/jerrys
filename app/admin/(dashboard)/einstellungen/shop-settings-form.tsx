@@ -264,6 +264,50 @@ export function ShopSettingsForm({ defaults }: Props) {
                 </span>
               </span>
             </label>
+
+            <fieldset className="mt-4 space-y-2 border-t border-[#e8eaed] pt-4">
+              <legend className="text-sm font-medium text-[#1f2937]">Desktop-Darstellung</legend>
+              <p className="text-xs text-[#6b7280]">
+                Auf schlanken Markenseiten kannst du das Desktop-Menü ausblenden. Mobil bleibt der
+                Burger, sobald Links vorhanden sind.
+              </p>
+              {(
+                [
+                  {
+                    value: "inline",
+                    title: "Sichtbar im Header",
+                    hint: "Klassische Linkzeile neben dem Logo (bisheriges Verhalten)",
+                  },
+                  {
+                    value: "burger",
+                    title: "Als Burger-Menü",
+                    hint: "Auch auf Desktop nur über das Menü-Icon öffnen",
+                  },
+                  {
+                    value: "hidden",
+                    title: "Kein Menü auf Desktop",
+                    hint: "Desktop ohne Shop-Nav; Mobil weiterhin Burger",
+                  },
+                ] as const
+              ).map((opt) => (
+                <label
+                  key={opt.value}
+                  className="flex cursor-pointer items-start gap-2.5 text-sm text-[#374151]"
+                >
+                  <input
+                    type="radio"
+                    name="desktopShopNavMode"
+                    value={opt.value}
+                    defaultChecked={defaults.desktopShopNavMode === opt.value}
+                    className="mt-1 size-3.5 accent-primary"
+                  />
+                  <span>
+                    <span className="font-medium">{opt.title}</span>
+                    <span className="mt-0.5 block text-xs text-[#6b7280]">{opt.hint}</span>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
           </div>
         </SettingsCard>
 
