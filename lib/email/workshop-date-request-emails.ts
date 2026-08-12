@@ -1,9 +1,8 @@
 import { sendTransactionalEmail } from "@/lib/email/provider";
-import {
-  grayInfoCard,
-  wrapTransactionalEmailHtml,
-} from "@/lib/email/transactional-email-layout";
+import { grayInfoCard } from "@/lib/email/transactional-email-layout";
 import { escapeHtmlForEmail, publicSiteBaseUrl } from "@/lib/email/template-utils";
+import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
+import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
 import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
 import { formatWorkshopSessionDateTime } from "@/lib/workshop/format-session-datetime";
 import { createLogger } from "@/lib/logging/logger";
@@ -26,29 +25,10 @@ export async function sendWorkshopDateRequestApprovedEmail(input: {
   const branding = await resolveTransactionalEmailBranding();
   const greeting = input.contactName?.trim() || "du";
   const when = formatWorkshopSessionDateTime(input.preferredStartsAt, "Europe/Berlin");
-  const seats =
-    input.seatCount === 1 ? "1 Platz" : `${input.seatCount} Plätze`;
+  const seats = input.seatCount === 1 ? "1 Platz" : `${input.seatCount} Plätze`;
   const overviewUrl = termineOverviewUrl();
 
-  const subject = "Dein Wunschtermin wurde angenommen";
-
-  const text = [
-    `Hallo ${greeting},`,
-    "",
-    "wir haben deine Terminanfrage angenommen und einen Terminentwurf angelegt.",
-    "",
-    `Wunschzeit: ${when}`,
-    `Plätze: ${seats}`,
-    "",
-    "Sobald der Termin veröffentlicht ist, kannst du ihn unter „Termine“ buchen.",
-    "",
-    overviewUrl,
-    "",
-    "Liebe Grüße",
-    branding.shopName,
-  ].join("\n");
-
-  const bodyInner = grayInfoCard(
+  const detailsHtml = grayInfoCard(
     [
       `<p style="margin:0"><strong>Wunschzeit:</strong> ${escapeHtmlForEmail(when)}</p>`,
       `<p style="margin:8px 0 0"><strong>Plätze:</strong> ${escapeHtmlForEmail(seats)}</p>`,
@@ -56,22 +36,30 @@ export async function sendWorkshopDateRequestApprovedEmail(input: {
     ].join(""),
   );
 
-  const html = wrapTransactionalEmailHtml({
-    variant: "workshop",
-    documentTitle: subject,
-    heading: "Wunschtermin angenommen",
-    intro: "Danke für deine Anfrage — wir melden uns, sobald der Termin buchbar ist.",
-    bodyHtml: bodyInner,
-    cta: { href: overviewUrl, label: "Termine ansehen" },
-    branding,
-  });
+  const vars = mergeTemplateVars(
+    buildShopTemplateVars(branding, {
+      cta: { href: overviewUrl, label: "Termine ansehen" },
+      heroVariant: "workshop",
+    }),
+    {
+      customer: { first_name: greeting },
+      workshop: {
+        when,
+        seats,
+        details_html: detailsHtml,
+      },
+    },
+  );
+
+  const rendered = await renderStoredEmailTemplate("workshop_date_request_approved", vars);
+  if (!rendered.enabled) return;
 
   try {
     await sendTransactionalEmail({
       to: input.contactEmail,
-      subject,
-      text,
-      html,
+      subject: rendered.subject,
+      text: rendered.text,
+      html: rendered.html,
     });
   } catch (e) {
     log.warn("workshop_date_request_approved_email_failed", {
@@ -91,55 +79,43 @@ export async function sendWorkshopDateRequestRejectedEmail(input: {
   const greeting = input.contactName?.trim() || "du";
   const when = formatWorkshopSessionDateTime(input.preferredStartsAt, "Europe/Berlin");
   const overviewUrl = termineOverviewUrl();
+  const adminNote = input.adminNote?.trim() || "";
 
-  const subject = "Zu deiner Terminanfrage";
-
-  const noteBlock = input.adminNote?.trim()
-    ? ["", "Hinweis vom Team:", input.adminNote.trim(), ""]
-    : [""];
-
-  const text = [
-    `Hallo ${greeting},`,
-    "",
-    "leider können wir deinen Wunschtermin so nicht anbieten.",
-    "",
-    `Angefragte Zeit: ${when}`,
-    ...noteBlock,
-    "Du kannst jederzeit eine neue Anfrage stellen oder einen veröffentlichten Termin buchen.",
-    "",
-    overviewUrl,
-    "",
-    "Liebe Grüße",
-    branding.shopName,
-  ].join("\n");
-
-  const noteHtml = input.adminNote?.trim()
-    ? `<p style="margin:12px 0 0;padding:12px;background:#f9fafb;border-radius:6px;border:1px solid #e5e7eb"><strong>Hinweis:</strong> ${escapeHtmlForEmail(input.adminNote.trim())}</p>`
+  const noteHtml = adminNote
+    ? `<p style="margin:12px 0 0;padding:12px;background:#f9fafb;border-radius:6px;border:1px solid #e5e7eb"><strong>Hinweis:</strong> ${escapeHtmlForEmail(adminNote)}</p>`
     : "";
 
-  const bodyInner = grayInfoCard(
+  const detailsHtml = grayInfoCard(
     [
       `<p style="margin:0"><strong>Angefragte Zeit:</strong> ${escapeHtmlForEmail(when)}</p>`,
       noteHtml,
     ].join(""),
   );
 
-  const html = wrapTransactionalEmailHtml({
-    variant: "workshop",
-    documentTitle: subject,
-    heading: "Terminanfrage nicht möglich",
-    intro: "Schau gern in unserem Terminkalender nach Alternativen oder stelle eine neue Anfrage.",
-    bodyHtml: bodyInner,
-    cta: { href: overviewUrl, label: "Termine ansehen" },
-    branding,
-  });
+  const vars = mergeTemplateVars(
+    buildShopTemplateVars(branding, {
+      cta: { href: overviewUrl, label: "Termine ansehen" },
+      heroVariant: "workshop",
+    }),
+    {
+      customer: { first_name: greeting },
+      workshop: {
+        when,
+        admin_note: adminNote,
+        details_html: detailsHtml,
+      },
+    },
+  );
+
+  const rendered = await renderStoredEmailTemplate("workshop_date_request_rejected", vars);
+  if (!rendered.enabled) return;
 
   try {
     await sendTransactionalEmail({
       to: input.contactEmail,
-      subject,
-      text,
-      html,
+      subject: rendered.subject,
+      text: rendered.text,
+      html: rendered.html,
     });
   } catch (e) {
     log.warn("workshop_date_request_rejected_email_failed", {

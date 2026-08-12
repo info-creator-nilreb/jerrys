@@ -8,6 +8,7 @@ import {
   Home,
   Layers,
   LayoutGrid,
+  Mail,
   Menu,
   Package,
   Percent,
@@ -51,6 +52,10 @@ export function IconOrders({ className }: { className?: string }) {
 
 export function IconPromotions({ className }: { className?: string }) {
   return <Percent className={className} aria-hidden strokeWidth={stroke} />;
+}
+
+export function IconEmails({ className }: { className?: string }) {
+  return <Mail className={className} aria-hidden strokeWidth={stroke} />;
 }
 
 export function IconCustomers({ className }: { className?: string }) {

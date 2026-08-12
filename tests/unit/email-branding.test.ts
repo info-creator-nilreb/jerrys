@@ -65,4 +65,34 @@ describe("wrapTransactionalEmailHtml mit Branding", () => {
     expect(html).toContain("Acme · Berlin");
     expect(html).not.toContain("Instagram");
   });
+
+  it("bindet absolutes Settings-Logo als img ein", () => {
+    const branding = {
+      ...defaultTransactionalEmailBranding(),
+      shopName: "Acme",
+      logoAbsoluteUrl: "https://cdn.example.com/logo.png",
+    };
+    const html = wrapTransactionalEmailHtml({
+      variant: "order",
+      documentTitle: "Test",
+      heading: "Hallo",
+      intro: "Intro",
+      bodyHtml: "<p>Body</p>",
+      cta: { href: "https://example.com", label: "CTA" },
+      branding,
+    });
+    expect(html).toContain('src="https://cdn.example.com/logo.png"');
+    expect(html).toContain('width="200"');
+    expect(html).toContain("-ms-interpolation-mode:bicubic");
+  });
+});
+
+describe("resolveEmailLogoAbsoluteUrl", () => {
+  it("bevorzugt hochgeladenes https-Logo aus Einstellungen", async () => {
+    const { resolveEmailLogoAbsoluteUrl } = await import("@/lib/shop/email-branding");
+    const url = resolveEmailLogoAbsoluteUrl(
+      settings({ logoLightUrl: "https://blob.example.com/logo-light.png" }),
+    );
+    expect(url).toBe("https://blob.example.com/logo-light.png");
+  });
 });

@@ -614,6 +614,24 @@ model EmailLog {
   @@map("email_logs")
 }
 
+/// Editierbare Transaktions-Mail-Templates (Betreff + HTML/Text mit {{Variablen}}).
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  /// Stabiler Schlüssel, z. B. order_confirmation, email_verify.
+  key         String   @unique
+  name        String
+  description String?
+  subject     String
+  htmlBody    String   @map("html_body") @db.Text
+  textBody    String   @map("text_body") @db.Text
+  /// false = Versand mit diesem Typ überspringen (nur manuell erneut aus Admin, falls vorgesehen).
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("email_templates")
+}
+
 model OrderItem {
   id                     String  @id @default(cuid())
   orderId                String  @map("order_id")

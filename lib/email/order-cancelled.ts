@@ -6,7 +6,9 @@ import {
   upsertOrderEmailDeliveryLog,
 } from "@/lib/email/order-email-log";
 import { sendTransactionalEmail } from "@/lib/email/provider";
-import { escapeHtmlForEmail, publicSiteBaseUrl } from "@/lib/email/template-utils";
+import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
+import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
+import { publicSiteBaseUrl } from "@/lib/email/template-utils";
 import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
 
 /**
@@ -35,33 +37,26 @@ export async function sendOrderCancelledIfNeeded(
   const base = publicSiteBaseUrl();
   const successPath = `/checkout/erfolg?nr=${encodeURIComponent(order.orderNumber)}`;
   const successUrl = base ? `${base}${successPath}` : successPath;
-  const shopName = branding.shopName;
 
-  const subject = `Storno zu Bestellung ${order.orderNumber}`;
-  const text = [
-    `Hallo ${order.shippingFirstName},`,
-    "",
-    `deine Bestellung ${order.orderNumber} wurde storniert.`,
-    "",
-    "Bei Fragen erreichst du uns über die Kontaktdaten im Impressum.",
-    "",
-    `Link zur Bestellübersicht: ${successUrl}`,
-    "",
-    "Liebe Grüße",
-    shopName,
-  ].join("\n");
+  const vars = mergeTemplateVars(buildShopTemplateVars(branding, { heroVariant: "order" }), {
+    customer: { first_name: order.shippingFirstName },
+    order: {
+      number: order.orderNumber,
+      status_url: successUrl,
+    },
+  });
 
-  const html = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;line-height:1.5;color:#111">
-<p>Hallo ${escapeHtmlForEmail(order.shippingFirstName)},</p>
-<p>deine Bestellung <strong>${escapeHtmlForEmail(order.orderNumber)}</strong> wurde storniert.</p>
-<p>Bei Fragen nutze bitte die Kontaktdaten im Impressum.</p>
-<p style="margin-top:1.25rem"><a href="${escapeHtmlForEmail(successUrl)}">Bestellung ansehen</a></p>
-<p>Liebe Grüße<br/>${escapeHtmlForEmail(shopName)}</p>
-</body></html>`;
+  const rendered = await renderStoredEmailTemplate("order_cancelled", vars);
+  if (!rendered.enabled && !options?.force) return;
 
   let result: Awaited<ReturnType<typeof sendTransactionalEmail>>;
   try {
-    result = await sendTransactionalEmail({ to: order.email, subject, text, html });
+    result = await sendTransactionalEmail({
+      to: order.email,
+      subject: rendered.subject,
+      text: rendered.text,
+      html: rendered.html,
+    });
   } catch (e) {
     result = {
       status: "failed",

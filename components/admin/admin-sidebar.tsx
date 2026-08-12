@@ -12,6 +12,7 @@ import {
   IconContents,
   IconCustomers,
   IconDashboard,
+  IconEmails,
   IconOrders,
   IconPromotions,
   IconSettings,
@@ -119,6 +120,7 @@ const mainNav: NavItem[] = [
     ],
   },
   { href: "/admin/promotions", label: "Promotions", icon: IconPromotions },
+  { href: "/admin/emails", label: "E-Mails", icon: IconEmails },
   { href: "/admin/versand", label: "Versand", icon: IconShipping },
   {
     href: "/admin/einstellungen",
@@ -258,7 +260,10 @@ export function AdminSidebar({
         )}
       </div>
 
-      <nav className="flex flex-1 flex-col overflow-y-auto py-3" aria-label="Hauptnavigation">
+      <nav
+        className="flex flex-1 flex-col overflow-y-auto py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        aria-label="Hauptnavigation"
+      >
         {mainNav.map((item) => {
           const Icon = item.icon;
           const active = itemActive(item);
