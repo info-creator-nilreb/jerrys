@@ -6,8 +6,8 @@ Referenz: [ADR 0004](./adr/0004-product-categories.md), [Epic 10](./EPIC10_PRODU
 
 | Konzept | Kundensicht | Navigation | Breadcrumb-Rolle |
 | --- | --- | --- | --- |
-| **Kategorien** | Stabile Produktwelt („Kratzbäume“) | **Header** (Primary Nav) | Browse-Pfad & SEO |
-| **Kollektionen** | Kampagnen / Kuratierung | **Footer** (Merchandising), nicht parallel zur Haupt-IA | Kontext, wenn Nutzer von dort kommt |
+| **Kategorien** | Stabile Produktwelt („Kratzbäume“) — Produkte über verknüpfte **Kollektionen** | **Header** (Primary Nav) | Browse-Pfad & SEO |
+| **Kollektionen** | Produktzuordnung & Kampagnen / Kuratierung | Admin-Zuordnung; optional **Footer** | Kontext, wenn Nutzer von dort kommt |
 | **Alle Produkte** | Gesamtkatalog | Erster Nav-Link | Fallback ohne Taxonomie |
 
 Es gibt **keine** kombinierte Kette „Kollektion → Kategorie → Produkt“. Es gilt **ein** Pfad pro Ansicht.
@@ -24,7 +24,7 @@ Cookie wird in der **Middleware** aus dem Pfad gesetzt (`/kategorien/[slug]`, `/
 | Kategorie **Y** (Root) | Start → **Y** → Produkt | Produkt ist in **Y** |
 | Kategorie **Y** (Unterkategorie) | Start → **Parent** → **Y** → Produkt | Produkt ist in **Y** |
 | Katalog `/produkte` | Start → **Alle Produkte** → Produkt | Kontext `catalog` |
-| Deep-Link / Suche / extern | Start → (Parent?) → **Primary-Kategorie** → Produkt | Primary gesetzt |
+| Deep-Link / Suche / extern | Start → (Parent?) → **Primary-Kategorie** → Produkt | Primary **abgeleitet** über Kollektion→Kategorie |
 | Deep-Link ohne Primary | Start → **Alle Produkte** → Produkt | Fallback |
 
 **Nicht** verwenden: Index-Crumbs „Kategorien“ / „Kollektionen“ auf der PDP (nur Titel der aktiven Gruppe).

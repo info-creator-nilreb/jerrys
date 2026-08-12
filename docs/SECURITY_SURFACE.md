@@ -30,7 +30,7 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | Server Actions `app/(storefront)/checkout/actions.ts` | Öffentlich | Checkout |
 | Server Actions `app/admin/.../orders/actions.ts` | `auth()` in Action | Bestellstatus |
 | Server Actions `app/admin/.../products/actions.ts` | `auth()` in Action | Katalogpflege |
-| Server Actions `app/admin/.../categories/actions.ts` | `auth()` in Action | Kategorie-CRUD, Produktzuordnung |
+| Server Actions `app/admin/.../categories/actions.ts` | `auth()` in Action | Kategorie-CRUD, Kollektions-Zuordnung |
 | Server Actions `app/admin/.../versand/actions.ts` | `auth()` in Action | Shopweite Versandländer und -kosten |
 | Seite `/admin/einstellungen` | Admin-Session | Shop-Branding, Kontakt, Farben, Medien-Uploads (Epic 11) |
 | Seite `/admin/einstellungen/integrationen` | Admin-Session | Instagram-OAuth + Internetmarke + Zettle POS + KI-Content (OpenAI) |

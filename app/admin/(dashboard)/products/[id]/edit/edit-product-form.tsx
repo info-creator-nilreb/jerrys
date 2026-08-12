@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -9,7 +10,6 @@ import {
 import { ProductAttributesFields } from "@/app/admin/(dashboard)/products/product-attributes-fields";
 import { ProductAiTextAssistant } from "@/app/admin/(dashboard)/products/product-ai-text-assistant";
 import { ProductAiImageAssistant } from "@/app/admin/(dashboard)/products/product-ai-image-assistant";
-import { ProductCategoriesFields } from "@/app/admin/(dashboard)/products/product-categories-fields";
 import { ProductDeliveryFields } from "@/app/admin/(dashboard)/products/product-delivery-fields";
 import { ProductGeneralFields } from "@/app/admin/(dashboard)/products/product-general-fields";
 import { ProductPricesSection } from "@/app/admin/(dashboard)/products/product-prices-section";
@@ -81,8 +81,7 @@ type Product = {
     availableQuantity: number;
     stockQuantity: number;
   }[];
-  categoryIds: string[];
-  primaryCategoryId: string | null;
+  collectionTitles: string[];
 };
 
 const initialState: ProductFormState = null;
@@ -93,18 +92,10 @@ const saveBtnClass =
 export function EditProductForm({
   product,
   manufacturers,
-  categories,
   aiReady = false,
 }: {
   product: Product;
   manufacturers: Manufacturer[];
-  categories: {
-    id: string;
-    title: string;
-    slug: string;
-    isActive: boolean;
-    parentTitle: string | null;
-  }[];
   aiReady?: boolean;
 }) {
   const router = useRouter();
@@ -134,15 +125,12 @@ export function EditProductForm({
 
   const defaultSku =
     product.variants.find((v) => v.isDefault)?.sku ?? product.variants[0]?.sku ?? null;
-  const categoryNames = categories
-    .filter((c) => product.categoryIds.includes(c.id))
-    .map((c) => (c.parentTitle ? `${c.parentTitle} › ${c.title}` : c.title));
 
   return (
     <div className="flex max-w-4xl flex-col gap-8">
       <ProductAiTextAssistant
         aiReady={aiReady}
-        categoryNames={categoryNames}
+        categoryNames={product.collectionTitles}
         defaultSku={defaultSku}
         onApply={(target, value) => {
           if (target === "descriptionHtml") {
@@ -209,14 +197,24 @@ export function EditProductForm({
           defaults={product.attributes ?? []}
         />
 
-        <ProductCategoriesFields
-          categories={categories}
-          defaults={{
-            categoryIds: product.categoryIds,
-            primaryCategoryId: product.primaryCategoryId,
-          }}
-          fieldErrors={state?.fieldErrors}
-        />
+        <section className="rounded-lg border border-[#e8eaed] bg-[#fafbfc] p-4">
+          <h2 className="text-sm font-semibold text-[#374151]">Kategorien &amp; Kollektionen</h2>
+          <p className="mt-1 text-xs text-[#6b7280]">
+            Produkte werden in{" "}
+            <Link href="/admin/collections" className="font-medium text-primary hover:underline">
+              Kollektionen
+            </Link>{" "}
+            zugeordnet. Kategorien in der Shop-Navigation binden diese Kollektionen — nicht einzelne
+            Produkte.
+          </p>
+          {product.collectionTitles.length > 0 ? (
+            <p className="mt-3 text-sm text-[#374151]">
+              Aktuell in: {product.collectionTitles.join(", ")}
+            </p>
+          ) : (
+            <p className="mt-3 text-sm text-[#9ca3af]">Noch keiner Kollektion zugeordnet.</p>
+          )}
+        </section>
 
         <ProductPricesSection
           defaultTaxPercent={product.taxRatePercent}

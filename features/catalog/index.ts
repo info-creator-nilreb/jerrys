@@ -43,7 +43,3 @@ export {
   deleteProducts,
   type ProductLifecycleResult,
 } from "@/features/catalog/application/product-admin-lifecycle";
-export {
-  persistAiGeneratedProductImage,
-  type PersistAiProductImageResult,
-} from "@/features/catalog/application/persist-ai-product-image";

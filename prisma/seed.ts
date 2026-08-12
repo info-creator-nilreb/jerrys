@@ -1,6 +1,6 @@
 import { hash } from "bcryptjs";
 import "dotenv/config";
-import { syncDefaultVariantFromProduct } from "../features/catalog";
+import { syncDefaultVariantFromProduct } from "../features/catalog/application/sync-default-variant-from-product";
 import { netCentsFromGross } from "../lib/catalog/pricing";
 import { getPrisma } from "../lib/db/prisma";
 import {
@@ -273,28 +273,53 @@ async function main() {
       },
     });
 
-    await prisma.productCategory.upsert({
-      where: {
-        productId_categoryId: { productId: hoehle.id, categoryId: catKatzen.id },
-      },
+    const colKatzen = await prisma.collection.upsert({
+      where: { slug: "katzen" },
       create: {
-        productId: hoehle.id,
-        categoryId: catKatzen.id,
-        isPrimary: true,
+        id: "seed_col_katzen",
+        slug: "katzen",
+        title: "Katzen",
+        description: "Demo-Kollektion für Kategorie Katzen (ADR 0010).",
+        sortOrder: 0,
+        isActive: true,
       },
-      update: { isPrimary: true },
+      update: {
+        title: "Katzen",
+        description: "Demo-Kollektion für Kategorie Katzen (ADR 0010).",
+        sortOrder: 0,
+        isActive: true,
+      },
     });
 
-    await prisma.productCategory.upsert({
+    await prisma.categoryCollection.upsert({
       where: {
-        productId_categoryId: { productId: napf.id, categoryId: catKatzen.id },
+        categoryId_collectionId: {
+          categoryId: catKatzen.id,
+          collectionId: colKatzen.id,
+        },
       },
       create: {
-        productId: napf.id,
         categoryId: catKatzen.id,
-        isPrimary: true,
+        collectionId: colKatzen.id,
+        sortOrder: 0,
       },
-      update: { isPrimary: true },
+      update: { sortOrder: 0 },
+    });
+
+    await prisma.collectionProduct.upsert({
+      where: {
+        collectionId_productId: { collectionId: colKatzen.id, productId: hoehle.id },
+      },
+      create: { collectionId: colKatzen.id, productId: hoehle.id, sortOrder: 0 },
+      update: { sortOrder: 0 },
+    });
+
+    await prisma.collectionProduct.upsert({
+      where: {
+        collectionId_productId: { collectionId: colKatzen.id, productId: napf.id },
+      },
+      create: { collectionId: colKatzen.id, productId: napf.id, sortOrder: 1 },
+      update: { sortOrder: 1 },
     });
 
     await syncDefaultVariantsForAllProducts(prisma);

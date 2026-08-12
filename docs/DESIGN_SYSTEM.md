@@ -63,7 +63,7 @@ Do not introduce another interactive accent color. The existing navy admin sideb
 
 - Product imagery is the primary visual element; preserve aspect ratio and prevent layout shift.
 - Header remains compact. Cart and account actions are easy to find; navigation does not overwhelm the catalog.
-- **Primary shop navigation (header / mobile drawer):** stable **product categories** (`/kategorien/…`) plus „Alle Produkte“; cap top-level links (default 6). **Collections** are secondary merchandising (e.g. footer), not the main browse IA. Rules: [EPIC10_PRODUCT_CATEGORIES.md](./EPIC10_PRODUCT_CATEGORIES.md), breadcrumbs: [STOREFRONT_BREADCRUMBS.md](./STOREFRONT_BREADCRUMBS.md).
+- **Primary shop navigation (header / mobile drawer):** stable **product categories** (`/kategorien/…`) plus „Alle Produkte“; categories expose products via linked **collections** (ADR 0010). Cap top-level links (default 6). Unlinked campaign collections stay secondary (e.g. footer). Rules: [EPIC10_PRODUCT_CATEGORIES.md](./EPIC10_PRODUCT_CATEGORIES.md), breadcrumbs: [STOREFRONT_BREADCRUMBS.md](./STOREFRONT_BREADCRUMBS.md).
 - Collection pages provide clear filtering and sorting with active-filter feedback and removable filter chips.
 - Product cards show image, name, optional concise subtitle/badge, price, availability, and one unambiguous action.
 - Product detail pages place title, price, variant, availability, quantity, and add-to-cart near each other. Supporting content follows in scannable sections.

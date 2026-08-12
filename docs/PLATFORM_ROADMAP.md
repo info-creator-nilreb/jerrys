@@ -177,16 +177,16 @@ Goals:
 
 User stories:
 
-- As a merchandiser, I can define categories (name, slug, description, sort order, active/inactive) and assign products to one or more categories with a clear primary category for listings and SEO.
+- As a merchandiser, I can define categories (name, slug, description, sort order, active/inactive) and link collections so products appear in nav listings; primary category for SEO/breadcrumbs is derived via collection membership.
 - As a customer, I can browse products by category from the header (desktop and mobile) and land on category pages with filters and sorting consistent with `/produkte`.
 - As a customer, I see breadcrumbs and page titles that reflect category hierarchy when a nested taxonomy is enabled.
-- As an operator, I can leave products without a category and still expose them via the all-products catalog (`/produkte`) until assignment is complete.
+- As an operator, I can leave products without a collection (and thus without a category) and still expose them via the all-products catalog (`/produkte`) until assignment is complete.
 - As the system, I do not show inactive or empty categories in the storefront navigation (same visibility rules as active collections today).
 
 Suggested delivery slices (see [EPIC10_PRODUCT_CATEGORIES.md](./EPIC10_PRODUCT_CATEGORIES.md)):
 
-1. ADR and schema (`categories`, product assignment, optional parent for one level of nesting initially).
-2. Admin: category CRUD, product assignment, nav sort order.
+1. ADR and schema (`categories`, collection links, optional parent for one level of nesting initially).
+2. Admin: category CRUD, collection assignment on categories, nav sort order.
 3. Storefront: category index and `/kategorien/[slug]` listing (reuse existing product cards, filters, sort from Epic 2).
 4. Header/footer: build nav from active categories; cap depth and count for compact header; collections remain separate optional links.
 5. Migration and SEO: backfill optional default category; metadata and redirects policy documented.
@@ -196,7 +196,7 @@ Exit criteria: every active category in nav resolves to a published listing; pro
 Out of scope for this epic (explicit):
 
 - Multi-level unlimited taxonomy and faceted attribute navigation (follow-up if needed).
-- Replacing collections; merging categories and collections into one concept.
+- Replacing collections; collapsing categories and collections into one entity without a menu system.
 - Marketplace-style vendor categories.
 
 ## Epic 11: Central Shop Settings and Branding

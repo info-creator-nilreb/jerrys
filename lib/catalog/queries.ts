@@ -19,11 +19,29 @@ export const storefrontProductCardSelect = {
   },
 };
 
-const storefrontPrimaryCategorySelect = {
-  categoryMemberships: {
-    where: { isPrimary: true, category: { isActive: true } },
-    select: { category: { select: { slug: true, title: true } } },
-    take: 1,
+/** Kategorien über aktive Kollektionen (für Primary-Ableitung / Facetten). */
+export const storefrontCategoryViaCollectionsSelect = {
+  collectionMemberships: {
+    where: { collection: { isActive: true } },
+    select: {
+      collection: {
+        select: {
+          categoryLinks: {
+            where: { category: { isActive: true } },
+            select: {
+              category: {
+                select: {
+                  slug: true,
+                  title: true,
+                  sortOrder: true,
+                  parentId: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   },
 } as const;
 
@@ -33,7 +51,7 @@ export async function listActiveProductsForStorefront() {
     orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
     select: {
       ...storefrontProductCardSelect,
-      ...storefrontPrimaryCategorySelect,
+      ...storefrontCategoryViaCollectionsSelect,
     },
   });
 }
@@ -49,7 +67,7 @@ export async function listActiveProductsByIdsForStorefront(
     where: { id: { in: ids }, isActive: true },
     select: {
       ...storefrontProductCardSelect,
-      ...storefrontPrimaryCategorySelect,
+      ...storefrontCategoryViaCollectionsSelect,
     },
   });
   const byId = new Map(rows.map((r) => [r.id, r]));
@@ -63,15 +81,22 @@ export async function listActiveProductsByCategorySlugForStorefront(
   return getPrisma().product.findMany({
     where: {
       isActive: true,
-      categoryMemberships: {
-        some: { category: { slug: categorySlug, isActive: true } },
+      collectionMemberships: {
+        some: {
+          collection: {
+            isActive: true,
+            categoryLinks: {
+              some: { category: { slug: categorySlug, isActive: true } },
+            },
+          },
+        },
       },
     },
     orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
     take: limit,
     select: {
       ...storefrontProductCardSelect,
-      ...storefrontPrimaryCategorySelect,
+      ...storefrontCategoryViaCollectionsSelect,
     },
   });
 }
@@ -82,23 +107,29 @@ export async function getActiveProductBySlug(slug: string) {
     include: {
       images: { orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }] },
       variants: prismaStorefrontActiveVariantsInclude,
-      categoryMemberships: {
-        where: { category: { isActive: true } },
-        select: {
-          isPrimary: true,
-          category: {
-            select: {
-              slug: true,
-              title: true,
-              parent: { select: { slug: true, title: true } },
-            },
-          },
-        },
-      },
       collectionMemberships: {
         where: { collection: { isActive: true } },
         select: {
-          collection: { select: { slug: true, title: true } },
+          collection: {
+            select: {
+              slug: true,
+              title: true,
+              categoryLinks: {
+                where: { category: { isActive: true } },
+                select: {
+                  category: {
+                    select: {
+                      slug: true,
+                      title: true,
+                      sortOrder: true,
+                      parentId: true,
+                      parent: { select: { slug: true, title: true } },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       },
     },
@@ -154,12 +185,11 @@ export async function getProductByIdForAdmin(id: string) {
         orderBy: [{ isDefault: "desc" }, { sortOrder: "asc" }],
         select: defaultVariantAdminSelect,
       },
-      categoryMemberships: {
-        orderBy: [{ isPrimary: "desc" }, { category: { title: "asc" } }],
+      collectionMemberships: {
+        orderBy: [{ sortOrder: "asc" }, { collection: { title: "asc" } }],
         select: {
-          isPrimary: true,
-          categoryId: true,
-          category: { select: { id: true, title: true, slug: true, isActive: true } },
+          collectionId: true,
+          collection: { select: { id: true, title: true, slug: true, isActive: true } },
         },
       },
     },

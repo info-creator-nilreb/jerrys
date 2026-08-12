@@ -54,7 +54,7 @@ export default async function KategorienIndexPage() {
                   <p className="mt-2 line-clamp-3 text-sm text-(--foreground-muted)">{c.description}</p>
                 ) : null}
                 <p className="mt-4 text-sm text-(--foreground-muted)">
-                  {c._count.products} {c._count.products === 1 ? "Produkt" : "Produkte"}
+                  {c.productCount} {c.productCount === 1 ? "Produkt" : "Produkte"}
                 </p>
               </Link>
               {childCategories.some((ch) => ch.parentId === c.id) ? (
@@ -70,7 +70,7 @@ export default async function KategorienIndexPage() {
                           {ch.title}
                         </Link>
                         <span className="ml-2 text-xs text-(--foreground-muted)">
-                          ({ch._count.products})
+                          ({ch.productCount})
                         </span>
                       </li>
                     ))}
@@ -91,7 +91,7 @@ export default async function KategorienIndexPage() {
                     <p className="mt-1 text-xs text-(--foreground-muted)">Unter „{c.parent.title}“</p>
                   ) : null}
                   <p className="mt-4 text-sm text-(--foreground-muted)">
-                    {c._count.products} {c._count.products === 1 ? "Produkt" : "Produkte"}
+                    {c.productCount} {c.productCount === 1 ? "Produkt" : "Produkte"}
                   </p>
                 </Link>
               </li>

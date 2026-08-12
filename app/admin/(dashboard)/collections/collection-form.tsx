@@ -113,7 +113,8 @@ export function CollectionForm({
         <h2 className="text-sm font-semibold text-[#374151]">Produkte in dieser Kollektion</h2>
         <p className="mt-1 text-xs text-[#6b7280]">
           Reihenfolge entspricht der Auswahl (oben nach unten). Nur aktive Produkte erscheinen in der
-          Storefront.
+          Storefront. Shop-Navigation bindet Kollektionen über Kategorien — hier ist die
+          Produktzuordnung.
         </p>
         {products.length === 0 ? (
           <p className="mt-4 text-sm text-[#6b7280]">Noch keine Produkte im Katalog.</p>

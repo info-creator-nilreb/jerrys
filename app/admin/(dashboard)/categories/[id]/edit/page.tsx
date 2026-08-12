@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { CategoryForm } from "@/app/admin/(dashboard)/categories/category-form";
 import {
   getCategoryByIdForAdmin,
-  listProductsForCategoryPicker,
+  listCollectionsForCategoryPicker,
   listRootCategoriesForParentPicker,
 } from "@/lib/catalog/category-queries";
 
@@ -17,14 +17,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function AdminEditCategoryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [category, products, parentOptions] = await Promise.all([
+  const [category, collections, parentOptions] = await Promise.all([
     getCategoryByIdForAdmin(id),
-    listProductsForCategoryPicker(),
+    listCollectionsForCategoryPicker(),
     listRootCategoriesForParentPicker(id),
   ]);
   if (!category) notFound();
-
-  const primaryRow = category.products.find((p) => p.isPrimary);
 
   return (
     <div className="mx-auto max-w-3xl rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm sm:p-8">
@@ -34,11 +32,11 @@ export default async function AdminEditCategoryPage({ params }: { params: Promis
         </Link>
         <h1 className="mt-4 text-xl font-semibold text-[#1f2937] sm:text-2xl">{category.title}</h1>
         <p className="mt-1 text-xs text-[#9ca3af]">
-          Storefront-Listing folgt in Epic 10 Slice 3 (/kategorien/{category.slug}).
+          Storefront: /kategorien/{category.slug} — Produkte über verknüpfte Kollektionen.
         </p>
       </div>
       <CategoryForm
-        products={products}
+        collections={collections}
         parentOptions={parentOptions}
         submitLabel="Speichern"
         category={{
@@ -49,8 +47,7 @@ export default async function AdminEditCategoryPage({ params }: { params: Promis
           sortOrder: category.sortOrder,
           isActive: category.isActive,
           parentId: category.parentId,
-          productIds: category.products.map((p) => p.productId),
-          primaryProductId: primaryRow?.productId ?? null,
+          collectionIds: category.collections.map((c) => c.collectionId),
           hasChildren: category._count.children > 0,
         }}
       />

@@ -1,4 +1,5 @@
 import type { StorefrontProductCard } from "@/components/storefront/product-card";
+import { pickPrimaryCategoryRef } from "@/lib/catalog/category-membership";
 import { pickDefaultVariant } from "@/lib/catalog/default-variant-storefront";
 
 export type StorefrontCatalogProduct = StorefrontProductCard & {
@@ -9,14 +10,48 @@ export function asCatalogProduct(product: StorefrontProductCard): StorefrontCata
   return { ...product, primaryCategory: null };
 }
 
+type CategoryViaCollectionMembership = {
+  collection: {
+    categoryLinks: Array<{
+      category: {
+        slug: string;
+        title: string;
+        sortOrder?: number;
+        parentId?: string | null;
+      };
+    }>;
+  };
+};
+
 export function mapProductWithPrimaryCategory(
   product: StorefrontProductCard & {
+    collectionMemberships?: CategoryViaCollectionMembership[];
+    /** @deprecated legacy shape — ignore if collectionMemberships present */
     categoryMemberships?: Array<{ category: { slug: string; title: string } }>;
   },
 ): StorefrontCatalogProduct {
-  const primary = product.categoryMemberships?.[0]?.category ?? null;
-  const { categoryMemberships: _categoryMemberships, ...rest } = product;
-  return { ...rest, primaryCategory: primary };
+  const {
+    collectionMemberships,
+    categoryMemberships: _legacy,
+    ...rest
+  } = product;
+
+  const fromCollections =
+    collectionMemberships?.flatMap((m) =>
+      m.collection.categoryLinks.map((l) => l.category),
+    ) ?? [];
+
+  const primary =
+    fromCollections.length > 0
+      ? pickPrimaryCategoryRef(fromCollections)
+      : (_legacy?.[0]?.category ?? null);
+
+  return {
+    ...rest,
+    primaryCategory: primary
+      ? { slug: primary.slug, title: primary.title }
+      : null,
+  };
 }
 
 function displayPriceCents(product: StorefrontProductCard): number {
