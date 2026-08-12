@@ -200,6 +200,16 @@ Symptoms: Admin-Integrationen zeigt Prüfung fehlgeschlagen; Generierung `not_co
 4. OpenAI Dashboard: Key-Rechte, Billing, Rate-Limits.
 5. Nach Fix: „Speichern & prüfen“ (GET `/v1/models`).
 
+### Runbook: Semantische Suche fällt auf Lexik zurück
+
+Symptoms: Storefront `/produkte?q=` liefert Treffer, aber semantisch schwache Anfragen wirken „klassisch“; Admin zeigt Indexalter/Hinweis auf Fallback.
+
+1. **Admin → Einstellungen → Integrationen → Semantischer Suchindex**: Embedding konfiguriert? Indexalter / letzter Rebuild / Fehlerstatus?
+2. Ohne Key oder bei Providerfehler: Vollsuche nutzt automatisch `lexical_fallback` — Katalog bleibt durchsuchbar (kein Ausfall).
+3. Index unvollständig: „Suchindex neu aufbauen“; bei Modellwechsel optional „Embeddings erzwingen“.
+4. Öffentliche Agentenressourcen: `/llms.txt`, `/katalog.json` (ETag/Cache; Rate-Limit), Sitemap — siehe [EPIC14](./EPIC14_SEMANTIC_SEARCH_DISCOVERABILITY.md).
+5. Eval: kuratierter Satz `features/catalog/domain/search-eval-set.de.ts` + Metrik-Hilfen in `search-quality-metrics.ts`.
+
 ### Runbook: INTERNETMARKE Label-Kauf / Auth fehlgeschlagen
 
 Symptoms: Admin/Command liefert `not_configured` oder `provider_rejected`; Logs mit INTERNETMARKE 401/4xx.

@@ -51,11 +51,19 @@ Diese Funktionen bleiben als robuster Fallback erhalten.
 - Cache-/ETag-Strategie und Rate-Limits
 - keine nicht öffentlichen Lager-, Kunden- oder Admin-Daten
 
+**Status:** umgesetzt (Livegang-Paket). `GET /llms.txt` listet kanonische öffentliche Pfade inkl. Sitemap und Feed; `GET /katalog.json` liefert nur aktive Produkte (ID, URL, Preis, Währung, `in_stock`/`out_of_stock`, `updatedAt`) ohne Lagermengen/Kundendaten; ETag + `Cache-Control` + IP-Rate-Limit; Eintrag in `SECURITY_SURFACE.md`; Unit-Tests `public-product-feed`, `public-catalog-feed-rate-limit`.
+
 ### Slice 5 — Qualität und Betrieb
 
 - kuratierter deutscher Such-Evaluationssatz (Synonyme, Tippfehler, Intentionen, Nulltreffer)
 - Metriken: Nulltreffer, Klickrate, Latenz, Fallback-Rate und Indexalter
 - Kostenlimits, Batch-Reindex und Rollback auf klassische Suche
+
+**Status:** umgesetzt (MVP, Livegang-Paket). Eval-Satz `features/catalog/domain/search-eval-set.de.ts`; Metrik-Hilfen (`nullHitRate`, `fallbackRate`, `meanLatencyMs`, `indexAgeHours`) in `search-quality-metrics.ts`; Admin-Panel zeigt Indexalter und Hinweis auf lexikalischen Fallback; Batch-Rebuild bleibt im Integrationen-Panel; Klickrate/Live-Telemetrie und harte Kostenlimits bewusst schlank (nicht im MVP-Scope). Dokumentierter Fallback siehe unten.
+
+### Lexikalischer Fallback (Betrieb)
+
+Die Storefront-Vollsuche (`searchStorefrontProductsHybrid` → `/produkte?q=`) kombiniert Lexik und Semantik. Bei fehlender Embedding-Konfiguration, leerem Index, Providerfehler oder fehlgeschlagenem Query-Embedding liefert sie **kontrolliert nur die klassische lexikalische Suche** (`mode: lexical_fallback`). Typeahead (`/api/storefront/product-suggest`) ist bewusst rein lexikalisch und erzeugt kein Query-Embedding pro Tastendruck. Ein vollständiger Rollback auf Lexik ist damit der Default-Pfad bei Ausfall — kein separater Feature-Flag nötig.
 
 ## Agentic-Commerce-Grenze v1
 
@@ -63,11 +71,13 @@ Erlaubt sind ausschließlich lesende Discoverability-Funktionen. Produktfeed und
 
 ## Exit-Kriterien
 
-1. Natürlich formulierte und synonyme Suchanfragen verbessern den kuratierten Evaluationssatz messbar.
-2. Provider-/Indexausfall fällt kontrolliert auf klassische Suche zurück.
-3. Preis, Verfügbarkeit und Sichtbarkeit stammen immer aus autoritativen Shopdaten.
-4. Öffentliche Agentenressourcen enthalten keine personenbezogenen oder internen Daten.
-5. Strukturierte Daten, Feed und Sitemap widersprechen sich nicht.
+1. Natürlich formulierte und synonyme Suchanfragen verbessern den kuratierten Evaluationssatz messbar. ✅ Eval-Satz vorhanden; Hybrid-Ranking + Unit-Tests.
+2. Provider-/Indexausfall fällt kontrolliert auf klassische Suche zurück. ✅ `lexical_fallback` in Application + Tests + Admin-Hinweis.
+3. Preis, Verfügbarkeit und Sichtbarkeit stammen immer aus autoritativen Shopdaten. ✅ Feed/JSON-LD/Storefront aus aktiven Produkten + Default-Variante.
+4. Öffentliche Agentenressourcen enthalten keine personenbezogenen oder internen Daten. ✅ Feed ohne Lager/Kunde; `SECURITY_SURFACE` + Tests.
+5. Strukturierte Daten, Feed und Sitemap widersprechen sich nicht. ✅ dieselben aktiven Produkt-URLs (`/produkte/{slug}`), Verfügbarkeit analog JSON-LD InStock/OutOfStock.
+
+**MVP-Exit:** erfüllt (Livegang-Paket).
 
 ## Nicht-Ziele
 

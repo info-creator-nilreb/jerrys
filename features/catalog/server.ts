@@ -18,3 +18,4 @@ export {
   type HybridStorefrontSearchMeta,
   type HybridStorefrontSearchResult,
 } from "@/features/catalog/application/hybrid-storefront-search";
+export { getPublicProductFeedDocument } from "@/features/catalog/application/public-product-feed";

@@ -66,3 +66,30 @@ export {
   type HybridRankMode,
   type HybridSearchableProduct,
 } from "@/features/catalog/domain/hybrid-product-search";
+export {
+  PUBLIC_PRODUCT_FEED_VERSION,
+  buildPublicProductFeedDocument,
+  buildPublicProductFeedItem,
+  formatPublicPriceAmount,
+  ifNoneMatchMatches,
+  publicProductFeedEtag,
+  resolvePublicAvailability,
+  type PublicProductAvailability,
+  type PublicProductFeedDocument,
+  type PublicProductFeedItem,
+  type PublicProductFeedSource,
+} from "@/features/catalog/domain/public-product-feed";
+export {
+  SEARCH_EVAL_SET_DE,
+  SEARCH_EVAL_SET_VERSION,
+  type SearchEvalCase,
+  type SearchEvalIntent,
+} from "@/features/catalog/domain/search-eval-set.de";
+export {
+  fallbackRate,
+  formatIndexAgeLabel,
+  indexAgeHours,
+  meanLatencyMs,
+  nullHitRate,
+  type SearchEvalRunResult,
+} from "@/features/catalog/domain/search-quality-metrics";

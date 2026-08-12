@@ -51,12 +51,15 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | Lesepfade Storefront/E-Mail/PDF/Admin-Login | Öffentlich bzw. serverseitig | `getShopSettings()` + Static-Fallbacks `/branding/*`; keine freie CSS/JS aus Admin-Eingaben (nur Hex-Farben, URLs, Text via Zod) |
 | Seiten `/admin/termine`, `/admin/termine/neu`, `/admin/termine/[id]/edit` | Admin-Session | Gruppentermine (Entwurf, Veröffentlichen, Absage); globale Storno-Frist |
 | Server Actions `app/admin/(dashboard)/termine/actions.ts` | `auth()` in Action | Termin-CRUD (nur Entwürfe), Lifecycle, Shop-Workshop-Einstellungen; Audit `workshop.session.*` |
-| `GET /llms.txt` | Öffentlich | KI-/Agenten-Hinweis (nur statischer Text, keine personenbezogenen Daten) |
+| `GET /llms.txt` | Öffentlich | KI-/Agenten-Hinweis mit kanonischen öffentlichen Ressourcen (kein PII); Cache `max-age=3600` |
+| `GET /katalog.json` | Öffentlich | Maschinenlesbarer Produktfeed (aktive Produkte: stabile ID, URL, Preis, Währung, Verfügbarkeit, `updatedAt`); **kein** Lagerbestand/Kundendaten; **ETag** + `Cache-Control`; **Rate-Limit** pro IP (`lib/security/public-catalog-feed-rate-limit.ts`) |
 | `GET /sitemap.xml` | Öffentlich | SEO-Sitemap (Produkt-URLs u. a.) |
 | `GET /robots.txt` | Öffentlich | Crawler-Regeln inkl. Sitemap-Verweis |
 | `GET /checkout/paypal-rueckkehr` | Öffentlich (Redirect von PayPal) | Nach erfolgreichem Capture: Bestellung `paid`, Lager, E-Mail ([PAYMENT_PROVIDER_STRATEGY](./PAYMENT_PROVIDER_STRATEGY.md)) |
 | `POST /api/checkout/paypal/create-order` | Öffentlich (Checkout) | Bestellung anlegen + PayPal-Order; **Rate-Limit** pro IP (`lib/security/paypal-checkout-api-rate-limit.ts`) |
 | `POST /api/checkout/paypal/capture-order` | Öffentlich (Checkout) | Capture nach Karte/Wallet; **gleiches Rate-Limit** wie create-order |
+| `POST /api/checkout/paypal/express-create` | Öffentlich (Checkout/Warenkorb) | PayPal Express Order anlegen; **gleiches Rate-Limit** wie create-order |
+| `POST /api/checkout/paypal/express-approve` | Öffentlich (Checkout/Warenkorb) | PayPal Express nach Approve finalisieren; **gleiches Rate-Limit** wie create-order |
 | `POST /api/webhooks/paypal` | Öffentlich (PayPal) | PayPal-Webhooks; **Signaturpflicht** (`PAYPAL_WEBHOOK_ID` + verify-webhook-signature); Inbox-Idempotenz (`paypal_webhook` / Event-ID); Rate-Limit pro IP (`lib/security/paypal-webhook-api-rate-limit.ts`); ohne Webhook-ID → **503**; Events u. a. Capture-Complete/Approve + `PAYMENT.CAPTURE.REFUNDED` |
 | `GET`/`POST /api/internal/commerce-maintenance` | Bearer `CRON_SECRET` (Vercel Cron), Bearer/`x-commerce-maintenance-secret` (`COMMERCE_MAINTENANCE_SECRET`) | Bestandsreservierungen, Outbox, Workshops, PayPal-Reconciliation, Instagram-Feed-Sync, Zettle-Kauf-Pull (wenn verbunden) |
 | `POST /api/webhooks/zettle` | Öffentlich (Zettle Pusher); HMAC `X-iZettle-Signature` | `PurchaseCreated` → idempotente POS-Bestandsbuchung; Inbox `zettle_pusher` |

@@ -7,6 +7,10 @@ import {
   rebuildSearchIndexAction,
   type SearchIndexAdminActionState,
 } from "@/app/admin/(dashboard)/einstellungen/integrationen/search-index-actions";
+import {
+  formatIndexAgeLabel,
+  indexAgeHours,
+} from "@/features/catalog/domain/search-quality-metrics";
 
 export type SearchIndexPanelProps = {
   embeddingConfigured: boolean;
@@ -43,6 +47,10 @@ export function SearchIndexPanel(props: SearchIndexPanelProps) {
     null as SearchIndexAdminActionState,
   );
 
+  const indexAgeLabel = formatIndexAgeLabel(
+    indexAgeHours(props.lastRebuildFinishedAt),
+  );
+
   useEffect(() => {
     if (state?.ok || state?.error) {
       router.refresh();
@@ -61,8 +69,9 @@ export function SearchIndexPanel(props: SearchIndexPanelProps) {
         <div>
           <h2 className="text-lg font-semibold text-[#1f2937]">Semantischer Suchindex</h2>
           <p className="mt-2 text-sm text-[#6b7280]">
-            Öffentliche Produktdokumente und Embeddings (Epic 14). Keine Kundendaten. Die
-            Storefront-Suche bleibt lexikalisch, bis die hybride Suche folgt.
+            Öffentliche Produktdokumente und Embeddings für die hybride Storefront-Suche
+            (Epic 14). Keine Kundendaten. Typeahead bleibt lexikalisch; bei Index- oder
+            Providerausfall fällt die Vollsuche auf die klassische Suche zurück.
           </p>
         </div>
       </div>
@@ -125,6 +134,10 @@ export function SearchIndexPanel(props: SearchIndexPanelProps) {
           <dd className="mt-0.5 font-medium text-[#1f2937]">
             {formatDe(props.lastRebuildFinishedAt ?? props.lastRebuildStartedAt)}
           </dd>
+        </div>
+        <div>
+          <dt className="text-[#6b7280]">Indexalter</dt>
+          <dd className="mt-0.5 font-medium text-[#1f2937]">{indexAgeLabel}</dd>
         </div>
       </dl>
 

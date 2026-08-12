@@ -84,20 +84,26 @@ function buildOperatorHint(input: {
   documentsPending: number;
   lastRebuildError: string | null;
   activeProductsWithoutDocument: number;
+  lastRebuildFinishedAt: Date | null;
 }): string {
+  const fallbackNote =
+    "Bei Provider-/Indexausfall fällt die Storefront-Vollsuche kontrolliert auf die lexikalische Suche zurück.";
   if (!input.embeddingConfigured) {
-    return "Kein Embedding-Anbieter konfiguriert. Lexikalische Suche bleibt aktiv; semantischer Index kann nicht aufgebaut werden. OPENAI_API_KEY unter Integrationen setzen.";
+    return `Kein Embedding-Anbieter konfiguriert. Lexikalische Suche bleibt aktiv; semantischer Index kann nicht aufgebaut werden. OPENAI_API_KEY unter Integrationen setzen. ${fallbackNote}`;
   }
   if (input.lastRebuildError) {
-    return `Letzter Rebuild fehlgeschlagen: ${input.lastRebuildError}`;
+    return `Letzter Rebuild fehlgeschlagen: ${input.lastRebuildError} ${fallbackNote}`;
   }
   if (input.documentsError > 0) {
-    return `${input.documentsError} Dokument(e) im Fehlerstatus. Rebuild erneut ausführen oder Produktdaten prüfen.`;
+    return `${input.documentsError} Dokument(e) im Fehlerstatus. Rebuild erneut ausführen oder Produktdaten prüfen. ${fallbackNote}`;
   }
   if (input.activeProductsWithoutDocument > 0 || input.documentsPending > 0) {
-    return "Index unvollständig — Rebuild ausführen, um aktive Produkte nachzuziehen.";
+    return `Index unvollständig — Rebuild ausführen, um aktive Produkte nachzuziehen. ${fallbackNote}`;
   }
-  return "Index bereit. Embeddings werden nur bei relevanten Inhaltsänderungen aktualisiert.";
+  if (!input.lastRebuildFinishedAt) {
+    return `Index bereit, aber noch kein abgeschlossener Rebuild protokolliert. ${fallbackNote}`;
+  }
+  return `Index bereit. Embeddings werden nur bei relevanten Inhaltsänderungen aktualisiert. ${fallbackNote}`;
 }
 
 async function loadProductsForIndex(productIds?: string[]): Promise<ProductIndexRow[]> {
@@ -488,6 +494,7 @@ export async function getSearchIndexStatusPublic(
         documentsPending,
         lastRebuildError,
         activeProductsWithoutDocument,
+        lastRebuildFinishedAt: state?.lastRebuildFinishedAt ?? null,
       }),
     };
   } catch (e) {

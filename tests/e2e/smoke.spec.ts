@@ -15,7 +15,7 @@ test("Impressum lädt", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Impressum" })).toBeVisible();
 });
 
-test("Sitemap und llms.txt liefern 200", async ({ request }) => {
+test("Sitemap, llms.txt und katalog.json liefern 200", async ({ request }) => {
   const sm = await request.get("/sitemap.xml");
   expect(sm.ok()).toBeTruthy();
   expect(sm.headers()["content-type"] ?? "").toMatch(/xml/i);
@@ -23,4 +23,11 @@ test("Sitemap und llms.txt liefern 200", async ({ request }) => {
   const llms = await request.get("/llms.txt");
   expect(llms.ok()).toBeTruthy();
   expect(llms.headers()["content-type"] ?? "").toMatch(/text\/plain/i);
+  const llmsBody = await llms.text();
+  expect(llmsBody).toContain("/katalog.json");
+
+  const feed = await request.get("/katalog.json");
+  expect(feed.ok()).toBeTruthy();
+  expect(feed.headers()["content-type"] ?? "").toMatch(/json/i);
+  expect(feed.headers()["etag"]).toBeTruthy();
 });
