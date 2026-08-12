@@ -1,4 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/db/prisma", () => ({
+  getPrisma: () => ({
+    aiContentSettings: {
+      findUnique: vi.fn().mockResolvedValue(null),
+      upsert: vi.fn(),
+      update: vi.fn(),
+      create: vi.fn(),
+    },
+  }),
+}));
+
 import {
   createAiContentPort,
   createNotConfiguredAiContentAdapter,
@@ -24,8 +36,12 @@ describe("NotConfiguredAiContentAdapter", () => {
 });
 
 describe("createAiContentPort / resolveOpenAiContentConfigFromEnv", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("fällt ohne Key auf NotConfigured zurück", async () => {
-    const port = createAiContentPort({} as unknown as NodeJS.ProcessEnv);
+    const port = await createAiContentPort({} as unknown as NodeJS.ProcessEnv);
     expect(port.isConfigured()).toBe(false);
     const result = await port.moderate({ text: "hallo" });
     expect(result).toMatchObject({ ok: false, error: "not_configured" });

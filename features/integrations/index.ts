@@ -42,9 +42,26 @@ export {
   createNotConfiguredAiContentAdapter,
   type AiContentPort,
 } from "@/features/integrations/application/ai-content-port";
-export { createAiContentPort } from "@/features/integrations/application/create-ai-content-port";
+export {
+  createAiContentPort,
+  createAiContentPortFromConfig,
+} from "@/features/integrations/application/create-ai-content-port";
 export { createOpenAiContentAdapter } from "@/features/integrations/infrastructure/openai-ai-content-adapter";
 export {
   resolveOpenAiContentConfigFromEnv,
   type OpenAiContentConfig,
 } from "@/features/integrations/infrastructure/openai-config";
+export {
+  AI_CONTENT_SETTINGS_ID,
+  clearAiContentApiKey,
+  consumeAiContentRequestQuota,
+  getAiContentSettingsPublic,
+  getAiContentSettingsSecrets,
+  markAiContentSettingsError,
+  markAiContentSettingsVerified,
+  saveAiContentSettings,
+  verifyOpenAiApiKey,
+  type AiContentSettingsPublic,
+  type AiContentSettingsSecrets,
+  type SaveAiContentSettingsInput,
+} from "@/features/integrations/infrastructure/ai-content-settings";

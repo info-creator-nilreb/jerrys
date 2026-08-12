@@ -22,8 +22,8 @@ Epic 13 requires AI-assisted draft generation for product text, SEO copy, alt te
 3. **First adapter:** OpenAI via server-side HTTP (`OPENAI_API_KEY` and optional model env vars). Without a key → `NotConfigured` adapter (clear errors, no network).
 4. **Draft-only contract:** Port results are drafts plus provider metadata (model, capability, usage). Persistence and publish remain later slices with explicit confirm.
 5. **Allowlisted facts:** Prompt builders accept only approved product/CMS fact keys. Forbidden keys (customer, order, address, secrets, …) are rejected before any provider call.
-6. **Secrets:** Slice 1 uses env credentials only. Admin UI + encrypted DB keys (same pattern as Instagram / INTERNETMARKE) ship in Slice 2.
-7. **Out of scope still:** Admin UI, product-form apply, CMS blocks, durable image storage of drafts, usage dashboards, second provider.
+6. **Secrets:** Env `OPENAI_API_KEY` and/or encrypted Admin key in `AiContentSettings` (AES-GCM). Env wins over DB. Model profiles + daily request limit live in the singleton (Slice 2).
+7. **Out of scope still:** product-form apply (Slice 3), CMS blocks, durable image storage of drafts, rich usage dashboards, second provider.
 
 ## Consequences
 

@@ -28,7 +28,7 @@ KI unterstützt Admins bei Produkttexten, SEO-Inhalten, Alt-Texten sowie Bildgen
 ## Vorgeschlagene Slices
 
 1. **ADR und Provider-Port:** Text-, Vision-, Image-Generation und Moderation als getrennte Fähigkeiten; OpenAI-Adapter. ✅ (Slice 1)
-2. **Admin-Konfiguration:** Provider, Modellprofile, Limits und verschlüsselte Server-Keys; keine Secrets im Client/DB-Klartext.
+2. **Admin-Konfiguration:** Provider, Modellprofile, Limits und verschlüsselte Server-Keys; keine Secrets im Client/DB-Klartext. ✅ (Slice 2)
 3. **Textassistent:** Produktformular mit Vorschau/Diff und explizitem Übernehmen einzelner Felder.
 4. **Bildassistent:** Upload/Quellbild, Prompt, Vorschau, Moderation, explizite Übernahme in dauerhaften Medienspeicher.
 5. **CMS-Integration:** Text-/Bildentwürfe für ausgewählte Blöcke, weiterhin ohne Auto-Publish.

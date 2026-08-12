@@ -20,14 +20,14 @@
 
 ---
 
-## Ist-Zustand (nach Slice 1)
+## Ist-Zustand (nach Slice 2)
 
-- ADR-0010 akzeptiert
-- `AiContentPort` in `features/integrations` (Text, Vision/Alt, Image, Moderation)
-- `NotConfigured`-Adapter ohne `OPENAI_API_KEY`
-- OpenAI-Adapter (HTTP) hinter Env-Config
+- ADR-0010 akzeptiert; Slice 1 Port + OpenAI-Adapter
+- `AiContentSettings` Singleton (verschlüsselter Key, Modelle, Tageslimit, Usage UTC)
+- Admin-Panel unter `/admin/einstellungen/integrationen`
+- `createAiContentPort()` löst DB+Env auf (Env-Key Vorrang), Quota-Wrapper
 - Allowlist `assertSafeAiProductFacts` / `AI_ALLOWED_PRODUCT_FACT_KEYS`
-- Noch **keine** Admin-UI und keine Produkt-/CMS-Übernahme
+- Noch **keine** Produktformular-UI und keine CMS-Übernahme
 
 ---
 
@@ -38,7 +38,7 @@ Branch-Prefix: `cursor/epic13-slice<N>-<kurzname>-e864`
 | Slice | Inhalt | Exit |
 | --- | --- | --- |
 | **1** | ADR-0010 + Port + NotConfigured + OpenAI-Adapter + Fact-Allowlist + Unit-Tests | ✅ |
-| **2** | Admin-Konfiguration: Limits, Modellprofile, optional verschlüsselter Key (wie Instagram/INTERNETMARKE) | konfigurierbar ohne Client-Secrets |
+| **2** | Admin-Konfiguration: Limits, Modellprofile, optional verschlüsselter Key (wie Instagram/INTERNETMARKE) | ✅ |
 | **3** | Textassistent im Produktformular: Vorschau/Diff, explizites Übernehmen einzelner Felder | kein Auto-Save |
 | **4** | Bildassistent: Prompt/Quelle, Moderation, temporäre Vorschau, explizite Übernahme in Object Storage | Draft bis Confirm |
 | **5** | CMS-Integration für ausgewählte Blöcke (Text/Bild-Entwürfe) | kein Auto-Publish |
@@ -59,20 +59,21 @@ Branch-Prefix: `cursor/epic13-slice<N>-<kurzname>-e864`
 
 ---
 
-## Copy-Paste — Aufgabe für neuen Agenten (Slice 2)
+## Copy-Paste — Aufgabe für neuen Agenten (Slice 3)
 
 ```
-Epic 13 Slice 2 (KI Admin-Konfiguration) auf main bzw. nach Slice-1-Merge umsetzen.
+Epic 13 Slice 3 (Textassistent Produktformular) nach Slice 2 umsetzen.
 
 Lies zuerst:
 - docs/EPIC13_AGENT_HANDOFF.md
 - docs/EPIC13_AI_CONTENT_ASSISTANCE.md
 - docs/adr/0010-ai-content-assistance-port.md
-- bestehende Integrations-UI unter /admin/einstellungen (Instagram/INTERNETMARKE/Zettle)
+- app/admin/(dashboard)/products/** (edit-product-form, product-general-fields, product-storefront-detail-fields)
+- createAiContentPort / assertSafeAiProductFacts aus @/features/integrations
 
-Branch: cursor/epic13-slice2-ai-admin-config-e864
-Kein Auto-Publish. Secrets serverseitig / verschlüsselt. Antworten auf Deutsch.
-Tests: npm run validate (mindestens architecture + typecheck + test:unit)
+Branch: cursor/epic13-slice3-product-text-assistant-e864
+Vorschau/Diff, explizites Übernehmen einzelner Felder — kein Auto-Save/Publish.
+Antworten auf Deutsch. Tests: npm run validate (mindestens architecture + typecheck + test:unit)
 ```
 
 ---
