@@ -129,6 +129,7 @@ describe("createOpenAiContentAdapter", () => {
     if (!result.ok) return;
     expect(result.temporaryImageBase64).toBe("aaa");
     expect(result.meta.capability).toBe("image_edit");
-    expect(String(fetchImpl.mock.calls[0]?.[0] as unknown as string)).toContain("/images/edits");
+    const call = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    expect(String(call[0])).toContain("/images/edits");
   });
 });
