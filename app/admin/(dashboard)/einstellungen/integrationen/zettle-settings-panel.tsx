@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import {
   deleteZettleMappingAction,
   disconnectZettleAction,
+  ensureZettleWebhookAction,
   loadZettleProductsAction,
   retryZettlePurchaseSyncAction,
+  runZettleDiscrepancyAction,
   saveZettleApiKeyAction,
   saveZettleMappingAction,
   syncZettlePurchasesAction,
@@ -52,6 +54,8 @@ type Props = {
   lastSyncError: string | null;
   attributionClientIdMasked: string | null;
   apiKeyDeepLink: string;
+  webhookConfigured: boolean;
+  webhookDestination: string | null;
   mappings: MappingRow[];
   recentSyncs: SyncRow[];
 };
@@ -110,6 +114,14 @@ export function ZettleSettingsPanel(props: Props) {
     retryZettlePurchaseSyncAction,
     null as ZettleAdminActionState,
   );
+  const [webhookState, webhookAction, webhookPending] = useActionState(
+    ensureZettleWebhookAction,
+    null as ZettleAdminActionState,
+  );
+  const [discState, discAction, discPending] = useActionState(
+    runZettleDiscrepancyAction,
+    null as ZettleAdminActionState,
+  );
   const [disconnectState, disconnectAction, disconnectPending] = useActionState(
     disconnectZettleAction,
     null as ZettleAdminActionState,
@@ -128,6 +140,7 @@ export function ZettleSettingsPanel(props: Props) {
       unmapState?.ok ||
       syncState?.ok ||
       retryState?.ok ||
+      webhookState?.ok ||
       disconnectState?.ok
     ) {
       router.refresh();
@@ -138,6 +151,7 @@ export function ZettleSettingsPanel(props: Props) {
     unmapState?.ok,
     syncState?.ok,
     retryState?.ok,
+    webhookState?.ok,
     disconnectState?.ok,
     router,
   ]);
@@ -149,6 +163,8 @@ export function ZettleSettingsPanel(props: Props) {
     unmapState?.error ||
     syncState?.error ||
     retryState?.error ||
+    webhookState?.error ||
+    discState?.error ||
     disconnectState?.error;
   const message =
     saveState?.message ||
@@ -157,6 +173,8 @@ export function ZettleSettingsPanel(props: Props) {
     unmapState?.message ||
     syncState?.message ||
     retryState?.message ||
+    webhookState?.message ||
+    discState?.message ||
     disconnectState?.message;
 
   const variantOptions = useMemo(() => {
@@ -250,6 +268,20 @@ export function ZettleSettingsPanel(props: Props) {
               Kauf-Sync: {formatDe(props.lastPurchaseSyncAt)}
             </p>
             <p>
+              Webhook:{" "}
+              {props.webhookConfigured ? (
+                <span className="font-medium text-[#374151]">aktiv</span>
+              ) : (
+                <span className="font-medium text-amber-800">nicht eingerichtet</span>
+              )}
+              {props.webhookDestination ? (
+                <>
+                  {" · "}
+                  <code className="break-all text-[10px]">{props.webhookDestination}</code>
+                </>
+              ) : null}
+            </p>
+            <p>
               Mappings: {mappedCount}/{props.mappings.length}
               {failedSyncs > 0 ? ` · ${failedSyncs} Sync-Fehler` : ""}
             </p>
@@ -302,6 +334,28 @@ export function ZettleSettingsPanel(props: Props) {
                 {syncPending ? "Synchronisiere…" : "Käufe synchronisieren"}
               </button>
             </form>
+            <form action={webhookAction}>
+              <button
+                type="submit"
+                disabled={webhookPending}
+                className="inline-flex min-h-11 items-center justify-center rounded-md border border-[#e5e7eb] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb] disabled:opacity-60"
+              >
+                {webhookPending
+                  ? "Webhook…"
+                  : props.webhookConfigured
+                    ? "Webhook prüfen"
+                    : "Webhook einrichten"}
+              </button>
+            </form>
+            <form action={discAction}>
+              <button
+                type="submit"
+                disabled={discPending}
+                className="inline-flex min-h-11 items-center justify-center rounded-md border border-[#e5e7eb] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb] disabled:opacity-60"
+              >
+                {discPending ? "Vergleiche…" : "Bestands-Abweichungen prüfen"}
+              </button>
+            </form>
             {failedSyncs > 0 ? (
               <form action={retryAction}>
                 <button
@@ -314,6 +368,43 @@ export function ZettleSettingsPanel(props: Props) {
               </form>
             ) : null}
           </div>
+
+          {discState?.discrepancy ? (
+            <div className="rounded-md border border-[#e8eaed] bg-[#fafbfc] p-3">
+              <h3 className="text-sm font-semibold text-[#1f2937]">Discrepancy-Report</h3>
+              <p className="mt-1 text-xs text-[#6b7280]">
+                Shop-Lager vs. Zettle STORE — der Shop bleibt Quelle der Wahrheit; Abweichungen
+                nur als Hinweis.
+              </p>
+              {discState.discrepancy.rows.length === 0 ? (
+                <p className="mt-2 text-sm text-[#6b7280]">Keine gemappten Varianten.</p>
+              ) : (
+                <ul className="mt-3 max-h-64 space-y-2 overflow-y-auto text-xs">
+                  {discState.discrepancy.rows.map((r) => (
+                    <li
+                      key={r.productVariantId}
+                      className={
+                        r.delta != null && r.delta !== 0
+                          ? "rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-amber-950"
+                          : "rounded border border-[#e8eaed] bg-white px-2 py-1.5 text-[#374151]"
+                      }
+                    >
+                      <span className="font-medium">
+                        {r.productTitle}
+                        {r.variantTitle ? ` — ${r.variantTitle}` : ""}
+                      </span>
+                      <span className="text-[#6b7280]">
+                        {" · "}Shop {r.shopStock}
+                        {" · "}Zettle{" "}
+                        {r.zettleTracked ? r.zettleBalance : "nicht getrackt"}
+                        {r.delta != null ? ` · Δ ${r.delta > 0 ? "+" : ""}${r.delta}` : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : null}
 
           <div>
             <h3 className="text-sm font-semibold text-[#1f2937]">Varianten-Mapping</h3>

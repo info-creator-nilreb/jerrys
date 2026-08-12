@@ -8,11 +8,17 @@
 export const ZETTLE_OAUTH_BASE_URL = "https://oauth.zettle.com";
 export const ZETTLE_PRODUCT_API_BASE_URL = "https://products.izettle.com";
 export const ZETTLE_PURCHASE_API_BASE_URL = "https://purchase.izettle.com";
+export const ZETTLE_INVENTORY_API_BASE_URL = "https://inventory.izettle.com";
+export const ZETTLE_PUSHER_API_BASE_URL = "https://pusher.izettle.com";
 
 export const ZETTLE_CONNECTION_ID = "default" as const;
 
-/** Empfohlene Scopes für POS-Bestandssync (v1: Read). */
-export const ZETTLE_API_KEY_SCOPES = ["READ:PRODUCT", "READ:PURCHASE"] as const;
+/** Empfohlene Scopes: Käufe + Katalog + Inventory-Balance (Discrepancy). */
+export const ZETTLE_API_KEY_SCOPES = [
+  "READ:PRODUCT",
+  "WRITE:PRODUCT",
+  "READ:PURCHASE",
+] as const;
 
 export function getZettleAttributionClientId(): string | null {
   const id = process.env.ZETTLE_CLIENT_ID?.trim();

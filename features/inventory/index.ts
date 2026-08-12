@@ -14,10 +14,25 @@ export {
 
 export {
   syncZettlePurchases,
+  syncZettlePurchaseByUuid,
+  applyZettlePurchase,
   retryFailedZettlePurchaseSyncs,
   listRecentZettlePurchaseSyncs,
   type SyncZettlePurchasesResult,
+  type ApplyZettlePurchaseResult,
 } from "@/features/inventory/application/sync-zettle-purchases";
+
+export {
+  ensureZettlePurchaseWebhook,
+  removeZettlePurchaseWebhook,
+  getZettleWebhookDestinationUrl,
+} from "@/features/inventory/application/ensure-zettle-webhook";
+
+export {
+  buildZettleDiscrepancyReport,
+  type ZettleDiscrepancyReport,
+  type ZettleDiscrepancyRow,
+} from "@/features/inventory/application/build-zettle-discrepancy-report";
 
 export {
   buildZettleApiKeyDeepLink,
@@ -28,9 +43,15 @@ export {
   ZETTLE_OAUTH_BASE_URL,
   ZETTLE_PRODUCT_API_BASE_URL,
   ZETTLE_PURCHASE_API_BASE_URL,
+  ZETTLE_INVENTORY_API_BASE_URL,
+  ZETTLE_PUSHER_API_BASE_URL,
 } from "@/features/inventory/infrastructure/zettle-config";
 
 export { parseZettleApiKeyClaims, type ZettleApiKeyClaims } from "@/features/inventory/infrastructure/zettle-api-key";
+
+export { verifyZettleWebhookSignature } from "@/features/inventory/infrastructure/zettle-webhook-signature";
+
+export { generateUuidV1 } from "@/features/inventory/infrastructure/zettle-uuid-v1";
 
 export {
   getZettleConnectionPublic,
@@ -40,6 +61,8 @@ export {
   markZettleConnectionVerified,
   markZettleConnectionError,
   disconnectZettleConnection,
+  saveZettleWebhookSubscription,
+  clearZettleWebhookSubscription,
   type ZettleConnectionPublic,
 } from "@/features/inventory/infrastructure/zettle-connection";
 
@@ -49,6 +72,7 @@ export {
   type ZettleCatalogProduct,
   type ZettleCatalogVariant,
   type ZettlePurchase,
+  type ZettleInventoryVariantBalance,
 } from "@/features/inventory/infrastructure/zettle-client";
 
 export {

@@ -109,6 +109,8 @@ export default async function AdminIntegrationenPage({
         lastSyncError={zettle.lastSyncError}
         attributionClientIdMasked={zettle.attributionClientIdMasked}
         apiKeyDeepLink={zettleDiagnostics.apiKeyDeepLink || buildZettleApiKeyDeepLink()}
+        webhookConfigured={zettle.webhookConfigured}
+        webhookDestination={zettle.webhookDestination}
         mappings={mappings.map((m) => ({
           productVariantId: m.productVariantId,
           productTitle: m.productTitle,

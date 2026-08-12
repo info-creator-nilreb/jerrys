@@ -738,6 +738,12 @@ model ZettleConnection {
   /// Optional gecachter Access-Token (AES-GCM).
   accessTokenEnc       String?   @map("access_token_enc")
   accessTokenExpiresAt DateTime? @map("access_token_expires_at")
+  /// Pusher-Subscription UUID (v1) für PurchaseCreated.
+  webhookSubscriptionUuid String? @map("webhook_subscription_uuid")
+  /// AES-GCM Ciphertext des Pusher signingKey.
+  webhookSigningKeyEnc    String? @map("webhook_signing_key_enc")
+  /// Öffentliche Destination-URL der Subscription.
+  webhookDestination      String? @map("webhook_destination")
   connectedAt          DateTime  @default(now()) @map("connected_at")
   lastVerifiedAt       DateTime? @map("last_verified_at")
   lastPurchaseSyncAt   DateTime? @map("last_purchase_sync_at")

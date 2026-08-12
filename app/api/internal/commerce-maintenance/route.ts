@@ -1,7 +1,11 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { publishIntegrationOutboxBatch } from "@/features/integrations";
-import { expireStaleStockReservations } from "@/features/inventory";
+import {
+  expireStaleStockReservations,
+  getZettleConnectionPublic,
+  syncZettlePurchases,
+} from "@/features/inventory";
 import { runWorkshopMaintenance } from "@/features/workshops";
 import { getPrisma } from "@/lib/db/prisma";
 import { getInstagramConnectionPublic } from "@/lib/instagram/connection";
@@ -44,9 +48,33 @@ async function runInstagramSyncIfConnected() {
   };
 }
 
+async function runZettleSyncIfConnected() {
+  const conn = await getZettleConnectionPublic();
+  if (!conn.connected) {
+    return { skipped: true as const, reason: "not_connected" };
+  }
+  try {
+    const result = await syncZettlePurchases({ lookbackDays: 3, limit: 50 });
+    return {
+      skipped: false as const,
+      ok: true as const,
+      fetched: result.fetched,
+      processed: result.processed,
+      skippedPurchases: result.skipped,
+      failed: result.failed,
+    };
+  } catch (e) {
+    return {
+      skipped: false as const,
+      ok: false as const,
+      error: e instanceof Error ? e.message : "zettle_sync_failed",
+    };
+  }
+}
+
 async function runCommerceMaintenance() {
   const prisma = getPrisma();
-  const [expired, outbox, workshops, paypalReconcile, instagram] = await Promise.all([
+  const [expired, outbox, workshops, paypalReconcile, instagram, zettle] = await Promise.all([
     expireStaleStockReservations(prisma),
     publishIntegrationOutboxBatch(prisma),
     runWorkshopMaintenance(prisma),
@@ -55,6 +83,7 @@ async function runCommerceMaintenance() {
       source: "paypal_reconciliation",
     }),
     runInstagramSyncIfConnected(),
+    runZettleSyncIfConnected(),
   ]);
   return {
     expiredReservations: expired,
@@ -68,6 +97,7 @@ async function runCommerceMaintenance() {
       skipped: paypalReconcile.skipped,
     },
     instagram,
+    zettle,
   };
 }
 
@@ -84,7 +114,7 @@ export async function GET(req: NextRequest) {
 }
 
 /**
- * POST — Reservierungs-Ablauf + Workshop-Holds + Outbox-Publisher (manuell/Curl).
+ * POST — Reservierungs-Ablauf + Workshop-Holds + Outbox + Zettle-Pull (manuell/Curl).
  * Erfordert COMMERCE_MAINTENANCE_SECRET (oder CRON_SECRET als Bearer).
  */
 export async function POST(req: NextRequest) {

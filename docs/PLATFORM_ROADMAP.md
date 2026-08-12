@@ -113,7 +113,7 @@ Exit criteria: concurrent requests cannot confirm the last seat twice; multiple 
 
 ## Epic 6: Zettle POS
 
-**Status:** Slice 1 in progress (Verbindung + Mapping + manueller Kauf-Sync).  
+**Status:** Slices 1–4 umgesetzt (Verbindung, Cron-Pull, Webhook, Discrepancy).  
 Suggested delivery: [EPIC6_ZETTLE_POS.md](./EPIC6_ZETTLE_POS.md).
 
 User stories:

@@ -1,6 +1,9 @@
 import "server-only";
 
-import { applyPosRefundStockMovements, applyPosSaleStockMovements } from "@/features/inventory/application/apply-pos-stock-movements";
+import {
+  applyPosRefundStockMovements,
+  applyPosSaleStockMovements,
+} from "@/features/inventory/application/apply-pos-stock-movements";
 import {
   createZettleClientFromConnection,
   type ZettlePurchase,
@@ -21,6 +24,11 @@ export type SyncZettlePurchasesResult = {
   errors: string[];
 };
 
+export type ApplyZettlePurchaseResult =
+  | { status: "processed" }
+  | { status: "skipped"; reason: string }
+  | { status: "failed"; reason: string };
+
 function purchaseUuidOf(p: ZettlePurchase): string | null {
   const id = (p.purchaseUUID1 || p.purchaseUUID || "").trim();
   return id || null;
@@ -40,9 +48,158 @@ function purchasedAtOf(p: ZettlePurchase): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+/** Verarbeitet einen einzelnen Zettle-Kauf idempotent (Pull-Sync und Webhook). */
+export async function applyZettlePurchase(
+  purchase: ZettlePurchase,
+): Promise<ApplyZettlePurchaseResult> {
+  const purchaseUuid = purchaseUuidOf(purchase);
+  if (!purchaseUuid) {
+    return { status: "skipped", reason: "Kauf ohne UUID." };
+  }
+
+  const prisma = getPrisma();
+  const existing = await prisma.zettlePurchaseSync.findUnique({
+    where: { purchaseUuid },
+  });
+  if (existing?.status === "processed" || existing?.status === "skipped") {
+    return { status: "skipped", reason: `Bereits ${existing.status}.` };
+  }
+
+  const isRefund = Boolean(purchase.refund);
+  const linesRaw = purchase.products ?? [];
+  const mappedLines: Array<{
+    productId: string;
+    productVariantId: string;
+    quantity: number;
+  }> = [];
+  let hasUnmapped = false;
+  let unmappedDetail = "";
+
+  for (const line of linesRaw) {
+    const qtyAbs = Math.abs(parseQuantity(line.quantity));
+    if (qtyAbs <= 0) continue;
+    if (!Number.isInteger(qtyAbs)) {
+      hasUnmapped = true;
+      unmappedDetail = `Nicht-ganzzahlige Menge (${line.quantity}) — bitte manuell prüfen.`;
+      continue;
+    }
+    if (!line.variantUuid) continue;
+    const mapping = await getZettleMappingByVariantUuid(line.variantUuid);
+    if (!mapping) {
+      hasUnmapped = true;
+      unmappedDetail = `Kein Mapping für Zettle-Variante ${line.variantUuid}${line.name ? ` (${line.name})` : ""}.`;
+      continue;
+    }
+    mappedLines.push({
+      productId: mapping.productId,
+      productVariantId: mapping.productVariantId,
+      quantity: qtyAbs,
+    });
+  }
+
+  if (mappedLines.length === 0) {
+    await prisma.zettlePurchaseSync.upsert({
+      where: { purchaseUuid },
+      create: {
+        purchaseUuid,
+        purchaseNumber: purchase.purchaseNumber ?? null,
+        purchasedAt: purchasedAtOf(purchase),
+        status: hasUnmapped ? "failed" : "skipped",
+        isRefund,
+        lastError: hasUnmapped
+          ? unmappedDetail || "Keine gemappten Positionen."
+          : "Keine lagerrelevanten Positionen.",
+        processedAt: new Date(),
+      },
+      update: {
+        status: hasUnmapped ? "failed" : "skipped",
+        lastError: hasUnmapped
+          ? unmappedDetail || "Keine gemappten Positionen."
+          : "Keine lagerrelevanten Positionen.",
+        processedAt: new Date(),
+        isRefund,
+      },
+    });
+    return hasUnmapped
+      ? { status: "failed", reason: unmappedDetail || "Keine gemappten Positionen." }
+      : { status: "skipped", reason: "Keine lagerrelevanten Positionen." };
+  }
+
+  if (hasUnmapped) {
+    const reason = `Teilweise ungemappt: ${unmappedDetail}`;
+    await prisma.zettlePurchaseSync.upsert({
+      where: { purchaseUuid },
+      create: {
+        purchaseUuid,
+        purchaseNumber: purchase.purchaseNumber ?? null,
+        purchasedAt: purchasedAtOf(purchase),
+        status: "failed",
+        isRefund,
+        lastError: reason,
+      },
+      update: { status: "failed", lastError: reason, isRefund },
+    });
+    return { status: "failed", reason };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const again = await tx.zettlePurchaseSync.findUnique({
+        where: { purchaseUuid },
+      });
+      if (again?.status === "processed") return;
+
+      const correlationId = `zettle:${purchaseUuid}`;
+      if (isRefund) {
+        await applyPosRefundStockMovements(tx, { lines: mappedLines, correlationId });
+      } else {
+        await applyPosSaleStockMovements(tx, { lines: mappedLines, correlationId });
+      }
+
+      await tx.zettlePurchaseSync.upsert({
+        where: { purchaseUuid },
+        create: {
+          purchaseUuid,
+          purchaseNumber: purchase.purchaseNumber ?? null,
+          purchasedAt: purchasedAtOf(purchase),
+          status: "processed",
+          isRefund,
+          lastError: null,
+          processedAt: new Date(),
+        },
+        update: {
+          status: "processed",
+          lastError: null,
+          processedAt: new Date(),
+          isRefund,
+        },
+      });
+    });
+    return { status: "processed" };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Sync fehlgeschlagen.";
+    await prisma.zettlePurchaseSync.upsert({
+      where: { purchaseUuid },
+      create: {
+        purchaseUuid,
+        purchaseNumber: purchase.purchaseNumber ?? null,
+        purchasedAt: purchasedAtOf(purchase),
+        status: "failed",
+        isRefund,
+        lastError: msg.slice(0, 500),
+      },
+      update: {
+        status: "failed",
+        lastError: msg.slice(0, 500),
+        isRefund,
+      },
+    });
+    return { status: "failed", reason: msg };
+  }
+}
+
 /**
  * Zieht aktuelle Zettle-Käufe und bucht gemappte Varianten idempotent ab.
- * Unmapped Zeilen → skipped; Unterbestand → failed (kein Negativbestand).
  */
 export async function syncZettlePurchases(options?: {
   lookbackDays?: number;
@@ -72,177 +229,14 @@ export async function syncZettlePurchases(options?: {
     errors: [],
   };
 
-  const prisma = getPrisma();
-
   for (const purchase of purchases) {
-    const purchaseUuid = purchaseUuidOf(purchase);
-    if (!purchaseUuid) {
-      result.skipped += 1;
-      continue;
-    }
-
-    const existing = await prisma.zettlePurchaseSync.findUnique({
-      where: { purchaseUuid },
-    });
-    if (existing?.status === "processed" || existing?.status === "skipped") {
-      result.skipped += 1;
-      continue;
-    }
-
-    const isRefund = Boolean(purchase.refund);
-    const linesRaw = purchase.products ?? [];
-    const mappedLines: Array<{
-      productId: string;
-      productVariantId: string;
-      quantity: number;
-    }> = [];
-    let hasUnmapped = false;
-    let unmappedDetail = "";
-
-    for (const line of linesRaw) {
-      const qtyAbs = Math.abs(parseQuantity(line.quantity));
-      if (qtyAbs <= 0) continue;
-      // Ganzzahlige Mengen (Boutique-Stückware); Dezimal → skip mit Hinweis
-      if (!Number.isInteger(qtyAbs)) {
-        hasUnmapped = true;
-        unmappedDetail = `Nicht-ganzzahlige Menge (${line.quantity}) — bitte manuell prüfen.`;
-        continue;
-      }
-      if (!line.variantUuid) {
-        // Custom amounts / non-library items
-        continue;
-      }
-      const mapping = await getZettleMappingByVariantUuid(line.variantUuid);
-      if (!mapping) {
-        hasUnmapped = true;
-        unmappedDetail = `Kein Mapping für Zettle-Variante ${line.variantUuid}${line.name ? ` (${line.name})` : ""}.`;
-        continue;
-      }
-      mappedLines.push({
-        productId: mapping.productId,
-        productVariantId: mapping.productVariantId,
-        quantity: qtyAbs,
-      });
-    }
-
-    if (mappedLines.length === 0) {
-      await prisma.zettlePurchaseSync.upsert({
-        where: { purchaseUuid },
-        create: {
-          purchaseUuid,
-          purchaseNumber: purchase.purchaseNumber ?? null,
-          purchasedAt: purchasedAtOf(purchase),
-          status: hasUnmapped ? "failed" : "skipped",
-          isRefund,
-          lastError: hasUnmapped
-            ? unmappedDetail || "Keine gemappten Positionen."
-            : "Keine lagerrelevanten Positionen.",
-          processedAt: new Date(),
-        },
-        update: {
-          status: hasUnmapped ? "failed" : "skipped",
-          lastError: hasUnmapped
-            ? unmappedDetail || "Keine gemappten Positionen."
-            : "Keine lagerrelevanten Positionen.",
-          processedAt: new Date(),
-          isRefund,
-        },
-      });
-      if (hasUnmapped) {
-        result.failed += 1;
-        result.errors.push(`${purchaseUuid}: ${unmappedDetail}`);
-      } else {
-        result.skipped += 1;
-      }
-      continue;
-    }
-
-    if (hasUnmapped) {
-      // Teilweise gemappt: lieber failen als still halb buchen
-      await prisma.zettlePurchaseSync.upsert({
-        where: { purchaseUuid },
-        create: {
-          purchaseUuid,
-          purchaseNumber: purchase.purchaseNumber ?? null,
-          purchasedAt: purchasedAtOf(purchase),
-          status: "failed",
-          isRefund,
-          lastError: `Teilweise ungemappt: ${unmappedDetail}`,
-        },
-        update: {
-          status: "failed",
-          lastError: `Teilweise ungemappt: ${unmappedDetail}`,
-          isRefund,
-        },
-      });
+    const uuid = purchaseUuidOf(purchase) ?? "?";
+    const applied = await applyZettlePurchase(purchase);
+    if (applied.status === "processed") result.processed += 1;
+    else if (applied.status === "skipped") result.skipped += 1;
+    else {
       result.failed += 1;
-      result.errors.push(`${purchaseUuid}: teilweise ungemappt`);
-      continue;
-    }
-
-    try {
-      await prisma.$transaction(async (tx) => {
-        // Double-check inside tx for races
-        const again = await tx.zettlePurchaseSync.findUnique({
-          where: { purchaseUuid },
-        });
-        if (again?.status === "processed") {
-          return;
-        }
-
-        const correlationId = `zettle:${purchaseUuid}`;
-        if (isRefund) {
-          await applyPosRefundStockMovements(tx, {
-            lines: mappedLines,
-            correlationId,
-          });
-        } else {
-          await applyPosSaleStockMovements(tx, {
-            lines: mappedLines,
-            correlationId,
-          });
-        }
-
-        await tx.zettlePurchaseSync.upsert({
-          where: { purchaseUuid },
-          create: {
-            purchaseUuid,
-            purchaseNumber: purchase.purchaseNumber ?? null,
-            purchasedAt: purchasedAtOf(purchase),
-            status: "processed",
-            isRefund,
-            lastError: null,
-            processedAt: new Date(),
-          },
-          update: {
-            status: "processed",
-            lastError: null,
-            processedAt: new Date(),
-            isRefund,
-          },
-        });
-      });
-      result.processed += 1;
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Sync fehlgeschlagen.";
-      await prisma.zettlePurchaseSync.upsert({
-        where: { purchaseUuid },
-        create: {
-          purchaseUuid,
-          purchaseNumber: purchase.purchaseNumber ?? null,
-          purchasedAt: purchasedAtOf(purchase),
-          status: "failed",
-          isRefund,
-          lastError: msg.slice(0, 500),
-        },
-        update: {
-          status: "failed",
-          lastError: msg.slice(0, 500),
-          isRefund,
-        },
-      });
-      result.failed += 1;
-      result.errors.push(`${purchaseUuid}: ${msg}`);
+      result.errors.push(`${uuid}: ${applied.reason}`);
     }
   }
 
@@ -255,6 +249,18 @@ export async function syncZettlePurchases(options?: {
   }
 
   return result;
+}
+
+/** Webhook: Kauf per UUID nachladen und verbuchen. */
+export async function syncZettlePurchaseByUuid(
+  purchaseUuid: string,
+): Promise<ApplyZettlePurchaseResult> {
+  const client = await createZettleClientFromConnection();
+  if (!client) {
+    return { status: "failed", reason: "Zettle ist nicht verbunden." };
+  }
+  const purchase = await client.getPurchase(purchaseUuid);
+  return applyZettlePurchase(purchase);
 }
 
 export async function listRecentZettlePurchaseSyncs(limit = 20): Promise<
@@ -289,7 +295,6 @@ export async function listRecentZettlePurchaseSyncs(limit = 20): Promise<
 }
 
 export async function retryFailedZettlePurchaseSyncs(): Promise<SyncZettlePurchasesResult> {
-  // Reset failed → pending_retry so syncZettlePurchases will re-attempt
   await getPrisma().zettlePurchaseSync.updateMany({
     where: { status: "failed" },
     data: { status: "pending_retry", lastError: null },

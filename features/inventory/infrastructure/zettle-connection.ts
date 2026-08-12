@@ -19,6 +19,8 @@ export type ZettleConnectionPublic = {
   lastPurchaseSyncAt: Date | null;
   lastSyncError: string | null;
   attributionClientIdMasked: string | null;
+  webhookConfigured: boolean;
+  webhookDestination: string | null;
 };
 
 function maskId(id: string): string {
@@ -39,6 +41,8 @@ export async function getZettleConnectionPublic(): Promise<ZettleConnectionPubli
     lastSyncError: null,
     lastPurchaseSyncAt: null,
     attributionClientIdMasked: attribution ? maskId(attribution) : null,
+    webhookConfigured: false,
+    webhookDestination: null,
   };
   try {
     const row = await getPrisma().zettleConnection.findUnique({
@@ -56,6 +60,8 @@ export async function getZettleConnectionPublic(): Promise<ZettleConnectionPubli
       lastPurchaseSyncAt: row.lastPurchaseSyncAt,
       lastSyncError: row.lastSyncError,
       attributionClientIdMasked: attribution ? maskId(attribution) : null,
+      webhookConfigured: Boolean(row.webhookSigningKeyEnc && row.webhookSubscriptionUuid),
+      webhookDestination: row.webhookDestination,
     };
   } catch (e) {
     if (isMissingSchemaError(e)) return empty;
@@ -69,6 +75,9 @@ export async function getZettleConnectionSecrets(): Promise<{
   organizationUuid: string | null;
   accessToken: string | null;
   accessTokenExpiresAt: Date | null;
+  webhookSubscriptionUuid: string | null;
+  webhookSigningKey: string | null;
+  webhookDestination: string | null;
 } | null> {
   try {
     const row = await getPrisma().zettleConnection.findUnique({
@@ -81,6 +90,11 @@ export async function getZettleConnectionSecrets(): Promise<{
       organizationUuid: row.organizationUuid,
       accessToken: row.accessTokenEnc ? decryptSecret(row.accessTokenEnc) : null,
       accessTokenExpiresAt: row.accessTokenExpiresAt,
+      webhookSubscriptionUuid: row.webhookSubscriptionUuid,
+      webhookSigningKey: row.webhookSigningKeyEnc
+        ? decryptSecret(row.webhookSigningKeyEnc)
+        : null,
+      webhookDestination: row.webhookDestination,
     };
   } catch (e) {
     if (isMissingSchemaError(e)) return null;
@@ -162,6 +176,36 @@ export async function markZettlePurchaseSyncCompleted(): Promise<void> {
     where: { id: ZETTLE_CONNECTION_ID },
     data: { lastPurchaseSyncAt: new Date(), lastSyncError: null },
   });
+}
+
+export async function saveZettleWebhookSubscription(input: {
+  subscriptionUuid: string;
+  signingKey: string;
+  destination: string;
+}): Promise<void> {
+  await getPrisma().zettleConnection.update({
+    where: { id: ZETTLE_CONNECTION_ID },
+    data: {
+      webhookSubscriptionUuid: input.subscriptionUuid,
+      webhookSigningKeyEnc: encryptSecret(input.signingKey),
+      webhookDestination: input.destination,
+    },
+  });
+}
+
+export async function clearZettleWebhookSubscription(): Promise<void> {
+  try {
+    await getPrisma().zettleConnection.update({
+      where: { id: ZETTLE_CONNECTION_ID },
+      data: {
+        webhookSubscriptionUuid: null,
+        webhookSigningKeyEnc: null,
+        webhookDestination: null,
+      },
+    });
+  } catch {
+    /* ignore */
+  }
 }
 
 export async function disconnectZettleConnection(): Promise<boolean> {

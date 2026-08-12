@@ -211,7 +211,9 @@ Symptoms: POS-Verkauf in Zettle, Shop-Bestand unverändert; Sync-Eintrag `failed
 3. Varianten-Mapping: fehlende oder falsche Zuordnung → Sync bleibt `failed` (kein stilles Abschreiben). Mapping setzen, dann „Fehler erneut versuchen“.
 4. Unterbestand: Shop-Lager prüfen; nach Korrektur Retry — Negativbestand wird bewusst nicht still erzeugt.
 5. Idempotenz: bereits `processed` Käufe werden nicht erneut abgebucht (`zettle_purchase_syncs.purchase_uuid`).
-6. Optional Env `ZETTLE_CLIENT_ID` nur für Attribution; der API-Key selbst liegt verschlüsselt in der DB.
+6. Webhook: `POST /api/webhooks/zettle` muss öffentlich HTTPS erreichbar sein (`NEXT_PUBLIC_SITE_URL`); Signing-Key unter Integrationen; bei 401 Signatur prüfen.
+7. Cron-Fallback: `commerce-maintenance` zieht Käufe der letzten 3 Tage, wenn verbunden.
+8. Optional Env `ZETTLE_CLIENT_ID` nur für Attribution; der API-Key selbst liegt verschlüsselt in der DB.
 
 Siehe [EPIC6_ZETTLE_POS.md](./EPIC6_ZETTLE_POS.md).
 

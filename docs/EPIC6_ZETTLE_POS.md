@@ -13,21 +13,22 @@ Der Shop bleibt **Source of Truth** für Bestand. Zettle ist ein **downstream PO
 | `/admin/einstellungen/integrationen` | Zettle-API-Key verbinden (analog Instagram/Internetmarke) |
 | Bestand | Nur Abbuchung aus POS-Käufen; Zettle überschreibt Shop-Bestand nie |
 | Katalog | Kein automatisches Pushen von Shop-Produkten nach Zettle (v1) |
-| Webhooks/Pusher | Follow-up (Slice 3+); v1 = Pull-Sync aus Admin / Maintenance |
+| Webhooks/Pusher | `PurchaseCreated` → `/api/webhooks/zettle`; Cron-Pull als Fallback |
 
 ## Auth (Private Integration)
 
 - Assertion Grant mit API-Key (JWT) aus [my.zettle.com/apps/api-keys](https://my.zettle.com/apps/api-keys)
-- Scopes: `READ:PRODUCT`, `READ:PURCHASE` (WRITE:PRODUCT erst bei späteren Inventory-Push)
+- Scopes: `READ:PRODUCT`, `WRITE:PRODUCT` (Inventory-Balance), `READ:PURCHASE`
 - API-Key verschlüsselt in DB (`INTEGRATIONS_ENCRYPTION_KEY` / `AUTH_SECRET`)
 - Optional `ZETTLE_CLIENT_ID` in Env für Attribution (`X-iZettle-Application-Id`)
+- Webhook: `POST /api/webhooks/zettle` (HMAC über `timestamp.payload`, Signing-Key aus Subscription)
 
 ## Vorgeschlagene Slices
 
-1. **Verbindung + Mapping + Pull-Sync (dieser Schnitt):** `ZettleConnection`, Produkt-Mapping, Admin-Panel unter Integrationen, manueller Kauf-Sync mit Idempotenz und `pos_sale`/`pos_refund`-Movements.
-2. **Maintenance-Cron:** periodischer Purchase-Pull in `commerce-maintenance`.
-3. **Pusher/Webhooks:** Near-realtime `PurchaseCreated` + Inbox-Idempotenz.
-4. **Discrepancy-Report:** Admin-Übersicht Shop vs. Zettle Inventory (optionaler Inventory-API-Read).
+1. **Verbindung + Mapping + Pull-Sync:** `ZettleConnection`, Produkt-Mapping, Admin-Panel unter Integrationen, manueller Kauf-Sync mit Idempotenz und `pos_sale`/`pos_refund`-Movements. **Status:** umgesetzt.
+2. **Maintenance-Cron:** periodischer Purchase-Pull in `commerce-maintenance`. **Status:** umgesetzt.
+3. **Pusher/Webhooks:** Near-realtime `PurchaseCreated` + Inbox-Idempotenz (`/api/webhooks/zettle`). **Status:** umgesetzt.
+4. **Discrepancy-Report:** Admin-Button „Bestands-Abweichungen prüfen“ (Shop vs. Zettle STORE Inventory). **Status:** umgesetzt.
 
 ## Exit-Kriterien (Epic)
 

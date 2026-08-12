@@ -3,16 +3,20 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  buildZettleDiscrepancyReport,
   createZettleClientFromConnection,
   disconnectZettleConnection,
   deleteZettleProductMapping,
+  ensureZettlePurchaseWebhook,
   exchangeZettleApiKeyForToken,
   parseZettleApiKeyClaims,
+  removeZettlePurchaseWebhook,
   retryFailedZettlePurchaseSyncs,
   saveZettleApiKeyConnection,
   syncZettlePurchases,
   upsertZettleProductMapping,
   type ZettleCatalogProduct,
+  type ZettleDiscrepancyRow,
 } from "@/features/inventory";
 import { getAdminSession } from "@/lib/auth/admin-session";
 import { z } from "zod";
@@ -27,6 +31,12 @@ export type ZettleAdminActionState =
         name: string;
         variants: Array<{ uuid: string; name: string | null; sku: string | null }>;
       }>;
+      discrepancy?: {
+        compared: number;
+        mismatches: number;
+        untracked: number;
+        rows: ZettleDiscrepancyRow[];
+      };
     }
   | null;
 
@@ -108,10 +118,13 @@ export async function saveZettleApiKeyAction(
     return { error: msg };
   }
 
+  const webhook = await ensureZettlePurchaseWebhook();
   revalidatePath("/admin/einstellungen/integrationen");
   return {
     ok: true,
-    message: "Zettle verbunden und Organisation geprüft. Als Nächstes Varianten mappen.",
+    message: webhook.ok
+      ? `Zettle verbunden. ${webhook.message} Als Nächstes Varianten mappen.`
+      : `Zettle verbunden. Webhook: ${webhook.message} Als Nächstes Varianten mappen.`,
   };
 }
 
@@ -120,10 +133,15 @@ export async function disconnectZettleAction(
   _formData: FormData,
 ): Promise<ZettleAdminActionState> {
   await requireAdmin();
+  try {
+    await removeZettlePurchaseWebhook();
+  } catch {
+    /* ignore */
+  }
   const ok = await disconnectZettleConnection();
   revalidatePath("/admin/einstellungen/integrationen");
   return ok
-    ? { ok: true, message: "Zettle-Verbindung und Mappings entfernt." }
+    ? { ok: true, message: "Zettle-Verbindung, Webhook und Mappings entfernt." }
     : { error: "Keine Verbindung vorhanden." };
 }
 
@@ -240,4 +258,37 @@ export async function retryZettlePurchaseSyncAction(
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Retry fehlgeschlagen." };
   }
+}
+
+export async function ensureZettleWebhookAction(
+  _prev: ZettleAdminActionState,
+  _formData: FormData,
+): Promise<ZettleAdminActionState> {
+  await requireAdmin();
+  const result = await ensureZettlePurchaseWebhook();
+  revalidatePath("/admin/einstellungen/integrationen");
+  return result.ok
+    ? { ok: true, message: result.message }
+    : { error: result.message };
+}
+
+export async function runZettleDiscrepancyAction(
+  _prev: ZettleAdminActionState,
+  _formData: FormData,
+): Promise<ZettleAdminActionState> {
+  await requireAdmin();
+  const report = await buildZettleDiscrepancyReport();
+  if (!report.ok) {
+    return { error: report.error ?? "Discrepancy-Report fehlgeschlagen." };
+  }
+  return {
+    ok: true,
+    message: `Verglichen: ${report.compared} · Abweichungen: ${report.mismatches} · ohne Zettle-Tracking: ${report.untracked}`,
+    discrepancy: {
+      compared: report.compared,
+      mismatches: report.mismatches,
+      untracked: report.untracked,
+      rows: report.rows.slice(0, 40),
+    },
+  };
 }

@@ -2,9 +2,11 @@ import "server-only";
 
 import {
   getZettleAttributionClientId,
+  ZETTLE_INVENTORY_API_BASE_URL,
   ZETTLE_OAUTH_BASE_URL,
   ZETTLE_PRODUCT_API_BASE_URL,
   ZETTLE_PURCHASE_API_BASE_URL,
+  ZETTLE_PUSHER_API_BASE_URL,
 } from "@/features/inventory/infrastructure/zettle-config";
 import {
   exchangeZettleApiKeyForToken,
@@ -47,15 +49,31 @@ export type ZettlePurchase = {
   products?: ZettlePurchaseProductLine[];
 };
 
+export type ZettleInventoryVariantBalance = {
+  variantUuid: string;
+  productUuid: string;
+  balance: number;
+  locationUuid: string | null;
+};
+
+export type ZettlePusherSubscription = {
+  uuid: string;
+  destination: string;
+  eventNames: string[];
+  status?: string;
+  signingKey?: string;
+};
+
 export class ZettleClient {
   constructor(private readonly getAccessToken: () => Promise<string>) {}
 
-  private async headers(): Promise<HeadersInit> {
+  private async headers(json = false): Promise<HeadersInit> {
     const token = await this.getAccessToken();
     const headers: Record<string, string> = {
       Authorization: `Bearer ${token}`,
       Accept: "application/json",
     };
+    if (json) headers["Content-Type"] = "application/json";
     const appId = getZettleAttributionClientId();
     if (appId) {
       headers["X-iZettle-Application-Id"] = appId;
@@ -147,6 +165,129 @@ export class ZettleClient {
       lastPurchaseHash: json.lastPurchaseHash ?? null,
     };
   }
+
+  async getPurchase(purchaseUuid: string): Promise<ZettlePurchase> {
+    const res = await fetch(
+      `${ZETTLE_PURCHASE_API_BASE_URL}/purchase/v2/${encodeURIComponent(purchaseUuid)}`,
+      { headers: await this.headers() },
+    );
+    const text = await res.text();
+    if (!res.ok) {
+      throw Object.assign(new Error(`Zettle Kauf laden fehlgeschlagen (${res.status}).`), {
+        responseBody: text.slice(0, 300),
+      });
+    }
+    return JSON.parse(text) as ZettlePurchase;
+  }
+
+  /** STORE-Inventory-Balances (Discrepancy). Scope WRITE:PRODUCT empfohlen. */
+  async listStoreInventoryBalances(): Promise<ZettleInventoryVariantBalance[]> {
+    const res = await fetch(`${ZETTLE_INVENTORY_API_BASE_URL}/organizations/self/inventory`, {
+      headers: await this.headers(),
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      const res2 = await fetch(`${ZETTLE_INVENTORY_API_BASE_URL}/inventory`, {
+        headers: await this.headers(),
+      });
+      const text2 = await res2.text();
+      if (!res2.ok) {
+        throw Object.assign(new Error(`Zettle Inventory laden fehlgeschlagen (${res.status}).`), {
+          responseBody: text.slice(0, 300),
+        });
+      }
+      return parseInventoryBalances(text2);
+    }
+    return parseInventoryBalances(text);
+  }
+
+  async listPusherSubscriptions(): Promise<ZettlePusherSubscription[]> {
+    const res = await fetch(`${ZETTLE_PUSHER_API_BASE_URL}/organizations/self/subscriptions`, {
+      headers: await this.headers(),
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      throw Object.assign(new Error(`Zettle Subscriptions laden fehlgeschlagen (${res.status}).`), {
+        responseBody: text.slice(0, 300),
+      });
+    }
+    const json = JSON.parse(text) as unknown;
+    const list = Array.isArray(json) ? json : [];
+    return list.map((raw) => {
+      const s = raw as ZettlePusherSubscription;
+      return {
+        uuid: s.uuid,
+        destination: s.destination,
+        eventNames: Array.isArray(s.eventNames) ? s.eventNames : [],
+        status: s.status,
+        signingKey: s.signingKey,
+      };
+    });
+  }
+
+  async createPusherSubscription(input: {
+    uuid: string;
+    destination: string;
+    contactEmail: string;
+    eventNames: string[];
+  }): Promise<ZettlePusherSubscription> {
+    const res = await fetch(`${ZETTLE_PUSHER_API_BASE_URL}/organizations/self/subscriptions`, {
+      method: "POST",
+      headers: await this.headers(true),
+      body: JSON.stringify({
+        uuid: input.uuid,
+        transportName: "WEBHOOK",
+        eventNames: input.eventNames,
+        destination: input.destination,
+        contactEmail: input.contactEmail,
+      }),
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      throw Object.assign(new Error(`Zettle Webhook anlegen fehlgeschlagen (${res.status}).`), {
+        responseBody: text.slice(0, 400),
+      });
+    }
+    return JSON.parse(text) as ZettlePusherSubscription;
+  }
+
+  async deletePusherSubscription(subscriptionUuid: string): Promise<void> {
+    const res = await fetch(
+      `${ZETTLE_PUSHER_API_BASE_URL}/organizations/self/subscriptions/${encodeURIComponent(subscriptionUuid)}`,
+      { method: "DELETE", headers: await this.headers() },
+    );
+    if (!res.ok && res.status !== 404) {
+      const text = await res.text();
+      throw Object.assign(new Error(`Zettle Webhook löschen fehlgeschlagen (${res.status}).`), {
+        responseBody: text.slice(0, 300),
+      });
+    }
+  }
+}
+
+function parseInventoryBalances(text: string): ZettleInventoryVariantBalance[] {
+  const json = JSON.parse(text) as {
+    variants?: Array<{
+      variantUuid?: string;
+      productUuid?: string;
+      balance?: string | number;
+      locationUuid?: string;
+    }>;
+  };
+  const variants = Array.isArray(json.variants) ? json.variants : [];
+  return variants
+    .filter((v): v is {
+      variantUuid: string;
+      productUuid: string;
+      balance: string | number;
+      locationUuid?: string;
+    } => Boolean(v.variantUuid && v.productUuid))
+    .map((v) => ({
+      variantUuid: v.variantUuid,
+      productUuid: v.productUuid,
+      balance: Number.parseFloat(String(v.balance ?? "0")) || 0,
+      locationUuid: v.locationUuid ?? null,
+    }));
 }
 
 /**
