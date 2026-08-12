@@ -20,9 +20,11 @@ export {
 export {
   AI_ALLOWED_PRODUCT_FACT_KEYS,
   AiForbiddenPromptFactsError,
+  assertSafeAiCmsFacts,
   assertSafeAiProductFacts,
   type AiAllowedProductFactKey,
   type AiCapability,
+  type AiCmsFacts,
   type AiGenerationMeta,
   type AiImageEditInput,
   type AiImageEditMode,
@@ -57,6 +59,14 @@ export {
   type GenerateProductAiTextResult,
   type ProductAiTextTargetField,
 } from "@/features/integrations/application/generate-product-ai-text";
+export {
+  cmsAiKindForBlock,
+  cmsFieldForAiTextKind,
+  generateCmsAiTextDraft,
+  type CmsAiTextBlockType,
+  type CmsAiTextTargetField,
+  type GenerateCmsAiTextResult,
+} from "@/features/integrations/application/generate-cms-ai-text";
 export {
   generateProductAiAltTextDraft,
   generateProductAiImageDraft,

@@ -12,6 +12,8 @@ describe("productFieldForAiTextKind", () => {
     expect(productFieldForAiTextKind("bullets")).toBe("featureBullets");
     expect(productFieldForAiTextKind("seo_title")).toBeNull();
     expect(productFieldForAiTextKind("alt_text")).toBeNull();
+    expect(productFieldForAiTextKind("cms_hero_headline")).toBeNull();
+    expect(productFieldForAiTextKind("cms_rich_text")).toBeNull();
   });
 });
 

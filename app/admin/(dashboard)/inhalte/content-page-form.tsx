@@ -58,9 +58,11 @@ function newClientId(): string {
 export function ContentPageForm({
   initial,
   previewProducts = [],
+  aiReady = false,
 }: {
   initial?: InitialPage;
   previewProducts?: LivePreviewProduct[];
+  aiReady?: boolean;
 }) {
   const formId = useId();
   const [state, formAction, pending] = useActionState<
@@ -343,6 +345,9 @@ export function ContentPageForm({
                     <ContentBlockFields
                       type={block.type}
                       data={block.data}
+                      aiReady={aiReady}
+                      pageTitle={title}
+                      pageType={pageType}
                       onChange={(data) =>
                         setBlocks((prev) =>
                           prev.map((b) =>

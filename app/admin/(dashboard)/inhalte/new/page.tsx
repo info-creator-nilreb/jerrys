@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ContentPageForm } from "@/app/admin/(dashboard)/inhalte/content-page-form";
+import { getAiContentSettingsPublic } from "@/features/integrations";
 import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 
@@ -26,6 +27,8 @@ export default async function AdminInhalteNewPage() {
     if (!isDatabaseUnreachable(e)) throw e;
   }
 
+  const aiSettings = await getAiContentSettingsPublic();
+
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <div className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm sm:p-8">
@@ -42,7 +45,7 @@ export default async function AdminInhalteNewPage() {
           Live-Vorschau rechts aktualisiert sich sofort; Speichern übernimmt dauerhaft.
         </p>
       </div>
-      <ContentPageForm previewProducts={previewProducts} />
+      <ContentPageForm previewProducts={previewProducts} aiReady={aiSettings.ready} />
     </div>
   );
 }

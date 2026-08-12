@@ -20,12 +20,13 @@
 
 ---
 
-## Ist-Zustand (nach Slice 4)
+## Ist-Zustand (nach Slice 5 Start)
 
 - Slices 1–3: Port, Admin-Config, Textassistent
 - Bildassistent auf Produkt-Edit: Prompt → Moderation → Vorschau → explizite Übernahme in Vercel Blob + `ProductImage`
 - Alt-Text-Entwurf für bestehende Galeriebilder (noch ohne Alt-Editor-Persistenz)
-- Noch **keine** CMS-KI und kein Usage-Dashboard (Slices 5–6)
+- Slice 5 (Start): CMS-Textentwürfe für **Hero** und **RichText** im Inhalte-Editor (`generateCmsAiTextDraft` + UI-Hook, kein Auto-Publish)
+- Noch offen: weitere CMS-Blöcke/Bildentwürfe, Usage-Dashboard (Slice 6)
 
 ---
 
@@ -39,7 +40,7 @@ Branch-Prefix: `cursor/epic13-slice<N>-<kurzname>-e864`
 | **2** | Admin-Konfiguration: Limits, Modellprofile, optional verschlüsselter Key (wie Instagram/INTERNETMARKE) | ✅ |
 | **3** | Textassistent im Produktformular: Vorschau/Diff, explizites Übernehmen einzelner Felder | ✅ |
 | **4** | Bildassistent: Prompt/Quelle, Moderation, temporäre Vorschau, explizite Übernahme in Object Storage | ✅ |
-| **5** | CMS-Integration für ausgewählte Blöcke (Text/Bild-Entwürfe) | kein Auto-Publish |
+| **5** | CMS-Integration für ausgewählte Blöcke (Text/Bild-Entwürfe) | ✅ Start (Hero/RichText-Text); Bild/weitere Blöcke offen |
 | **6** | Betrieb: Usage-/Kostenmetriken, Quoten, verständliche Providerfehler, Audit | Exit-Kriterien Epic 13 |
 
 **Empfehlung:** Als Nächstes Slice 2 (Konfiguration/Limits) oder Slice 3 (Text-UI), sobald ein OpenAI-Key in Preview verfügbar ist.

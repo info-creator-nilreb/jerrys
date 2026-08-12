@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CmsBlockAiTextAssistant } from "@/app/admin/(dashboard)/inhalte/cms-block-ai-text-assistant";
 import { AdminRichTextEditor } from "@/components/admin/admin-rich-text-editor";
 import { CmsMediaField } from "@/components/admin/cms-media-field";
 import type { ContentBlockType } from "@/lib/content/block-types";
@@ -9,6 +10,9 @@ type Props = {
   type: ContentBlockType;
   data: Record<string, unknown>;
   onChange: (next: Record<string, unknown>) => void;
+  aiReady?: boolean;
+  pageTitle?: string;
+  pageType?: string;
 };
 
 function str(data: Record<string, unknown>, key: string): string {
@@ -29,71 +33,103 @@ function num(data: Record<string, unknown>, key: string, fallback: number): numb
 const fieldClass =
   "mt-1 w-full rounded-md border border-[#e3e4e8] px-3 py-2 text-sm text-[#1f2937] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25";
 
-export function ContentBlockFields({ type, data, onChange }: Props) {
+export function ContentBlockFields({
+  type,
+  data,
+  onChange,
+  aiReady = false,
+  pageTitle = "",
+  pageType = "content",
+}: Props) {
   const set = (key: string, value: unknown) => onChange({ ...data, [key]: value });
 
   if (type === "hero") {
     return (
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="text-sm text-[#5c5f66] sm:col-span-2">
-          Überschrift <span className="text-primary">*</span>
-          <input
-            className={fieldClass}
-            value={str(data, "headline")}
-            onChange={(e) => set("headline", e.target.value)}
-          />
-        </label>
-        <label className="text-sm text-[#5c5f66]">
-          Eyebrow
-          <input
-            className={fieldClass}
-            value={str(data, "eyebrow")}
-            onChange={(e) => set("eyebrow", e.target.value)}
-          />
-        </label>
-        <CmsMediaField
-          label="Hero-Bild"
-          value={str(data, "imageUrl")}
-          onChange={(url) => set("imageUrl", url)}
-          required
-          hint="Upload, Medienbibliothek oder URL"
+      <div className="space-y-4">
+        <CmsBlockAiTextAssistant
+          aiReady={aiReady}
+          blockType="hero"
+          pageTitle={pageTitle}
+          pageType={pageType}
+          existingHeadline={str(data, "headline")}
+          ctaLabel={str(data, "ctaLabel")}
+          onApply={(target, value) => {
+            if (target === "headline") set("headline", value);
+          }}
         />
-        <label className="text-sm text-[#5c5f66]">
-          CTA-Label
-          <input
-            className={fieldClass}
-            value={str(data, "ctaLabel")}
-            onChange={(e) => set("ctaLabel", e.target.value)}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="text-sm text-[#5c5f66] sm:col-span-2">
+            Überschrift <span className="text-primary">*</span>
+            <input
+              className={fieldClass}
+              value={str(data, "headline")}
+              onChange={(e) => set("headline", e.target.value)}
+            />
+          </label>
+          <label className="text-sm text-[#5c5f66]">
+            Eyebrow
+            <input
+              className={fieldClass}
+              value={str(data, "eyebrow")}
+              onChange={(e) => set("eyebrow", e.target.value)}
+            />
+          </label>
+          <CmsMediaField
+            label="Hero-Bild"
+            value={str(data, "imageUrl")}
+            onChange={(url) => set("imageUrl", url)}
+            required
+            hint="Upload, Medienbibliothek oder URL"
           />
-        </label>
-        <label className="text-sm text-[#5c5f66]">
-          CTA-Pfad
-          <input
-            className={fieldClass}
-            value={str(data, "ctaHref")}
-            onChange={(e) => set("ctaHref", e.target.value)}
-            placeholder="/produkte"
-          />
-        </label>
+          <label className="text-sm text-[#5c5f66]">
+            CTA-Label
+            <input
+              className={fieldClass}
+              value={str(data, "ctaLabel")}
+              onChange={(e) => set("ctaLabel", e.target.value)}
+            />
+          </label>
+          <label className="text-sm text-[#5c5f66]">
+            CTA-Pfad
+            <input
+              className={fieldClass}
+              value={str(data, "ctaHref")}
+              onChange={(e) => set("ctaHref", e.target.value)}
+              placeholder="/produkte"
+            />
+          </label>
+        </div>
       </div>
     );
   }
 
   if (type === "richText") {
     return (
-      <div className="block text-sm text-[#5c5f66]">
-        <span className="mb-1 block">
-          Text <span className="text-primary">*</span>
-        </span>
-        <AdminRichTextEditor
-          value={str(data, "html")}
-          onChange={(html) => set("html", html)}
-          placeholder="Text eingeben …"
+      <div className="space-y-4">
+        <CmsBlockAiTextAssistant
+          aiReady={aiReady}
+          blockType="richText"
+          pageTitle={pageTitle}
+          pageType={pageType}
+          existingBody={str(data, "html")}
+          onApply={(target, value) => {
+            if (target === "html") set("html", value);
+          }}
         />
-        <p className="mt-1 text-xs text-[#9ca3af]">
-          Fett, Kursiv, Unterstrichen, Ausrichtung und Schriftgröße. HTML wird beim
-          Speichern sanitisiert.
-        </p>
+        <div className="block text-sm text-[#5c5f66]">
+          <span className="mb-1 block">
+            Text <span className="text-primary">*</span>
+          </span>
+          <AdminRichTextEditor
+            value={str(data, "html")}
+            onChange={(html) => set("html", html)}
+            placeholder="Text eingeben …"
+          />
+          <p className="mt-1 text-xs text-[#9ca3af]">
+            Fett, Kursiv, Unterstrichen, Ausrichtung und Schriftgröße. HTML wird beim
+            Speichern sanitisiert.
+          </p>
+        </div>
       </div>
     );
   }

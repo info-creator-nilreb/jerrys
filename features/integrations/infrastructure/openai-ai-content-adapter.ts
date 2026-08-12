@@ -69,6 +69,10 @@ function textKindInstruction(kind: AiTextKind, locale: string): string {
       return `Schreibe 4–6 kurze USP-Bulletpoints auf ${locale}, eine Zeile pro Punkt, mit führendem „- “.`;
     case "alt_text":
       return `Schreibe einen kurzen, barrierefreien Alt-Text auf ${locale}.`;
+    case "cms_hero_headline":
+      return `Schreibe eine prägnante Hero-Überschrift für eine CMS-Shopseite (max. ~12 Wörter) auf ${locale}. Kein CTA im Text.`;
+    case "cms_rich_text":
+      return `Schreibe einen sachlichen CMS-Fließtext (2–4 kurze Absätze) auf ${locale}. Keine erfundenen Claims, Preise oder Rechtsaussagen.`;
   }
 }
 

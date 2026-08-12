@@ -6,14 +6,14 @@ Verbindlicher Scope für den Production-Cutover (Stand Abstimmung Product Owner)
 
 | # | Thema | Status | Hinweise |
 | --- | --- | --- | --- |
-| 1 | Epic 13 KI-Content abschließen | offen (Slices 1–4 ✅) | CMS-KI (5), Betrieb/Usage (6), Alt-Text-Persistenz |
+| 1 | Epic 13 KI-Content abschließen | teilweise (Slices 1–5 Start ✅) | Slice 5: CMS-Textentwürfe Hero/RichText via AiContentPort, Human-in-the-loop; Slice 6 Betrieb/Usage + Alt-Text-Persistenz offen |
 | 2 | Zettle bidirektional | extern | PR #102 — nicht parallel nachbauen |
 | 3 | Retoure / Reship Admin-MVP | umgesetzt | Epic 7 Slice 5; `forceNew`, ConfirmDialog, Audit; private Labels später |
 
 | 4 | Admin Index: Card-Layout mobil | ✅ | Cards unter `md`, Tabelle ab `md`: Produkte, Bestellungen, Kunden, Kategorien, Kollektionen, Inhalte, Promotions, Termine, Bestand, E-Mails |
 | 5 | Epic 14 Semantische Suche | offen (Slice 1 ✅) | SEO/Schema-Audit; Slices 2–5 laut `EPIC14_…` |
 | 6 | Confirm-Dialoge statt `window.confirm` | ✅ | `ConfirmDialog` verdrahtet |
-| 7 | PayPal Express + Apple Pay | offen | PDP/Warenkorb echte Buttons, nicht Platzhalter |
+| 7 | PayPal Express + Apple Pay | umgesetzt ✅ | Warenkorb Smart Buttons + Apple Pay Eligibility; PDP führt nach Add-to-Cart zum Express-Warenkorb |
 | 8 | Mobile-UX-Pass | offen | Storefront + Admin als UX-Review |
 | 9 | Epic-/Slice-Hinweise aus UI | ✅ | Sichtbare Copy bereinigt |
 
