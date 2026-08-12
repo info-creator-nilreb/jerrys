@@ -6,15 +6,14 @@ Verbindlicher Scope für den Production-Cutover (Stand Abstimmung Product Owner)
 
 | # | Thema | Status | Hinweise |
 | --- | --- | --- | --- |
-| 1 | Epic 13 KI-Content abschließen | teilweise (Slices 1–5 Start ✅) | Slice 5: CMS-Textentwürfe Hero/RichText via AiContentPort, Human-in-the-loop; Slice 6 Betrieb/Usage + Alt-Text-Persistenz offen |
+| 1 | Epic 13 KI-Content abschließen | teilweise (1–5 ✅) | Slice 5: CMS-Textentwürfe Hero/RichText; Slice 6 Betrieb/Usage + Alt-Text-Persistenz offen |
 | 2 | Zettle bidirektional | extern | PR #102 — nicht parallel nachbauen |
-| 3 | Retoure / Reship Admin-MVP | umgesetzt | Epic 7 Slice 5; `forceNew`, ConfirmDialog, Audit; private Labels später |
-
-| 4 | Admin Index: Card-Layout mobil | ✅ | Cards unter `md`, Tabelle ab `md`: Produkte, Bestellungen, Kunden, Kategorien, Kollektionen, Inhalte, Promotions, Termine, Bestand, E-Mails |
-| 5 | Epic 14 Semantische Suche | offen (Slice 1 ✅) | SEO/Schema-Audit; Slices 2–5 laut `EPIC14_…` |
+| 3 | Retoure / Reship Admin-MVP | ✅ | Sync bei Retoure, Reship-Entwurf, ConfirmDialog, Audit; private Labels später |
+| 4 | Admin Index: Card-Layout mobil | ✅ | Cards unter `md`, Tabelle ab `md` auf allen Indexseiten |
+| 5 | Epic 14 Semantische Suche | offen (Slice 1 ✅) | SEO/Schema; Slices 2–5 (Embeddings, Hybrid, Feed, Eval) offen |
 | 6 | Confirm-Dialoge statt `window.confirm` | ✅ | `ConfirmDialog` verdrahtet |
-| 7 | PayPal Express + Apple Pay | umgesetzt ✅ | Warenkorb Smart Buttons + Apple Pay Eligibility; PDP führt nach Add-to-Cart zum Express-Warenkorb |
-| 8 | Mobile-UX-Pass | offen | Storefront + Admin als UX-Review |
+| 7 | PayPal Express + Apple Pay | ✅ | Warenkorb Smart Buttons + Apple Pay; PDP → Warenkorb-Express |
+| 8 | Mobile-UX-Pass | in Arbeit | Storefront + Admin Feinschliff nach Card-/Express-Änderungen |
 | 9 | Epic-/Slice-Hinweise aus UI | ✅ | Sichtbare Copy bereinigt |
 
 ## Explizit außerhalb (bis nach Live)
@@ -30,4 +29,4 @@ Unverändert abzuarbeiten: [EPIC9_HARDENING_GO_LIVE.md](./EPIC9_HARDENING_GO_LIV
 
 ## Branch
 
-`cursor/final-go-live-package-3106` — inkrementelle PRs/Commits pro Slice möglich; dieses Dokument hält den Gesamtumfang fest.
+`cursor/final-go-live-package-3106` — PR #103.
