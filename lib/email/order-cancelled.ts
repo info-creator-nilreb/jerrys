@@ -38,7 +38,7 @@ export async function sendOrderCancelledIfNeeded(
   const successPath = `/checkout/erfolg?nr=${encodeURIComponent(order.orderNumber)}`;
   const successUrl = base ? `${base}${successPath}` : successPath;
 
-  const vars = mergeTemplateVars(buildShopTemplateVars(branding), {
+  const vars = mergeTemplateVars(buildShopTemplateVars(branding, { heroVariant: "order" }), {
     customer: { first_name: order.shippingFirstName },
     order: {
       number: order.orderNumber,

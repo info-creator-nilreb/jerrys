@@ -37,7 +37,10 @@ export async function sendWorkshopDateRequestApprovedEmail(input: {
   );
 
   const vars = mergeTemplateVars(
-    buildShopTemplateVars(branding, { href: overviewUrl, label: "Termine ansehen" }),
+    buildShopTemplateVars(branding, {
+      cta: { href: overviewUrl, label: "Termine ansehen" },
+      heroVariant: "workshop",
+    }),
     {
       customer: { first_name: greeting },
       workshop: {
@@ -90,7 +93,10 @@ export async function sendWorkshopDateRequestRejectedEmail(input: {
   );
 
   const vars = mergeTemplateVars(
-    buildShopTemplateVars(branding, { href: overviewUrl, label: "Termine ansehen" }),
+    buildShopTemplateVars(branding, {
+      cta: { href: overviewUrl, label: "Termine ansehen" },
+      heroVariant: "workshop",
+    }),
     {
       customer: { first_name: greeting },
       workshop: {

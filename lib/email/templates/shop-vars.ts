@@ -2,18 +2,25 @@ import "server-only";
 
 import {
   grayInfoCard,
+  heroIconHtml,
   transactionalCtaButton,
   transactionalEmailFooterBlock,
   transactionalLogoBlock,
+  type TransactionalHeroVariant,
 } from "@/lib/email/transactional-email-layout";
 import type { TransactionalEmailBranding } from "@/lib/shop/email-branding";
 import type { TemplateVars } from "@/lib/email/templates/render";
 
-/** Gemeinsame Shop-/CTA-Fragmente für Template-Rendering. */
+/** Gemeinsame Shop-/CTA-/Hero-Fragmente für Template-Rendering. */
 export function buildShopTemplateVars(
   branding: TransactionalEmailBranding,
-  cta?: { href: string; label: string },
+  options?: {
+    cta?: { href: string; label: string };
+    heroVariant?: TransactionalHeroVariant;
+  },
 ): TemplateVars {
+  const cta = options?.cta;
+  const heroVariant = options?.heroVariant ?? "order";
   return {
     shop: {
       name: branding.shopName,
@@ -28,6 +35,7 @@ export function buildShopTemplateVars(
       cta_html: cta
         ? transactionalCtaButton(cta.href, cta.label, branding)
         : "",
+      hero_icon_html: heroIconHtml(heroVariant),
       notice_html: grayInfoCard(
         `<p style="margin:0">Wenn du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.</p>`,
       ),

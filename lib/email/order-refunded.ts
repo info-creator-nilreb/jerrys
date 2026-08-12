@@ -58,7 +58,10 @@ export async function sendOrderRefundedIfNeeded(
       : `<p style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333">Positionen siehe Bestellübersicht.</p>`;
 
   const vars = mergeTemplateVars(
-    buildShopTemplateVars(branding, { href: shopUrl, label: "Zurück zum Shop" }),
+    buildShopTemplateVars(branding, {
+      cta: { href: shopUrl, label: "Zurück zum Shop" },
+      heroVariant: "refund",
+    }),
     {
       customer: { first_name: order.shippingFirstName },
       order: {

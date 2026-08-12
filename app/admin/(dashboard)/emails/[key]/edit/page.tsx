@@ -4,18 +4,40 @@ import {
   getEmailTemplateCatalogEntry,
   isEmailTemplateKey,
   sampleVarsForTemplate,
+  type EmailTemplateKey,
 } from "@/lib/email/templates/catalog";
 import { getEmailTemplateByKey } from "@/lib/email/templates/load";
 import { EmailTemplateEditor } from "@/app/admin/(dashboard)/emails/email-template-editor";
 import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
 import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
 import { renderEmailBodies } from "@/lib/email/templates/render";
+import type { TransactionalHeroVariant } from "@/lib/email/email-icon-assets";
 
 export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ key: string }>;
 };
+
+function heroVariantForTemplate(key: EmailTemplateKey): TransactionalHeroVariant {
+  switch (key) {
+    case "order_shipped":
+      return "shipping";
+    case "order_refunded":
+      return "refund";
+    case "email_verify":
+    case "magic_link":
+    case "password_reset":
+      return "account";
+    case "workshop_booking_confirmation":
+    case "workshop_booking_cancelled":
+    case "workshop_date_request_approved":
+    case "workshop_date_request_rejected":
+      return "workshop";
+    default:
+      return "order";
+  }
+}
 
 export async function generateMetadata({ params }: PageProps) {
   const { key } = await params;
@@ -38,12 +60,15 @@ export default async function AdminEmailTemplateEditPage({ params }: PageProps) 
   const previewVars = mergeTemplateVars(
     sample,
     buildShopTemplateVars(branding, {
-      href: String(
-        (sample.email as { cta_url?: string } | undefined)?.cta_url ?? "https://example.com",
-      ),
-      label: String(
-        (sample.email as { cta_label?: string } | undefined)?.cta_label ?? "Weiter",
-      ),
+      cta: {
+        href: String(
+          (sample.email as { cta_url?: string } | undefined)?.cta_url ?? "https://example.com",
+        ),
+        label: String(
+          (sample.email as { cta_label?: string } | undefined)?.cta_label ?? "Weiter",
+        ),
+      },
+      heroVariant: heroVariantForTemplate(key),
     }),
   );
   const initialPreview = renderEmailBodies(

@@ -77,7 +77,10 @@ export async function sendOrderShippedIfNeeded(
   const lineItems = orderItemsToEmailLineItems(order.items);
 
   const vars = mergeTemplateVars(
-    buildShopTemplateVars(branding, { href: successUrl, label: "Zur Bestellung" }),
+    buildShopTemplateVars(branding, {
+      cta: { href: successUrl, label: "Zur Bestellung" },
+      heroVariant: "shipping",
+    }),
     {
       customer: { first_name: order.shippingFirstName },
       order: {

@@ -55,7 +55,10 @@ export async function sendCustomerAuthEmail(params: {
   }
 
   const vars = mergeTemplateVars(
-    buildShopTemplateVars(branding, { href, label: meta.cta }),
+    buildShopTemplateVars(branding, {
+      cta: { href, label: meta.cta },
+      heroVariant: "account",
+    }),
     {},
   );
 

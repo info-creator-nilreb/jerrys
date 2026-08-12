@@ -65,6 +65,12 @@ const CTA_VARS: EmailTemplateVariableDef[] = [
     html: true,
     example: "<a href=\"#\">Bestellung ansehen</a>",
   },
+  {
+    path: "email.hero_icon_html",
+    label: "Hero-Icon (PNG)",
+    html: true,
+    example: "<img src=\"…/shopping-bag.png\" width=\"40\" height=\"40\" alt=\"\" />",
+  },
 ];
 
 export const EMAIL_TEMPLATE_CATALOG: EmailTemplateCatalogEntry[] = [

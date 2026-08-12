@@ -1,6 +1,12 @@
 import "server-only";
 
 import { absoluteUrlForEmail } from "@/lib/email/email-absolute-url";
+import {
+  absoluteEmailIconUrl,
+  footerIconPublicPath,
+  heroIconPublicPath,
+  type TransactionalHeroVariant,
+} from "@/lib/email/email-icon-assets";
 import { escapeHtmlForEmail } from "@/lib/email/template-utils";
 import { formatGermanDateMedium } from "@/lib/i18n/format-german-date";
 import { paymentMethodLabel } from "@/lib/orders/payment-method-label";
@@ -10,6 +16,7 @@ import {
 } from "@/lib/shop/email-branding";
 
 export { formatGermanDateMedium };
+export type { TransactionalHeroVariant };
 export const transactionalPaymentLabel = paymentMethodLabel;
 
 /**
@@ -36,8 +43,6 @@ export const TRANSACTIONAL_EMAIL_DESIGN = {
   footerDivider: "rgba(255,255,255,0.18)",
 } as const;
 
-export type TransactionalHeroVariant = "order" | "shipping" | "refund" | "account" | "workshop";
-
 /** Links in Mails müssen absolut sein; ohne konfigurierte Basis nur Platzhalter. */
 function absUrl(path: string): string {
   return absoluteUrlForEmail(path) ?? "#";
@@ -49,13 +54,19 @@ function brandingOrDefault(
   return branding ?? defaultTransactionalEmailBranding();
 }
 
-/** Logo-`<img>` nur bei gültiger absoluter URL; sonst Textmarke. */
+/**
+ * Logo aus Shop-Einstellungen als `<img>` mit absoluter HTTPS-URL
+ * (Gmail/Outlook laden keine relativen/localhost-Bilder).
+ * Fallback: Textmarke, wenn keine auflösbare URL.
+ */
 export function transactionalLogoBlock(branding: TransactionalEmailBranding): string {
   const home = absUrl("/");
   const shopName = escapeHtmlForEmail(branding.shopName);
-  const logoUrl = branding.logoAbsoluteUrl;
-  if (logoUrl) {
-    return `<tr><td align="center" style="padding:0 0 22px"><a href="${escapeHtmlForEmail(home)}" style="text-decoration:none;display:inline-block"><img src="${escapeHtmlForEmail(logoUrl)}" alt="${shopName}" width="200" border="0" style="display:block;margin:0 auto;max-width:220px;height:auto;border:0;outline:none"/></a></td></tr>`;
+  const logoUrl = branding.logoAbsoluteUrl?.trim() || null;
+  if (logoUrl && /^https?:\/\//i.test(logoUrl)) {
+    const safeSrc = escapeHtmlForEmail(logoUrl);
+    // width-Attribut + display:block: Outlook/Gmail-kompatibel; max-width für Mobile.
+    return `<tr><td align="center" style="padding:0 0 22px"><a href="${escapeHtmlForEmail(home)}" style="text-decoration:none;display:inline-block;border:0;outline:none" target="_blank"><img src="${safeSrc}" alt="${shopName}" width="200" border="0" style="display:block;margin:0 auto;width:200px;max-width:220px;height:auto;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic"/></a></td></tr>`;
   }
   return `<tr><td align="center" style="padding:0 0 22px"><a href="${escapeHtmlForEmail(home)}" style="text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:700;color:#1f2937">${shopName}</a></td></tr>`;
 }
@@ -65,21 +76,34 @@ function heroCircleBg(): string {
   return "#f3f4f6";
 }
 
-/** Gmail entfernt Inline-SVG oft; Emoji sind zuverlässiger (Semantik wie Order/Versand/Erstattung). */
-function heroIconHtml(variant: TransactionalHeroVariant): string {
-  const emoji =
+/**
+ * Schlanke Lucide-ähnliche PNG-Icons (keine Emoji, kein Inline-SVG — Gmail strippt SVG).
+ * Quelle: `/branding/email-icons/*.png`, absolut über Site-URL.
+ */
+export function heroIconHtml(variant: TransactionalHeroVariant): string {
+  const url = absoluteEmailIconUrl(heroIconPublicPath(variant));
+  if (!url) {
+    return `<span style="font-size:14px;line-height:1;color:#6b7280;font-family:Arial,Helvetica,sans-serif" aria-hidden="true">●</span>`;
+  }
+  const alt =
     variant === "order"
-      ? "🛒"
+      ? "Bestellung"
       : variant === "shipping"
-        ? "🚚"
+        ? "Versand"
         : variant === "refund"
-          ? "💵"
+          ? "Erstattung"
           : variant === "account"
-            ? "🔑"
-            : variant === "workshop"
-              ? "📅"
-              : "•";
-  return `<span style="font-size:36px;line-height:1;display:inline-block" aria-hidden="true">${emoji}</span>`;
+            ? "Konto"
+            : "Termin";
+  return `<img src="${escapeHtmlForEmail(url)}" alt="${escapeHtmlForEmail(alt)}" width="40" height="40" border="0" style="display:block;width:40px;height:40px;border:0;outline:none;-ms-interpolation-mode:bicubic" />`;
+}
+
+function footerIconImg(kind: "lock" | "truck" | "mail" | "instagram", alt: string): string {
+  const url = absoluteEmailIconUrl(footerIconPublicPath(kind));
+  if (!url) {
+    return `<span style="font-size:14px;line-height:1;color:#e5e7eb" aria-hidden="true">●</span>`;
+  }
+  return `<img src="${escapeHtmlForEmail(url)}" alt="${escapeHtmlForEmail(alt)}" width="22" height="22" border="0" style="display:inline-block;width:22px;height:22px;border:0;outline:none;vertical-align:middle;-ms-interpolation-mode:bicubic" />`;
 }
 
 export function transactionalCtaButton(
@@ -104,18 +128,15 @@ function footerSocialRow(branding: TransactionalEmailBranding): string {
   if (!url) return "";
   const primary = branding.primary;
   const aria = escapeHtmlForEmail(`${branding.shopName} auf Instagram`);
-  const igMark = `<span style="font-size:20px;line-height:1;vertical-align:middle" aria-hidden="true">📷</span>`;
-  return `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:20px auto 0"><tr><td align="center" style="padding:0 10px"><a href="${escapeHtmlForEmail(url)}" style="text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:600;color:${primary}" aria-label="${aria}"><table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto"><tr><td style="vertical-align:middle;line-height:1;padding-right:8px">${igMark}</td><td style="vertical-align:middle;color:${primary}">Instagram</td></tr></table></a></td></tr></table>`;
+  const igMark = footerIconImg("instagram", "Instagram");
+  return `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:20px auto 0"><tr><td align="center" style="padding:0 10px"><a href="${escapeHtmlForEmail(url)}" style="text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:600;color:${primary}" aria-label="${aria}"><table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto"><tr><td style="vertical-align:middle;line-height:0;padding-right:8px">${igMark}</td><td style="vertical-align:middle;color:${primary}">Instagram</td></tr></table></a></td></tr></table>`;
 }
 
 function footerUspRow(): string {
   const { footerDivider, footerText } = TRANSACTIONAL_EMAIL_DESIGN;
-  const lock = `<span style="font-size:20px;line-height:1;vertical-align:middle" aria-hidden="true">🔒</span>`;
-  const truck = `<span style="font-size:20px;line-height:1;vertical-align:middle" aria-hidden="true">🚚</span>`;
-  const mail = `<span style="font-size:20px;line-height:1;vertical-align:middle" aria-hidden="true">✉️</span>`;
   const item = (icon: string, title: string) =>
-    `<td style="padding:12px 8px;text-align:center;vertical-align:top;width:33%"><div style="margin-bottom:8px">${icon}</div><div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:600;color:${footerText};line-height:1.4">${escapeHtmlForEmail(title)}</div></td>`;
-  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:8px;border-top:1px solid ${footerDivider}"><tr>${item(lock, "Sicher bezahlen")}${item(truck, "Schneller Versand")}${item(mail, "Kundenservice")}</tr></table>`;
+    `<td style="padding:12px 8px;text-align:center;vertical-align:top;width:33%"><div style="margin-bottom:8px;line-height:0">${icon}</div><div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:600;color:${footerText};line-height:1.4">${escapeHtmlForEmail(title)}</div></td>`;
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:8px;border-top:1px solid ${footerDivider}"><tr>${item(footerIconImg("lock", "Sicher bezahlen"), "Sicher bezahlen")}${item(footerIconImg("truck", "Schneller Versand"), "Schneller Versand")}${item(footerIconImg("mail", "Kundenservice"), "Kundenservice")}</tr></table>`;
 }
 
 export function transactionalEmailFooterBlock(branding: TransactionalEmailBranding): string {
@@ -154,7 +175,7 @@ export function wrapTransactionalEmailHtml(p: TransactionalEmailWrapParams): str
 }
 
 /**
- * HTML-Shell für editierbare Templates: Logo/Footer/CTA als {{{…}}}-Platzhalter,
+ * HTML-Shell für editierbare Templates: Logo/Footer/CTA/Hero als {{{…}}}-Platzhalter,
  * Heading/Intro/Body als feste oder variable Inhalte.
  */
 export function buildEditableTransactionalShell(params: {
@@ -167,8 +188,9 @@ export function buildEditableTransactionalShell(params: {
 }): string {
   const { text, pageBg, maxWidth, cardBorderNeutral } = TRANSACTIONAL_EMAIL_DESIGN;
   const circleBg = heroCircleBg();
-  const icon = heroIconHtml(params.variant);
-  const mainCard = `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:${maxWidth}px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid ${cardBorderNeutral}"><tr><td style="padding:32px 28px 28px;font-family:Arial,Helvetica,sans-serif;color:${text};background-color:#ffffff"><table role="presentation" width="100%" cellspacing="0" cellpadding="0">{{{shop.logo_html}}}<tr><td align="center" style="padding:4px 0 22px"><table role="presentation" cellspacing="0" cellpadding="0"><tr><td align="center" valign="middle" style="width:84px;height:84px;border-radius:50%;background:${circleBg};border:1px solid ${cardBorderNeutral};line-height:0;padding:16px">${icon}</td></tr></table></td></tr><tr><td style="font-size:22px;font-weight:700;color:#1f2937;line-height:1.35;text-align:center;padding-bottom:12px">${params.heading}</td></tr><tr><td style="font-size:15px;line-height:1.55;color:${text};text-align:center;padding:0 4px 24px">${params.intro}</td></tr><tr><td>${params.bodyHtml}</td></tr><tr><td align="center">{{{email.cta_html}}}</td></tr></table></td></tr></table>`;
+  // Hero-Icon zur Laufzeit via {{{email.hero_icon_html}}} (absolute PNG-URL, kein Emoji).
+  void params.variant;
+  const mainCard = `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:${maxWidth}px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid ${cardBorderNeutral}"><tr><td style="padding:32px 28px 28px;font-family:Arial,Helvetica,sans-serif;color:${text};background-color:#ffffff"><table role="presentation" width="100%" cellspacing="0" cellpadding="0">{{{shop.logo_html}}}<tr><td align="center" style="padding:4px 0 22px"><table role="presentation" cellspacing="0" cellpadding="0"><tr><td align="center" valign="middle" style="width:84px;height:84px;border-radius:50%;background:${circleBg};border:1px solid ${cardBorderNeutral};line-height:0;padding:22px">{{{email.hero_icon_html}}}</td></tr></table></td></tr><tr><td style="font-size:22px;font-weight:700;color:#1f2937;line-height:1.35;text-align:center;padding-bottom:12px">${params.heading}</td></tr><tr><td style="font-size:15px;line-height:1.55;color:${text};text-align:center;padding:0 4px 24px">${params.intro}</td></tr><tr><td>${params.bodyHtml}</td></tr><tr><td align="center">{{{email.cta_html}}}</td></tr></table></td></tr></table>`;
 
   return `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta http-equiv="x-ua-compatible" content="ie=edge"/><title>${params.documentTitle}</title></head><body style="margin:0;padding:0;background:${pageBg}"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${pageBg}"><tr><td align="center" style="padding:24px 12px">${mainCard}</td></tr><tr><td align="center" style="padding:0 12px 24px">{{{shop.footer_html}}}</td></tr></table></body></html>`;
 }
@@ -214,4 +236,3 @@ export function buildOrderItemsTableHtml(
     .join("");
   return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:8px 0 16px">${rows}</table>`;
 }
-

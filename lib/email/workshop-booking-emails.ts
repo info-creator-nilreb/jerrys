@@ -167,7 +167,10 @@ export async function sendWorkshopBookingConfirmationIfNeeded(
   );
 
   const vars = mergeTemplateVars(
-    buildShopTemplateVars(branding, { href: detailUrl, label: "Termin im Konto ansehen" }),
+    buildShopTemplateVars(branding, {
+      cta: { href: detailUrl, label: "Termin im Konto ansehen" },
+      heroVariant: "workshop",
+    }),
     {
       customer: { first_name: greetingName },
       workshop: {
@@ -249,7 +252,10 @@ export async function sendWorkshopBookingCancelledForBookingId(
   );
 
   const vars = mergeTemplateVars(
-    buildShopTemplateVars(branding, { href: termineUrl, label: "Termine im Konto" }),
+    buildShopTemplateVars(branding, {
+      cta: { href: termineUrl, label: "Termine im Konto" },
+      heroVariant: "workshop",
+    }),
     {
       customer: { first_name: greetingName },
       workshop: {

@@ -59,7 +59,10 @@ export async function sendOrderConfirmationIfNeeded(
   const paymentMethod = transactionalPaymentLabel(order.paymentMethod);
 
   const vars = mergeTemplateVars(
-    buildShopTemplateVars(branding, { href: successUrl, label: "Bestellung ansehen" }),
+    buildShopTemplateVars(branding, {
+      cta: { href: successUrl, label: "Bestellung ansehen" },
+      heroVariant: "order",
+    }),
     {
       customer: { first_name: order.shippingFirstName },
       order: {

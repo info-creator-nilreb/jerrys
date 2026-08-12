@@ -46,29 +46,54 @@ function mapRow(row: {
   };
 }
 
-/** Fehlende Templates aus Code-Defaults anlegen (idempotent). */
+/** Fehlende Templates aus Code-Defaults anlegen; veraltete Basis-HTML (Emoji-Hero) aktualisieren. */
 export async function ensureEmailTemplatesSeeded(): Promise<void> {
   const prisma = getPrisma();
-  const existing = await prisma.emailTemplate.findMany({ select: { key: true } });
+  const existing = await prisma.emailTemplate.findMany();
   const have = new Set(existing.map((e) => e.key));
-  const missing = getAllEmailTemplateDefaults().filter((d) => !have.has(d.key));
-  if (missing.length === 0) return;
+  const defaults = getAllEmailTemplateDefaults();
+  const missing = defaults.filter((d) => !have.has(d.key));
 
-  await prisma.$transaction(
-    missing.map((d) =>
-      prisma.emailTemplate.create({
-        data: {
-          key: d.key,
-          name: d.name,
-          description: d.description,
-          subject: d.subject,
-          htmlBody: d.htmlBody,
-          textBody: d.textBody,
-          enabled: true,
-        },
-      }),
-    ),
+  if (missing.length > 0) {
+    await prisma.$transaction(
+      missing.map((d) =>
+        prisma.emailTemplate.create({
+          data: {
+            key: d.key,
+            name: d.name,
+            description: d.description,
+            subject: d.subject,
+            htmlBody: d.htmlBody,
+            textBody: d.textBody,
+            enabled: true,
+          },
+        }),
+      ),
+    );
+  }
+
+  // Einmalig: Emoji-basierte Basis-Templates auf Lucide-PNG-Hero + Logo-Platzhalter bringen.
+  const stale = existing.filter(
+    (row) =>
+      /[🛒🚚💵🔑📅🔒✉️📷]/.test(row.htmlBody) ||
+      (row.htmlBody.includes("wrap") === false &&
+        row.htmlBody.includes("{{{shop.logo_html}}}") &&
+        !row.htmlBody.includes("{{{email.hero_icon_html}}}")),
   );
+  for (const row of stale) {
+    if (!isEmailTemplateKey(row.key)) continue;
+    const d = getEmailTemplateDefault(row.key);
+    await prisma.emailTemplate.update({
+      where: { id: row.id },
+      data: {
+        name: d.name,
+        description: d.description,
+        subject: d.subject,
+        htmlBody: d.htmlBody,
+        textBody: d.textBody,
+      },
+    });
+  }
 }
 
 export async function listEmailTemplatesForAdmin(): Promise<StoredEmailTemplate[]> {
