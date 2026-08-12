@@ -3,6 +3,7 @@ import { productSlugSchema } from "@/lib/catalog/schemas";
 import type { DeliveryTimeKey } from "@/lib/catalog/delivery-options";
 import { DELIVERY_TIME_OPTIONS } from "@/lib/catalog/delivery-options";
 import type { ShopifyParsedProduct } from "@/features/catalog/domain/shopify-csv";
+import type { ProductAttribute } from "@/features/catalog/domain/product-attributes";
 
 export type CatalogImportImage = {
   url: string;
@@ -12,7 +13,10 @@ export type CatalogImportImage = {
 };
 
 export type CatalogImportVariant = {
+  /** Leere SKU wenn Shopify keine liefert — technische System-SKU erst beim Apply. */
   sku: string;
+  /** true wenn Shopify-SKU fehlte (nicht aus Titel/Handle generieren). */
+  skuMissing: boolean;
   title: string | null;
   isDefault: boolean;
   isActive: boolean;
@@ -24,6 +28,7 @@ export type CatalogImportVariant = {
   listPriceNetCents: number | null;
   stockQuantity: number;
   availableQuantity: number;
+  /** true bei Kollisions-Umbenennung einer vorhandenen Shopify-SKU. */
   skuGenerated: boolean;
 };
 
@@ -44,6 +49,7 @@ export type CatalogImportProduct = {
   materialText: string | null;
   dimensionsText: string | null;
   featureBullets: string[];
+  attributes: ProductAttribute[];
   deliveryTimeKey: DeliveryTimeKey;
   taxRatePercent: 7 | 19;
   variants: CatalogImportVariant[];
@@ -196,17 +202,15 @@ export function mapShopifyProductToCatalog(
 
   const materialText = source.metafields.material.trim() || null;
   const dimensionsText = source.metafields.dimensions.trim() || null;
+  const attributes = source.attributes;
   const featureBullets: string[] = [];
-  if (source.metafields.color.trim()) {
-    featureBullets.push(`Farbe: ${source.metafields.color.trim()}`.slice(0, 200));
-  }
-  if (source.metafields.countryOfOrigin.trim()) {
-    featureBullets.push(
-      `Herkunft: ${source.metafields.countryOfOrigin.trim()}`.slice(0, 200),
-    );
-  }
   if (materialText) warnings.push("Metafield Material → materialText.");
   if (dimensionsText) warnings.push("Metafield Maße → dimensionsText.");
+  if (attributes.length > 0) {
+    warnings.push(
+      `${attributes.length} Merkmal(e) aus Shopify-Metafeldern übernommen.`,
+    );
+  }
 
   if (source.metafields.deliveryNote.trim()) {
     const guessed = guessDeliveryTimeKey(source.metafields.deliveryNote);
@@ -230,11 +234,11 @@ export function mapShopifyProductToCatalog(
   source.variants.forEach((v, index) => {
     let sku = v.sku.trim();
     let skuGenerated = false;
+    let skuMissing = false;
     if (!sku) {
-      sku = generateVariantSku(source.handle, v.optionValues, index, usedSkus);
-      skuGenerated = true;
+      skuMissing = true;
       warnings.push(
-        `Variante #${index + 1}: keine Shopify-SKU — generiert als „${sku}“.`,
+        `Variante #${index + 1}: keine Shopify-SKU — bleibt leer (keine Ableitung aus Name/Handle).`,
       );
     } else if (usedSkus.has(sku)) {
       const next = generateVariantSku(source.handle, v.optionValues, index, usedSkus);
@@ -245,16 +249,18 @@ export function mapShopifyProductToCatalog(
       usedSkus.add(sku);
     }
 
+    const skuLabel = sku || `(ohne SKU #${index + 1})`;
+
     let gross = decimalToCents(v.price);
     if (gross == null) {
       if (allowDraft) {
         gross = 0;
         warnings.push(
-          `Variante ${sku}: Preis fehlt/ungültig („${v.price}“) — 0,00 € als Entwurf.`,
+          `Variante ${skuLabel}: Preis fehlt/ungültig („${v.price}“) — 0,00 € als Entwurf.`,
         );
         softIncomplete = true;
       } else {
-        errors.push(`Variante ${sku}: ungültiger Preis „${v.price}“.`);
+        errors.push(`Variante ${skuLabel}: ungültiger Preis „${v.price}“.`);
         return;
       }
     }
@@ -266,7 +272,7 @@ export function mapShopifyProductToCatalog(
       listGross = compare;
       listNet = netCentsFromGross(compare, taxRatePercent);
     } else if (compare != null && compare > 0 && compare <= gross) {
-      warnings.push(`Variante ${sku}: Compare-at ≤ Preis — Listenpreis ignoriert.`);
+      warnings.push(`Variante ${skuLabel}: Compare-at ≤ Preis — Listenpreis ignoriert.`);
     }
 
     const qtyRaw = v.inventoryQty.trim();
@@ -278,12 +284,12 @@ export function mapShopifyProductToCatalog(
       if (!Number.isFinite(n) || !Number.isInteger(n) || n < 0) {
         if (allowDraft) {
           warnings.push(
-            `Variante ${sku}: ungültiger Bestand „${v.inventoryQty}“ — 0 als Entwurf.`,
+            `Variante ${skuLabel}: ungültiger Bestand „${v.inventoryQty}“ — 0 als Entwurf.`,
           );
           softIncomplete = true;
           qty = 0;
         } else {
-          errors.push(`Variante ${sku}: ungültiger Bestand „${v.inventoryQty}“.`);
+          errors.push(`Variante ${skuLabel}: ungültiger Bestand „${v.inventoryQty}“.`);
           return;
         }
       } else {
@@ -293,12 +299,12 @@ export function mapShopifyProductToCatalog(
 
     if (v.inventoryPolicy.toLowerCase() === "continue") {
       warnings.push(
-        `Variante ${sku}: Inventory Policy „continue“ (Verkauf ohne Stock) — hier strikter Bestand.`,
+        `Variante ${skuLabel}: Inventory Policy „continue“ (Verkauf ohne Stock) — hier strikter Bestand.`,
       );
     }
     if (v.variantImageUrl) {
       warnings.push(
-        `Variante ${sku}: Variant Image — kein Varianten-Medienmodell; am Produkt prüfen.`,
+        `Variante ${skuLabel}: Variant Image — kein Varianten-Medienmodell; am Produkt prüfen.`,
       );
     }
 
@@ -312,6 +318,7 @@ export function mapShopifyProductToCatalog(
 
     variants.push({
       sku,
+      skuMissing,
       title: variantTitle(v.optionValues),
       isDefault,
       isActive: true,
@@ -335,9 +342,9 @@ export function mapShopifyProductToCatalog(
 
   if (variants.length === 0) {
     if (allowDraft && source.title.trim() && slugResult.success) {
-      const sku = generateVariantSku(source.handle, [], 0, usedSkus);
       variants.push({
-        sku,
+        sku: "",
+        skuMissing: true,
         title: null,
         isDefault: true,
         isActive: true,
@@ -349,12 +356,12 @@ export function mapShopifyProductToCatalog(
         listPriceNetCents: null,
         stockQuantity: 0,
         availableQuantity: 0,
-        skuGenerated: true,
+        skuGenerated: false,
       });
-      warnings.push(`Keine Variantenzeile — Platzhalter-SKU „${sku}“ als Entwurf.`);
+      warnings.push("Keine Variantenzeile — Platzhalter-Variante ohne SKU als Entwurf.");
       softIncomplete = true;
     } else {
-      errors.push("Keine Varianten mit gültiger SKU/Preis.");
+      errors.push("Keine Varianten mit gültigem Preis.");
     }
   } else if (!variants.some((v) => v.isDefault)) {
     variants[0]!.isDefault = true;
@@ -384,7 +391,8 @@ export function mapShopifyProductToCatalog(
     );
   }
 
-  const productNumber = variants.find((v) => !v.skuGenerated)?.sku ?? variants[0]?.sku ?? null;
+  const productNumber =
+    variants.find((v) => !v.skuMissing && !v.skuGenerated && v.sku.trim())?.sku ?? null;
 
   // Entwurf: Shopify-Draft ODER unvollständig mit Option
   const shopifyInactive =
@@ -397,7 +405,6 @@ export function mapShopifyProductToCatalog(
     isActive = false;
     warnings.push("Unvollständig — wird als Entwurf (inaktiv) importiert.");
   } else if (softIncomplete && !allowDraft) {
-    // Generierte SKUs allein sind Warnung, kein Hard-Error mehr
     // Fehlende Preise ohne Draft-Flag erzeugen bereits errors oben
   }
 
@@ -421,6 +428,7 @@ export function mapShopifyProductToCatalog(
     materialText,
     dimensionsText,
     featureBullets,
+    attributes,
     deliveryTimeKey,
     taxRatePercent,
     variants,

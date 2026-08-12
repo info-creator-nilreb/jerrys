@@ -149,6 +149,8 @@ model Product {
   weightText       String? @map("weight_text")
   materialText     String? @map("material_text")
   featureBullets     String[] @default([]) @map("feature_bullets")
+  /// Shopify-ähnliche Merkmale: [{ key, label, values: string[] }]
+  attributes         Json     @default("[]")
   /// Epic 5: Gruppentermin-Kalender auf der Produktdetailseite einblenden.
   showWorkshopCalendar Boolean @default(false) @map("show_workshop_calendar")
 

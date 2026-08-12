@@ -1,4 +1,9 @@
 import { csvRowsToObjects, parseCsv } from "@/features/catalog/domain/parse-csv";
+import {
+  extractAttributesFromShopifyRow,
+  mergeProductAttributes,
+  type ProductAttribute,
+} from "@/features/catalog/domain/product-attributes";
 
 export type ShopifyParsedImage = {
   url: string;
@@ -39,6 +44,8 @@ export type ShopifyParsedProduct = {
   seoTitle: string;
   seoDescription: string;
   metafields: ShopifyParsedMetafields;
+  /** Kategorie-/Custom-Metafelder analog Shopify-Merkmale. */
+  attributes: ProductAttribute[];
   variants: ShopifyParsedVariant[];
   images: ShopifyParsedImage[];
 };
@@ -144,6 +151,7 @@ export function parseShopifyProductCsv(csvText: string): ShopifyParsedProduct[] 
         seoTitle: "",
         seoDescription: "",
         metafields: emptyMetafields(),
+        attributes: [],
         variants: [],
         images: [],
       };
@@ -180,6 +188,10 @@ export function parseShopifyProductCsv(csvText: string): ShopifyParsedProduct[] 
     for (const key of Object.keys(mf) as (keyof ShopifyParsedMetafields)[]) {
       if (!product.metafields[key] && mf[key]) product.metafields[key] = mf[key];
     }
+    product.attributes = mergeProductAttributes(
+      product.attributes,
+      extractAttributesFromShopifyRow(raw),
+    );
 
     const sku = cell(raw, "Variant SKU");
     const price = cell(raw, "Variant Price") || cell(raw, "Price / Deutschland");

@@ -4,8 +4,11 @@ import { parseShopifyProductCsv } from "@/features/catalog/domain/shopify-csv";
 import {
   mapShopifyProductsToCatalog,
   type CatalogImportProduct,
+  type CatalogImportVariant,
   type MapShopifyOptions,
 } from "@/features/catalog/domain/shopify-map";
+import { technicalImportSku } from "@/features/catalog/domain/product-attributes";
+import type { Prisma } from "@/app/generated/prisma/client";
 
 export type ShopifyImportMode = "dry-run" | "apply";
 
@@ -63,6 +66,7 @@ function annotateCrossSkuConflicts(products: CatalogImportProduct[]): void {
   const skuToSlugs = new Map<string, string[]>();
   for (const p of products) {
     for (const v of p.variants) {
+      if (v.skuMissing || !v.sku.trim()) continue;
       const list = skuToSlugs.get(v.sku) ?? [];
       if (!list.includes(p.slug)) list.push(p.slug);
       skuToSlugs.set(v.sku, list);
@@ -70,6 +74,7 @@ function annotateCrossSkuConflicts(products: CatalogImportProduct[]): void {
   }
   for (const p of products) {
     for (const v of p.variants) {
+      if (v.skuMissing || !v.sku.trim()) continue;
       const slugs = skuToSlugs.get(v.sku) ?? [];
       if (slugs.length > 1) {
         p.errors.push(
@@ -179,7 +184,55 @@ function productContentData(draft: CatalogImportProduct, description: string | n
     materialText: draft.materialText,
     dimensionsText: draft.dimensionsText,
     featureBullets: draft.featureBullets,
+    attributes: draft.attributes as unknown as Prisma.InputJsonValue,
   };
+}
+
+type ExistingVariantRow = {
+  id: string;
+  sku: string;
+  title: string | null;
+  sortOrder: number;
+  isDefault: boolean;
+};
+
+function resolvePersistSku(
+  draft: CatalogImportVariant,
+  productId: string,
+  index: number,
+  total: number,
+  existing: ExistingVariantRow[],
+  usedSkus: Set<string>,
+): { sku: string; existingId?: string } {
+  if (!draft.skuMissing && draft.sku.trim()) {
+    const found = existing.find((x) => x.sku === draft.sku);
+    usedSkus.add(draft.sku);
+    return { sku: draft.sku, existingId: found?.id };
+  }
+  const byOrder = existing.find(
+    (x) => x.sortOrder === draft.sortOrder && !usedSkus.has(x.sku),
+  );
+  if (byOrder) {
+    usedSkus.add(byOrder.sku);
+    return { sku: byOrder.sku, existingId: byOrder.id };
+  }
+  const byDefault =
+    draft.isDefault
+      ? existing.find((x) => x.isDefault && !usedSkus.has(x.sku))
+      : undefined;
+  if (byDefault) {
+    usedSkus.add(byDefault.sku);
+    return { sku: byDefault.sku, existingId: byDefault.id };
+  }
+  const byTitle =
+    draft.title != null
+      ? existing.find((x) => x.title === draft.title && !usedSkus.has(x.sku))
+      : undefined;
+  if (byTitle) {
+    usedSkus.add(byTitle.sku);
+    return { sku: byTitle.sku, existingId: byTitle.id };
+  }
+  return { sku: technicalImportSku(productId, index, total, usedSkus) };
 }
 
 async function applyOne(
@@ -205,7 +258,9 @@ async function applyOne(
     where: { slug: draft.slug },
     select: {
       id: true,
-      variants: { select: { id: true, sku: true } },
+      variants: {
+        select: { id: true, sku: true, title: true, sortOrder: true, isDefault: true },
+      },
     },
   });
 
@@ -214,6 +269,7 @@ async function applyOne(
   }
 
   for (const v of draft.variants) {
+    if (v.skuMissing || !v.sku.trim()) continue;
     const other = await prisma.productVariant.findUnique({
       where: { sku: v.sku },
       select: { productId: true },
@@ -239,11 +295,15 @@ async function applyOne(
           ...productContentData(draft, description, manufacturerId),
         },
       });
-      for (const v of draft.variants) {
+      const usedSkus = new Set<string>();
+      const total = draft.variants.length;
+      for (let i = 0; i < draft.variants.length; i++) {
+        const v = draft.variants[i]!;
+        const { sku } = resolvePersistSku(v, product.id, i, total, [], usedSkus);
         await prisma.productVariant.create({
           data: {
             productId: product.id,
-            sku: v.sku,
+            sku,
             title: v.title,
             isDefault: v.isDefault,
             isActive: v.isActive,
@@ -281,8 +341,11 @@ async function applyOne(
       data: productContentData(draft, description, manufacturerId),
     });
 
-    for (const v of draft.variants) {
-      const found = existing.variants.find((x) => x.sku === v.sku);
+    const usedSkus = new Set<string>();
+    const total = draft.variants.length;
+    for (let i = 0; i < draft.variants.length; i++) {
+      const v = draft.variants[i]!;
+      const resolved = resolvePersistSku(v, existing.id, i, total, existing.variants, usedSkus);
       const data = {
         title: v.title,
         isDefault: v.isDefault,
@@ -297,11 +360,14 @@ async function applyOne(
         availableQuantity: v.availableQuantity,
         deliveryTimeKey: draft.deliveryTimeKey,
       };
-      if (found) {
-        await prisma.productVariant.update({ where: { id: found.id }, data });
+      if (resolved.existingId) {
+        await prisma.productVariant.update({
+          where: { id: resolved.existingId },
+          data,
+        });
       } else {
         await prisma.productVariant.create({
-          data: { productId: existing.id, sku: v.sku, ...data },
+          data: { productId: existing.id, sku: resolved.sku, ...data },
         });
       }
     }

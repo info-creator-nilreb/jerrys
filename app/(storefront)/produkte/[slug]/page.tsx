@@ -100,7 +100,8 @@ export default async function ProduktDetailPage({
     Boolean(specs.dimensionsText?.trim()) ||
     Boolean(specs.weightText?.trim()) ||
     Boolean(specs.materialText?.trim()) ||
-    specs.featureBullets.length > 0;
+    specs.featureBullets.length > 0 ||
+    (Array.isArray(specs.attributes) && specs.attributes.length > 0);
 
   return (
     <>
@@ -181,6 +182,7 @@ export default async function ProduktDetailPage({
                   weightText={specs.weightText}
                   materialText={specs.materialText}
                   featureBullets={specs.featureBullets}
+                  attributes={specs.attributes}
                 />
               ) : null}
 

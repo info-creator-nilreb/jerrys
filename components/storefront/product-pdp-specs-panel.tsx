@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
-import { Layers, PawPrint, Ruler, Scale } from "lucide-react";
+import { Layers, ListTree, PawPrint, Ruler, Scale } from "lucide-react";
+import type { ProductAttribute } from "@/features/catalog/domain/product-attributes";
+import { normalizeProductAttributes } from "@/features/catalog/domain/product-attributes";
 
 const specIconClass = "size-[22px] text-primary";
 
@@ -19,7 +21,9 @@ function SpecRow({
     <div className="flex gap-3">
       <span className="mt-0.5 shrink-0 text-primary">{icon}</span>
       <div className="min-w-0">
-        <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-(--foreground-heading)">{label}</p>
+        <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-(--foreground-heading)">
+          {label}
+        </p>
         <p className="mt-1 text-sm leading-snug text-(--foreground-muted)">{value}</p>
       </div>
     </div>
@@ -31,14 +35,32 @@ export function ProductPdpSpecsPanel({
   weightText,
   materialText,
   featureBullets,
+  attributes = [],
 }: {
   dimensionsText: string | null;
   weightText: string | null;
   materialText: string | null;
   featureBullets: string[];
+  attributes?: ProductAttribute[] | unknown;
 }) {
+  const attrs = normalizeProductAttributes(attributes).filter((attr) => {
+    // Feste Spec-Felder nicht doppelt anzeigen
+    if (materialText?.trim() && attr.key === "custom.material") {
+      return false;
+    }
+    if (
+      dimensionsText?.trim() &&
+      (attr.key === "custom.ma_e" || attr.key === "custom.masse")
+    ) {
+      return false;
+    }
+    return true;
+  });
   const hasLeft =
-    Boolean(dimensionsText?.trim()) || Boolean(weightText?.trim()) || Boolean(materialText?.trim());
+    Boolean(dimensionsText?.trim()) ||
+    Boolean(weightText?.trim()) ||
+    Boolean(materialText?.trim()) ||
+    attrs.length > 0;
   const hasBullets = featureBullets.length > 0;
   if (!hasLeft && !hasBullets) return null;
 
@@ -79,6 +101,14 @@ export function ProductPdpSpecsPanel({
                 value={materialText.trim()}
               />
             ) : null}
+            {attrs.map((attr) => (
+              <SpecRow
+                key={attr.key}
+                icon={<ListTree className={specIconClass} strokeWidth={1.5} aria-hidden />}
+                label={attr.label}
+                value={attr.values.join(", ")}
+              />
+            ))}
           </div>
         ) : null}
         {hasBullets ? (

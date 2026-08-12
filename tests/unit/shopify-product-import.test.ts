@@ -95,7 +95,7 @@ describe("mapShopifyProductToCatalog", () => {
     expect(tea.variants[1]!.listPriceGrossCents).toBe(2999);
   });
 
-  it("generiert SKU wenn Shopify-SKU fehlt", () => {
+  it("lässt fehlende Shopify-SKU leer (keine Ableitung aus Handle/Name)", () => {
     const mapped = mapShopifyProductToCatalog({
       handle: "broken",
       title: "Broken",
@@ -115,6 +115,7 @@ describe("mapShopifyProductToCatalog", () => {
         color: "",
         countryOfOrigin: "",
       },
+      attributes: [],
       variants: [
         {
           sku: "",
@@ -130,19 +131,24 @@ describe("mapShopifyProductToCatalog", () => {
       images: [],
     });
     expect(mapped.errors).toEqual([]);
-    expect(mapped.variants[0]!.sku).toBe("broken");
-    expect(mapped.variants[0]!.skuGenerated).toBe(true);
-    expect(mapped.warnings.some((w) => w.includes("generiert"))).toBe(true);
+    expect(mapped.variants[0]!.sku).toBe("");
+    expect(mapped.variants[0]!.skuMissing).toBe(true);
+    expect(mapped.productNumber).toBeNull();
+    expect(mapped.warnings.some((w) => w.includes("bleibt leer"))).toBe(true);
   });
 
-  it("mappt realen Export mit generierten SKUs und Metafields", () => {
+  it("mappt realen Export ohne generierte Handle-SKUs und mit Merkmalen", () => {
     const csv = readFileSync(realExportPath, "utf8");
     const planned = planShopifyCsvImport(csv, { allowIncompleteAsDraft: true });
     expect(planned.every((p) => p.errors.length === 0)).toBe(true);
     expect(planned[0]!.variants).toHaveLength(2);
-    expect(planned[0]!.variants[0]!.sku).toContain("armband-candy");
+    expect(planned[0]!.variants.every((v) => v.sku === "" && v.skuMissing)).toBe(true);
+    expect(planned[0]!.productNumber).toBeNull();
     expect(planned[0]!.materialText).toMatch(/Resin/i);
-    // SKU-Generierung allein hält Produkte aktiv (Shopify Status active)
+    expect(planned[0]!.attributes.some((a) => a.key === "custom.material")).toBe(true);
+    expect(planned[0]!.attributes.some((a) => a.key === "custom.herstellungsland")).toBe(true);
+    expect(planned[2]!.attributes.some((a) => a.key === "custom.farbe")).toBe(true);
+    // SKU fehlt allein hält Produkte aktiv (Shopify Status active)
     expect(planned[0]!.isActive).toBe(true);
     expect(planned[0]!.deliveryTimeKey).toBe("2-4-werktage");
   });
@@ -168,6 +174,7 @@ describe("mapShopifyProductToCatalog", () => {
           color: "",
           countryOfOrigin: "",
         },
+        attributes: [],
         variants: [
           {
             sku: "NP-1",

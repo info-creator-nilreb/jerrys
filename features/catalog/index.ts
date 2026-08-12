@@ -21,6 +21,12 @@ export {
   type MapShopifyOptions,
 } from "@/features/catalog/domain/shopify-map";
 export {
+  normalizeProductAttributes,
+  attributesToFormText,
+  parseAttributesFormText,
+  type ProductAttribute,
+} from "@/features/catalog/domain/product-attributes";
+export {
   planShopifyCsvImport,
   importShopifyProductsFromCsv,
   type ShopifyImportOptions,

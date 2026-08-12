@@ -30,17 +30,19 @@ CSV ist Transport, nicht die Architektur. Die Quelle der Wahrheit nach Import is
 | `Published` / `Status` | `isActive` | `active`/`published` → true; sonst false. |
 | `SEO Title` | — | **Kein** Produkt-SEO-Feld; Warnung. Meta nutzt `title` + `leadText`. |
 | `SEO Description` | `leadText` (optional) | Nur wenn `leadText` leer und Länge ≤ 500; sonst Warnung. |
-| erste `Variant SKU` | `productNumber` | Wenn gesetzt; sonst `null` (Default-SKU-Regel greift bei Create). |
+| erste `Variant SKU` | `productNumber` | Nur wenn gesetzt; sonst `null`. |
+| Kategorie-/Custom-Metafelder | `attributes` JSON | Spalten `Label (product.metafields…)` → `{ key, label, values[] }` analog Shopify-Merkmale. |
+| `custom.material` / `custom.ma_e` | zusätzlich `materialText` / `dimensionsText` | PDP-Kurzinfos bleiben. |
 
 Shop-eigene Felder ohne Shopify-Äquivalent (Default / manuell):
 
-- `subtitle`, `categoryTag`, `isBestseller`, `dimensionsText`, `materialText`, `featureBullets`, `showWorkshopCalendar`, Amazon-Felder
+- `subtitle`, `categoryTag`, `isBestseller`, `featureBullets`, `showWorkshopCalendar`, Amazon-Felder
 
 ### Variante (`product_variants`)
 
 | Shopify | Ziel | Regel |
 | --- | --- | --- |
-| `Variant SKU` | `sku` | Pflicht für Importzeile; global unique. Leer → Fehler. |
+| `Variant SKU` | `sku` | Nur wenn gesetzt. **Leer → bleibt leer** (keine Ableitung aus Name/Handle). Beim Speichern: technische System-SKU `SKU-<productId>` nur für DB-Unique. |
 | `Option1/2/3 Value` | `title` | Joined mit ` / `; bei nur `Default Title` → `null` + `isDefault`. |
 | `Variant Price` | `priceGrossCents` | Dezimal → Cent; **Annahme: Brutto** (konfigurierbar). |
 | — | `priceNetCents` | `netCentsFromGross(gross, taxRatePercent)`. |
@@ -89,9 +91,9 @@ Typische Lücken in Shopify-CSVs (wie `products_export.csv`):
 
 | Problem | Auswirkung | Umgang jetzt |
 | --- | --- | --- |
-| Leere `Variant SKU` | Früher Hard-Error | SKU aus Handle + Option generieren |
+| Leere `Variant SKU` | Früher Handle/Name als SKU | **SKU bleibt leer**; Artikelnummer `null`; beim Apply nur technische `SKU-<id>` für DB-Unique |
 | Kein `Variant Inventory Qty` | Bestand unbekannt | Bestand 0 + Warnung |
-| Metafields (Material, Maße, Lieferzeit) | Extra-Spalten | → `materialText` / `dimensionsText` / Lieferzeit-Heuristik |
+| Metafields (Material, Maße, Lieferzeit, Kategorie-Merkmale) | Extra-Spalten | → `materialText` / `dimensionsText` / Lieferzeit + **`attributes`** |
 | Google Product Category vs Type | Keine Shop-Kategorie | Warnung, kein Auto-Create |
 | CDN-Bilder / HEIC | Nicht dauerhaft / nicht unterstützter Typ | Optional spiegeln; HEIC überspringen |
 | Tags | Kein Tag-Modell | Warnung |

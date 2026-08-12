@@ -38,11 +38,13 @@ export function resolvePdpSpecs(product: {
   weightText: string | null;
   materialText: string | null;
   featureBullets: string[];
+  attributes?: unknown;
 }): {
   dimensionsText: string | null;
   weightText: string | null;
   materialText: string | null;
   featureBullets: string[];
+  attributes: unknown;
 } {
   const useFallback = isDesignKatzenhoehlePdp(product.slug);
   const fb = KATZENHOEHLE_DEFAULTS;
@@ -56,5 +58,6 @@ export function resolvePdpSpecs(product: {
         : useFallback
           ? [...fb.featureBullets]
           : [],
+    attributes: product.attributes ?? [],
   };
 }

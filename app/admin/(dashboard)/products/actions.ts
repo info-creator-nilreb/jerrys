@@ -130,6 +130,7 @@ export async function createProduct(
     weightText: String(formData.get("weightText") ?? ""),
     materialText: String(formData.get("materialText") ?? ""),
     featureBullets: String(formData.get("featureBullets") ?? ""),
+    attributesText: String(formData.get("attributesText") ?? ""),
     isBestseller: formData.get("isBestseller") === "on",
     showWorkshopCalendar: formData.get("showWorkshopCalendar") === "on",
     imageUrl: formData.get("imageUrl"),
@@ -189,6 +190,7 @@ export async function createProduct(
           weightText: d.weightText,
           materialText: d.materialText,
           featureBullets: d.featureBullets,
+          attributes: d.attributesText,
           ...amazon,
           images: {
             create: [
@@ -260,6 +262,7 @@ export async function updateProduct(
     weightText: String(formData.get("weightText") ?? ""),
     materialText: String(formData.get("materialText") ?? ""),
     featureBullets: String(formData.get("featureBullets") ?? ""),
+    attributesText: String(formData.get("attributesText") ?? ""),
     isBestseller: formData.get("isBestseller") === "on",
     isActive: parseIsActiveFromFormData(formData),
     categoryIds: formData.getAll("categoryIds"),
@@ -347,6 +350,7 @@ export async function updateProduct(
           weightText: d.weightText,
           materialText: d.materialText,
           featureBullets: d.featureBullets,
+          attributes: d.attributesText,
           ...amazon,
         },
       });
