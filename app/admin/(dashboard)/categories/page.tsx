@@ -16,7 +16,8 @@ export default async function AdminCategoriesPage() {
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-[#1f2937] sm:text-2xl">Kategorien</h1>
           <p className="mt-1 text-sm text-[#6b7280]">
-            Shop-Navigation: Kategorien binden Kollektionen — Produkte nur in Kollektionen zuordnen.
+            Maßgeblich für die Header-Navigation: aktive Hauptkategorien mit Produkten (über
+            Kollektionen). Systemlinks „Alle Produkte“ / „Termine“ unter Einstellungen → Shop.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

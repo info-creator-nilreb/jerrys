@@ -2,13 +2,17 @@ import type { PrismaClient } from "@/app/generated/prisma/client";
 import type { Prisma } from "@/app/generated/prisma/client";
 import {
   commitStockReservationsForOrder,
+  enqueueAndProcessZettleInventoryForOrder,
 } from "@/features/inventory";
 import { confirmWorkshopBookingAfterOrderPaid } from "@/features/workshops";
+import { createLogger, errorMeta } from "@/lib/logging/logger";
 import { createOrderEvent, ORDER_EVENT_STATUS_CHANGED } from "@/lib/orders/order-events";
 import { mergeOrderPaymentRefundMeta } from "@/lib/payments/order-payment-refund-meta";
 
+const log = createLogger("orders.finalize");
+
 export type FinalizePendingPaymentResult =
-  | { ok: true }
+  | { ok: true; becamePaid?: boolean }
   | { ok: false; error: "not_found" | "invalid_status" | "insufficient_stock" | "transaction_failed" };
 
 /**
@@ -27,8 +31,9 @@ export async function finalizeOrderAfterPendingPaymentCapture(
     providerCaptureId?: string | null;
   },
 ): Promise<FinalizePendingPaymentResult> {
+  let result: FinalizePendingPaymentResult;
   try {
-    return await prisma.$transaction(async (tx) => {
+    result = await prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
         where: { id: params.orderId },
         include: { items: true },
@@ -145,9 +150,25 @@ export async function finalizeOrderAfterPendingPaymentCapture(
         });
       }
 
-      return { ok: true };
+      return { ok: true, becamePaid: true };
     });
   } catch {
     return { ok: false, error: "transaction_failed" };
   }
+
+  if (result.ok && result.becamePaid) {
+    try {
+      await enqueueAndProcessZettleInventoryForOrder({
+        orderId: params.orderId,
+        kind: "shop_sale",
+      });
+    } catch (e) {
+      log.warn("zettle_inventory_sale_push_failed", {
+        orderId: params.orderId,
+        ...errorMeta(e),
+      });
+    }
+  }
+
+  return result;
 }

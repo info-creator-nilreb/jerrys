@@ -362,6 +362,19 @@ enum ZettlePurchaseSyncStatus {
   pending_retry
 }
 
+/// Shop → Zettle Inventory-Delta (Online-Verkauf / Storno / Retoure).
+enum ZettleInventoryPushKind {
+  shop_sale
+  shop_return
+}
+
+enum ZettleInventoryPushStatus {
+  pending
+  processed
+  skipped
+  failed
+}
+
 enum IntegrationOutboxStatus {
   pending
   published
@@ -808,6 +821,27 @@ model ZettlePurchaseSync {
   @@map("zettle_purchase_syncs")
 }
 
+/// Idempotenter Shop→Zettle Inventory-Push (Online-Verkauf / Storno / Retoure).
+model ZettleInventoryPush {
+  id            String                     @id @default(cuid())
+  correlationId String                     @unique @map("correlation_id")
+  orderId       String?                    @map("order_id")
+  kind          ZettleInventoryPushKind
+  status        ZettleInventoryPushStatus  @default(pending)
+  /// UUID v1 für Zettle `externalUuid` (Idempotenz auf API-Seite).
+  externalUuid  String                     @map("external_uuid")
+  /// Gemappte Positionen: [{ productVariantId, zettleProductUuid, zettleVariantUuid, quantity }]
+  linesJson     Json                       @map("lines_json")
+  lastError     String?                    @map("last_error") @db.Text
+  processedAt   DateTime?                  @map("processed_at")
+  createdAt     DateTime                   @default(now()) @map("created_at")
+  updatedAt     DateTime                   @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@index([orderId])
+  @@map("zettle_inventory_pushes")
+}
+
 /// INTERNETMARKE-Anbindung (Epic 7). Singleton id = default; Secrets AES-GCM wie Instagram.
 model InternetmarkeConnection {
   id                   String    @id @default("default")
@@ -1087,6 +1121,13 @@ model ShopSettings {
   logoDarkUrl  String? @map("logo_dark_url")
   faviconUrl   String? @map("favicon_url")
   ogImageUrl   String? @map("og_image_url")
+
+  /// Header-/Footer-Shop-Nav: festes Systemlink „Alle Produkte“.
+  showAllProductsInNav Boolean @default(true) @map("show_all_products_in_nav")
+  /// Header-/Footer-Shop-Nav: festes Systemlink „Termine“.
+  showTermineInNav Boolean @default(true) @map("show_termine_in_nav")
+  /// Desktop-Header: hidden | inline | burger (Mobil bleibt Burger, sofern Links existieren).
+  desktopShopNavMode String @default("inline") @map("desktop_shop_nav_mode")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

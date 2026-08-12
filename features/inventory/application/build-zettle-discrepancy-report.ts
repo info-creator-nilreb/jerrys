@@ -29,6 +29,8 @@ export type ZettleDiscrepancyReport = {
 
 /**
  * Vergleicht gemappte Shop-Bestände mit Zettle STORE-Inventory.
+ * Delta nutzt `availableQuantity` (verkaufbarer Bestand), weil Online-Verkäufe
+ * Zettle bereits bei Zahlung reduzieren — nicht erst bei Versand.
  * Zettle überschreibt den Shop nicht — nur Report/Alert.
  */
 export async function buildZettleDiscrepancyReport(): Promise<ZettleDiscrepancyReport> {
@@ -87,14 +89,15 @@ export async function buildZettleDiscrepancyReport(): Promise<ZettleDiscrepancyR
         ? (byVariant.get(m.zettleVariantUuid) as number)
         : null;
       const shopStock = m.productVariant.stockQuantity;
-      const delta = zettleBalance == null ? null : shopStock - zettleBalance;
+      const shopAvailable = m.productVariant.availableQuantity;
+      const delta = zettleBalance == null ? null : shopAvailable - zettleBalance;
       return {
         productVariantId: m.productVariantId,
         productTitle: m.productVariant.product.title,
         variantTitle: m.productVariant.title,
         sku: m.productVariant.sku,
         shopStock,
-        shopAvailable: m.productVariant.availableQuantity,
+        shopAvailable,
         zettleBalance,
         zettleTracked: zettleBalance != null,
         delta,

@@ -17,6 +17,7 @@ import {
   buildZettleApiKeyDeepLink,
   getZettleConfigDiagnostics,
   getZettleConnectionPublic,
+  listRecentZettleInventoryPushes,
   listRecentZettlePurchaseSyncs,
   listShopVariantsForZettleMapping,
 } from "@/features/inventory";
@@ -46,14 +47,25 @@ export default async function AdminIntegrationenPage({
   const igDiagnostics = getInstagramConfigDiagnostics(requestOrigin);
   const zettleDiagnostics = getZettleConfigDiagnostics();
 
-  const [igConnection, igCache, im, zettle, mappings, recentSyncs, ai, recentAiEvents, searchIndex] =
-    await Promise.all([
+  const [
+    igConnection,
+    igCache,
+    im,
+    zettle,
+    mappings,
+    recentSyncs,
+    recentPushes,
+    ai,
+    recentAiEvents,
+    searchIndex,
+  ] = await Promise.all([
       getInstagramConnectionPublic(),
       listActiveInstagramMediaCache(48),
       getInternetmarkeConnectionPublic(),
       getZettleConnectionPublic(),
       listShopVariantsForZettleMapping(),
       listRecentZettlePurchaseSyncs(15).catch(() => []),
+      listRecentZettleInventoryPushes(15).catch(() => []),
       getAiContentSettingsPublic(),
       listRecentAiContentGenerationEvents(15).catch(() => []),
       getSearchIndexStatusPublic(),
@@ -199,6 +211,15 @@ export default async function AdminIntegrationenPage({
           status: s.status,
           isRefund: s.isRefund,
           lastError: s.lastError,
+        }))}
+        recentPushes={recentPushes.map((p) => ({
+          correlationId: p.correlationId,
+          orderId: p.orderId,
+          kind: p.kind,
+          status: p.status,
+          lastError: p.lastError,
+          processedAt: p.processedAt?.toISOString() ?? null,
+          createdAt: p.createdAt.toISOString(),
         }))}
       />
     </div>

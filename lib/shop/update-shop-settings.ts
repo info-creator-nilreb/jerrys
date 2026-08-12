@@ -6,7 +6,10 @@ import {
   SHOP_SETTINGS_DEFAULT_ID,
   type ShopSettingsDTO,
 } from "@/lib/shop/shop-settings";
-import { JERRYS_SHOP_SETTINGS_DEFAULTS } from "@/lib/shop/shop-settings-defaults";
+import {
+  JERRYS_SHOP_SETTINGS_DEFAULTS,
+  parseDesktopShopNavMode,
+} from "@/lib/shop/shop-settings-defaults";
 import {
   parseShopSettingsUpdate,
   type ShopSettingsValues,
@@ -40,6 +43,14 @@ function fieldErrorsFromZod(err: { issues: { path: PropertyKey[]; message: strin
   return out;
 }
 
+/** Hidden `false` + Checkbox `true`: letzter Wert gewinnt; fehlt das Feld → Default true. */
+function formCheckbox(formData: FormData, key: string, defaultWhenMissing = true): boolean {
+  const values = formData.getAll(key).map(String);
+  if (values.length === 0) return defaultWhenMissing;
+  const last = values[values.length - 1]!;
+  return last === "true" || last === "on" || last === "1";
+}
+
 /** FormData → Eingabeobjekt (ohne Asset-URLs; die bleiben serverseitig erhalten). */
 export function shopSettingsInputFromFormData(formData: FormData): Record<string, unknown> {
   const str = (key: string) => String(formData.get(key) ?? "");
@@ -66,6 +77,9 @@ export function shopSettingsInputFromFormData(formData: FormData): Record<string
     logoDarkUrl: null,
     faviconUrl: null,
     ogImageUrl: null,
+    showAllProductsInNav: formCheckbox(formData, "showAllProductsInNav"),
+    showTermineInNav: formCheckbox(formData, "showTermineInNav"),
+    desktopShopNavMode: parseDesktopShopNavMode(formData.get("desktopShopNavMode")),
   };
 }
 
@@ -94,6 +108,9 @@ function createDefaultsRow(values: ShopSettingsValues) {
     logoDarkUrl: d.logoDarkUrl,
     faviconUrl: d.faviconUrl,
     ogImageUrl: d.ogImageUrl,
+    showAllProductsInNav: values.showAllProductsInNav,
+    showTermineInNav: values.showTermineInNav,
+    desktopShopNavMode: values.desktopShopNavMode,
   };
 }
 
@@ -135,6 +152,9 @@ export async function updateShopSettingsFromInput(
           instagramUrl: values.instagramUrl,
           facebookUrl: values.facebookUrl,
           emailFromName: values.emailFromName,
+          showAllProductsInNav: values.showAllProductsInNav,
+          showTermineInNav: values.showTermineInNav,
+          desktopShopNavMode: values.desktopShopNavMode,
         },
       });
       await appendIntegrationOutbox(tx, {
@@ -145,6 +165,9 @@ export async function updateShopSettingsFromInput(
           shopName: values.shopName,
           primaryColor: values.primaryColor,
           primaryHoverColor: values.primaryHoverColor,
+          showAllProductsInNav: values.showAllProductsInNav,
+          showTermineInNav: values.showTermineInNav,
+          desktopShopNavMode: values.desktopShopNavMode,
         },
       });
     });

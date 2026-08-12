@@ -3,19 +3,22 @@ import {
   syncManualShipmentOnOrderShipped,
   syncShipmentsOnOrderReturned,
 } from "@/features/fulfillment";
-import { releaseStockReservationsForOrder } from "@/features/inventory";
+import {
+  enqueueAndProcessZettleInventoryForOrder,
+  releaseStockReservationsForOrder,
+} from "@/features/inventory";
 import { fulfillmentStatusAfterOrderTransition } from "@/features/orders";
 import { sendOrderCancelledIfNeeded } from "@/lib/email/order-cancelled";
 import { sendOrderRefundedIfNeeded } from "@/lib/email/order-refunded";
 import { sendOrderShippedIfNeeded } from "@/lib/email/order-shipped";
 import { allocateNextInvoiceNumber } from "@/lib/invoice/allocate-invoice-number";
+import { createLogger, errorMeta } from "@/lib/logging/logger";
 import { createOrderEvent, ORDER_EVENT_STATUS_CHANGED } from "@/lib/orders/order-events";
 import { isAllowedOrderStatusTransition } from "@/lib/orders/order-status-machine";
 import {
   decrementWarehouseForShippedOrder,
   restoreStockOnOrderCancelled,
 } from "@/lib/orders/order-stock-on-status";
-import { createLogger, errorMeta } from "@/lib/logging/logger";
 
 const log = createLogger("orders.transition");
 
@@ -56,6 +59,7 @@ export async function applyOrderStatusTransition(
     }
 
     const from = order.status;
+    let zettleReturnPush = false;
     if (from === toStatus) {
       return { ok: false, error: "invalid_transition" } as const;
     }
@@ -100,6 +104,7 @@ export async function applyOrderStatusTransition(
       );
       const r = await restoreStockOnOrderCancelled(tx, "shipped", stockLines, orderId);
       if (!r.ok) return { ok: false, error: "insufficient_warehouse" } as const;
+      zettleReturnPush = true;
     }
 
     if (toStatus === "cancelled") {
@@ -122,6 +127,10 @@ export async function applyOrderStatusTransition(
       );
       const r = await restoreStockOnOrderCancelled(tx, from, stockLines, orderId);
       if (!r.ok) return { ok: false, error: "insufficient_warehouse" } as const;
+      // Nur wenn Verkauf bereits gezahlt war (Sale-Push) — nicht bei pending_payment.
+      if (from === "paid" || from === "processing" || from === "shipped") {
+        zettleReturnPush = true;
+      }
     }
 
     let invoiceNumber: string | undefined;
@@ -177,7 +186,7 @@ export async function applyOrderStatusTransition(
       await syncShipmentsOnOrderReturned(tx, orderId);
     }
 
-    return { ok: true } as const;
+    return { ok: true, zettleReturnPush } as const;
   });
 
   if (result.ok) {
@@ -192,9 +201,20 @@ export async function applyOrderStatusTransition(
     } catch (e) {
       log.error("post_transition_email_failed", { orderId, toStatus, ...errorMeta(e) });
     }
+
+    if ("zettleReturnPush" in result && result.zettleReturnPush) {
+      try {
+        await enqueueAndProcessZettleInventoryForOrder({
+          orderId,
+          kind: "shop_return",
+        });
+      } catch (e) {
+        log.warn("zettle_inventory_return_push_failed", { orderId, ...errorMeta(e) });
+      }
+    }
   } else if (result.error === "invalid_transition") {
     log.info("transition_rejected", { orderId, toStatus });
   }
 
-  return result;
+  return result.ok ? { ok: true } : result;
 }
