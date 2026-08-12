@@ -129,9 +129,21 @@ npm run catalog:import-shopify -- --file ./shopify-products.csv --apply --tax 19
 npm run catalog:import-shopify -- --file ./shopify-products.csv --apply --update
 ```
 
+## Bestände (Inventar)
+
+Der Shopify-CSV-Export enthält oft **keine Mengenangaben**:
+
+| Spalte | In eurem Export |
+| --- | --- |
+| `Variant Inventory Qty` | **fehlt** |
+| `Variant Inventory Tracker` | z. B. `shopify` |
+| `Variant Inventory Policy` | z. B. `deny` |
+
+Ohne Qty setzt der Import Bestand auf **0** (mit Warnung). Mengen kommen nur mit einem Export, der `Variant Inventory Qty` enthält, über die Shopify Admin API (Inventory Levels), oder manuell im Admin.
+
 ## Nächste Ausbaustufen
 
 1. Mapping-JSON: `productType`/`tags` → Categories/Collections.
 2. Medien-Pipeline nach Blob (ADR 0008).
-3. Shopify GraphQL statt CSV (gleiche Mapper-Schicht).
+3. Shopify GraphQL statt CSV (gleiche Mapper-Schicht) inkl. Inventar.
 4. Redirect-Tabelle alter Storefront-URLs.

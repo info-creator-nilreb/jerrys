@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EditProductForm } from "@/app/admin/(dashboard)/products/[id]/edit/edit-product-form";
+import { ProductLifecycleControls } from "@/app/admin/(dashboard)/products/[id]/edit/product-lifecycle-controls";
 import { adminProductForEditForm } from "@/lib/catalog/admin-product-form";
 import { getProductByIdForAdmin, listManufacturersForAdmin } from "@/lib/catalog/queries";
 import { listCategoriesForProductPicker } from "@/lib/catalog/category-queries";
@@ -51,8 +52,13 @@ export default async function AdminEditProductPage({
         Produkt bearbeiten
       </h1>
       <p className="mt-1 text-sm text-[#6b7280]">{product.title}</p>
-      <div className="mt-8">
+      <div className="mt-8 space-y-8">
         <EditProductForm product={formProduct} manufacturers={manufacturers} categories={categories} />
+        <ProductLifecycleControls
+          productId={product.id}
+          isActive={product.isActive}
+          title={product.title}
+        />
       </div>
     </div>
   );

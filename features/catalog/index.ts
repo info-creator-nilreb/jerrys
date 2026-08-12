@@ -27,3 +27,8 @@ export {
   type ShopifyImportReport,
   type ShopifyImportProductResult,
 } from "@/features/catalog/application/import-shopify-csv";
+export {
+  setProductsActive,
+  deleteProducts,
+  type ProductLifecycleResult,
+} from "@/features/catalog/application/product-admin-lifecycle";
