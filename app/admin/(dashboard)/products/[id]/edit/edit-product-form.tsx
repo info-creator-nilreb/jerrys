@@ -101,11 +101,14 @@ export function EditProductForm({
   manufacturers,
   shopAssignment,
   aiReady = false,
+  isNewDraft = false,
 }: {
   product: Product;
   manufacturers: Manufacturer[];
   shopAssignment: AdminShopAssignmentOption;
   aiReady?: boolean;
+  /** Aus „Neues Produkt“ — Button-Label angepasst. */
+  isNewDraft?: boolean;
 }) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(updateProduct, initialState);
@@ -123,6 +126,10 @@ export function EditProductForm({
     if (!state?.ok) return;
     const show = window.setTimeout(() => {
       setSavedFlash(true);
+      if (isNewDraft) {
+        // Entwurfs-Query entfernen, sobald einmal gespeichert wurde.
+        router.replace(`/admin/products/${product.id}/edit`);
+      }
       router.refresh();
     }, 0);
     const hide = window.setTimeout(() => setSavedFlash(false), 4000);
@@ -130,7 +137,7 @@ export function EditProductForm({
       window.clearTimeout(show);
       window.clearTimeout(hide);
     };
-  }, [state?.ok, router]);
+  }, [state?.ok, router, isNewDraft, product.id]);
 
   const defaultSku =
     product.defaultSku ??
@@ -273,7 +280,11 @@ export function EditProductForm({
               ) : null}
             </div>
             <button type="submit" disabled={pending} className={saveBtnClass}>
-              {pending ? "Wird gespeichert…" : "Änderungen speichern"}
+              {pending
+                ? "Wird gespeichert…"
+                : isNewDraft
+                  ? "Produkt speichern"
+                  : "Änderungen speichern"}
             </button>
           </div>
           {state?.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
