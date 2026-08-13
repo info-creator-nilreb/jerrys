@@ -17,15 +17,6 @@ export type OrdersAdminListItem = {
   triple: AdminTriple;
 };
 
-const dateFmt = new Intl.DateTimeFormat("de-DE", {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
-
-export function formatOrderCreatedAt(d: Date): string {
-  return dateFmt.format(d);
-}
-
 export function OrdersAdminList({ orders }: { orders: OrdersAdminListItem[] }) {
   return (
     <>

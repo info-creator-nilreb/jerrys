@@ -17,24 +17,22 @@ const LOGO_W = 256;
 const LOGO_H = 128;
 
 export async function SiteHeader() {
-  const [cartCount, settings] = await Promise.all([
+  const [cartCount, settings, categoriesResult] = await Promise.all([
     getStorefrontCartBadgeCount(),
     getShopSettings(),
+    listActiveCategoriesForNav().catch((e) => {
+      if (!isDatabaseUnreachable(e)) throw e;
+      return null;
+    }),
   ]);
   const navOptions = {
     showAllProducts: settings.showAllProductsInNav,
     showTermine: settings.showTermineInNav,
   };
-  let shopNavLinks = buildStorefrontShopNavLinks([], navOptions);
-  try {
-    const categories = await listActiveCategoriesForNav();
-    shopNavLinks = buildStorefrontShopNavLinks(
-      categories.map((c) => ({ slug: c.slug, title: c.title })),
-      navOptions,
-    );
-  } catch (e) {
-    if (!isDatabaseUnreachable(e)) throw e;
-  }
+  const shopNavLinks = buildStorefrontShopNavLinks(
+    (categoriesResult ?? []).map((c) => ({ slug: c.slug, title: c.title })),
+    navOptions,
+  );
 
   const logoSrc = resolveShopBrandingAssetUrl(settings, "logoLight");
   const shopName = settings.shopName;

@@ -17,6 +17,7 @@ import {
   markCustomerLoggedIn,
   resolveAuthSubjectKind,
 } from "@/features/customers";
+import { isInsecureAdminPassword } from "@/lib/security/insecure-admin-passwords";
 
 syncAuthUrlForVercelPreview();
 assertAuthSecretForRuntime("auth");
@@ -55,6 +56,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
           const parsed = adminCredentialsSchema.safeParse(raw);
           if (!parsed.success) return null;
           try {
+            // Production/Preview (NODE_ENV=production): Seed-Default nie akzeptieren.
+            if (
+              process.env.NODE_ENV === "production" &&
+              isInsecureAdminPassword(parsed.data.password)
+            ) {
+              log.warn("admin_login_rejected_insecure_default", {
+                email: parsed.data.email,
+              });
+              return null;
+            }
             const admin = await getPrisma().adminUser.findUnique({
               where: { email: parsed.data.email },
             });

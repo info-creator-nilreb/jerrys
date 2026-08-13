@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { createWorkshopOrderFromFormData } from "@/lib/checkout/create-workshop-order-from-form";
+import { clientIpFromRequest } from "@/lib/security/client-ip";
+import {
+  touchWorkshopCheckoutApiAttempt,
+  workshopCheckoutApiRateLimitHeaders,
+} from "@/lib/security/workshop-checkout-api-rate-limit";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +21,20 @@ function requestOrigin(request: Request): URL {
  */
 export async function POST(request: Request) {
   const base = requestOrigin(request);
+
+  const limited = touchWorkshopCheckoutApiAttempt(clientIpFromRequest(request));
+  if (!limited.ok) {
+    const res = NextResponse.redirect(
+      new URL(
+        `/checkout/termine?fehler=${encodeURIComponent("Zu viele Anfragen. Bitte später erneut versuchen.")}`,
+        base,
+      ),
+      303,
+    );
+    const headers = workshopCheckoutApiRateLimitHeaders(limited.retryAfterSec);
+    for (const [k, v] of Object.entries(headers)) res.headers.set(k, v);
+    return res;
+  }
 
   let formData: FormData;
   try {

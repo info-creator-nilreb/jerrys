@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth/admin-session";
+import { updateStorefrontCatalogCacheTag } from "@/lib/catalog/storefront-catalog-cache";
 import {
   deleteProducts,
   setProductsActive,
@@ -15,6 +16,7 @@ async function requireAdmin(): Promise<void> {
 }
 
 function revalidateCatalog() {
+  updateStorefrontCatalogCacheTag();
   revalidatePath("/admin/products");
   revalidatePath("/admin/bestand");
   revalidatePath("/produkte");

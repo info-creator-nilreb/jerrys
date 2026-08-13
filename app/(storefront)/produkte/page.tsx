@@ -88,22 +88,19 @@ export default async function ProduktePage({
   let hasPublishedCollections = false;
   let dbUnavailable = false;
   try {
-    products = await listActiveProductsForStorefront();
-    const categories = await listActiveCategoriesForNav();
+    const [productRows, categories, collections] = await Promise.all([
+      listActiveProductsForStorefront(),
+      listActiveCategoriesForNav(),
+      listActiveCollectionsForStorefront(),
+    ]);
+    products = productRows;
     categoryFacets = categories.map((c) => ({ slug: c.slug, title: c.title }));
+    hasPublishedCollections = collections.length > 0;
   } catch (e) {
     if (isDatabaseUnreachable(e)) {
       dbUnavailable = true;
     } else {
       throw e;
-    }
-  }
-  if (!dbUnavailable) {
-    try {
-      const collections = await listActiveCollectionsForStorefront();
-      hasPublishedCollections = collections.length > 0;
-    } catch (e) {
-      if (!isDatabaseUnreachable(e)) throw e;
     }
   }
 

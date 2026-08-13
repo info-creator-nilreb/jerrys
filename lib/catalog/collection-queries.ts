@@ -1,4 +1,6 @@
+import { unstable_cache } from "next/cache";
 import { getPrisma } from "@/lib/db/prisma";
+import { STOREFRONT_CATALOG_CACHE_TAG } from "@/lib/catalog/storefront-catalog-cache-tag";
 import { storefrontProductCardSelect } from "@/lib/catalog/queries";
 
 export async function listCollectionsForAdmin() {
@@ -29,7 +31,7 @@ export async function listProductsForCollectionPicker() {
   });
 }
 
-export async function listActiveCollectionsForStorefront() {
+async function loadActiveCollectionsForStorefront() {
   return getPrisma().collection.findMany({
     where: { isActive: true },
     orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
@@ -41,6 +43,16 @@ export async function listActiveCollectionsForStorefront() {
       _count: { select: { products: true } },
     },
   });
+}
+
+const getCachedActiveCollectionsForStorefront = unstable_cache(
+  loadActiveCollectionsForStorefront,
+  ["storefront-active-collections"],
+  { tags: [STOREFRONT_CATALOG_CACHE_TAG], revalidate: 60 },
+);
+
+export async function listActiveCollectionsForStorefront() {
+  return getCachedActiveCollectionsForStorefront();
 }
 
 export async function getActiveCollectionBySlugForStorefront(slug: string) {

@@ -1,5 +1,7 @@
+import { unstable_cache } from "next/cache";
 import { getPrisma } from "@/lib/db/prisma";
 import { prismaDefaultVariantInclude, prismaStorefrontActiveVariantsInclude } from "@/lib/catalog/default-variant-storefront";
+import { STOREFRONT_CATALOG_CACHE_TAG } from "@/lib/catalog/storefront-catalog-cache-tag";
 
 /** Storefront-Produktkarte: Commerce-Felder nur über `variants`. */
 export const storefrontProductCardSelect = {
@@ -15,6 +17,7 @@ export const storefrontProductCardSelect = {
   variants: prismaDefaultVariantInclude,
   images: {
     orderBy: [{ isCover: "desc" as const }, { sortOrder: "asc" as const }],
+    take: 5,
     select: { url: true, alt: true },
   },
 };
@@ -45,15 +48,32 @@ export const storefrontCategoryViaCollectionsSelect = {
   },
 } as const;
 
-export async function listActiveProductsForStorefront() {
+async function loadActiveProductsForStorefront(take?: number) {
   return getPrisma().product.findMany({
     where: { isActive: true },
     orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
+    ...(take != null && take > 0 ? { take } : {}),
     select: {
       ...storefrontProductCardSelect,
       ...storefrontCategoryViaCollectionsSelect,
     },
   });
+}
+
+const getCachedActiveProductsForStorefront = unstable_cache(
+  async () => loadActiveProductsForStorefront(),
+  ["storefront-active-products"],
+  { tags: [STOREFRONT_CATALOG_CACHE_TAG], revalidate: 60 },
+);
+
+export async function listActiveProductsForStorefront(options?: { take?: number }) {
+  const take = options?.take;
+  /** Immer den getaggten Cache nutzen — `take` nur als Slice (Homepage-Kuratierung). */
+  const all = await getCachedActiveProductsForStorefront();
+  if (take != null && take > 0) {
+    return all.slice(0, take);
+  }
+  return all;
 }
 
 /** Aktive Produkte in ID-Reihenfolge (CMS kuratierte Listen). */

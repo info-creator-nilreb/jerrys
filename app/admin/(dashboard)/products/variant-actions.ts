@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getAdminSession } from "@/lib/auth/admin-session";
 import { parseEuroInputToCents } from "@/lib/catalog/format";
 import { netCentsFromGross } from "@/lib/catalog/pricing";
+import { updateStorefrontCatalogCacheTag } from "@/lib/catalog/storefront-catalog-cache";
 import { getPrisma } from "@/lib/db/prisma";
 import { nonEmptyString } from "@/lib/validation/form";
 
@@ -34,6 +35,7 @@ function isUniqueConstraintError(e: unknown): boolean {
 }
 
 function revalidateProductVariantPaths(product: { id: string; slug: string }) {
+  updateStorefrontCatalogCacheTag();
   revalidatePath("/");
   revalidatePath("/produkte");
   revalidatePath(`/produkte/${product.slug}`);

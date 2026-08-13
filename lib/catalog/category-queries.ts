@@ -1,5 +1,7 @@
+import { unstable_cache } from "next/cache";
 import { getPrisma } from "@/lib/db/prisma";
 import { categoryHasActiveProductViaCollections } from "@/lib/catalog/category-storefront-visibility";
+import { STOREFRONT_CATALOG_CACHE_TAG } from "@/lib/catalog/storefront-catalog-cache-tag";
 import { storefrontProductCardSelect } from "@/lib/catalog/queries";
 
 const activeViaCollections = categoryHasActiveProductViaCollections;
@@ -86,7 +88,7 @@ const activeProductInLinkedCollection = {
 } as const;
 
 /** Aktive Root-Kategorien für Navigation. */
-export async function listActiveCategoriesForNav() {
+async function loadActiveCategoriesForNav() {
   return getPrisma().category.findMany({
     where: {
       isActive: true,
@@ -108,6 +110,16 @@ export async function listActiveCategoriesForNav() {
       },
     },
   });
+}
+
+const getCachedActiveCategoriesForNav = unstable_cache(
+  loadActiveCategoriesForNav,
+  ["storefront-active-categories-nav"],
+  { tags: [STOREFRONT_CATALOG_CACHE_TAG], revalidate: 60 },
+);
+
+export async function listActiveCategoriesForNav() {
+  return getCachedActiveCategoriesForNav();
 }
 
 /** Aktive Kategorie inkl. Unterkategorien (eine Ebene) für Nav-Erweiterung. */

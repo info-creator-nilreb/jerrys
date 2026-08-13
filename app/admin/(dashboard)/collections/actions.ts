@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getAdminSession } from "@/lib/auth/admin-session";
 import { collectionUpsertSchema } from "@/lib/catalog/collection-schemas";
+import { updateStorefrontCatalogCacheTag } from "@/lib/catalog/storefront-catalog-cache";
 import { getPrisma } from "@/lib/db/prisma";
 
 export type CollectionFormState = {
@@ -32,6 +33,7 @@ function isUniqueConstraintError(e: unknown): boolean {
 }
 
 function revalidateCollectionPaths(slug: string) {
+  updateStorefrontCatalogCacheTag();
   revalidatePath("/admin/collections");
   revalidatePath("/admin/categories");
   revalidatePath("/kollektionen");

@@ -9,8 +9,8 @@ afterEach(() => {
 });
 
 describe("touchStorefrontSearchApiAttempt", () => {
-  it("blockiert nach 90 Versuchen im Fenster", () => {
-    for (let i = 0; i < 90; i++) {
+  it("blockiert nach 35 Versuchen im Fenster", () => {
+    for (let i = 0; i < 35; i++) {
       expect(touchStorefrontSearchApiAttempt("203.0.113.40").ok).toBe(true);
     }
     const r = touchStorefrontSearchApiAttempt("203.0.113.40");

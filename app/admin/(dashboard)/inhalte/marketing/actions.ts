@@ -9,8 +9,15 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getAdminSession } from "@/lib/auth/admin-session";
 import { ALLOWED_IMAGE_TYPES, extFromMime, MAX_UPLOAD_BYTES } from "@/lib/admin/upload-image";
+import { updateContentPagesCacheTag } from "@/lib/content/content-pages-cache";
 import { getPrisma } from "@/lib/db/prisma";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
+
+function revalidateHomepageMarketing() {
+  updateContentPagesCacheTag();
+  revalidatePath("/");
+  revalidatePath("/admin/inhalte/marketing");
+}
 
 const log = createLogger("admin.inhalte.marketing");
 
@@ -99,8 +106,7 @@ export async function createHomepageAmazonReview(
     return { error: "Speichern fehlgeschlagen." };
   }
 
-  revalidatePath("/");
-  revalidatePath("/admin/inhalte/marketing");
+  revalidateHomepageMarketing();
   return { ok: true };
 }
 
@@ -145,8 +151,7 @@ export async function updateHomepageAmazonReview(
     return { error: "Aktualisieren fehlgeschlagen." };
   }
 
-  revalidatePath("/");
-  revalidatePath("/admin/inhalte/marketing");
+  revalidateHomepageMarketing();
   return { ok: true };
 }
 
@@ -164,8 +169,7 @@ export async function deleteHomepageAmazonReview(formData: FormData): Promise<vo
   } catch (e) {
     log.error("homepage_review_delete_failed", { id, ...errorMeta(e) });
   }
-  revalidatePath("/");
-  revalidatePath("/admin/inhalte/marketing");
+  revalidateHomepageMarketing();
 }
 
 export async function setHomepageAmazonReviewActive(formData: FormData): Promise<void> {
@@ -177,8 +181,7 @@ export async function setHomepageAmazonReviewActive(formData: FormData): Promise
     where: { id },
     data: { isActive: active },
   });
-  revalidatePath("/");
-  revalidatePath("/admin/inhalte/marketing");
+  revalidateHomepageMarketing();
 }
 
 export async function moveHomepageAmazonReview(formData: FormData): Promise<void> {
@@ -207,8 +210,7 @@ export async function moveHomepageAmazonReview(formData: FormData): Promise<void
       data: { sortOrder: a.sortOrder },
     }),
   ]);
-  revalidatePath("/");
-  revalidatePath("/admin/inhalte/marketing");
+  revalidateHomepageMarketing();
 }
 
 const HOMEPAGE_SOCIAL_PREFIX = "/media/homepage-social/";
@@ -282,8 +284,7 @@ export async function uploadHomepageSocialImages(
     return { error: "Upload fehlgeschlagen." };
   }
 
-  revalidatePath("/");
-  revalidatePath("/admin/inhalte/marketing");
+  revalidateHomepageMarketing();
   return { ok: true };
 }
 
@@ -312,8 +313,7 @@ export async function updateHomepageSocialImageMeta(
     return { error: "Speichern fehlgeschlagen." };
   }
 
-  revalidatePath("/");
-  revalidatePath("/admin/inhalte/marketing");
+  revalidateHomepageMarketing();
   return { ok: true };
 }
 
@@ -342,8 +342,7 @@ export async function deleteHomepageSocialImage(formData: FormData): Promise<voi
   } catch (e) {
     log.error("homepage_social_delete_failed", { id, ...errorMeta(e) });
   }
-  revalidatePath("/");
-  revalidatePath("/admin/inhalte/marketing");
+  revalidateHomepageMarketing();
 }
 
 export async function setHomepageSocialImageActive(formData: FormData): Promise<void> {
@@ -355,8 +354,7 @@ export async function setHomepageSocialImageActive(formData: FormData): Promise<
     where: { id },
     data: { isActive: active },
   });
-  revalidatePath("/");
-  revalidatePath("/admin/inhalte/marketing");
+  revalidateHomepageMarketing();
 }
 
 export async function moveHomepageSocialImage(formData: FormData): Promise<void> {
@@ -385,6 +383,5 @@ export async function moveHomepageSocialImage(formData: FormData): Promise<void>
       data: { sortOrder: a.sortOrder },
     }),
   ]);
-  revalidatePath("/");
-  revalidatePath("/admin/inhalte/marketing");
+  revalidateHomepageMarketing();
 }

@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { createWorkshopSeatHoldForStorefront } from "@/features/workshops";
 import { getCustomerSession } from "@/lib/auth/customer-session";
+import { clientIpFromRequest } from "@/lib/security/client-ip";
+import {
+  touchWorkshopCheckoutApiAttempt,
+  workshopCheckoutApiRateLimitHeaders,
+} from "@/lib/security/workshop-checkout-api-rate-limit";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 import { WORKSHOP_BOOKING_HOLD_COOKIE } from "@/lib/workshop/workshop-booking-cookie";
 
@@ -35,6 +40,18 @@ function errorRedirect(request: Request, sessionId: string, message: string) {
  * Minified React error #441 auslösen (Soft-Navigation / Transition).
  */
 export async function POST(request: Request) {
+  const limited = touchWorkshopCheckoutApiAttempt(clientIpFromRequest(request));
+  if (!limited.ok) {
+    const res = errorRedirect(
+      request,
+      "",
+      "Zu viele Anfragen. Bitte später erneut versuchen.",
+    );
+    const headers = workshopCheckoutApiRateLimitHeaders(limited.retryAfterSec);
+    for (const [k, v] of Object.entries(headers)) res.headers.set(k, v);
+    return res;
+  }
+
   let formData: FormData;
   try {
     formData = await request.formData();

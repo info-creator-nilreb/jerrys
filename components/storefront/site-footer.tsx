@@ -23,38 +23,38 @@ const legalLinks = [
 
 /** Dunkles Navy wie Admin-Sidebar; helle Schrift, Primärgrün für Links. */
 export async function SiteFooter() {
-  const settings = await getShopSettings();
-  const navOptions = {
-    showAllProducts: settings.showAllProductsInNav,
-    showTermine: settings.showTermineInNav,
-  };
-  let shopLinks = buildStorefrontShopNavLinks([], navOptions);
+  let shopLinks = buildStorefrontShopNavLinks([], {
+    showAllProducts: true,
+    showTermine: true,
+  });
   let merchandisingLinks: ReturnType<typeof resolveFooterMerchandisingLinks> = [];
+  /** Nur published CMS-Content-Seiten — Drafts nie (Epic 12 Slice 4). */
+  let cmsContentLinks: Array<{ href: string; label: string }> = [];
+  let settings: Awaited<ReturnType<typeof getShopSettings>>;
   try {
-    const categories = await listActiveCategoriesForNav();
+    const [shopSettings, categories, collections, cmsLinks] = await Promise.all([
+      getShopSettings(),
+      listActiveCategoriesForNav(),
+      listActiveCollectionsForStorefront(),
+      listPublishedContentNavLinks(),
+    ]);
+    settings = shopSettings;
+    const navOptions = {
+      showAllProducts: settings.showAllProductsInNav,
+      showTermine: settings.showTermineInNav,
+    };
     shopLinks = buildStorefrontShopNavLinks(
       categories.map((c) => ({ slug: c.slug, title: c.title })),
       navOptions,
     );
-  } catch (e) {
-    if (!isDatabaseUnreachable(e)) throw e;
-  }
-  try {
-    const collections = await listActiveCollectionsForStorefront();
     merchandisingLinks = resolveFooterMerchandisingLinks(
       shopLinks,
       collections.filter((c) => c._count.products > 0).map((c) => ({ slug: c.slug, title: c.title })),
     );
+    cmsContentLinks = cmsLinks;
   } catch (e) {
     if (!isDatabaseUnreachable(e)) throw e;
-  }
-
-  /** Nur published CMS-Content-Seiten — Drafts nie (Epic 12 Slice 4). */
-  let cmsContentLinks: Array<{ href: string; label: string }> = [];
-  try {
-    cmsContentLinks = await listPublishedContentNavLinks();
-  } catch (e) {
-    if (!isDatabaseUnreachable(e)) throw e;
+    settings = await getShopSettings();
   }
 
   const tagline = shopFooterTagline(settings);

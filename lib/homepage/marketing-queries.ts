@@ -1,4 +1,6 @@
+import { unstable_cache } from "next/cache";
 import { getPrisma } from "@/lib/db/prisma";
+import { CONTENT_PAGES_CACHE_TAG } from "@/lib/content/content-pages-cache-tag";
 
 function isMissingHomepageTableError(e: unknown): boolean {
   if (typeof e !== "object" || e === null) return false;
@@ -12,7 +14,7 @@ function isMissingHomepageTableError(e: unknown): boolean {
   );
 }
 
-export async function listActiveHomepageAmazonReviews() {
+async function loadActiveHomepageAmazonReviews() {
   try {
     return await getPrisma().homepageAmazonReview.findMany({
       where: { isActive: true },
@@ -32,7 +34,17 @@ export async function listActiveHomepageAmazonReviews() {
   }
 }
 
-export async function listActiveHomepageSocialImages() {
+const getCachedActiveHomepageAmazonReviews = unstable_cache(
+  async () => loadActiveHomepageAmazonReviews(),
+  ["homepage-amazon-reviews-active"],
+  { tags: [CONTENT_PAGES_CACHE_TAG], revalidate: 60 },
+);
+
+export async function listActiveHomepageAmazonReviews() {
+  return getCachedActiveHomepageAmazonReviews();
+}
+
+async function loadActiveHomepageSocialImages() {
   try {
     return await getPrisma().homepageSocialImage.findMany({
       where: { isActive: true },
@@ -48,6 +60,16 @@ export async function listActiveHomepageSocialImages() {
     if (isMissingHomepageTableError(e)) return [];
     throw e;
   }
+}
+
+const getCachedActiveHomepageSocialImages = unstable_cache(
+  async () => loadActiveHomepageSocialImages(),
+  ["homepage-social-images-active"],
+  { tags: [CONTENT_PAGES_CACHE_TAG], revalidate: 60 },
+);
+
+export async function listActiveHomepageSocialImages() {
+  return getCachedActiveHomepageSocialImages();
 }
 
 export async function listAllHomepageAmazonReviewsForAdmin() {

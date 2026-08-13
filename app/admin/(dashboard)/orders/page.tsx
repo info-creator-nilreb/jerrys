@@ -1,5 +1,6 @@
-import { OrdersAdminList, formatOrderCreatedAt } from "@/app/admin/(dashboard)/orders/orders-admin-list";
+import { OrdersAdminList } from "@/app/admin/(dashboard)/orders/orders-admin-list";
 import { listOrdersForAdmin } from "@/lib/orders/admin-queries";
+import { formatOrderCreatedAt } from "@/lib/orders/format-order-created-at";
 import { deriveTripleFromOrder } from "@/lib/orders/order-admin-triple";
 
 export const dynamic = "force-dynamic";
