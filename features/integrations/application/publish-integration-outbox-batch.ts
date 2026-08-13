@@ -9,8 +9,10 @@ export type PublishIntegrationOutboxBatchResult = {
 };
 
 /**
- * Markiert ausstehende Outbox-Nachrichten als veröffentlicht (Epic 1 MVP-Publisher).
- * Später durch Queue-Worker ersetzbar; heute idempotent und restart-sicher.
+ * Epic-1-MVP-Publisher: markiert pending Outbox-Nachrichten als `published`
+ * (Audit-/Restart-sicher), ohne echte Queue-Zustellung an Verbraucher.
+ * Ops: Backlog über `getIntegrationOutboxBacklogStats` / Maintenance-Feld `outboxBacklog` beobachten.
+ * Später durch einen echten Worker ersetzen — nicht als „Side-Effect erledigt“ interpretieren.
  */
 export async function publishIntegrationOutboxBatch(
   prisma: PrismaClient,

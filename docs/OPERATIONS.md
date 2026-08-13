@@ -234,7 +234,7 @@ Symptoms: POS-Verkauf in Zettle, Shop-Bestand unverändert; Sync-Eintrag `failed
 4. Unterbestand: Shop-Lager prüfen; nach Korrektur Retry — Negativbestand wird bewusst nicht still erzeugt.
 5. Idempotenz POS→Shop: `zettle_purchase_syncs.purchase_uuid`. Shop→Zettle: `zettle_inventory_pushes.correlation_id` (`shop_sale:{orderId}` / `shop_return:{orderId}`).
 6. Webhook: `POST /api/webhooks/zettle` muss öffentlich HTTPS erreichbar sein (`NEXT_PUBLIC_SITE_URL`); Signing-Key unter Integrationen; bei 401 Signatur prüfen.
-7. Cron: `commerce-maintenance` zieht Käufe der letzten 3 Tage und retried pending/failed Inventory-Pushes.
+7. Cron: `commerce-maintenance?mode=full` (GitHub Action ~alle 30 Min. / Vercel täglich) zieht Käufe der letzten 3 Tage und retried pending/failed Inventory-Pushes; `mode=critical` überspringt Zettle bewusst.
 8. Discrepancy vergleicht Shop **available** vs. Zettle STORE (Online-Verkauf reduziert Zettle bei Zahlung).
 9. Optional Env `ZETTLE_CLIENT_ID` nur für Attribution; der API-Key selbst liegt verschlüsselt in der DB.
 
@@ -258,18 +258,20 @@ LIMIT 20;
 
 **Outbox / Maintenance**
 
-1. Cron / Manual: `POST /api/internal/commerce-maintenance` mit Bearer `CRON_SECRET` bzw. `COMMERCE_MAINTENANCE_SECRET`.
-2. Antwortfelder `expiredReservations`, `outbox.published` prüfen.
-3. Backlog:
+1. Operativer Takt: GitHub Action `.github/workflows/commerce-maintenance.yml` — `critical` alle 10 Min., `full` alle 30 Min. Secrets `COMMERCE_MAINTENANCE_SITE_URL` + `COMMERCE_MAINTENANCE_SECRET` sind **Go-Live-Pflicht**; fehlen sie, bleibt nur der Vercel-Tages-Cron (`vercel.json`).
+2. Manual: `POST /api/internal/commerce-maintenance?mode=critical` (oder `full`) mit Bearer `CRON_SECRET` bzw. `COMMERCE_MAINTENANCE_SECRET`.
+3. Antwortfelder prüfen: `mode`, `expiredReservations`, `workshops`, `paypalReconcile`, `outbox` / `outbox.skipped`, **`outboxBacklog`** (`pendingCount`, `stalePendingCount`, `oldestPendingAgeSeconds`). Alert wenn `stalePendingCount > 0` bzw. Alter > 15 Min. — Publisher ist MVP (`mvp_audit_mark_published`), Backlog signalisiert vor allem „Maintenance läuft nicht“.
+4. SQL-Backlog:
 
 ```sql
 SELECT status, event_type, created_at
 FROM integration_outbox_messages
-ORDER BY created_at DESC
+WHERE status = 'pending'
+ORDER BY created_at ASC
 LIMIT 20;
 ```
 
-4. Wenn Publisher hängt: Secret/Cron auf Production verifizieren (`vercel.json` + GitHub Action laut Epic-1-Doku), dann einen manuellen Maintenance-Call.
+5. Wenn Cleanup/Publisher hängt: Secrets + letzten GitHub-Action-Lauf prüfen, dann manuellen `mode=critical`- und `mode=full`-Call.
 
 Antwort enthält zusätzlich `workshops` (Epic 5 Slice 6):
 

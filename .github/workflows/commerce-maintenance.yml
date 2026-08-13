@@ -1,7 +1,12 @@
-# Epic 1 + Epic 5: Reservierungs-Ablauf, Workshop-Holds, Outbox (alle 30 Min.) —
-# sinnvoll bei Hobby-Plan, weil Vercel Cron dort max. 1×/Tag erlaubt (vercel.json = Fallback).
+# Commerce-Maintenance gegen Production/Staging.
+# Hobby-Plan: Vercel Cron max. 1×/Tag (vercel.json = Fallback) — dieses Workflow ist der
+# operative Taktgeber für Workshop-Holds (TTL 30 min) und Stock-Reservierungen (TTL 2 h).
 #
-# GitHub Repo → Settings → Secrets → Actions:
+# Schedule:
+#   - critical alle 10 Min. (Stock-Expiry, Workshop-Holds, PayPal-Reconcile, Outbox-Backlog-Metrik)
+#   - full alle 30 Min. versetzt (zusätzlich Outbox-MVP-Publisher, Instagram, Zettle)
+#
+# GitHub Repo → Settings → Secrets → Actions (Go-Live-Gate — ohne Secrets läuft nur der Tages-Cron):
 #   COMMERCE_MAINTENANCE_SITE_URL  z. B. https://deine-domain.vercel.app (ohne Slash am Ende)
 #   COMMERCE_MAINTENANCE_SECRET    gleicher Wert wie in Vercel
 
@@ -9,8 +14,17 @@ name: Commerce maintenance
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Maintenance-Modus
+        type: choice
+        options:
+          - critical
+          - full
+        default: critical
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "*/10 * * * *"
+    - cron: "7,37 * * * *"
 
 concurrency:
   group: commerce-maintenance
@@ -21,14 +35,30 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Resolve mode
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            MODE="${{ inputs.mode }}"
+          elif [ "${{ github.event.schedule }}" = "7,37 * * * *" ]; then
+            MODE=full
+          else
+            MODE=critical
+          fi
+          echo "mode=${MODE}" >> "$GITHUB_OUTPUT"
+          echo "Maintenance mode: ${MODE}"
+
       - name: POST maintenance
         env:
           SITE_URL: ${{ secrets.COMMERCE_MAINTENANCE_SITE_URL }}
           SECRET: ${{ secrets.COMMERCE_MAINTENANCE_SECRET }}
+          MODE: ${{ steps.mode.outputs.mode }}
         run: |
           if [ -z "$SITE_URL" ] || [ -z "$SECRET" ]; then
-            echo "COMMERCE_MAINTENANCE_SITE_URL oder COMMERCE_MAINTENANCE_SECRET fehlt — Job übersprungen."
+            echo "::warning::COMMERCE_MAINTENANCE_SITE_URL oder COMMERCE_MAINTENANCE_SECRET fehlt — Job übersprungen. Ohne diese Secrets läuft nur der Vercel-Tages-Cron (zu selten für Holds)."
             exit 0
           fi
-          curl -fsS -X POST "${SITE_URL%/}/api/internal/commerce-maintenance" \
-            -H "Authorization: Bearer ${SECRET}"
+          curl -fsS -X POST "${SITE_URL%/}/api/internal/commerce-maintenance?mode=${MODE}" \
+            -H "Authorization: Bearer ${SECRET}" \
+            -H "Content-Type: application/json" \
+            -d "{\"mode\":\"${MODE}\"}"

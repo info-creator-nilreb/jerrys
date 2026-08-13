@@ -8,7 +8,7 @@ Erkennt und behebt den Fall **extern bei PayPal erfolgreich / intern noch `pendi
 
 ## Verhalten
 
-1. **Batch (Cron):** `GET`/`POST /api/internal/commerce-maintenance` ruft `reconcilePendingPayPalPayments` auf (bis 25 offene PayPal-Bestellungen).
+1. **Batch (Cron):** `GET`/`POST /api/internal/commerce-maintenance` (`mode=critical` und `mode=full`) ruft `reconcilePendingPayPalPayments` auf (bis 25 offene PayPal-Bestellungen).
 2. Pro Kandidat: PayPal Order GET → bei `APPROVED`/`COMPLETED` derselbe Capture-/Finalize-Pfad wie Return-URL/Webhook (`eventSource: paypal_reconciliation`).
 3. **Admin:** Bestelldetail (Status Zahlung ausstehend + PayPal-Zahlungszeile) → „Zahlung bei PayPal nachziehen“.
 4. **Webhook:** `PAYMENT.CAPTURE.REFUNDED` → bei erkennbarer Vollerstattung Shop-Status `refunded` (Teilerstattung nur geloggt; Detail-Persistenz im Refund-MVP).
