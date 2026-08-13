@@ -5,6 +5,11 @@ import { CmsBlockAiTextAssistant } from "@/app/admin/(dashboard)/inhalte/cms-blo
 import { AdminRichTextEditor } from "@/components/admin/admin-rich-text-editor";
 import { CmsMediaField } from "@/components/admin/cms-media-field";
 import type { ContentBlockType } from "@/lib/content/block-types";
+import {
+  HERO_CTA_CUSTOM_VALUE,
+  HERO_CTA_TARGET_PRESETS,
+  resolveHeroCtaSelectValue,
+} from "@/lib/content/hero-cta-targets";
 
 type Props = {
   type: ContentBlockType;
@@ -81,23 +86,65 @@ export function ContentBlockFields({
             required
             hint="Upload, Medienbibliothek oder URL"
           />
-          <label className="text-sm text-[#5c5f66]">
-            CTA-Label
-            <input
-              className={fieldClass}
-              value={str(data, "ctaLabel")}
-              onChange={(e) => set("ctaLabel", e.target.value)}
-            />
-          </label>
-          <label className="text-sm text-[#5c5f66]">
-            CTA-Pfad
-            <input
-              className={fieldClass}
-              value={str(data, "ctaHref")}
-              onChange={(e) => set("ctaHref", e.target.value)}
-              placeholder="/produkte"
-            />
-          </label>
+          <div className="space-y-3 sm:col-span-2">
+            <p className="text-sm font-medium text-[#374151]">Call-to-Action</p>
+            <p className="text-xs text-[#6b7280]">
+              Optionaler Button unter der Überschrift. Erscheint nur, wenn Label und Zielseite
+              gesetzt sind.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="text-sm text-[#5c5f66]">
+                Button-Label
+                <input
+                  className={fieldClass}
+                  value={str(data, "ctaLabel")}
+                  onChange={(e) => set("ctaLabel", e.target.value)}
+                  placeholder="Produkte entdecken"
+                  maxLength={60}
+                />
+              </label>
+              <label className="text-sm text-[#5c5f66]">
+                Zielseite
+                <select
+                  className={fieldClass}
+                  value={resolveHeroCtaSelectValue(str(data, "ctaHref"))}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "") {
+                      set("ctaHref", "");
+                      return;
+                    }
+                    if (v === HERO_CTA_CUSTOM_VALUE) {
+                      const current = str(data, "ctaHref");
+                      const isPreset = HERO_CTA_TARGET_PRESETS.some((p) => p.href === current);
+                      set("ctaHref", isPreset || !current ? "/" : current);
+                      return;
+                    }
+                    set("ctaHref", v);
+                  }}
+                >
+                  <option value="">Keine (ohne Button)</option>
+                  {HERO_CTA_TARGET_PRESETS.map((p) => (
+                    <option key={p.href} value={p.href}>
+                      {p.label}
+                    </option>
+                  ))}
+                  <option value={HERO_CTA_CUSTOM_VALUE}>Eigener Pfad…</option>
+                </select>
+              </label>
+              {resolveHeroCtaSelectValue(str(data, "ctaHref")) === HERO_CTA_CUSTOM_VALUE ? (
+                <label className="text-sm text-[#5c5f66] sm:col-span-2">
+                  Eigener Pfad (intern, mit /)
+                  <input
+                    className={fieldClass}
+                    value={str(data, "ctaHref")}
+                    onChange={(e) => set("ctaHref", e.target.value)}
+                    placeholder="/ueber-uns"
+                  />
+                </label>
+              ) : null}
+            </div>
+          </div>
         </div>
       </div>
     );

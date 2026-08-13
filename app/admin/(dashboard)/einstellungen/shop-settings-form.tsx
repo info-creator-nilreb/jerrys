@@ -312,6 +312,112 @@ export function ShopSettingsForm({ defaults }: Props) {
         </SettingsCard>
 
         <SettingsCard
+          title="Footer"
+          description="Steuert, welche Infos und Links in der Storefront-Fußzeile erscheinen. Weniger ist meist klarer — Shop-Navigation gehört typisch in den Header."
+        >
+          <div className="space-y-3">
+            {(
+              [
+                {
+                  name: "footerShowTagline",
+                  title: "Kurzbeschreibung / Tagline",
+                  hint: "Text aus der Kurzbeschreibung oben im Footer",
+                  defaultChecked: defaults.footerShowTagline,
+                },
+                {
+                  name: "footerShowShopNav",
+                  title: "Shop-Navigation",
+                  hint: "Kategorien sowie „Alle Produkte“ / „Termine“ — oft redundant zum Header",
+                  defaultChecked: defaults.footerShowShopNav,
+                },
+                {
+                  name: "footerShowCollections",
+                  title: "Kollektionen",
+                  hint: "Aktive Kollektionen mit Produkten (Merchandising)",
+                  defaultChecked: defaults.footerShowCollections,
+                },
+                {
+                  name: "footerShowCmsLinks",
+                  title: "CMS-Inhaltsseiten",
+                  hint: "Nur Seiten mit aktivem „Im Footer anzeigen“ unter Inhalte",
+                  defaultChecked: defaults.footerShowCmsLinks,
+                },
+                {
+                  name: "footerShowSocial",
+                  title: "Social-Media-Icons",
+                  hint: "Instagram/Facebook, sofern URLs gesetzt sind",
+                  defaultChecked: defaults.footerShowSocial,
+                },
+              ] as const
+            ).map((opt) => (
+              <label
+                key={opt.name}
+                className="flex cursor-pointer items-start gap-2.5 text-sm text-[#374151]"
+              >
+                <input type="hidden" name={opt.name} value="false" />
+                <input
+                  type="checkbox"
+                  name={opt.name}
+                  value="true"
+                  defaultChecked={opt.defaultChecked}
+                  className="checkbox-primary mt-0.5 size-4"
+                />
+                <span>
+                  <span className="font-medium">{opt.title}</span>
+                  <span className="mt-0.5 block text-xs text-[#6b7280]">{opt.hint}</span>
+                </span>
+              </label>
+            ))}
+
+            <fieldset className="mt-4 space-y-2 border-t border-[#e8eaed] pt-4">
+              <legend className="text-sm font-medium text-[#1f2937]">Rechtliche Links</legend>
+              <p className="text-xs text-[#6b7280]">
+                Impressum und Datenschutz bleiben immer sichtbar. Cookie-Einstellungen ebenfalls.
+              </p>
+              {(
+                [
+                  {
+                    name: "footerShowLegalAgb",
+                    title: "AGB",
+                    defaultChecked: defaults.footerShowLegalAgb,
+                  },
+                  {
+                    name: "footerShowLegalWiderruf",
+                    title: "Widerruf",
+                    defaultChecked: defaults.footerShowLegalWiderruf,
+                  },
+                  {
+                    name: "footerShowLegalRueckgabe",
+                    title: "Rückgabe",
+                    defaultChecked: defaults.footerShowLegalRueckgabe,
+                  },
+                  {
+                    name: "footerShowLegalVersand",
+                    title: "Versand",
+                    defaultChecked: defaults.footerShowLegalVersand,
+                  },
+                ] as const
+              ).map((opt) => (
+                <label
+                  key={opt.name}
+                  className="flex cursor-pointer items-start gap-2.5 text-sm text-[#374151]"
+                >
+                  <input type="hidden" name={opt.name} value="false" />
+                  <input
+                    type="checkbox"
+                    name={opt.name}
+                    value="true"
+                    defaultChecked={opt.defaultChecked}
+                    className="checkbox-primary mt-0.5 size-4"
+                  />
+                  <span className="font-medium">{opt.title}</span>
+                </label>
+              ))}
+            </fieldset>
+          </div>
+        </SettingsCard>
+
+        <SettingsCard
           title="Kurzbeschreibung"
           description="Beschreibung deines Unternehmens, oft in Biografien und Angeboten verwendet"
         >

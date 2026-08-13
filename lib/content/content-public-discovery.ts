@@ -13,6 +13,7 @@ export type PublishedContentDiscoveryItem = {
   title: string;
   path: string;
   robotsIndex: boolean;
+  showInFooter: boolean;
   updatedAt: Date;
   publishedAt: Date | null;
 };
@@ -24,6 +25,8 @@ export type PublishedContentDiscoveryItem = {
 export async function listPublishedContentPagesForDiscovery(options?: {
   /** Wenn true, nur `robotsIndex: true` (Sitemap). */
   robotsIndexOnly?: boolean;
+  /** Wenn true, nur Seiten mit `showInFooter`. */
+  footerOnly?: boolean;
   pageTypes?: ContentPageType[];
 }): Promise<PublishedContentDiscoveryItem[]> {
   const prisma = getPrisma();
@@ -32,6 +35,7 @@ export async function listPublishedContentPagesForDiscovery(options?: {
       where: {
         status: "published",
         ...(options?.robotsIndexOnly ? { robotsIndex: true } : {}),
+        ...(options?.footerOnly ? { showInFooter: true } : {}),
         ...(options?.pageTypes?.length
           ? { pageType: { in: options.pageTypes } }
           : {}),
@@ -43,6 +47,7 @@ export async function listPublishedContentPagesForDiscovery(options?: {
         pageType: true,
         title: true,
         robotsIndex: true,
+        showInFooter: true,
         updatedAt: true,
         publishedAt: true,
       },
@@ -54,6 +59,7 @@ export async function listPublishedContentPagesForDiscovery(options?: {
       title: row.title,
       path: publicPathForContentSlug(row.slug),
       robotsIndex: row.robotsIndex,
+      showInFooter: row.showInFooter,
       updatedAt: row.updatedAt,
       publishedAt: row.publishedAt,
     }));
@@ -63,12 +69,15 @@ export async function listPublishedContentPagesForDiscovery(options?: {
   }
 }
 
-/** Footer/Nav: published Content-Seiten (kein Home, keine Legal-Migration in Slice 4). */
-export async function listPublishedContentNavLinks(): Promise<
-  Array<{ href: string; label: string }>
-> {
+/** Footer/Nav: published Content-Seiten (kein Home, keine Legal). */
+export async function listPublishedContentNavLinks(options?: {
+  /** Default true: nur Seiten mit „Im Footer anzeigen“. */
+  footerOnly?: boolean;
+}): Promise<Array<{ href: string; label: string }>> {
+  const footerOnly = options?.footerOnly ?? true;
   const pages = await listPublishedContentPagesForDiscovery({
     pageTypes: ["content"],
+    footerOnly,
   });
   return pages
     .filter((p) => p.slug !== CONTENT_PAGE_HOME_SLUG)

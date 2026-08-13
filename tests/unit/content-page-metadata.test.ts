@@ -14,6 +14,7 @@ function base(over: Partial<ContentPageDTO> = {}): ContentPageDTO {
     ogImageUrl: "/branding/og.png",
     canonicalPath: null,
     robotsIndex: true,
+    showInFooter: false,
     previousSlug: null,
     publishedAt: new Date(),
     updatedAt: new Date(),

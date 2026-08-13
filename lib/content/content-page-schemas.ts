@@ -62,6 +62,7 @@ export const contentPageValuesSchema = z
         .nullable(),
     ),
     robotsIndex: z.boolean().default(true),
+    showInFooter: z.boolean().default(false),
     previousSlug: z.preprocess(
       emptyToNull,
       z.union([slugSchema, z.null()]).optional(),

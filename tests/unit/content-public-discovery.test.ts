@@ -25,6 +25,7 @@ describe("content public discovery", () => {
         pageType: "content",
         title: "Über uns",
         robotsIndex: true,
+        showInFooter: true,
         updatedAt: new Date("2026-08-11T00:00:00.000Z"),
         publishedAt: new Date("2026-08-11T00:00:00.000Z"),
       },
@@ -54,6 +55,7 @@ describe("content public discovery", () => {
         pageType: "content",
         title: "Über uns",
         robotsIndex: true,
+        showInFooter: true,
         updatedAt: new Date(),
         publishedAt: new Date(),
       },
@@ -64,6 +66,7 @@ describe("content public discovery", () => {
         where: expect.objectContaining({
           status: "published",
           pageType: { in: ["content"] },
+          showInFooter: true,
         }),
       }),
     );

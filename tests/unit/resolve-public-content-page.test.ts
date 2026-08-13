@@ -26,6 +26,7 @@ function page(partial: {
     ogImageUrl: null,
     canonicalPath: null,
     robotsIndex: true,
+    showInFooter: false,
     previousSlug: null,
     publishedAt: new Date(),
     updatedAt: new Date(),

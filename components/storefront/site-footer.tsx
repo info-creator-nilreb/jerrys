@@ -5,21 +5,13 @@ import { listActiveCategoriesForNav } from "@/lib/catalog/category-queries";
 import { listActiveCollectionsForStorefront } from "@/lib/catalog/collection-queries";
 import { listPublishedContentNavLinks } from "@/lib/content/content-public-discovery";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
+import { resolveFooterLegalLinks } from "@/lib/shop/footer-settings";
 import { getShopSettings } from "@/lib/shop/shop-settings";
 import { shopFooterTagline } from "@/lib/shop/storefront-branding";
 import {
   buildStorefrontShopNavLinks,
   resolveFooterMerchandisingLinks,
 } from "@/lib/storefront/shop-nav-links";
-
-const legalLinks = [
-  { href: "/impressum", label: "Impressum" },
-  { href: "/datenschutz", label: "Datenschutz" },
-  { href: "/agb", label: "AGB" },
-  { href: "/widerruf", label: "Widerruf" },
-  { href: "/rueckgabe", label: "Rückgabe" },
-  { href: "/versand", label: "Versand" },
-] as const;
 
 /** Dunkles Navy wie Admin-Sidebar; helle Schrift, Primärgrün für Links. */
 export async function SiteFooter() {
@@ -28,7 +20,7 @@ export async function SiteFooter() {
     showTermine: true,
   });
   let merchandisingLinks: ReturnType<typeof resolveFooterMerchandisingLinks> = [];
-  /** Nur published CMS-Content-Seiten — Drafts nie (Epic 12 Slice 4). */
+  /** Nur published CMS-Content-Seiten mit showInFooter — Drafts nie (Epic 12 Slice 4). */
   let cmsContentLinks: Array<{ href: string; label: string }> = [];
   let settings: Awaited<ReturnType<typeof getShopSettings>>;
   try {
@@ -36,7 +28,7 @@ export async function SiteFooter() {
       getShopSettings(),
       listActiveCategoriesForNav(),
       listActiveCollectionsForStorefront(),
-      listPublishedContentNavLinks(),
+      listPublishedContentNavLinks({ footerOnly: true }),
     ]);
     settings = shopSettings;
     const navOptions = {
@@ -59,6 +51,7 @@ export async function SiteFooter() {
 
   const tagline = shopFooterTagline(settings);
   const shopName = settings.shopName;
+  const legalLinks = resolveFooterLegalLinks(settings);
   const socialLinks = [
     settings.instagramUrl
       ? { href: settings.instagramUrl, label: "Instagram", Icon: Instagram }
@@ -68,13 +61,21 @@ export async function SiteFooter() {
       : null,
   ].filter((item): item is NonNullable<typeof item> => item != null);
 
+  const showShopNav = settings.footerShowShopNav && shopLinks.length > 0;
+  const showCollections =
+    settings.footerShowCollections && merchandisingLinks.length > 0;
+  const showCms = settings.footerShowCmsLinks && cmsContentLinks.length > 0;
+  const showSocial = settings.footerShowSocial && socialLinks.length > 0;
+
   return (
     <footer className="mt-auto border-t border-white/10 bg-[#182d4d] py-12 text-center text-[0.98rem] leading-relaxed text-white/90 sm:py-14 sm:text-base">
       <div className="mx-auto max-w-6xl px-4">
-        <p className="text-lg font-medium text-white sm:text-xl">{tagline}</p>
-        {shopLinks.length > 0 ? (
+        {settings.footerShowTagline ? (
+          <p className="text-lg font-medium text-white sm:text-xl">{tagline}</p>
+        ) : null}
+        {showShopNav ? (
           <nav
-            className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2.5 text-[0.95rem] sm:text-base"
+            className={`flex flex-wrap items-center justify-center gap-x-5 gap-y-2.5 text-[0.95rem] sm:text-base ${settings.footerShowTagline ? "mt-5" : ""}`}
             aria-label="Shop"
           >
             {shopLinks.map(({ href, label }) => (
@@ -88,7 +89,7 @@ export async function SiteFooter() {
             ))}
           </nav>
         ) : null}
-        {merchandisingLinks.length > 0 ? (
+        {showCollections ? (
           <nav
             className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2.5 text-[0.95rem] text-white/80 sm:text-base"
             aria-label="Kollektionen"
@@ -104,7 +105,7 @@ export async function SiteFooter() {
             ))}
           </nav>
         ) : null}
-        {cmsContentLinks.length > 0 ? (
+        {showCms ? (
           <nav
             className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2.5 text-[0.95rem] text-white/80 sm:text-base"
             aria-label="Inhalte"
@@ -121,7 +122,7 @@ export async function SiteFooter() {
           </nav>
         ) : null}
         <nav
-          className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2.5 text-[0.95rem] sm:text-base"
+          className={`flex flex-wrap items-center justify-center gap-x-5 gap-y-2.5 text-[0.95rem] sm:text-base ${settings.footerShowTagline || showShopNav || showCollections || showCms ? "mt-4" : ""}`}
           aria-label="Rechtliches"
         >
           {legalLinks.map(({ href, label }) => (
@@ -135,7 +136,7 @@ export async function SiteFooter() {
           ))}
           <CookieSettingsButton className="font-medium text-primary underline-offset-4 transition-colors hover:text-(--primary-hover) hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#182d4d]" />
         </nav>
-        {socialLinks.length > 0 ? (
+        {showSocial ? (
           <nav
             className="mt-5 flex flex-wrap items-center justify-center gap-3"
             aria-label="Social Media"

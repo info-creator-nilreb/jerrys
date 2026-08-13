@@ -46,6 +46,7 @@ describe("parseContentPageValues", () => {
       expect(r.data.slug).toBe("impressum");
       expect(r.data.seoTitle).toBeNull();
       expect(r.data.previousSlug).toBeNull();
+      expect(r.data.showInFooter).toBe(false);
     }
   });
 

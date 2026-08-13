@@ -43,6 +43,15 @@ export type ShopSettingsDefaults = {
   showAllProductsInNav: boolean;
   showTermineInNav: boolean;
   desktopShopNavMode: DesktopShopNavMode;
+  footerShowTagline: boolean;
+  footerShowShopNav: boolean;
+  footerShowCollections: boolean;
+  footerShowCmsLinks: boolean;
+  footerShowSocial: boolean;
+  footerShowLegalAgb: boolean;
+  footerShowLegalWiderruf: boolean;
+  footerShowLegalRueckgabe: boolean;
+  footerShowLegalVersand: boolean;
 };
 
 export const JERRYS_SHOP_SETTINGS_DEFAULTS: ShopSettingsDefaults = {
@@ -71,6 +80,16 @@ export const JERRYS_SHOP_SETTINGS_DEFAULTS: ShopSettingsDefaults = {
   showAllProductsInNav: true,
   showTermineInNav: true,
   desktopShopNavMode: "inline",
+  // Footer: schlank by default — Shop-Nav bleibt im Header; Rückgabe oft redundant zu Widerruf.
+  footerShowTagline: true,
+  footerShowShopNav: false,
+  footerShowCollections: true,
+  footerShowCmsLinks: true,
+  footerShowSocial: true,
+  footerShowLegalAgb: true,
+  footerShowLegalWiderruf: true,
+  footerShowLegalRueckgabe: false,
+  footerShowLegalVersand: true,
 };
 
 /** Client-sichere DTO-Form (ohne next/cache / Prisma). */

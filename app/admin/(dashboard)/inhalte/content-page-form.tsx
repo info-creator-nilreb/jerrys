@@ -44,6 +44,7 @@ type InitialPage = {
   ogImageUrl: string;
   canonicalPath: string;
   robotsIndex: boolean;
+  showInFooter: boolean;
   previousSlug: string;
   blocks: Array<{ id: string; type: string; data: Record<string, unknown> }>;
 };
@@ -255,6 +256,24 @@ export function ContentPageForm({
             />
             Für Suchmaschinen indexierbar (nach Veröffentlichung)
           </label>
+          {pageType === "content" ? (
+            <label className="flex items-start gap-2 text-sm text-[#2d2e32] sm:col-span-2">
+              <input
+                type="checkbox"
+                name="showInFooter"
+                value="true"
+                defaultChecked={initial?.showInFooter ?? false}
+                className="mt-0.5 size-4 checkbox-primary"
+              />
+              <span>
+                Im Storefront-Footer anzeigen
+                <span className="mt-0.5 block text-xs text-[#6b7280]">
+                  Nur veröffentlichte Inhaltsseiten. Zusätzlich muss unter Einstellungen die
+                  Footer-Sektion „CMS-Seiten“ aktiv sein.
+                </span>
+              </span>
+            </label>
+          ) : null}
         </div>
       </section>
 
