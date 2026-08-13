@@ -72,6 +72,15 @@ export const shopSettingsValuesSchema = z.object({
   showAllProductsInNav: z.boolean(),
   showTermineInNav: z.boolean(),
   desktopShopNavMode: z.enum(DESKTOP_SHOP_NAV_MODES),
+  footerShowTagline: z.boolean(),
+  footerShowShopNav: z.boolean(),
+  footerShowCollections: z.boolean(),
+  footerShowCmsLinks: z.boolean(),
+  footerShowSocial: z.boolean(),
+  footerShowLegalAgb: z.boolean(),
+  footerShowLegalWiderruf: z.boolean(),
+  footerShowLegalRueckgabe: z.boolean(),
+  footerShowLegalVersand: z.boolean(),
 });
 
 export type ShopSettingsValues = z.infer<typeof shopSettingsValuesSchema>;

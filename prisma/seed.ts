@@ -146,6 +146,15 @@ async function main() {
         showAllProductsInNav: shopDefaults.showAllProductsInNav,
         showTermineInNav: shopDefaults.showTermineInNav,
         desktopShopNavMode: shopDefaults.desktopShopNavMode,
+        footerShowTagline: shopDefaults.footerShowTagline,
+        footerShowShopNav: shopDefaults.footerShowShopNav,
+        footerShowCollections: shopDefaults.footerShowCollections,
+        footerShowCmsLinks: shopDefaults.footerShowCmsLinks,
+        footerShowSocial: shopDefaults.footerShowSocial,
+        footerShowLegalAgb: shopDefaults.footerShowLegalAgb,
+        footerShowLegalWiderruf: shopDefaults.footerShowLegalWiderruf,
+        footerShowLegalRueckgabe: shopDefaults.footerShowLegalRueckgabe,
+        footerShowLegalVersand: shopDefaults.footerShowLegalVersand,
       },
       update: {
         // Bestehende Installationen nicht überschreiben — nur fehlende Zeile anlegen.

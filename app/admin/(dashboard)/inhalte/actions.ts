@@ -35,6 +35,7 @@ export async function saveContentPageAction(
 
   const idRaw = String(formData.get("id") ?? "").trim();
   const robotsRaw = formData.get("robotsIndex");
+  const footerRaw = formData.get("showInFooter");
   const result = await upsertContentPageFromInput({
     id: idRaw || null,
     values: {
@@ -47,6 +48,7 @@ export async function saveContentPageAction(
       ogImageUrl: formData.get("ogImageUrl"),
       canonicalPath: formData.get("canonicalPath"),
       robotsIndex: robotsRaw === "on" || robotsRaw === "true" || robotsRaw === "1",
+      showInFooter: footerRaw === "on" || footerRaw === "true" || footerRaw === "1",
       previousSlug: formData.get("previousSlug"),
     },
     blocksJson: formData.get("blocksJson"),
@@ -61,6 +63,8 @@ export async function saveContentPageAction(
 
   revalidatePath("/admin/inhalte");
   revalidatePath(`/admin/inhalte/${result.page.id}/edit`);
+  // Footer kann showInFooter nutzen.
+  revalidatePath("/", "layout");
 
   if (!idRaw) {
     redirect(`/admin/inhalte/${result.page.id}/edit`);

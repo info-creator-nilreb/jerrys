@@ -44,6 +44,15 @@ function toDto(
     showAllProductsInNav: boolean;
     showTermineInNav: boolean;
     desktopShopNavMode: string;
+    footerShowTagline: boolean;
+    footerShowShopNav: boolean;
+    footerShowCollections: boolean;
+    footerShowCmsLinks: boolean;
+    footerShowSocial: boolean;
+    footerShowLegalAgb: boolean;
+    footerShowLegalWiderruf: boolean;
+    footerShowLegalRueckgabe: boolean;
+    footerShowLegalVersand: boolean;
     updatedAt: Date;
   } | null,
 ): ShopSettingsDTO {
@@ -77,6 +86,15 @@ function toDto(
     showAllProductsInNav: row.showAllProductsInNav,
     showTermineInNav: row.showTermineInNav,
     desktopShopNavMode: parseDesktopShopNavMode(row.desktopShopNavMode),
+    footerShowTagline: row.footerShowTagline,
+    footerShowShopNav: row.footerShowShopNav,
+    footerShowCollections: row.footerShowCollections,
+    footerShowCmsLinks: row.footerShowCmsLinks,
+    footerShowSocial: row.footerShowSocial,
+    footerShowLegalAgb: row.footerShowLegalAgb,
+    footerShowLegalWiderruf: row.footerShowLegalWiderruf,
+    footerShowLegalRueckgabe: row.footerShowLegalRueckgabe,
+    footerShowLegalVersand: row.footerShowLegalVersand,
     updatedAt: row.updatedAt,
   };
 }
@@ -107,6 +125,15 @@ const createDefaults = () => ({
   showAllProductsInNav: JERRYS_SHOP_SETTINGS_DEFAULTS.showAllProductsInNav,
   showTermineInNav: JERRYS_SHOP_SETTINGS_DEFAULTS.showTermineInNav,
   desktopShopNavMode: JERRYS_SHOP_SETTINGS_DEFAULTS.desktopShopNavMode,
+  footerShowTagline: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowTagline,
+  footerShowShopNav: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowShopNav,
+  footerShowCollections: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowCollections,
+  footerShowCmsLinks: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowCmsLinks,
+  footerShowSocial: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowSocial,
+  footerShowLegalAgb: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowLegalAgb,
+  footerShowLegalWiderruf: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowLegalWiderruf,
+  footerShowLegalRueckgabe: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowLegalRueckgabe,
+  footerShowLegalVersand: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowLegalVersand,
 });
 
 async function loadShopSettingsFromDb(): Promise<ShopSettingsCached> {

@@ -28,6 +28,7 @@ export type ContentPageDTO = {
   ogImageUrl: string | null;
   canonicalPath: string | null;
   robotsIndex: boolean;
+  showInFooter: boolean;
   previousSlug: string | null;
   publishedAt: Date | null;
   updatedAt: Date;
@@ -62,6 +63,7 @@ function toPageDto(
     ogImageUrl: string | null;
     canonicalPath: string | null;
     robotsIndex: boolean;
+    showInFooter: boolean;
     previousSlug: string | null;
     publishedAt: Date | null;
     updatedAt: Date;
@@ -88,6 +90,7 @@ function toPageDto(
     ogImageUrl: row.ogImageUrl,
     canonicalPath: row.canonicalPath,
     robotsIndex: row.robotsIndex,
+    showInFooter: row.showInFooter,
     previousSlug: row.previousSlug,
     publishedAt: row.publishedAt,
     updatedAt: row.updatedAt,
@@ -238,6 +241,7 @@ export async function listContentPages(options?: {
       ogImageUrl: row.ogImageUrl,
       canonicalPath: row.canonicalPath,
       robotsIndex: row.robotsIndex,
+      showInFooter: row.showInFooter,
       previousSlug: row.previousSlug,
       publishedAt: row.publishedAt,
       updatedAt: row.updatedAt,

@@ -208,6 +208,7 @@ export async function upsertContentPageFromInput(input: {
             ogImageUrl: values.ogImageUrl,
             canonicalPath: values.canonicalPath,
             robotsIndex: values.robotsIndex,
+            showInFooter: values.showInFooter,
             previousSlug,
             publishedAt:
               values.status === "published"
@@ -227,6 +228,7 @@ export async function upsertContentPageFromInput(input: {
             ogImageUrl: values.ogImageUrl,
             canonicalPath: values.canonicalPath,
             robotsIndex: values.robotsIndex,
+            showInFooter: values.showInFooter,
             previousSlug:
               values.previousSlug && values.previousSlug !== values.slug
                 ? values.previousSlug

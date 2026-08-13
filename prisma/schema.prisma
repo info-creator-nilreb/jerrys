@@ -1032,6 +1032,8 @@ model ContentPage {
   /// Optionaler Canonical-Pfad (z. B. `/impressum`); null = aus Slug abgeleitet.
   canonicalPath  String? @map("canonical_path")
   robotsIndex    Boolean @default(true) @map("robots_index")
+  /// Opt-in: veröffentlichte Content-Seite im Storefront-Footer verlinken.
+  showInFooter   Boolean @default(false) @map("show_in_footer")
 
   /// Vorheriger Slug für 301-Redirect nach URL-Wechsel (Slice 5).
   previousSlug String? @map("previous_slug")
@@ -1128,6 +1130,22 @@ model ShopSettings {
   showTermineInNav Boolean @default(true) @map("show_termine_in_nav")
   /// Desktop-Header: hidden | inline | burger (Mobil bleibt Burger, sofern Links existieren).
   desktopShopNavMode String @default("inline") @map("desktop_shop_nav_mode")
+
+  /// Footer: Kurzbeschreibung/Tagline.
+  footerShowTagline Boolean @default(true) @map("footer_show_tagline")
+  /// Footer: Shop-Nav (Kategorien / Systemlinks) — oft redundant zur Header-Nav.
+  footerShowShopNav Boolean @default(false) @map("footer_show_shop_nav")
+  /// Footer: Kollektionen (Merchandising).
+  footerShowCollections Boolean @default(true) @map("footer_show_collections")
+  /// Footer: CMS-Inhaltsseiten mit showInFooter.
+  footerShowCmsLinks Boolean @default(true) @map("footer_show_cms_links")
+  /// Footer: Social-Icons (wenn URLs gesetzt).
+  footerShowSocial Boolean @default(true) @map("footer_show_social")
+  /// Footer-Rechtslinks (Impressum/Datenschutz immer; diese optional).
+  footerShowLegalAgb Boolean @default(true) @map("footer_show_legal_agb")
+  footerShowLegalWiderruf Boolean @default(true) @map("footer_show_legal_widerruf")
+  footerShowLegalRueckgabe Boolean @default(false) @map("footer_show_legal_rueckgabe")
+  footerShowLegalVersand Boolean @default(true) @map("footer_show_legal_versand")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

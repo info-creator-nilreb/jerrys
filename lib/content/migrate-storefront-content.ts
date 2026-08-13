@@ -67,8 +67,8 @@ function homepageBlocks(): Array<{
         headline: "Katzenhöhle mit Stil",
         imageUrl: "/media/hero-mood.jpg",
         imageAlt: "",
-        ctaLabel: "",
-        ctaHref: "",
+        ctaLabel: "Produkte entdecken",
+        ctaHref: "/produkte",
       },
     },
     {

@@ -104,6 +104,7 @@ export default async function AdminInhalteEditPage({
           ogImageUrl: page.ogImageUrl ?? "",
           canonicalPath: page.canonicalPath ?? "",
           robotsIndex: page.robotsIndex,
+          showInFooter: page.showInFooter,
           previousSlug: page.previousSlug ?? "",
           blocks: page.blocks.map((b) => ({
             id: b.id,

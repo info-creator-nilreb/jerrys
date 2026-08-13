@@ -80,6 +80,15 @@ export function shopSettingsInputFromFormData(formData: FormData): Record<string
     showAllProductsInNav: formCheckbox(formData, "showAllProductsInNav"),
     showTermineInNav: formCheckbox(formData, "showTermineInNav"),
     desktopShopNavMode: parseDesktopShopNavMode(formData.get("desktopShopNavMode")),
+    footerShowTagline: formCheckbox(formData, "footerShowTagline"),
+    footerShowShopNav: formCheckbox(formData, "footerShowShopNav", false),
+    footerShowCollections: formCheckbox(formData, "footerShowCollections"),
+    footerShowCmsLinks: formCheckbox(formData, "footerShowCmsLinks"),
+    footerShowSocial: formCheckbox(formData, "footerShowSocial"),
+    footerShowLegalAgb: formCheckbox(formData, "footerShowLegalAgb"),
+    footerShowLegalWiderruf: formCheckbox(formData, "footerShowLegalWiderruf"),
+    footerShowLegalRueckgabe: formCheckbox(formData, "footerShowLegalRueckgabe", false),
+    footerShowLegalVersand: formCheckbox(formData, "footerShowLegalVersand"),
   };
 }
 
@@ -111,6 +120,15 @@ function createDefaultsRow(values: ShopSettingsValues) {
     showAllProductsInNav: values.showAllProductsInNav,
     showTermineInNav: values.showTermineInNav,
     desktopShopNavMode: values.desktopShopNavMode,
+    footerShowTagline: values.footerShowTagline,
+    footerShowShopNav: values.footerShowShopNav,
+    footerShowCollections: values.footerShowCollections,
+    footerShowCmsLinks: values.footerShowCmsLinks,
+    footerShowSocial: values.footerShowSocial,
+    footerShowLegalAgb: values.footerShowLegalAgb,
+    footerShowLegalWiderruf: values.footerShowLegalWiderruf,
+    footerShowLegalRueckgabe: values.footerShowLegalRueckgabe,
+    footerShowLegalVersand: values.footerShowLegalVersand,
   };
 }
 
@@ -155,6 +173,15 @@ export async function updateShopSettingsFromInput(
           showAllProductsInNav: values.showAllProductsInNav,
           showTermineInNav: values.showTermineInNav,
           desktopShopNavMode: values.desktopShopNavMode,
+          footerShowTagline: values.footerShowTagline,
+          footerShowShopNav: values.footerShowShopNav,
+          footerShowCollections: values.footerShowCollections,
+          footerShowCmsLinks: values.footerShowCmsLinks,
+          footerShowSocial: values.footerShowSocial,
+          footerShowLegalAgb: values.footerShowLegalAgb,
+          footerShowLegalWiderruf: values.footerShowLegalWiderruf,
+          footerShowLegalRueckgabe: values.footerShowLegalRueckgabe,
+          footerShowLegalVersand: values.footerShowLegalVersand,
         },
       });
       await appendIntegrationOutbox(tx, {
@@ -168,6 +195,9 @@ export async function updateShopSettingsFromInput(
           showAllProductsInNav: values.showAllProductsInNav,
           showTermineInNav: values.showTermineInNav,
           desktopShopNavMode: values.desktopShopNavMode,
+          footerShowShopNav: values.footerShowShopNav,
+          footerShowCollections: values.footerShowCollections,
+          footerShowCmsLinks: values.footerShowCmsLinks,
         },
       });
     });
