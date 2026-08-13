@@ -153,7 +153,7 @@ export function HeaderAccountPopover({ isLoggedIn, email, initials }: Props) {
               id={`${panelId}-title`}
               className="text-base font-semibold text-(--foreground-heading)"
             >
-              {isLoggedIn ? "Mein Konto" : "Anmelden"}
+              {isLoggedIn || justSignedIn ? "Mein Konto" : "Anmelden"}
             </h2>
             <button
               type="button"
