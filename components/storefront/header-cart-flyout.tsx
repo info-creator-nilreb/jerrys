@@ -14,6 +14,10 @@ import {
 } from "@/lib/cart/actions";
 import { CartIcon } from "@/components/storefront/cart-icon";
 import {
+  QuantityStepperButton,
+  QuantityStepperValue,
+} from "@/components/storefront/quantity-stepper";
+import {
   useStorefrontHeaderOverlayLock,
   useStorefrontHeaderUi,
 } from "@/components/storefront/storefront-header-ui";
@@ -141,26 +145,17 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
                         {formatPrice(line.unitPriceGrossCents, line.currency)} × {line.quantity}
                       </p>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <form action={incrementCartLineQuantity}>
-                          <input type="hidden" name="lineId" value={line.lineId} />
-                          <button
-                            type="submit"
-                            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-(--surface-muted) text-base font-medium hover:border-primary hover:text-primary"
-                            aria-label="Menge erhöhen"
-                          >
-                            +
-                          </button>
-                        </form>
-                        <form action={decrementCartLineQuantity}>
-                          <input type="hidden" name="lineId" value={line.lineId} />
-                          <button
-                            type="submit"
-                            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-(--surface-muted) text-base font-medium hover:border-primary hover:text-primary"
-                            aria-label="Menge verringern"
-                          >
-                            −
-                          </button>
-                        </form>
+                        <div className="inline-flex items-center gap-1.5">
+                          <form action={decrementCartLineQuantity}>
+                            <input type="hidden" name="lineId" value={line.lineId} />
+                            <QuantityStepperButton direction="dec" label="Menge verringern" />
+                          </form>
+                          <QuantityStepperValue quantity={line.quantity} />
+                          <form action={incrementCartLineQuantity}>
+                            <input type="hidden" name="lineId" value={line.lineId} />
+                            <QuantityStepperButton direction="inc" label="Menge erhöhen" />
+                          </form>
+                        </div>
                         <form action={submitRemoveCartLine}>
                           <input type="hidden" name="lineId" value={line.lineId} />
                           <button

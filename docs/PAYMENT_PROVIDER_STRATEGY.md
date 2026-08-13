@@ -7,11 +7,13 @@
 - **PCI:** Zahlungsdaten verbleiben bei PayPal; der Shop leitet nur um.
 - **Finalisierung:** `GET /checkout/paypal-rueckkehr?token=…` (PayPal Order ID) → Capture → Lagerabzug, Status `paid`, `OrderPayment` `succeeded` (`provider: "paypal"`).
 - **Express Checkout:** Warenkorb nutzt PayPal JS SDK Smart Buttons (`components=buttons,applepay`). `POST /api/checkout/paypal/express-create` legt eine `pending_payment`-Shop-Order mit Platzhalteradresse und PayPal `shipping_preference=GET_FROM_FILE` an; `express-approve` übernimmt PayPal-/Apple-Pay-Lieferdaten und capturt über dieselbe Finalisierung (`eventSource: paypal_smart_buttons`).
+- **Apple Pay Domain:** `GET /.well-known/apple-developer-merchantid-domain-association` liefert die PayPal-Association-Datei (`application/octet-stream`, ohne Redirect; Sandbox/Live je `PAYPAL_ENV`). Die Shop-Domain muss zusätzlich im PayPal-Dashboard unter Apple Pay **exakt** registriert sein (www und Apex getrennt). Ohne Registrierung: `APPLE_PAY_MERCHANT_SESSION_VALIDATION_ERROR`.
 - **Webhooks (Doppel-Absicherung):** `POST /api/webhooks/paypal` mit Signaturprüfung (`PAYPAL_WEBHOOK_ID`) für u. a. `PAYMENT.CAPTURE.COMPLETED` / `CHECKOUT.ORDER.APPROVED` → dieselbe Capture-/Finalize-Pipeline (Inbox-Idempotenz).
 - **Umgebungsvariablen:** siehe [.env.example](../.env.example)
   - `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`
   - `PAYPAL_ENV`: `sandbox` (Standard) oder `live`
   - `PAYPAL_WEBHOOK_ID`: Webhook-ID aus dem PayPal Developer Dashboard (URL: `/api/webhooks/paypal`)
+  - optional `APPLE_PAY_DOMAIN_ASSOCIATION`: Override für den Association-Dateiinhalt
 
 **Klarna** als Checkout-Zahlungsart ist keine direkte PayPal-Orders-Route: ohne weiteres PSP erfolgt kein Hosted-Redirect im gleichen Sinne (Demo: Sofortbestätigung `bestaetigt` wie bei rein lokalem Checkout).
 

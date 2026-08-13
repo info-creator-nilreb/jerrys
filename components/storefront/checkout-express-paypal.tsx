@@ -19,7 +19,11 @@ type PayPalApplePayConfig = {
 
 type PayPalApplePaySession = {
   config: () => Promise<PayPalApplePayConfig>;
-  validateMerchant: (options: { validationUrl: string; displayName?: string }) => Promise<{ merchantSession: unknown }>;
+  validateMerchant: (options: {
+    validationUrl: string;
+    displayName?: string;
+    domainName?: string;
+  }) => Promise<{ merchantSession: unknown }>;
   confirmOrder: (options: {
     orderId: string;
     token: unknown;
@@ -62,6 +66,49 @@ type ApplePaySessionConstructor = {
 /** Apple Pay mag Sonderzeichen im total.label oft nicht — Apostroph vermeiden. */
 const APPLE_PAY_STORE_LABEL = "jerrys";
 
+function moneyStringFromGrossCents(cents: number): string {
+  return (Math.max(0, cents) / 100).toFixed(2);
+}
+
+function formatExpressSdkError(error: unknown, fallback: string): string {
+  const raw =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : typeof error === "object" &&
+            error &&
+            "message" in error &&
+            typeof (error as { message: unknown }).message === "string"
+          ? (error as { message: string }).message
+          : "";
+  const code = raw.toUpperCase();
+  if (
+    code.includes("APPLE_PAY_MERCHANT_SESSION_VALIDATION") ||
+    code.includes("MERCHANT_SESSION_VALIDATION")
+  ) {
+    return (
+      "Apple Pay: Händler-/Domain-Prüfung fehlgeschlagen. " +
+      "Die aktuelle Shop-Domain muss exakt bei PayPal unter Apple Pay registriert sein " +
+      "(inkl. www falls genutzt), und /.well-known/apple-developer-merchantid-domain-association " +
+      "muss ohne Weiterleitung erreichbar sein."
+    );
+  }
+  if (raw.trim()) return raw.trim();
+  return fallback;
+}
+
+function merchantSessionForApple(raw: unknown): unknown {
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw) as unknown;
+    } catch {
+      return raw;
+    }
+  }
+  return raw;
+}
+
 function paypalExpressSdkSrc(clientId: string, currency: string): string {
   const p = new URLSearchParams({
     "client-id": clientId,
@@ -80,10 +127,6 @@ function currentPayPal(): PayPalExpressSdk | undefined {
 
 function currentApplePaySession(): ApplePaySessionConstructor | undefined {
   return (window as unknown as { ApplePaySession?: ApplePaySessionConstructor }).ApplePaySession;
-}
-
-function moneyStringFromGrossCents(cents: number): string {
-  return (Math.max(0, cents) / 100).toFixed(2);
 }
 
 export type PdpExpressLine = {
@@ -497,15 +540,17 @@ export function CheckoutExpressPayPalOnly({
           const result = await applepay.validateMerchant({
             validationUrl: event.validationURL,
             displayName: APPLE_PAY_STORE_LABEL,
+            domainName: window.location.hostname,
           });
-          session.completeMerchantValidation(result.merchantSession);
+          session.completeMerchantValidation(merchantSessionForApple(result.merchantSession));
         } catch (e) {
           console.error(e);
           setBusy(false);
           setSdkError(
-            e instanceof Error
-              ? e.message
-              : "Apple Pay Händlerprüfung fehlgeschlagen. Domain ggf. nicht für Apple Pay freigeschaltet.",
+            formatExpressSdkError(
+              e,
+              "Apple Pay Händlerprüfung fehlgeschlagen. Domain ggf. nicht für Apple Pay freigeschaltet.",
+            ),
           );
           try {
             session.abort();

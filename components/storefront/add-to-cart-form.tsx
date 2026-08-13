@@ -1,14 +1,29 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useId, useState } from "react";
 import { addToCart, type CartActionState } from "@/lib/cart/actions";
-import { defaultAddQuantity, maxSelectableQuantity, type ProductQuantityRules } from "@/lib/cart/quantity";
+import {
+  defaultAddQuantity,
+  maxSelectableQuantity,
+  type ProductQuantityRules,
+} from "@/lib/cart/quantity";
 import { CartIcon } from "@/components/storefront/cart-icon";
+import {
+  QuantityStepperButton,
+  QuantityStepperValue,
+} from "@/components/storefront/quantity-stepper";
 
 const initial: CartActionState = null;
 
-const qtyInputClass =
-  "min-w-[5.5rem] rounded-md border border-(--surface-muted) bg-white px-3 py-2.5 text-base text-(--foreground-heading) outline-none ring-primary focus:border-primary focus:ring-1";
+function clampQty(rules: ProductQuantityRules, value: number): number {
+  const maxQty = maxSelectableQuantity(rules);
+  const step = Math.max(1, rules.purchaseStep);
+  let next = Math.max(rules.minOrderQty, Math.min(maxQty, value));
+  const offset = next - rules.minOrderQty;
+  next = rules.minOrderQty + Math.round(offset / step) * step;
+  if (next > maxQty) next -= step;
+  return Math.max(rules.minOrderQty, next);
+}
 
 export function AddToCartForm({
   productId,
@@ -33,6 +48,12 @@ export function AddToCartForm({
   layout?: "default" | "pdp";
 }) {
   const [state, formAction, pending] = useActionState(addToCart, initial);
+  const qtyFieldId = useId();
+
+  const defaultQty = defaultAddQuantity(quantityRules) ?? quantityRules.minOrderQty;
+  const maxQty = maxSelectableQuantity(quantityRules);
+  const [quantity, setQuantity] = useState(() => clampQty(quantityRules, defaultQty));
+  const isPdp = !compact && layout === "pdp";
 
   if (!canAdd) {
     return (
@@ -42,10 +63,8 @@ export function AddToCartForm({
     );
   }
 
-  const defaultQty = defaultAddQuantity(quantityRules) ?? quantityRules.minOrderQty;
-  const maxQty = maxSelectableQuantity(quantityRules);
-  const qtyId = `add-qty-${productId}`;
-  const isPdp = !compact && layout === "pdp";
+  const canDec = quantity - quantityRules.purchaseStep >= quantityRules.minOrderQty;
+  const canInc = quantity + quantityRules.purchaseStep <= maxQty;
 
   return (
     <form
@@ -58,6 +77,7 @@ export function AddToCartForm({
       {productVariantId ? (
         <input type="hidden" name="productVariantId" value={productVariantId} />
       ) : null}
+      <input type="hidden" name="quantity" value={quantity} />
       <div
         className={
           compact
@@ -68,27 +88,33 @@ export function AddToCartForm({
         }
       >
         <div className={`flex min-w-0 flex-col gap-1.5 ${isPdp ? "shrink-0" : ""}`}>
-          <label htmlFor={qtyId} className="text-sm font-medium text-(--foreground-muted) md:text-[0.9375rem]">
+          <label htmlFor={qtyFieldId} className="text-sm font-medium text-(--foreground-muted) md:text-[0.9375rem]">
             Menge
           </label>
-          <input
-            id={qtyId}
-            name="quantity"
-            type="number"
-            inputMode="numeric"
-            min={quantityRules.minOrderQty}
-            max={maxQty}
-            step={quantityRules.purchaseStep}
-            defaultValue={String(defaultQty)}
-            required
-            className={
-              compact
-                ? `${qtyInputClass} w-full sm:w-24`
-                : isPdp
-                  ? `${qtyInputClass} w-full max-w-[6.5rem] sm:w-[6.5rem]`
-                  : `${qtyInputClass} w-full max-w-[7rem]`
-            }
-          />
+          <div className="inline-flex items-center gap-1.5" role="group" aria-labelledby={qtyFieldId}>
+            <span id={qtyFieldId} className="sr-only">
+              Menge
+            </span>
+            <QuantityStepperButton
+              type="button"
+              direction="dec"
+              label="Menge verringern"
+              disabled={!canDec || pending}
+              onClick={() =>
+                setQuantity((q) => clampQty(quantityRules, q - quantityRules.purchaseStep))
+              }
+            />
+            <QuantityStepperValue quantity={quantity} />
+            <QuantityStepperButton
+              type="button"
+              direction="inc"
+              label="Menge erhöhen"
+              disabled={!canInc || pending}
+              onClick={() =>
+                setQuantity((q) => clampQty(quantityRules, q + quantityRules.purchaseStep))
+              }
+            />
+          </div>
         </div>
         <button
           type="submit"

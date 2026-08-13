@@ -9,6 +9,10 @@ import {
 import { cartLineCommerceRules, type CartLineWithVariant } from "@/lib/cart/cart-queries";
 import { nextQuantityStep } from "@/lib/cart/quantity";
 import { PriceEUR } from "@/components/storefront/price-eur";
+import {
+  QuantityStepperButton,
+  QuantityStepperValue,
+} from "@/components/storefront/quantity-stepper";
 
 function QuantityStepper({
   lineId,
@@ -23,30 +27,12 @@ function QuantityStepper({
     <div className="inline-flex items-center gap-1.5">
       <form action={decrementCartLineQuantity}>
         <input type="hidden" name="lineId" value={lineId} />
-        <button
-          type="submit"
-          className="flex size-9 items-center justify-center rounded-full border border-(--surface-muted) bg-white text-lg text-(--foreground-heading) transition-colors hover:bg-(--surface-soft) sm:size-10"
-          aria-label="Menge verringern"
-        >
-          −
-        </button>
+        <QuantityStepperButton direction="dec" label="Menge verringern" />
       </form>
-      <span
-        className="min-w-[2.75rem] text-center text-sm font-medium tabular-nums sm:min-w-[3rem] sm:text-base"
-        aria-label={`Menge ${quantity}`}
-      >
-        {quantity}
-      </span>
+      <QuantityStepperValue quantity={quantity} />
       <form action={incrementCartLineQuantity}>
         <input type="hidden" name="lineId" value={lineId} />
-        <button
-          type="submit"
-          disabled={!canInc}
-          className="flex size-9 items-center justify-center rounded-full border border-(--surface-muted) bg-white text-lg text-(--foreground-heading) transition-colors hover:bg-(--surface-soft) disabled:cursor-not-allowed disabled:opacity-40 sm:size-10"
-          aria-label="Menge erhöhen"
-        >
-          +
-        </button>
+        <QuantityStepperButton direction="inc" label="Menge erhöhen" disabled={!canInc} />
       </form>
     </div>
   );
