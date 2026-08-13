@@ -11,6 +11,9 @@ export function defaultDataForContentBlockType(
         headline: "Neue Überschrift",
         imageUrl: "/media/hero-mood.jpg",
         imageAlt: "",
+        images: [{ url: "/media/hero-mood.jpg", alt: "" }],
+        slideDurationSec: 6,
+        motionEffect: "fade",
         ctaLabel: "",
         ctaHref: "",
       };

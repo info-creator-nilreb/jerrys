@@ -1,10 +1,18 @@
 "use client";
 
+import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { CmsBlockAiTextAssistant } from "@/app/admin/(dashboard)/inhalte/cms-block-ai-text-assistant";
 import { AdminRichTextEditor } from "@/components/admin/admin-rich-text-editor";
 import { CmsMediaField } from "@/components/admin/cms-media-field";
 import type { ContentBlockType } from "@/lib/content/block-types";
+import {
+  HERO_MOTION_EFFECT_LABELS,
+  HERO_MOTION_EFFECTS,
+  HERO_SLIDE_DURATIONS_SEC,
+  type HeroMotionEffect,
+  type HeroSlide,
+} from "@/lib/content/blocks/hero";
 import {
   HERO_CTA_CUSTOM_VALUE,
   HERO_CTA_TARGET_PRESETS,
@@ -49,6 +57,35 @@ export function ContentBlockFields({
   const set = (key: string, value: unknown) => onChange({ ...data, [key]: value });
 
   if (type === "hero") {
+    const slides: HeroSlide[] = (() => {
+      if (Array.isArray(data.images) && data.images.length > 0) {
+        return data.images
+          .filter((x): x is Record<string, unknown> => !!x && typeof x === "object")
+          .map((x) => ({
+            url: typeof x.url === "string" ? x.url : "",
+            alt: typeof x.alt === "string" ? x.alt : null,
+          }))
+          .filter((s) => s.url.trim() !== "");
+      }
+      const legacy = str(data, "imageUrl");
+      return legacy
+        ? [{ url: legacy, alt: str(data, "imageAlt") || null }]
+        : [{ url: "/media/hero-mood.jpg", alt: null }];
+    })();
+
+    const setSlides = (next: HeroSlide[]) => {
+      const normalized = next.length > 0 ? next : [{ url: "/media/hero-mood.jpg", alt: null }];
+      onChange({
+        ...data,
+        images: normalized,
+        imageUrl: normalized[0]!.url,
+        imageAlt: normalized[0]!.alt ?? "",
+      });
+    };
+
+    const motionEffect = (str(data, "motionEffect") || "fade") as HeroMotionEffect;
+    const duration = num(data, "slideDurationSec", 6);
+
     return (
       <div className="space-y-4">
         <CmsBlockAiTextAssistant
@@ -71,7 +108,7 @@ export function ContentBlockFields({
               onChange={(e) => set("headline", e.target.value)}
             />
           </label>
-          <label className="text-sm text-[#5c5f66]">
+          <label className="text-sm text-[#5c5f66] sm:col-span-2">
             Eyebrow
             <input
               className={fieldClass}
@@ -79,13 +116,162 @@ export function ContentBlockFields({
               onChange={(e) => set("eyebrow", e.target.value)}
             />
           </label>
-          <CmsMediaField
-            label="Hero-Bild"
-            value={str(data, "imageUrl")}
-            onChange={(url) => set("imageUrl", url)}
-            required
-            hint="Upload, Medienbibliothek oder URL"
-          />
+
+          <div className="space-y-3 sm:col-span-2">
+            <div>
+              <p className="text-sm font-medium text-[#374151]">
+                Hintergrundbilder <span className="text-primary">*</span>
+              </p>
+              <p className="mt-0.5 text-xs text-[#6b7280]">
+                Ein oder mehrere Bilder — bei mehreren als Karussell. Max. 8 Folien.
+              </p>
+            </div>
+            <ul className="space-y-3">
+              {slides.map((slide, index) => (
+                <li
+                  key={`hero-slide-${index}`}
+                  className="rounded-lg border border-[#e8eaed] bg-[#fafafa] p-3"
+                >
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
+                      Bild {index + 1}
+                    </p>
+                    <div className="flex items-center gap-0.5">
+                      <button
+                        type="button"
+                        className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-md text-[#5c5f66] hover:bg-white disabled:opacity-40"
+                        aria-label="Bild nach oben"
+                        disabled={index === 0}
+                        onClick={() => {
+                          const next = [...slides];
+                          const tmp = next[index - 1]!;
+                          next[index - 1] = next[index]!;
+                          next[index] = tmp;
+                          setSlides(next);
+                        }}
+                      >
+                        <ChevronUp className="size-4" aria-hidden strokeWidth={1.75} />
+                      </button>
+                      <button
+                        type="button"
+                        className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-md text-[#5c5f66] hover:bg-white disabled:opacity-40"
+                        aria-label="Bild nach unten"
+                        disabled={index >= slides.length - 1}
+                        onClick={() => {
+                          const next = [...slides];
+                          const tmp = next[index + 1]!;
+                          next[index + 1] = next[index]!;
+                          next[index] = tmp;
+                          setSlides(next);
+                        }}
+                      >
+                        <ChevronDown className="size-4" aria-hidden strokeWidth={1.75} />
+                      </button>
+                      <button
+                        type="button"
+                        className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-md text-red-600 hover:bg-red-50 disabled:opacity-40"
+                        aria-label="Bild entfernen"
+                        disabled={slides.length <= 1}
+                        onClick={() => setSlides(slides.filter((_, i) => i !== index))}
+                      >
+                        <Trash2 className="size-4" aria-hidden strokeWidth={1.75} />
+                      </button>
+                    </div>
+                  </div>
+                  <CmsMediaField
+                    label="Bilddatei"
+                    value={slide.url}
+                    onChange={(url) => {
+                      const next = slides.map((s, i) =>
+                        i === index ? { ...s, url } : s,
+                      );
+                      setSlides(next);
+                    }}
+                    required
+                    hint="Upload, Medienbibliothek oder URL"
+                  />
+                  <label className="mt-2 block text-sm text-[#5c5f66]">
+                    Alt-Text (optional)
+                    <input
+                      className={fieldClass}
+                      value={slide.alt ?? ""}
+                      onChange={(e) => {
+                        const next = slides.map((s, i) =>
+                          i === index
+                            ? { ...s, alt: e.target.value.trim() || null }
+                            : s,
+                        );
+                        setSlides(next);
+                      }}
+                      maxLength={160}
+                    />
+                  </label>
+                </li>
+              ))}
+            </ul>
+            {slides.length < 8 ? (
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                onClick={() =>
+                  setSlides([...slides, { url: "/media/hero-mood.jpg", alt: null }])
+                }
+              >
+                <Plus className="size-4" aria-hidden strokeWidth={1.75} />
+                Weiteres Bild hinzufügen
+              </button>
+            ) : null}
+          </div>
+
+          <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
+            <label className="text-sm text-[#5c5f66]">
+              {slides.length > 1 ? "Anzeigedauer pro Bild" : "Motion-Dauer"}
+              <select
+                className={fieldClass}
+                value={duration}
+                onChange={(e) => set("slideDurationSec", Number(e.target.value))}
+              >
+                {HERO_SLIDE_DURATIONS_SEC.map((sec) => (
+                  <option key={sec} value={sec}>
+                    {sec} Sekunden
+                  </option>
+                ))}
+              </select>
+              <span className="mt-1 block text-xs text-[#6b7280]">
+                {slides.length > 1
+                  ? "Wie lange jedes Bild sichtbar bleibt, bevor gewechselt wird."
+                  : "Dauer für Zoom/Drift bei einem einzelnen Bild."}
+              </span>
+            </label>
+            <label className="text-sm text-[#5c5f66]">
+              Bild-Motion
+              <select
+                className={fieldClass}
+                value={
+                  (HERO_MOTION_EFFECTS as readonly string[]).includes(motionEffect)
+                    ? motionEffect
+                    : "fade"
+                }
+                onChange={(e) => set("motionEffect", e.target.value)}
+              >
+                {HERO_MOTION_EFFECTS.map((effect) => (
+                  <option key={effect} value={effect}>
+                    {HERO_MOTION_EFFECT_LABELS[effect].title}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-1 block text-xs text-[#6b7280]">
+                {
+                  HERO_MOTION_EFFECT_LABELS[
+                    (HERO_MOTION_EFFECTS as readonly string[]).includes(motionEffect)
+                      ? motionEffect
+                      : "fade"
+                  ].hint
+                }
+              </span>
+            </label>
+          </div>
+
           <div className="space-y-3 sm:col-span-2">
             <p className="text-sm font-medium text-[#374151]">Call-to-Action</p>
             <p className="text-xs text-[#6b7280]">

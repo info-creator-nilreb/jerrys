@@ -70,6 +70,43 @@ body {
   animation: hero-scroll-nudge 1.6s ease-in-out infinite;
 }
 
+/* Dezente Hero-Hintergrund-Motion (Dauer via --hero-slide-duration). */
+@keyframes hero-ken-burns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.07);
+  }
+}
+
+@keyframes hero-drift {
+  from {
+    transform: scale(1.05) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.05) translate3d(-2.2%, 1.4%, 0);
+  }
+}
+
+.hero-motion-ken-burns {
+  animation: hero-ken-burns var(--hero-slide-duration, 6s) ease-out forwards;
+  will-change: transform;
+}
+
+.hero-motion-drift {
+  animation: hero-drift var(--hero-slide-duration, 6s) ease-in-out forwards;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-scroll-nudge,
+  .hero-motion-ken-burns,
+  .hero-motion-drift {
+    animation: none;
+  }
+}
+
 @keyframes auth-pending-dot-pulse {
   0%,
   80%,

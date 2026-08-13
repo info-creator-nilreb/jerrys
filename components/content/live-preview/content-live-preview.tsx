@@ -2,7 +2,16 @@
 
 import Image from "next/image";
 import { useDeferredValue, useMemo } from "react";
+import { HeroBackgroundCarousel } from "@/components/content/blocks/hero-background-carousel";
 import { UspIcon } from "@/components/storefront/usp-icons";
+import {
+  HERO_MOTION_EFFECTS,
+  HERO_SLIDE_DURATIONS_SEC,
+  resolveHeroSlides,
+  type HeroBlockData,
+  type HeroMotionEffect,
+  type HeroSlideDurationSec,
+} from "@/lib/content/blocks/hero";
 import { isContentBlockType, type ContentBlockType } from "@/lib/content/block-types";
 import { sanitizeContentRichTextHtml } from "@/lib/content/sanitize-content-html";
 
@@ -50,18 +59,42 @@ function PreviewBlock({
   }
 
   if (type === "hero") {
-    const imageUrl = str(data, "imageUrl") || "/media/hero-mood.jpg";
+    const images = Array.isArray(data.images)
+      ? data.images
+          .filter((x): x is Record<string, unknown> => !!x && typeof x === "object")
+          .map((x) => ({
+            url: typeof x.url === "string" ? x.url : "",
+            alt: typeof x.alt === "string" ? x.alt : null,
+          }))
+          .filter((s) => s.url.trim() !== "")
+      : [];
+    const slides = resolveHeroSlides({
+      imageUrl: str(data, "imageUrl") || "/media/hero-mood.jpg",
+      imageAlt: str(data, "imageAlt") || null,
+      images,
+    } as Pick<HeroBlockData, "imageUrl" | "imageAlt" | "images">);
+    const durationRaw = num(data, "slideDurationSec", 6);
+    const slideDurationSec = (
+      (HERO_SLIDE_DURATIONS_SEC as readonly number[]).includes(durationRaw)
+        ? durationRaw
+        : 6
+    ) as HeroSlideDurationSec;
+    const motionRaw = str(data, "motionEffect") || "fade";
+    const motionEffect = (
+      (HERO_MOTION_EFFECTS as readonly string[]).includes(motionRaw)
+        ? motionRaw
+        : "fade"
+    ) as HeroMotionEffect;
+
     return (
       <section className="relative aspect-[4/5] min-h-72 overflow-hidden bg-[#111] sm:aspect-[16/10] sm:min-h-80">
-        <Image
-          src={imageUrl}
-          alt=""
-          fill
-          className="object-cover object-[40%_center] opacity-90"
-          sizes="400px"
-          unoptimized={imageUrl.startsWith("https://")}
+        <HeroBackgroundCarousel
+          slides={slides}
+          slideDurationSec={slideDurationSec}
+          motionEffect={motionEffect}
+          compact
         />
-        <div className="absolute inset-0 bg-linear-to-r from-black/60 via-black/20 to-transparent" />
+        <div className="absolute inset-0 z-[2] bg-linear-to-r from-black/60 via-black/20 to-transparent" />
         <div className="relative z-10 flex h-full flex-col justify-center px-4 py-8">
           {str(data, "eyebrow") ? (
             <p className="text-[10px] font-medium tracking-wide text-primary uppercase">
