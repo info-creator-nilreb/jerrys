@@ -217,9 +217,20 @@ npx lighthouse https://ecom-seven-livid.vercel.app/ \
 - Runtime-`DATABASE_URL` = Transaction Pooler Port **6543** (nicht Session 5432).  
 - PayPal-Webhook, k6 Checkpoint.
 
-### Retest
+### Retest (Production, 2026-08-13 ~15:20 UTC, Commit `2c16e319`)
 
-Nach Production-Deploy: TTFB Home, Lighthouse Home + `/produkte` CLS, curl-30VU / k6 erneut; Ergebnisse hier ergänzen.
+Artefakte: `/opt/cursor/artifacts/go-live-tests/` (`ttfb-p1.csv`, `lighthouse/home-p1.report`, `lighthouse/produkte-p1.report`, `curl-load-30vu-p1.csv`)
+
+| Metrik | §8 / Baseline | P1 Retest |
+|--------|--------------:|----------:|
+| Home TTFB (warm) | ~2,6–3,3 s | **~0,34–0,42 s** (1. Hit ~2,9 s) |
+| Home Lighthouse Perf / LCP | 65 / **3168 ms** | **99 / 740 ms** |
+| `/produkte` CLS | **0,165** | **0** |
+| `/produkte` Perf / LCP | 76 / ~1763 ms | **98 / 867 ms** |
+| curl 30 VU p95 (60 s Spot) | ~45 s (120 s) | **~16 s** (kürzerer Lauf) |
+| Requests &lt; 10 s | ~16 % | **~92 %** |
+
+**Fazit P1:** Home- und Katalog-Performance deutlich im „Good“-Bereich; Last-p95 verbessert, Ziel &lt; 5 s noch nicht erreicht. k6/Checkpoint und PayPal-Webhook weiter Operator. Runtime-`DATABASE_URL` sollte Transaction-Pooler `:6543` nutzen (Agent-Env hier noch Session `:5432` — Production prüfen).
 
 ---
 
