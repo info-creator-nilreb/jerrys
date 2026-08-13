@@ -36,11 +36,17 @@ type PayPalExpressSdk = {
 
 type ApplePaySessionInstance = {
   onvalidatemerchant: ((event: { validationURL: string }) => void) | null;
+  onpaymentmethodselected: ((event: unknown) => void) | null;
+  onshippingcontactselected: ((event: unknown) => void) | null;
+  onshippingmethodselected: ((event: unknown) => void) | null;
   onpaymentauthorized:
     | ((event: { payment: { token: unknown; billingContact?: unknown; shippingContact?: unknown } }) => void)
     | null;
   oncancel: (() => void) | null;
   completeMerchantValidation: (merchantSession: unknown) => void;
+  completePaymentMethodSelection: (update: Record<string, unknown>) => void;
+  completeShippingContactSelection: (update: Record<string, unknown>) => void;
+  completeShippingMethodSelection: (update: Record<string, unknown>) => void;
   completePayment: (result: unknown) => void;
   abort: () => void;
   begin: () => void;
@@ -52,6 +58,9 @@ type ApplePaySessionConstructor = {
   STATUS_SUCCESS: number;
   STATUS_FAILURE: number;
 };
+
+/** Apple Pay mag Sonderzeichen im total.label oft nicht — Apostroph vermeiden. */
+const APPLE_PAY_STORE_LABEL = "jerrys";
 
 function paypalExpressSdkSrc(clientId: string, currency: string): string {
   const p = new URLSearchParams({
@@ -74,7 +83,7 @@ function currentApplePaySession(): ApplePaySessionConstructor | undefined {
 }
 
 function moneyStringFromGrossCents(cents: number): string {
-  return (cents / 100).toFixed(2);
+  return (Math.max(0, cents) / 100).toFixed(2);
 }
 
 export type PdpExpressLine = {
@@ -113,8 +122,10 @@ export function CheckoutExpressPayPalOnly({
   const paypalContainerRef = useRef<HTMLDivElement>(null);
   const paypalButtonsRef = useRef<PayPalButtonsInstance | null>(null);
   const applePaySessionRef = useRef<PayPalApplePaySession | null>(null);
+  const applePayConfigRef = useRef<PayPalApplePayConfig | null>(null);
   const idempotencyKeyRef = useRef<string | null>(null);
   const lastExpressPaypalOrderIdRef = useRef<string | null>(null);
+  const liveTotalCentsRef = useRef(totalGrossCents);
   const pdpExpressRef = useRef(pdpExpress);
   pdpExpressRef.current = pdpExpress;
   const [sdkError, setSdkError] = useState<string | null>(null);
@@ -124,7 +135,16 @@ export function CheckoutExpressPayPalOnly({
 
   useEffect(() => {
     setLiveTotalCents(totalGrossCents);
+    liveTotalCentsRef.current = totalGrossCents;
   }, [totalGrossCents]);
+
+  useEffect(() => {
+    liveTotalCentsRef.current = liveTotalCents;
+  }, [liveTotalCents]);
+
+  useEffect(() => {
+    applePayConfigRef.current = applePayConfig;
+  }, [applePayConfig]);
 
   const ensureIdempotencyKey = useCallback((): string | undefined => {
     if (!idempotencyKeyRef.current) {
@@ -151,6 +171,7 @@ export function CheckoutExpressPayPalOnly({
       throw new Error(data.error ?? "Express-Warenkorb konnte nicht vorbereitet werden.");
     }
     if (typeof data.totalGrossCents === "number") {
+      liveTotalCentsRef.current = data.totalGrossCents;
       setLiveTotalCents(data.totalGrossCents);
     }
   }, []);
@@ -222,9 +243,20 @@ export function CheckoutExpressPayPalOnly({
     idempotencyKeyRef.current = null;
   }, []);
 
+  const createExpressOrderRef = useRef(createExpressOrder);
+  const approveExpressOrderRef = useRef(approveExpressOrder);
+  const cancelExpressOrderRef = useRef(cancelExpressOrder);
+  createExpressOrderRef.current = createExpressOrder;
+  approveExpressOrderRef.current = approveExpressOrder;
+  cancelExpressOrderRef.current = cancelExpressOrder;
+
+  // SDK nur bei echten Config-Änderungen neu mounten — nicht bei jedem Total-Update
+  // (sonst reißt liveTotalCents den Apple-Pay-Flow mitten im Sheet ab).
   useEffect(() => {
     setSdkError(null);
     setApplePayConfig(null);
+    applePayConfigRef.current = null;
+    applePaySessionRef.current = null;
     paypalButtonsRef.current?.close?.();
     paypalButtonsRef.current = null;
     if (paypalContainerRef.current) paypalContainerRef.current.innerHTML = "";
@@ -247,19 +279,20 @@ export function CheckoutExpressPayPalOnly({
       const buttons = paypal.Buttons({
         fundingSource: paypal.FUNDING?.PAYPAL,
         style: { layout: "vertical", color: "gold", shape: "rect", label: "paypal", height: 44 },
-        createOrder: createExpressOrder,
+        createOrder: () => createExpressOrderRef.current(),
         onApprove: async (data: { orderID?: string }) => {
           const orderId = data.orderID;
           if (!orderId) throw new Error("PayPal Order-ID fehlt.");
           setBusy(true);
           try {
-            await approveExpressOrder(orderId);
+            await approveExpressOrderRef.current(orderId);
           } finally {
             setBusy(false);
           }
         },
         onCancel: async (data: { orderID?: string }) => {
-          await cancelExpressOrder(data.orderID);
+          await cancelExpressOrderRef.current(data.orderID);
+          setBusy(false);
           setSdkError("PayPal Express wurde abgebrochen. Es wurde nichts abgebucht.");
         },
         onError: (err: unknown) => {
@@ -277,16 +310,21 @@ export function CheckoutExpressPayPalOnly({
       }
 
       const ApplePaySession = currentApplePaySession();
-      if (typeof paypal.Applepay === "function" && ApplePaySession?.canMakePayments() && liveTotalCents > 0) {
+      if (typeof paypal.Applepay === "function" && ApplePaySession?.canMakePayments()) {
         try {
           const applepay = paypal.Applepay();
           const config = await applepay.config();
           if (!cancelled && config.isEligible) {
             applePaySessionRef.current = applepay;
+            applePayConfigRef.current = config;
             setApplePayConfig(config);
           }
         } catch {
-          if (!cancelled) setApplePayConfig(null);
+          if (!cancelled) {
+            applePaySessionRef.current = null;
+            applePayConfigRef.current = null;
+            setApplePayConfig(null);
+          }
         }
       }
     };
@@ -313,12 +351,8 @@ export function CheckoutExpressPayPalOnly({
       if (paypalContainerRef.current) paypalContainerRef.current.innerHTML = "";
     };
   }, [
-    approveExpressOrder,
-    cancelExpressOrder,
-    createExpressOrder,
     currency,
     enabled,
-    liveTotalCents,
     payPalConfigured,
     paypalClientId,
     pdpExpress?.productVariantId,
@@ -334,68 +368,124 @@ export function CheckoutExpressPayPalOnly({
     );
   }
 
-  const startApplePay = async () => {
+  /**
+   * ApplePaySession + begin() müssen synchron im User-Gesture laufen.
+   * Completion-Handler für Shipping/PaymentMethod sind Pflicht, sobald
+   * requiredShippingContactFields gesetzt sind — sonst schließt Safari das Sheet sofort.
+   */
+  const startApplePay = () => {
     const ApplePaySession = currentApplePaySession();
     const applepay = applePaySessionRef.current;
-    if (!ApplePaySession || !applepay || !applePayConfig) return;
+    const config = applePayConfigRef.current;
+    if (!ApplePaySession || !applepay || !config) return;
+
+    const amount = moneyStringFromGrossCents(liveTotalCentsRef.current);
+    if (liveTotalCentsRef.current <= 0) {
+      setSdkError("Apple Pay: Betrag fehlt. Bitte Seite neu laden.");
+      return;
+    }
 
     setBusy(true);
     setSdkError(null);
+
+    let session: ApplePaySessionInstance;
     try {
-      const session = new ApplePaySession(4, {
-        countryCode: applePayConfig.countryCode ?? "DE",
+      session = new ApplePaySession(4, {
+        countryCode: config.countryCode ?? "DE",
         currencyCode: currency.trim().toUpperCase(),
-        merchantCapabilities: applePayConfig.merchantCapabilities ?? ["supports3DS"],
-        supportedNetworks: applePayConfig.supportedNetworks ?? ["visa", "masterCard", "amex", "maestro"],
+        merchantCapabilities: config.merchantCapabilities ?? ["supports3DS"],
+        supportedNetworks: config.supportedNetworks ?? ["visa", "masterCard", "amex", "maestro"],
         requiredShippingContactFields: ["name", "phone", "email", "postalAddress"],
         requiredBillingContactFields: ["postalAddress"],
         total: {
-          label: "jerry's",
+          label: APPLE_PAY_STORE_LABEL,
           type: "final",
-          amount: moneyStringFromGrossCents(liveTotalCents),
+          amount,
         },
       });
+    } catch (e) {
+      setBusy(false);
+      setSdkError(e instanceof Error ? e.message : "Apple Pay konnte nicht gestartet werden.");
+      return;
+    }
 
-      session.onvalidatemerchant = async (event) => {
+    const totalUpdate = () => ({
+      newTotal: {
+        label: APPLE_PAY_STORE_LABEL,
+        type: "final",
+        amount: moneyStringFromGrossCents(liveTotalCentsRef.current),
+      },
+    });
+
+    session.onvalidatemerchant = (event) => {
+      void (async () => {
         try {
           const result = await applepay.validateMerchant({
             validationUrl: event.validationURL,
-            displayName: "jerry's",
+            displayName: APPLE_PAY_STORE_LABEL,
           });
           session.completeMerchantValidation(result.merchantSession);
         } catch (e) {
           console.error(e);
-          session.abort();
+          setBusy(false);
+          setSdkError(
+            e instanceof Error
+              ? e.message
+              : "Apple Pay Händlerprüfung fehlgeschlagen. Domain ggf. nicht für Apple Pay freigeschaltet.",
+          );
+          try {
+            session.abort();
+          } catch {
+            /* sheet bereits zu */
+          }
         }
-      };
+      })();
+    };
 
-      session.onpaymentauthorized = async (event) => {
+    // Ohne diese Completions schließt Safari das Sheet nach dem kurzen Anzeigen.
+    session.onpaymentmethodselected = () => {
+      session.completePaymentMethodSelection(totalUpdate());
+    };
+    session.onshippingcontactselected = () => {
+      session.completeShippingContactSelection({
+        ...totalUpdate(),
+        newLineItems: [],
+      });
+    };
+    session.onshippingmethodselected = () => {
+      session.completeShippingMethodSelection(totalUpdate());
+    };
+
+    session.onpaymentauthorized = (event) => {
+      void (async () => {
         try {
-          const orderId = await createExpressOrder();
+          const orderId = await createExpressOrderRef.current();
           await applepay.confirmOrder({
             orderId,
             token: event.payment.token,
             billingContact: event.payment.billingContact,
             shippingContact: event.payment.shippingContact,
           });
-          await approveExpressOrder(orderId, event.payment.shippingContact);
+          await approveExpressOrderRef.current(orderId, event.payment.shippingContact);
           session.completePayment({ status: ApplePaySession.STATUS_SUCCESS });
         } catch (e) {
           console.error(e);
           setSdkError(e instanceof Error ? e.message : "Apple Pay konnte nicht abgeschlossen werden.");
           session.completePayment({ status: ApplePaySession.STATUS_FAILURE });
-          await cancelExpressOrder(lastExpressPaypalOrderIdRef.current);
+          await cancelExpressOrderRef.current(lastExpressPaypalOrderIdRef.current);
         } finally {
           setBusy(false);
         }
-      };
+      })();
+    };
 
-      session.oncancel = () => {
-        void cancelExpressOrder(lastExpressPaypalOrderIdRef.current);
-        setBusy(false);
-        setSdkError("Apple Pay wurde abgebrochen. Es wurde nichts abgebucht.");
-      };
+    session.oncancel = () => {
+      void cancelExpressOrderRef.current(lastExpressPaypalOrderIdRef.current);
+      setBusy(false);
+      setSdkError("Apple Pay wurde abgebrochen. Es wurde nichts abgebucht.");
+    };
 
+    try {
       session.begin();
     } catch (e) {
       setBusy(false);
@@ -412,7 +502,7 @@ export function CheckoutExpressPayPalOnly({
         <button
           type="button"
           disabled={busy}
-          onClick={() => void startApplePay()}
+          onClick={startApplePay}
           className="flex min-h-[2.75rem] w-full items-center justify-center rounded-md bg-neutral-950 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           aria-label="Mit Apple Pay Express bezahlen"
         >
