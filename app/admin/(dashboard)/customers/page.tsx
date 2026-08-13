@@ -22,8 +22,8 @@ export default async function AdminCustomersPage() {
       <div>
         <h1 className="text-xl font-semibold tracking-tight text-[#1f2937] sm:text-2xl">Kunden</h1>
         <p className="mt-1 text-sm text-[#6b7280]">
-          Kunden werden aus Bestellungen abgeleitet (gleiche E-Mail). Unterschiedliche Adressen pro
-          Bestellung sind möglich.
+          Kunden entstehen aus abgeschlossenen Bestellungen (gleiche E-Mail). Offene Express-Checkouts
+          und Zahlungen ohne echte Kontaktdaten erscheinen hier nicht.
         </p>
       </div>
 

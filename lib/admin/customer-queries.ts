@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { orderContributesToAdminCustomer } from "@/lib/checkout/paypal-express-placeholder";
 import { getPrisma } from "@/lib/db/prisma";
 
 const CUSTOMER_KEY_HEX_LEN = 12;
@@ -110,6 +111,9 @@ export async function listCustomersForAdmin(): Promise<AdminCustomerListRow[]> {
   const byNorm = new Map<string, Agg>();
 
   for (const o of orders) {
+    // Keine Ghost-Kunden aus abgebrochenem Express / offener Zahlung.
+    if (!orderContributesToAdminCustomer(o)) continue;
+
     const norm = normalizeAdminCustomerEmail(o.email);
     let agg = byNorm.get(norm);
     if (!agg) {
@@ -285,12 +289,13 @@ export async function getCustomerDetailForAdmin(
   }
   if (!matchedNorm) return null;
 
-  const orders = (await getPrisma().order.findMany({
+  const allOrders = (await getPrisma().order.findMany({
     where: { email: { equals: matchedNorm, mode: "insensitive" } },
     orderBy: { createdAt: "desc" },
     select: orderSelectForCustomers,
   })) as OrderRowForCustomers[];
 
+  const orders = allOrders.filter((o) => orderContributesToAdminCustomer(o));
   if (orders.length === 0) return null;
 
   const latest = orders[0]!;
