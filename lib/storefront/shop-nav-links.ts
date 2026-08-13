@@ -9,7 +9,7 @@ export type StorefrontShopNavOptions = {
   maxTopLevel?: number;
   /** Systemlink „Alle Produkte“ — Shopify-ähnlich optional im Menü. Default true. */
   showAllProducts?: boolean;
-  /** Systemlink „Termine“ — optional im Menü. Default true. */
+  /** Systemlink „Termine“ — Shop-Feature-Flag. Default true. */
   showTermine?: boolean;
 };
 

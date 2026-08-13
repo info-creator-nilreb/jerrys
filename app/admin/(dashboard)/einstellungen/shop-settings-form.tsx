@@ -258,9 +258,10 @@ export function ShopSettingsForm({ defaults }: Props) {
                 className="checkbox-primary mt-0.5 size-4"
               />
               <span>
-                <span className="font-medium">„Termine“ anzeigen</span>
+                <span className="font-medium">Termine-Feature aktiv</span>
                 <span className="mt-0.5 block text-xs text-[#6b7280]">
-                  Link zum Gruppenkalender (/termine)
+                  Shop-Navigation, Buchung und Admin-Bereich „Termine“. Im Kundenkonto erscheint
+                  der Menüpunkt erst nach der ersten Buchung.
                 </span>
               </span>
             </label>
@@ -327,7 +328,7 @@ export function ShopSettingsForm({ defaults }: Props) {
                 {
                   name: "footerShowShopNav",
                   title: "Shop-Navigation",
-                  hint: "Kategorien sowie „Alle Produkte“ / „Termine“ — oft redundant zum Header",
+                  hint: "Kategorien sowie „Alle Produkte“ / ggf. „Termine“ (nur bei aktivem Feature)",
                   defaultChecked: defaults.footerShowShopNav,
                 },
                 {

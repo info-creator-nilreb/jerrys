@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { WorkshopSessionList } from "@/components/storefront/workshop-session-list";
 import type { WorkshopCalendarBlockData } from "@/lib/content/blocks/workshop-calendar";
+import { isTermineFeatureEnabled } from "@/lib/shop/termine-feature";
 
 /**
  * CMS-Einbettung: schlanke Terminliste für Landingpages.
@@ -13,6 +14,10 @@ export async function WorkshopCalendarBlock({
   data: WorkshopCalendarBlockData;
   blockId: string;
 }) {
+  if (!(await isTermineFeatureEnabled())) {
+    return null;
+  }
+
   const emptyAddon =
     data.showDateRequestLink !== false ? (
       <p className="mt-3">
