@@ -16,8 +16,8 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | Seiten `/konto/termine`, `/konto/termine/[bookingId]` | Kunden-Session + verifizierte E-Mail; Buchungen nur via `customerId` | Terminbuchungen; fremde Buchung → **404** ohne Existenz-Leak |
 | Server Actions `app/(storefront)/konto/workshop-booking-actions.ts` | Kunden-Session + verifizierte E-Mail; Bestätigungsfeld serverseitig | Selbststornierung; Frist serverseitig; idempotent; Audit `workshop.booking.self_cancelled` |
 | Seiten `/termine`, `/termine/[sessionId]` | Öffentlich | Veröffentlichte kommende Gruppentermine; Verfügbarkeit serverseitig |
-| `POST /api/workshop/start-checkout` | Öffentlich (Form-POST von Termin-Detail) | Platz-Hold anlegen, Cookie setzen, **HTTP 303** → `/checkout/termine` (MPA, kein Server-Action-Redirect — vermeidet React #441) |
-| `POST /api/workshop/complete-checkout` | Öffentlich (Form-POST von Termin-Checkout) | Workshop-Order anlegen; **HTTP 303** → Erfolg oder PayPal-Approval (MPA) |
+| `POST /api/workshop/start-checkout` | Öffentlich (Form-POST von Termin-Detail) | Platz-Hold anlegen, Cookie setzen, **HTTP 303** → `/checkout/termine` (MPA); **Rate-Limit** pro IP (`lib/security/workshop-checkout-api-rate-limit.ts`) |
+| `POST /api/workshop/complete-checkout` | Öffentlich (Form-POST von Termin-Checkout) | Workshop-Order anlegen; **HTTP 303** → Erfolg oder PayPal-Approval (MPA); **gleiches Rate-Limit** wie start-checkout |
 | Seite `/konto/datenschutz` | Kunden-Session + verifizierte E-Mail | Auskunft, Berichtigung, Konto-Löschung (Art. 15/16/17 DSGVO) |
 | `GET /konto/datenschutz/export` | Kunden-Session + verifizierte E-Mail; **kein** Parameter für fremde Konten | Datenauskunft als JSON-Download; ohne Passwort-Hash und Token; **Rate-Limit** pro IP (`lib/security/customer-privacy-rate-limit.ts`) |
 | Server Actions `app/(storefront)/konto/privacy-actions.ts` | Kunden-Session + verifizierte E-Mail; Löschung nur mit serverseitig geprüftem Bestätigungswort | Namen berichtigen, Konto anonymisieren (Audit `order.customer_unlinked`, danach Sign-out) |
@@ -59,6 +59,7 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | `POST /api/checkout/paypal/create-order` | Öffentlich (Checkout) | Bestellung anlegen + PayPal-Order; **Rate-Limit** pro IP (`lib/security/paypal-checkout-api-rate-limit.ts`) |
 | `POST /api/checkout/paypal/capture-order` | Öffentlich (Checkout) | Capture nach Karte/Wallet; **gleiches Rate-Limit** wie create-order |
 | `POST /api/checkout/paypal/express-create` | Öffentlich (Checkout/Warenkorb) | PayPal Express Order anlegen; **gleiches Rate-Limit** wie create-order |
+| `POST /api/checkout/paypal/express-prepare-pdp` | Öffentlich (PDP Express) | Warenkorb auf gewählte Variante setzen vor Express; **gleiches Rate-Limit** wie create-order |
 | `POST /api/checkout/paypal/express-approve` | Öffentlich (Checkout/Warenkorb) | PayPal Express nach Approve finalisieren; **gleiches Rate-Limit** wie create-order |
 | `POST /api/webhooks/paypal` | Öffentlich (PayPal) | PayPal-Webhooks; **Signaturpflicht** (`PAYPAL_WEBHOOK_ID` + verify-webhook-signature); Inbox-Idempotenz (`paypal_webhook` / Event-ID); Rate-Limit pro IP (`lib/security/paypal-webhook-api-rate-limit.ts`); ohne Webhook-ID → **503**; Events u. a. Capture-Complete/Approve + `PAYMENT.CAPTURE.REFUNDED` |
 | `GET`/`POST /api/internal/commerce-maintenance` | Bearer `CRON_SECRET` (Vercel Cron), Bearer/`x-commerce-maintenance-secret` (`COMMERCE_MAINTENANCE_SECRET`) | Bestandsreservierungen, Outbox, Workshops, PayPal-Reconciliation, Instagram-Feed-Sync, Zettle-Kauf-Pull (wenn verbunden) |
