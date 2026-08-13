@@ -128,6 +128,25 @@ export async function listWorkshopBookingsForCustomer(
   }
 }
 
+/** Ob der Kunde mindestens eine Terminbuchung hat (für Konto-Nav). */
+export async function customerHasWorkshopBookings(
+  customerId: string,
+): Promise<boolean> {
+  const verified = await verifiedCustomerId(customerId);
+  if (!verified) return false;
+
+  try {
+    const row = await getPrisma().workshopBooking.findFirst({
+      where: { customerId: verified },
+      select: { id: true },
+    });
+    return Boolean(row);
+  } catch (e) {
+    if (isMissingSchemaError(e)) return false;
+    throw e;
+  }
+}
+
 export async function getWorkshopBookingForCustomer(input: {
   customerId: string;
   bookingId: string;
