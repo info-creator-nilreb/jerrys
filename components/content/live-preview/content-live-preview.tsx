@@ -52,17 +52,17 @@ function PreviewBlock({
   if (type === "hero") {
     const imageUrl = str(data, "imageUrl") || "/media/hero-mood.jpg";
     return (
-      <section className="relative h-56 overflow-hidden bg-[#111]">
+      <section className="relative aspect-[4/5] min-h-72 overflow-hidden bg-[#111] sm:aspect-[16/10] sm:min-h-80">
         <Image
           src={imageUrl}
           alt=""
           fill
-          className="object-cover opacity-90"
+          className="object-cover object-[40%_center] opacity-90"
           sizes="400px"
           unoptimized={imageUrl.startsWith("https://")}
         />
-        <div className="absolute inset-0 bg-linear-to-r from-black/60 to-transparent" />
-        <div className="relative z-10 flex h-full flex-col justify-center px-4">
+        <div className="absolute inset-0 bg-linear-to-r from-black/60 via-black/20 to-transparent" />
+        <div className="relative z-10 flex h-full flex-col justify-center px-4 py-8">
           {str(data, "eyebrow") ? (
             <p className="text-[10px] font-medium tracking-wide text-primary uppercase">
               {str(data, "eyebrow")}
@@ -72,7 +72,7 @@ function PreviewBlock({
             {str(data, "headline") || "Überschrift"}
           </p>
           {str(data, "ctaLabel") ? (
-            <span className="mt-3 inline-flex w-fit rounded bg-primary px-2.5 py-1 text-[11px] font-semibold text-white">
+            <span className="mt-3 inline-flex w-fit rounded-md bg-primary px-2.5 py-1.5 text-[11px] font-semibold text-white">
               {str(data, "ctaLabel")}
             </span>
           ) : null}
@@ -326,7 +326,8 @@ function PreviewBlock({
 }
 
 /**
- * Live-Vorschau ungespeicherter CMS-Blöcke (Admin).
+ * Live-Vorschau der CMS-Blöcke (Admin).
+ * Viewport-hohe, scrollbare Karte — damit lange Startseiten nicht abgeschnitten werden.
  * Produktkarten nutzen den übergebenen Katalog-Snapshot.
  */
 export function ContentLivePreview({
@@ -334,11 +335,14 @@ export function ContentLivePreview({
   pageType,
   blocks,
   products,
+  hasUnsavedChanges = false,
 }: {
   title: string;
   pageType: "homepage" | "content" | "legal";
   blocks: LivePreviewBlock[];
   products: LivePreviewProduct[];
+  /** true = Editor weicht vom letzten gespeicherten Stand ab */
+  hasUnsavedChanges?: boolean;
 }) {
   const deferredBlocks = useDeferredValue(blocks);
   const deferredTitle = useDeferredValue(title);
@@ -352,22 +356,28 @@ export function ContentLivePreview({
   );
 
   return (
-    <div className="flex h-full min-h-[28rem] flex-col overflow-hidden rounded-xl border border-[#e8eaed] bg-[#f3f4f6] shadow-sm">
-      <div className="flex items-center justify-between border-b border-[#e8eaed] bg-white px-4 py-2.5">
-        <div>
+    <div className="flex h-[min(100%,calc(100dvh-6.5rem))] max-h-[calc(100dvh-6.5rem)] min-h-[28rem] flex-col overflow-hidden rounded-xl border border-[#e8eaed] bg-[#f3f4f6] shadow-sm">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[#e8eaed] bg-white px-4 py-2.5">
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
             Live-Vorschau
           </p>
-          <p className="text-sm font-medium text-[#1f2937]">
+          <p className="truncate text-sm font-medium text-[#1f2937]">
             {deferredTitle.trim() || "Ohne Titel"}
             <span className="ml-2 text-xs font-normal text-[#9ca3af]">({pageType})</span>
           </p>
         </div>
-        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-900">
-          ungespeichert
-        </span>
+        {hasUnsavedChanges ? (
+          <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-900">
+            ungespeichert
+          </span>
+        ) : (
+          <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+            gespeichert
+          </span>
+        )}
       </div>
-      <div className="flex-1 overflow-y-auto bg-white">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white">
         {pageType !== "homepage" ? (
           <div className="border-b border-[#f3f4f6] px-4 py-4">
             <h2 className="text-xl font-semibold tracking-tight text-[#1f2937]">

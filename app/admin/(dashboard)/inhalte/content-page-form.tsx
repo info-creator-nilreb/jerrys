@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
-import { useActionState, useId, useMemo, useState } from "react";
+import { useActionState, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ContentBlockFields } from "@/app/admin/(dashboard)/inhalte/content-block-fields";
 import { CmsPageSeoAiTextAssistant } from "@/app/admin/(dashboard)/inhalte/cms-page-seo-ai-text-assistant";
 import {
@@ -25,6 +25,7 @@ import {
   isContentBlockType,
   type ContentBlockType,
 } from "@/lib/content/block-types";
+import { buildContentPageEditorSnapshot } from "@/lib/content/content-page-editor-snapshot";
 import { CONTENT_PAGE_HOME_SLUG } from "@/lib/content/reserved-slugs";
 
 type EditorBlock = {
@@ -114,9 +115,15 @@ export function ContentPageForm({
 
   const [pageType, setPageType] = useState(initial?.pageType ?? "content");
   const [title, setTitle] = useState(initial?.title ?? "");
+  const [status, setStatus] = useState<"draft" | "published">(
+    initial?.status ?? "draft",
+  );
   const [seoTitle, setSeoTitle] = useState(initial?.seoTitle ?? "");
   const [seoDescription, setSeoDescription] = useState(initial?.seoDescription ?? "");
   const [ogImageUrl, setOgImageUrl] = useState(initial?.ogImageUrl ?? "");
+  const [canonicalPath, setCanonicalPath] = useState(initial?.canonicalPath ?? "");
+  const [robotsIndex, setRobotsIndex] = useState(initial?.robotsIndex ?? true);
+  const [showInFooter, setShowInFooter] = useState(initial?.showInFooter ?? false);
   const [slug, setSlug] = useState(
     initial?.slug ?? (pageType === "homepage" ? CONTENT_PAGE_HOME_SLUG : ""),
   );
@@ -142,6 +149,47 @@ export function ContentPageForm({
       ),
     [blocks],
   );
+
+  const editorSnapshot = useMemo(
+    () =>
+      buildContentPageEditorSnapshot({
+        title,
+        pageType,
+        slug,
+        status,
+        seoTitle,
+        seoDescription,
+        ogImageUrl,
+        canonicalPath,
+        robotsIndex,
+        showInFooter,
+        blocksJson,
+      }),
+    [
+      title,
+      pageType,
+      slug,
+      status,
+      seoTitle,
+      seoDescription,
+      ogImageUrl,
+      canonicalPath,
+      robotsIndex,
+      showInFooter,
+      blocksJson,
+    ],
+  );
+
+  const [savedSnapshot, setSavedSnapshot] = useState(editorSnapshot);
+  const editorSnapshotRef = useRef(editorSnapshot);
+  editorSnapshotRef.current = editorSnapshot;
+
+  /** Nur nach erfolgreichem Speichern Baseline aktualisieren — nicht bei jeder Editierung, solange `ok` noch true ist. */
+  useEffect(() => {
+    if (state?.ok) setSavedSnapshot(editorSnapshotRef.current);
+  }, [state]);
+
+  const hasUnsavedChanges = !initial?.id || editorSnapshot !== savedSnapshot;
 
   const previewBlocks = useMemo(
     () =>
@@ -230,7 +278,8 @@ export function ContentPageForm({
             <select
               name="status"
               className={fieldClass}
-              defaultValue={initial?.status ?? "draft"}
+              value={status}
+              onChange={(e) => setStatus(e.target.value as "draft" | "published")}
             >
               {(Object.keys(CONTENT_PAGE_STATUS_LABELS) as Array<
                 keyof typeof CONTENT_PAGE_STATUS_LABELS
@@ -287,7 +336,8 @@ export function ContentPageForm({
             Canonical-Pfad
             <input
               name="canonicalPath"
-              defaultValue={initial?.canonicalPath ?? ""}
+              value={canonicalPath}
+              onChange={(e) => setCanonicalPath(e.target.value)}
               className={fieldClass}
               placeholder="/impressum"
             />
@@ -318,7 +368,8 @@ export function ContentPageForm({
               type="checkbox"
               name="robotsIndex"
               value="true"
-              defaultChecked={initial?.robotsIndex ?? true}
+              checked={robotsIndex}
+              onChange={(e) => setRobotsIndex(e.target.checked)}
               className="size-4 checkbox-primary"
             />
             Für Suchmaschinen indexierbar (nach Veröffentlichung)
@@ -329,7 +380,8 @@ export function ContentPageForm({
                 type="checkbox"
                 name="showInFooter"
                 value="true"
-                defaultChecked={initial?.showInFooter ?? false}
+                checked={showInFooter}
+                onChange={(e) => setShowInFooter(e.target.checked)}
                 className="mt-0.5 size-4 checkbox-primary"
               />
               <span>
@@ -482,12 +534,13 @@ export function ContentPageForm({
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] xl:items-start">
       <div className="min-w-0">{editor}</div>
-      <aside className="xl:sticky xl:top-4 xl:self-start">
+      <aside className="xl:sticky xl:top-4 xl:max-h-[calc(100dvh-2rem)] xl:self-start">
         <ContentLivePreview
           title={title}
           pageType={pageType}
           blocks={previewBlocks}
           products={previewProducts}
+          hasUnsavedChanges={hasUnsavedChanges}
         />
       </aside>
     </div>
