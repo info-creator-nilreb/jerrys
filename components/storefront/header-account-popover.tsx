@@ -12,6 +12,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { AuthPendingDots } from "@/components/storefront/auth-pending-dots";
 import { CustomerLoginForm } from "@/components/storefront/customer-login-form";
 import {
   customerAuthPrimaryButtonClass,
@@ -213,6 +214,8 @@ export function HeaderAccountPopover({ isLoggedIn, email, initials }: Props) {
                 </button>
               </form>
             </div>
+          ) : justSignedIn ? (
+            <AuthPendingDots label="Anmeldung wird abgeschlossen…" />
           ) : (
             <div className="space-y-4">
               <CustomerLoginForm

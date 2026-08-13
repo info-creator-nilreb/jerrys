@@ -8,6 +8,7 @@ import {
   requestMagicLinkAction,
   type CustomerAuthActionState,
 } from "@/app/(storefront)/konto/actions";
+import { AuthPendingDots } from "@/components/storefront/auth-pending-dots";
 import {
   customerAuthInputClass,
   customerAuthPrimaryButtonClass,
@@ -42,9 +43,28 @@ export function CustomerLoginForm({
     if (!stayOnPage) return;
     if (!passwordState?.ok || signedInHandledRef.current) return;
     signedInHandledRef.current = true;
-    router.refresh();
     onSignedIn?.();
+    router.refresh();
   }, [stayOnPage, passwordState, router, onSignedIn]);
+
+  /**
+   * Popover-Login: Zwischen Action-Ende und Session-Refresh würde sonst kurz das
+   * zurückgesetzte leere Formular aufblitzen — Wartezustand statt leerer Felder.
+   */
+  const awaitingSessionRefresh = stayOnPage && Boolean(passwordState?.ok);
+  const showAuthPending = stayOnPage && (passwordPending || awaitingSessionRefresh);
+
+  if (showAuthPending) {
+    return (
+      <AuthPendingDots
+        label={
+          awaitingSessionRefresh
+            ? "Anmeldung wird abgeschlossen…"
+            : "Anmeldung läuft…"
+        }
+      />
+    );
+  }
 
   return (
     <div className={compact ? "space-y-4" : "space-y-6"}>
@@ -122,7 +142,7 @@ export function CustomerLoginForm({
             </p>
           ) : null}
           <button type="submit" className={customerAuthPrimaryButtonClass} disabled={passwordPending}>
-            {passwordPending ? "Wird angemeldet…" : "Anmelden"}
+            Anmelden
           </button>
         </form>
       ) : (
