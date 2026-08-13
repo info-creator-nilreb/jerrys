@@ -1,7 +1,10 @@
 import { unstable_cache } from "next/cache";
 import { getPrisma } from "@/lib/db/prisma";
 import { STOREFRONT_CATALOG_CACHE_TAG } from "@/lib/catalog/storefront-catalog-cache-tag";
-import { storefrontProductCardSelect } from "@/lib/catalog/queries";
+import {
+  storefrontCategoryViaCollectionsSelect,
+  storefrontProductCardSelect,
+} from "@/lib/catalog/queries";
 
 export async function listCollectionsForAdmin() {
   return getPrisma().collection.findMany({
@@ -68,10 +71,24 @@ export async function getActiveCollectionBySlugForStorefront(slug: string) {
         where: { product: { isActive: true } },
         select: {
           product: {
-            select: storefrontProductCardSelect,
+            select: {
+              ...storefrontProductCardSelect,
+              ...storefrontCategoryViaCollectionsSelect,
+            },
           },
         },
       },
     },
   });
+}
+
+/** Aktive Produkte einer Kollektion in Sortierreihenfolge (CMS-Produktblöcke). */
+export async function listActiveProductsByCollectionSlugForStorefront(
+  collectionSlug: string,
+  limit = 12,
+) {
+  const collection = await getActiveCollectionBySlugForStorefront(collectionSlug);
+  if (!collection) return [];
+  const take = Math.max(1, limit);
+  return collection.products.slice(0, take).map((row) => row.product);
 }

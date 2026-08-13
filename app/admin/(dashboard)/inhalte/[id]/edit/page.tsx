@@ -4,6 +4,7 @@ import { ContentPageForm } from "@/app/admin/(dashboard)/inhalte/content-page-fo
 import { ContentPageLifecycle } from "@/app/admin/(dashboard)/inhalte/content-page-lifecycle";
 import { getAiContentSettingsPublic } from "@/features/integrations";
 import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
+import { listCollectionsForCmsAdmin } from "@/lib/content/cms-admin-catalog-options";
 import { getContentPageById } from "@/lib/content/content-pages";
 import { contentPreviewAbsoluteUrl } from "@/lib/content/preview-token";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
@@ -38,13 +39,19 @@ export default async function AdminInhalteEditPage({
     title: string;
     imageUrl: string | null;
   }> = [];
+  let previewCollections: Awaited<ReturnType<typeof listCollectionsForCmsAdmin>> =
+    [];
   try {
-    const products = await listActiveProductsForStorefront();
+    const [products, collections] = await Promise.all([
+      listActiveProductsForStorefront(),
+      listCollectionsForCmsAdmin(),
+    ]);
     previewProducts = products.map((p) => ({
       id: p.id,
       title: p.title,
       imageUrl: p.images[0]?.url ?? null,
     }));
+    previewCollections = collections;
   } catch (e) {
     if (!isDatabaseUnreachable(e)) throw e;
   }
@@ -92,6 +99,7 @@ export default async function AdminInhalteEditPage({
       <ContentPageForm
         key={page.updatedAt.toISOString()}
         previewProducts={previewProducts}
+        previewCollections={previewCollections}
         aiReady={aiSettings.ready}
         initial={{
           id: page.id,

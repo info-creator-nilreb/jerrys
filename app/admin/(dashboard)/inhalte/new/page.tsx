@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ContentPageForm } from "@/app/admin/(dashboard)/inhalte/content-page-form";
 import { getAiContentSettingsPublic } from "@/features/integrations";
 import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
+import { listCollectionsForCmsAdmin } from "@/lib/content/cms-admin-catalog-options";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 
 export const dynamic = "force-dynamic";
@@ -16,13 +17,19 @@ export default async function AdminInhalteNewPage() {
     title: string;
     imageUrl: string | null;
   }> = [];
+  let previewCollections: Awaited<ReturnType<typeof listCollectionsForCmsAdmin>> =
+    [];
   try {
-    const products = await listActiveProductsForStorefront();
+    const [products, collections] = await Promise.all([
+      listActiveProductsForStorefront(),
+      listCollectionsForCmsAdmin(),
+    ]);
     previewProducts = products.map((p) => ({
       id: p.id,
       title: p.title,
       imageUrl: p.images[0]?.url ?? null,
     }));
+    previewCollections = collections;
   } catch (e) {
     if (!isDatabaseUnreachable(e)) throw e;
   }
@@ -45,7 +52,11 @@ export default async function AdminInhalteNewPage() {
           Live-Vorschau rechts aktualisiert sich sofort; Speichern übernimmt dauerhaft.
         </p>
       </div>
-      <ContentPageForm previewProducts={previewProducts} aiReady={aiSettings.ready} />
+      <ContentPageForm
+        previewProducts={previewProducts}
+        previewCollections={previewCollections}
+        aiReady={aiSettings.ready}
+      />
     </div>
   );
 }

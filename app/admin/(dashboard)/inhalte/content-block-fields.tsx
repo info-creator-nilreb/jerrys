@@ -11,6 +11,12 @@ import {
   resolveHeroCtaSelectValue,
 } from "@/lib/content/hero-cta-targets";
 
+export type CmsCollectionOption = {
+  slug: string;
+  title: string;
+  productIds: string[];
+};
+
 type Props = {
   type: ContentBlockType;
   data: Record<string, unknown>;
@@ -18,6 +24,8 @@ type Props = {
   aiReady?: boolean;
   pageTitle?: string;
   pageType?: string;
+  /** Aktive Kollektionen für Produktblöcke (Slug + Produkt-IDs für Vorschau). */
+  collections?: CmsCollectionOption[];
 };
 
 function str(data: Record<string, unknown>, key: string): string {
@@ -45,6 +53,7 @@ export function ContentBlockFields({
   aiReady = false,
   pageTitle = "",
   pageType = "content",
+  collections = [],
 }: Props) {
   const set = (key: string, value: unknown) => onChange({ ...data, [key]: value });
 
@@ -384,6 +393,18 @@ export function ContentBlockFields({
     const ids = Array.isArray(data.productIds)
       ? data.productIds.filter((x): x is string => typeof x === "string").join(", ")
       : "";
+    const curatedSource = str(data, "source") || "ids";
+    const pickMode = str(data, "mode") || "collection";
+    const usesCollection =
+      (type === "curatedProductList" && curatedSource === "collection") ||
+      (type === "productCategoryPick" && pickMode === "collection");
+    const usesCategory =
+      type === "productCategoryPick" && pickMode === "category";
+    const usesProductIds =
+      (type === "curatedProductList" && curatedSource === "ids") ||
+      (type === "productCategoryPick" && pickMode === "productIds");
+    const showAllCta = bool(data, "showAllCta", false);
+
     return (
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="text-sm text-[#5c5f66] sm:col-span-2">
@@ -399,55 +420,82 @@ export function ContentBlockFields({
             Quelle
             <select
               className={fieldClass}
-              value={str(data, "source") || "ids"}
+              value={curatedSource}
               onChange={(e) => set("source", e.target.value)}
             >
+              <option value="collection">Kollektion</option>
               <option value="ids">Produkt-IDs</option>
               <option value="allActive">Alle aktiven Produkte</option>
             </select>
           </label>
         ) : null}
         {type === "productCategoryPick" ? (
-          <>
-            <label className="text-sm text-[#5c5f66]">
-              Modus
-              <select
-                className={fieldClass}
-                value={str(data, "mode") || "category"}
-                onChange={(e) => set("mode", e.target.value)}
-              >
-                <option value="category">Kategorie</option>
-                <option value="productIds">Produkt-IDs</option>
-              </select>
-            </label>
-            <label className="text-sm text-[#5c5f66]">
-              Kategorie-Slug
-              <input
-                className={fieldClass}
-                value={str(data, "categorySlug")}
-                onChange={(e) => set("categorySlug", e.target.value)}
-              />
-            </label>
-          </>
+          <label className="text-sm text-[#5c5f66] sm:col-span-2">
+            Quelle
+            <select
+              className={fieldClass}
+              value={pickMode}
+              onChange={(e) => set("mode", e.target.value)}
+            >
+              <option value="collection">Kollektion</option>
+              <option value="category">Kategorie</option>
+              <option value="productIds">Produkt-IDs</option>
+            </select>
+          </label>
         ) : null}
-        <label className="text-sm text-[#5c5f66] sm:col-span-2">
-          Produkt-IDs (kommagetrennt)
-          <input
-            className={fieldClass}
-            value={ids}
-            onChange={(e) =>
-              set(
-                "productIds",
-                e.target.value
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean),
-              )
-            }
-          />
-        </label>
+        {usesCollection ? (
+          <label className="text-sm text-[#5c5f66] sm:col-span-2">
+            Kollektion
+            <select
+              className={fieldClass}
+              value={str(data, "collectionSlug")}
+              onChange={(e) => set("collectionSlug", e.target.value)}
+            >
+              <option value="">Kollektion wählen …</option>
+              {collections.map((c) => (
+                <option key={c.slug} value={c.slug}>
+                  {c.title}
+                </option>
+              ))}
+            </select>
+            {collections.length === 0 ? (
+              <span className="mt-1 block text-xs text-[#6b7280]">
+                Keine aktiven Kollektionen — bitte unter Katalog → Kollektionen anlegen.
+              </span>
+            ) : null}
+          </label>
+        ) : null}
+        {usesCategory ? (
+          <label className="text-sm text-[#5c5f66] sm:col-span-2">
+            Kategorie-Slug
+            <input
+              className={fieldClass}
+              value={str(data, "categorySlug")}
+              onChange={(e) => set("categorySlug", e.target.value)}
+              placeholder="z. B. katzenmoebel"
+            />
+          </label>
+        ) : null}
+        {usesProductIds ? (
+          <label className="text-sm text-[#5c5f66] sm:col-span-2">
+            Produkt-IDs (kommagetrennt)
+            <input
+              className={fieldClass}
+              value={ids}
+              onChange={(e) =>
+                set(
+                  "productIds",
+                  e.target.value
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean),
+                )
+              }
+            />
+          </label>
+        ) : null}
         <label className="text-sm text-[#5c5f66]">
-          Limit
+          Anzahl anzeigen
           <input
             type="number"
             min={1}
@@ -457,6 +505,51 @@ export function ContentBlockFields({
             onChange={(e) => set("limit", Number(e.target.value) || 12)}
           />
         </label>
+        <div className="sm:col-span-2 space-y-3 rounded-lg border border-[#e8eaed] bg-[#fafafa] p-3">
+          <label className="flex cursor-pointer items-start gap-2.5 text-sm text-[#374151]">
+            <input
+              type="checkbox"
+              className="checkbox-primary mt-0.5 size-4"
+              checked={showAllCta}
+              onChange={(e) => set("showAllCta", e.target.checked)}
+            />
+            <span>
+              <span className="font-medium">Button „Alle anzeigen“</span>
+              <span className="mt-0.5 block text-xs text-[#6b7280]">
+                Unter der Produktliste. Ziel automatisch aus Kollektion/Kategorie/Katalog,
+                sofern kein eigener Pfad gesetzt ist.
+              </span>
+            </span>
+          </label>
+          {showAllCta ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="text-sm text-[#5c5f66]">
+                Button-Text
+                <input
+                  className={fieldClass}
+                  value={str(data, "showAllLabel")}
+                  placeholder="Alle anzeigen"
+                  onChange={(e) => set("showAllLabel", e.target.value)}
+                />
+              </label>
+              <label className="text-sm text-[#5c5f66]">
+                Ziel-Pfad (optional)
+                <input
+                  className={fieldClass}
+                  value={str(data, "showAllHref")}
+                  placeholder={
+                    usesCollection
+                      ? "/kollektionen/…"
+                      : usesCategory
+                        ? "/kategorien/…"
+                        : "/produkte"
+                  }
+                  onChange={(e) => set("showAllHref", e.target.value)}
+                />
+              </label>
+            </div>
+          ) : null}
+        </div>
       </div>
     );
   }

@@ -4,7 +4,7 @@ export const CONTENT_BLOCK_TYPE_LABELS: Record<ContentBlockType, string> = {
   hero: "Hero",
   richText: "Rich-Text",
   imageText: "Bild / Text",
-  productCategoryPick: "Produkte (Kategorie/IDs)",
+  productCategoryPick: "Produkte (Kollektion/Kategorie/IDs)",
   curatedProductList: "Kuratierte Produktliste",
   uspStrip: "USP-Leiste",
   faq: "FAQ",

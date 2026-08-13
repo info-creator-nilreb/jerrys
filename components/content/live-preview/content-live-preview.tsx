@@ -12,6 +12,12 @@ export type LivePreviewProduct = {
   imageUrl: string | null;
 };
 
+export type LivePreviewCollection = {
+  slug: string;
+  title: string;
+  productIds: string[];
+};
+
 export type LivePreviewBlock = {
   clientId: string;
   type: ContentBlockType | string;
@@ -36,9 +42,11 @@ function num(data: Record<string, unknown>, key: string, fallback: number): numb
 function PreviewBlock({
   block,
   products,
+  collections,
 }: {
   block: LivePreviewBlock;
   products: LivePreviewProduct[];
+  collections: LivePreviewCollection[];
 }) {
   const type = block.type;
   const data = block.data;
@@ -183,18 +191,37 @@ function PreviewBlock({
 
   if (type === "curatedProductList" || type === "productCategoryPick") {
     const source = str(data, "source") || "ids";
+    const mode = str(data, "mode") || "collection";
+    const collectionSlug = str(data, "collectionSlug");
     const ids = Array.isArray(data.productIds)
       ? data.productIds.filter((x): x is string => typeof x === "string")
       : [];
     const limit =
       typeof data.limit === "number" && Number.isFinite(data.limit) ? data.limit : 12;
-    const list =
-      type === "curatedProductList" && source === "allActive"
-        ? products.slice(0, limit)
-        : ids
-            .map((id) => products.find((p) => p.id === id))
-            .filter((p): p is LivePreviewProduct => Boolean(p))
-            .slice(0, limit);
+    const usesCollection =
+      (type === "curatedProductList" && source === "collection") ||
+      (type === "productCategoryPick" && mode === "collection");
+    const collection = usesCollection
+      ? collections.find((c) => c.slug === collectionSlug)
+      : undefined;
+    const list = (() => {
+      if (type === "curatedProductList" && source === "allActive") {
+        return products.slice(0, limit);
+      }
+      if (usesCollection) {
+        const collectionIds = collection?.productIds ?? [];
+        return collectionIds
+          .map((id) => products.find((p) => p.id === id))
+          .filter((p): p is LivePreviewProduct => Boolean(p))
+          .slice(0, limit);
+      }
+      return ids
+        .map((id) => products.find((p) => p.id === id))
+        .filter((p): p is LivePreviewProduct => Boolean(p))
+        .slice(0, limit);
+    })();
+    const showAllCta = bool(data, "showAllCta", false);
+    const showAllLabel = str(data, "showAllLabel").trim() || "Alle anzeigen";
 
     return (
       <section className="bg-[#f8faf8] px-4 py-8">
@@ -203,9 +230,13 @@ function PreviewBlock({
         ) : null}
         {list.length === 0 ? (
           <p className="mt-4 text-center text-xs text-[#9ca3af]">
-            {source === "allActive"
+            {type === "curatedProductList" && source === "allActive"
               ? "Alle aktiven Produkte (Vorschau: Katalog-Snapshot)."
-              : "Keine Produkt-IDs / keine Treffer."}
+              : usesCollection
+                ? collectionSlug
+                  ? "Keine Produkte in dieser Kollektion (Vorschau)."
+                  : "Bitte Kollektion wählen."
+                : "Keine Produkt-IDs / keine Treffer."}
           </p>
         ) : (
           <ul className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -231,6 +262,13 @@ function PreviewBlock({
             ))}
           </ul>
         )}
+        {showAllCta ? (
+          <div className="mt-4 flex justify-center">
+            <span className="inline-flex rounded-md bg-primary px-3 py-1.5 text-[11px] font-semibold text-white">
+              {showAllLabel}
+            </span>
+          </div>
+        ) : null}
       </section>
     );
   }
@@ -335,12 +373,14 @@ export function ContentLivePreview({
   pageType,
   blocks,
   products,
+  collections = [],
   hasUnsavedChanges = false,
 }: {
   title: string;
   pageType: "homepage" | "content" | "legal";
   blocks: LivePreviewBlock[];
   products: LivePreviewProduct[];
+  collections?: LivePreviewCollection[];
   /** true = Editor weicht vom letzten gespeicherten Stand ab */
   hasUnsavedChanges?: boolean;
 }) {
@@ -350,9 +390,14 @@ export function ContentLivePreview({
   const body = useMemo(
     () =>
       deferredBlocks.map((block) => (
-        <PreviewBlock key={block.clientId} block={block} products={products} />
+        <PreviewBlock
+          key={block.clientId}
+          block={block}
+          products={products}
+          collections={collections}
+        />
       )),
-    [deferredBlocks, products],
+    [deferredBlocks, products, collections],
   );
 
   return (
