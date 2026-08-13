@@ -11,11 +11,11 @@
 
 | Test | Ergebnis | Kurzfazit |
 |------|----------|-----------|
-| Lasttest (30 VUs) | **Nicht bestanden** | Keine 5xx-Welle, aber Antwortzeiten unter Last unakzeptabel (curl-p95 ~45 s in §8; Baseline ~48 s). k6 weiterhin durch Vercel Security Checkpoint blockiert. |
-| Performance / Web Vitals | **Teilweise** | Leichtere Seiten OK; Startseite LCP weiterhin über „Good“-Budget (~3,2 s Desktop). |
-| Security Surface | **Grundsätzlich solide, mit Go-Live-Blockern** | Admin/Internal/Webhooks fail-closed; Seed-Default abgelehnt; **PayPal-Webhook nicht konfiguriert**; **`/admin/orders` auf Ziel-URL weiterhin HTTP 500** (Order-Detail 200); Rate-Limits auf Serverless schwach. |
+| Lasttest (30 VUs) | **Verbessert, Ziel verfehlt** | Nach P1 curl-p95 ~16 s (60 s Spot) vs. ~45 s zuvor; &lt; 5 s noch offen. k6 weiterhin Checkpoint. |
+| Performance / Web Vitals | **Bestanden (Single-User)** | Nach P1 Home LCP **740 ms**, `/produkte` CLS **0**, Perf 98–99. |
+| Security Surface | **Grundsätzlich solide, mit Go-Live-Blockern** | Admin/Internal/Webhooks fail-closed; Seed-Default abgelehnt; **`/admin/orders` 200** (nach #111); **PayPal-Webhook nicht konfiguriert**; Rate-Limits in-memory. |
 
-**Empfehlung vor Livegang:** PR-#111-Fix für `/admin/orders` auf die Ziel-URL deployen/promoten; Server-/DB-Latenz und Caching unter Concurrency adressieren; `PAYPAL_WEBHOOK_ID` (Operator) setzen; Lasttest wiederholen.
+**Empfehlung vor Livegang:** `PAYPAL_WEBHOOK_ID` setzen; Production-`DATABASE_URL` = Transaction-Pooler `:6543`; Last unter 30 VU weiter senken; k6 Checkpoint klären.
 
 ---
 
