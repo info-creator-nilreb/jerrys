@@ -50,7 +50,7 @@ function optionalPositiveIntMin1Nullable(val: unknown): number | null {
   return n;
 }
 
-/** Eine Zeile pro Stichpunkt; max. 20 Zeilen, je 200 Zeichen (nach Trim). */
+/** Eine Zeile pro Verkaufsargument/USP; max. 20 Zeilen, je 200 Zeichen (nach Trim). */
 const featureBulletsField = z.string().transform((raw) =>
   String(raw ?? "")
     .split(/\r?\n/)
@@ -108,6 +108,12 @@ const sharedProductFields = {
   descriptionHtml: optionalText,
   manufacturerId: optionalManufacturerId,
   productNumber: optionalText,
+  sku: z
+    .string()
+    .trim()
+    .max(64, "SKU max. 64 Zeichen.")
+    .transform((s) => (s === "" ? null : s))
+    .nullable(),
   taxRatePercent: taxRateSchema,
   priceGrossEuro: z.string().trim().min(1, "Bruttopreis erforderlich"),
   priceNetEuro: z.string().trim().min(1, "Nettopreis erforderlich"),

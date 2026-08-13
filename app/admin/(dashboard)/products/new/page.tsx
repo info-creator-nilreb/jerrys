@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CreateProductForm } from "@/app/admin/(dashboard)/products/new/create-product-form";
+import { listShopAssignmentOptionsForAdmin } from "@/lib/catalog/product-shop-membership";
 import { listManufacturersForAdmin } from "@/lib/catalog/queries";
 
 export const metadata = {
@@ -7,7 +8,10 @@ export const metadata = {
 };
 
 export default async function AdminNewProductPage() {
-  const manufacturers = await listManufacturersForAdmin();
+  const [manufacturers, shopAssignment] = await Promise.all([
+    listManufacturersForAdmin(),
+    listShopAssignmentOptionsForAdmin(),
+  ]);
 
   return (
     <div className="mx-auto max-w-4xl rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm sm:p-8">
@@ -23,7 +27,7 @@ export default async function AdminNewProductPage() {
         Slug erscheint in der URL (/produkte/…). Weitere Bilder kannst du nach dem Anlegen unter Bearbeiten hochladen.
       </p>
       <div className="mt-8">
-        <CreateProductForm manufacturers={manufacturers} />
+        <CreateProductForm manufacturers={manufacturers} shopAssignment={shopAssignment} />
       </div>
     </div>
   );

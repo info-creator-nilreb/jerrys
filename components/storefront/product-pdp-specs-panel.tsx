@@ -76,11 +76,12 @@ function SpecRow({
 }
 
 /**
- * Produktdetails: Specs links, Merkmale als einzelne Label/Wert-Zeilen rechts.
+ * Produktdetails: Specs links, Merkmale (Label/Wert) rechts.
+ * Freie Verkaufsargumente erscheinen nur als USP-Zeile — nicht noch einmal als Stichpunktliste.
  */
 export function ProductPdpSpecsPanel({ display }: { display: PdpResolvedDisplay }) {
   const hasLeft = display.leftSpecs.length > 0;
-  const hasRight = display.propertySpecs.length > 0 || display.propertyLines.length > 0;
+  const hasRight = display.propertySpecs.length > 0;
   if (!hasLeft && !hasRight) return null;
 
   const twoCols = hasLeft && hasRight;
@@ -121,26 +122,6 @@ export function ProductPdpSpecsPanel({ display }: { display: PdpResolvedDisplay 
                 value={spec.value}
               />
             ))}
-            {display.propertyLines.length > 0 ? (
-              <div className="flex items-start gap-2.5">
-                <span className="mt-0.5 shrink-0 text-primary">
-                  <SpecIcon name={display.propertiesIcon} />
-                </span>
-                <div>
-                  <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-(--foreground-heading)">
-                    Stichpunkte
-                  </p>
-                  <ul className="mt-2.5 space-y-2 text-sm leading-snug text-(--foreground-muted)">
-                    {display.propertyLines.map((line, i) => (
-                      <li key={`${i}-${line.slice(0, 40)}`} className="flex gap-2">
-                        <span className="mt-2 size-1 shrink-0 rounded-full bg-primary/60" aria-hidden />
-                        <span>{line}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ) : null}
           </div>
         ) : null}
       </div>

@@ -28,6 +28,8 @@ export async function syncDefaultVariantFromProduct(
   product: {
     id: string;
     productNumber: string | null;
+    /** Wenn gesetzt, überschreibt die Default-Varianten-SKU (Admin-bearbeitbar). */
+    sku?: string | null;
   } & DefaultVariantCommerceFields,
 ): Promise<void> {
   const sku = defaultVariantSku(product);

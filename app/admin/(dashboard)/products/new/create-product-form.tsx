@@ -7,6 +7,7 @@ import {
 } from "@/app/admin/(dashboard)/products/actions";
 import { ProductFormFields } from "@/app/admin/(dashboard)/products/product-form-fields";
 import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
+import type { AdminShopAssignmentOption } from "@/lib/catalog/product-shop-membership";
 
 const initialState: ProductFormState = null;
 
@@ -15,14 +16,20 @@ const submitClass =
 
 export function CreateProductForm({
   manufacturers,
+  shopAssignment,
 }: {
   manufacturers: { id: string; name: string }[];
+  shopAssignment: AdminShopAssignmentOption;
 }) {
   const [state, formAction, pending] = useActionState(createProduct, initialState);
 
   return (
     <form action={formAction} className="flex max-w-4xl flex-col gap-8 pb-28">
-      <ProductFormFields state={state} manufacturers={manufacturers} />
+      <ProductFormFields
+        state={state}
+        manufacturers={manufacturers}
+        shopAssignment={shopAssignment}
+      />
 
       <AdminFormActionDock>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

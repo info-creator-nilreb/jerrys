@@ -14,6 +14,7 @@ import { readBrowseContextFromCookies } from "@/lib/storefront/browse-context";
 import { AmazonRatingDisplay } from "@/components/storefront/amazon-rating-display";
 import { ProductDetailGallery } from "@/components/storefront/product-detail-gallery";
 import { ProductJsonLd } from "@/components/storefront/product-json-ld";
+import { ProductPdpDescription } from "@/components/storefront/product-pdp-description";
 import { ProductPdpPurchasePanel } from "@/components/storefront/product-pdp-purchase-panel";
 import { ProductPdpSpecsPanel } from "@/components/storefront/product-pdp-specs-panel";
 import { ProductPdpTrustFooterBar, ProductPdpUspRow } from "@/components/storefront/product-pdp-trust-blocks";
@@ -126,7 +127,7 @@ export default async function ProduktDetailPage({
   const jsonLdDescription =
     leadDisplay || product.subtitle || textPreviewFromHtml(product.description);
 
-  const hasSpecsPanel = display.leftSpecs.length > 0 || display.propertySpecs.length > 0 || display.propertyLines.length > 0;
+  const hasSpecsPanel = display.leftSpecs.length > 0 || display.propertySpecs.length > 0;
 
   return (
     <>
@@ -204,6 +205,8 @@ export default async function ProduktDetailPage({
               {hasSpecsPanel ? <ProductPdpSpecsPanel display={display} /> : null}
 
               <ProductPdpUspRow usps={display.usps} />
+
+              <ProductPdpDescription html={product.description} />
 
               {product.showWorkshopCalendar ? (
                 <div className="mt-6 border-t border-(--surface-muted) pt-6">

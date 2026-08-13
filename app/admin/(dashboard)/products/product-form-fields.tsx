@@ -5,16 +5,19 @@ import { ProductAttributesFields } from "@/app/admin/(dashboard)/products/produc
 import { ProductDeliveryFields } from "@/app/admin/(dashboard)/products/product-delivery-fields";
 import { ProductGeneralFields } from "@/app/admin/(dashboard)/products/product-general-fields";
 import { ProductPricesSection } from "@/app/admin/(dashboard)/products/product-prices-section";
+import { ProductShopAssignmentFields } from "@/app/admin/(dashboard)/products/product-shop-assignment-fields";
 import { ProductStorefrontDetailFields } from "@/app/admin/(dashboard)/products/product-storefront-detail-fields";
+import type { AdminShopAssignmentOption } from "@/lib/catalog/product-shop-membership";
 
 type Mfr = { id: string; name: string };
 
 type Props = {
   state: ProductFormState;
   manufacturers: Mfr[];
+  shopAssignment: AdminShopAssignmentOption;
 };
 
-export function ProductFormFields({ state, manufacturers }: Props) {
+export function ProductFormFields({ state, manufacturers, shopAssignment }: Props) {
   const fe = state?.fieldErrors ?? {};
 
   return (
@@ -29,6 +32,7 @@ export function ProductFormFields({ state, manufacturers }: Props) {
           descriptionHtml: "",
           manufacturerId: null,
           productNumber: null,
+          sku: null,
           amazonRatingAverage: "",
           amazonRatingCount: "",
           amazonReviewUrl: "",
@@ -50,6 +54,12 @@ export function ProductFormFields({ state, manufacturers }: Props) {
       />
 
       <ProductAttributesFields state={state} defaults={[]} />
+
+      <ProductShopAssignmentFields
+        state={state}
+        options={shopAssignment}
+        defaults={{ categoryIds: [], extraCollectionIds: [] }}
+      />
 
       <ProductPricesSection
         defaultTaxPercent={19}

@@ -35,8 +35,8 @@ const KIND_OPTIONS: Array<{
   },
   {
     value: "bullets",
-    label: "Verkaufsstichpunkte",
-    hint: "Übernahme in freie Verkaufsstichpunkte",
+    label: "Verkaufsargumente (USPs)",
+    hint: "Übernahme in Verkaufsargumente / USPs",
   },
   {
     value: "seo_title",
@@ -73,7 +73,7 @@ function fieldLabel(target: ProductAiApplyTarget | null | undefined): string {
     case "descriptionHtml":
       return "Beschreibung";
     case "featureBullets":
-      return "Verkaufsstichpunkte";
+      return "Verkaufsargumente";
     default:
       return "—";
   }

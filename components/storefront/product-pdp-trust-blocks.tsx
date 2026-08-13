@@ -70,7 +70,8 @@ function UspIcon({ name }: { name: PdpSpecIcon }) {
 }
 
 /**
- * USPs aus Produktdaten (Herkunft, Theme-Label, Feature-Bullets).
+ * USPs aus Produktdaten (Herkunft, Theme-Label, Verkaufsargumente).
+ * Freie Argumente erscheinen nur hier — nicht zusätzlich als Stichpunktliste.
  * Ohne Daten: nichts rendern — keine hartcodierten Katzen-/Schmuck-Texte.
  */
 export function ProductPdpUspRow({

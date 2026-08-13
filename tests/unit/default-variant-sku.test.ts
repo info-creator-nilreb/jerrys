@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { defaultVariantSku } from "@/features/catalog";
 
 describe("defaultVariantSku", () => {
+  it("nutzt explizite SKU vor Produktnummer", () => {
+    expect(
+      defaultVariantSku({ id: "clxyz", productNumber: "ART-1", sku: " KH-50 " }),
+    ).toBe("KH-50");
+  });
+
   it("nutzt product_number wenn gesetzt", () => {
     expect(defaultVariantSku({ id: "clxyz", productNumber: " ART-1 " })).toBe("ART-1");
   });

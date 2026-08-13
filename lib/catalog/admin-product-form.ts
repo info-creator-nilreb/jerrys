@@ -67,5 +67,7 @@ export function adminProductForEditForm(product: AdminProductRecord) {
       stockQuantity: v.stockQuantity,
     })),
     collectionTitles: product.collectionMemberships.map((m) => m.collection.title),
+    collectionIds: product.collectionMemberships.map((m) => m.collectionId),
+    defaultSku: defaultVariant.sku,
   };
 }

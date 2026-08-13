@@ -49,7 +49,10 @@ export type PdpResolvedDisplay = {
   leftSpecs: PdpResolvedSpec[];
   /** Rechte Spalte: Merkmale als einzelne Label/Wert-Zeilen. */
   propertySpecs: PdpResolvedSpec[];
-  /** Freie Stichpunkte (falls gepflegt). */
+  /**
+   * @deprecated Freie Verkaufsargumente erscheinen nur noch als USPs, nicht als Stichpunktliste.
+   * Bleibt für Abwärtskompatibilität leer bzw. mit den Roh-Bullets gefüllt.
+   */
   propertyLines: string[];
   propertiesIcon: PdpSpecIcon;
   family: PdpProductFamily;
@@ -212,7 +215,8 @@ export function resolvePdpDisplay(product: {
   }
 
   const propertySpecs: PdpResolvedSpec[] = [];
-  const propertyLines: string[] = [...reconciled.featureBullets];
+  // Stichpunktliste auf der PDP entfällt — freie Zeilen nur als USPs.
+  const propertyLines: string[] = [];
 
   for (const attr of attributes) {
     if (usedAttrKeys.has(attr.key)) continue;

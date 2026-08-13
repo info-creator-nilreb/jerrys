@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -14,10 +13,13 @@ import { ProductDeliveryFields } from "@/app/admin/(dashboard)/products/product-
 import { ProductGeneralFields } from "@/app/admin/(dashboard)/products/product-general-fields";
 import { ProductPricesSection } from "@/app/admin/(dashboard)/products/product-prices-section";
 import { ProductMediaSection } from "@/app/admin/(dashboard)/products/product-media-section";
+import { ProductShopAssignmentFields } from "@/app/admin/(dashboard)/products/product-shop-assignment-fields";
 import { ProductStorefrontDetailFields } from "@/app/admin/(dashboard)/products/product-storefront-detail-fields";
 import { ProductVariantsSection } from "@/app/admin/(dashboard)/products/product-variants-section";
 import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
 import type { ProductAttribute } from "@/features/catalog";
+import type { AdminShopAssignmentOption } from "@/lib/catalog/product-shop-membership";
+import { resolveSelectedShopAssignment } from "@/lib/catalog/product-shop-membership";
 
 function plainDescriptionToHtml(description: string | null): string {
   if (!description?.trim()) return "";
@@ -82,6 +84,8 @@ type Product = {
     stockQuantity: number;
   }[];
   collectionTitles: string[];
+  collectionIds: string[];
+  defaultSku: string | null;
 };
 
 const initialState: ProductFormState = null;
@@ -92,10 +96,12 @@ const saveBtnClass =
 export function EditProductForm({
   product,
   manufacturers,
+  shopAssignment,
   aiReady = false,
 }: {
   product: Product;
   manufacturers: Manufacturer[];
+  shopAssignment: AdminShopAssignmentOption;
   aiReady?: boolean;
 }) {
   const router = useRouter();
@@ -124,7 +130,14 @@ export function EditProductForm({
   }, [state?.ok, router]);
 
   const defaultSku =
-    product.variants.find((v) => v.isDefault)?.sku ?? product.variants[0]?.sku ?? null;
+    product.defaultSku ??
+    product.variants.find((v) => v.isDefault)?.sku ??
+    product.variants[0]?.sku ??
+    null;
+  const shopDefaults = resolveSelectedShopAssignment({
+    membershipCollectionIds: product.collectionIds,
+    options: shopAssignment,
+  });
 
   return (
     <div className="flex max-w-4xl flex-col gap-8">
@@ -166,6 +179,7 @@ export function EditProductForm({
             descriptionKey,
             manufacturerId: product.manufacturerId,
             productNumber: product.productNumber,
+            sku: defaultSku,
             amazonRatingAverage:
               product.amazonRatingAverage != null
                 ? String(product.amazonRatingAverage).replace(".", ",")
@@ -197,24 +211,11 @@ export function EditProductForm({
           defaults={product.attributes ?? []}
         />
 
-        <section className="rounded-lg border border-[#e8eaed] bg-[#fafbfc] p-4">
-          <h2 className="text-sm font-semibold text-[#374151]">Kategorien &amp; Kollektionen</h2>
-          <p className="mt-1 text-xs text-[#6b7280]">
-            Produkte werden in{" "}
-            <Link href="/admin/collections" className="font-medium text-primary hover:underline">
-              Kollektionen
-            </Link>{" "}
-            zugeordnet. Kategorien in der Shop-Navigation binden diese Kollektionen — nicht einzelne
-            Produkte.
-          </p>
-          {product.collectionTitles.length > 0 ? (
-            <p className="mt-3 text-sm text-[#374151]">
-              Aktuell in: {product.collectionTitles.join(", ")}
-            </p>
-          ) : (
-            <p className="mt-3 text-sm text-[#9ca3af]">Noch keiner Kollektion zugeordnet.</p>
-          )}
-        </section>
+        <ProductShopAssignmentFields
+          state={state}
+          options={shopAssignment}
+          defaults={shopDefaults}
+        />
 
         <ProductPricesSection
           defaultTaxPercent={product.taxRatePercent}

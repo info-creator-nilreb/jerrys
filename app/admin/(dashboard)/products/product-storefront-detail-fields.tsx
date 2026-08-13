@@ -27,7 +27,8 @@ export function ProductStorefrontDetailFields({ state, defaults }: Props) {
     <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
       <h2 className="text-base font-semibold text-[#1f2937]">Produktdetail (Shop)</h2>
       <p className="mt-1 text-sm text-[#6b7280]">
-        Felder für die Produktdetailseite: Kategoriezeile, Kurztext, technische Kurzinfos und Stichpunkte.
+        Felder für die Produktdetailseite: Claim-Zeile, Kurztext, Maße/Material und Verkaufsargumente
+        (USPs). Strukturierte Angaben gehören unter Merkmale.
       </p>
       <div className="mt-6 h-px bg-[#e8eaed]" />
       <div className="mt-6 flex flex-col gap-6">
@@ -151,7 +152,7 @@ export function ProductStorefrontDetailFields({ state, defaults }: Props) {
 
         <div className="flex flex-col gap-1">
           <label htmlFor="featureBullets" className="text-xs font-medium text-[#6b7280]">
-            Freie Verkaufsstichpunkte (optional)
+            Verkaufsargumente / USPs (optional)
           </label>
           <textarea
             key={defaults.featureBulletsKey ?? 0}
@@ -163,8 +164,10 @@ export function ProductStorefrontDetailFields({ state, defaults }: Props) {
             className="resize-y rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
           />
           <p className="text-xs text-[#6b7280]">
-            Nur kurze Werbeaussagen ohne Label. Angaben wie Herkunft, Farbe oder Material gehören
-            unter <span className="font-medium">Merkmale</span>. Maximal 20 Zeilen.
+            Kurze Werbeaussagen (eine pro Zeile) — erscheinen als USP-Icons auf der Produktdetailseite,
+            nicht als separate Stichpunktliste. Herkunft, Farbe, Material usw. bitte unter{" "}
+            <span className="font-medium">Merkmale</span> pflegen. Maximal 3 USPs werden angezeigt
+            (zzgl. Made in Germany / Theme, falls vorhanden).
           </p>
         </div>
       </div>

@@ -91,4 +91,31 @@ describe("resolvePdpDisplay", () => {
     );
     expect(d.propertyLines).toEqual([]);
   });
+
+  it("zeigt freie Verkaufsargumente nur als USPs, nicht als Stichpunktliste", () => {
+    const d = resolvePdpDisplay({
+      slug: "design-katzenhoehle",
+      title: "Design Katzenhöhle",
+      leadText: null,
+      dimensionsText: "ca. 50 × 40 × 35 cm",
+      weightText: "ca. 2,1 kg",
+      materialText: "Kunststoff",
+      featureBullets: [
+        "Stabil & langlebig",
+        "Pflegeleicht abwischbar",
+        "Angenehm geschlossene Form",
+      ],
+      attributes: [
+        {
+          key: "custom.herstellungsland",
+          label: "Herstellungsland",
+          values: ["Deutschland"],
+        },
+      ],
+    });
+    expect(d.propertyLines).toEqual([]);
+    expect(d.usps.some((u) => u.title === "Made in Germany")).toBe(true);
+    expect(d.usps.some((u) => u.title === "Stabil & langlebig")).toBe(true);
+    expect(d.usps.filter((u) => u.title === "Stabil & langlebig")).toHaveLength(1);
+  });
 });

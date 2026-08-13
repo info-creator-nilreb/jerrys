@@ -64,8 +64,9 @@ export function ProductAttributesFields({ state, defaults }: Props) {
         <div>
           <h2 className="text-base font-semibold text-[#1f2937]">Merkmale</h2>
           <p className="mt-1 text-sm text-[#6b7280]">
-            Strukturierte Produktangaben (Herkunft, Farbe, Material …) für Shop und Admin.
-            Shopify-Zuordnung bleibt im Hintergrund erhalten.
+            Strukturierte Produktangaben (Herkunft, Farbe, Größe …) als Label/Wert für die
+            Produktdetails. Kurze Werbeaussagen gehören unter Verkaufsargumente / USPs — nicht hier
+            als Stichpunkte duplizieren.
           </p>
         </div>
         <button

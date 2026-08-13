@@ -20,10 +20,18 @@ import {
   productImageSchema,
 } from "@/lib/catalog/schemas";
 import { sanitizeProductDescriptionHtml } from "@/lib/catalog/sanitize-html";
+import { syncProductShopMemberships } from "@/lib/catalog/product-shop-membership";
 import { getPrisma } from "@/lib/db/prisma";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 import { ALLOWED_IMAGE_TYPES, extFromMime, MAX_UPLOAD_BYTES } from "@/lib/admin/upload-image";
 import { nonEmptyString } from "@/lib/validation/form";
+
+function formIdList(formData: FormData, key: string): string[] {
+  return formData
+    .getAll(key)
+    .map((v) => String(v).trim())
+    .filter(Boolean);
+}
 
 const log = createLogger("admin.products");
 
@@ -107,6 +115,7 @@ export async function createProduct(
     descriptionHtml: formData.get("descriptionHtml"),
     manufacturerId: formData.get("manufacturerId"),
     productNumber: formData.get("productNumber"),
+    sku: String(formData.get("sku") ?? ""),
     taxRatePercent: formData.get("taxRatePercent"),
     priceGrossEuro: formData.get("priceGrossEuro"),
     priceNetEuro: formData.get("priceNetEuro"),
@@ -137,6 +146,9 @@ export async function createProduct(
     imageAlt: formData.get("imageAlt"),
     isActive: parseIsActiveFromFormData(formData),
   };
+
+  const categoryIds = formIdList(formData, "categoryIds");
+  const extraCollectionIds = formIdList(formData, "extraCollectionIds");
 
   const parsed = createProductFormSchema.safeParse(raw);
   if (!parsed.success) {
@@ -208,18 +220,31 @@ export async function createProduct(
       await syncDefaultVariantFromProduct(tx, {
         id: created.id,
         productNumber: d.productNumber,
+        sku: d.sku,
         ...variantMirror,
+      });
+      await syncProductShopMemberships(tx, created.id, {
+        categoryIds,
+        extraCollectionIds,
       });
     });
   } catch (e) {
     if (isUniqueConstraintError(e)) {
-      return { error: "Dieser Slug ist bereits vergeben." };
+      const msg = String((e as { meta?: { target?: string[] } }).meta?.target ?? []);
+      if (msg.includes("sku") || /sku/i.test(String(e))) {
+        return { fieldErrors: { sku: "Diese SKU ist bereits vergeben." } };
+      }
+      return { error: "Dieser Slug oder diese SKU ist bereits vergeben." };
     }
     throw e;
   }
 
   revalidatePath("/");
   revalidatePath("/produkte");
+  revalidatePath("/kategorien");
+  revalidatePath("/kollektionen");
+  revalidatePath("/admin/categories");
+  revalidatePath("/admin/collections");
   redirect("/admin/products");
 }
 
@@ -240,6 +265,7 @@ export async function updateProduct(
     descriptionHtml: formData.get("descriptionHtml"),
     manufacturerId: formData.get("manufacturerId"),
     productNumber: formData.get("productNumber"),
+    sku: String(formData.get("sku") ?? ""),
     taxRatePercent: formData.get("taxRatePercent"),
     priceGrossEuro: formData.get("priceGrossEuro"),
     priceNetEuro: formData.get("priceNetEuro"),
@@ -268,6 +294,9 @@ export async function updateProduct(
     showWorkshopCalendar: formData.get("showWorkshopCalendar") === "on",
     isActive: parseIsActiveFromFormData(formData),
   };
+
+  const categoryIds = formIdList(formData, "categoryIds");
+  const extraCollectionIds = formIdList(formData, "extraCollectionIds");
 
   const parsed = updateProductFormSchema.safeParse(raw);
   if (!parsed.success) {
@@ -340,12 +369,21 @@ export async function updateProduct(
       await syncDefaultVariantFromProduct(tx, {
         id: d.id,
         productNumber: d.productNumber,
+        sku: d.sku,
         ...variantMirror,
+      });
+      await syncProductShopMemberships(tx, d.id, {
+        categoryIds,
+        extraCollectionIds,
       });
     });
   } catch (e) {
     if (isUniqueConstraintError(e)) {
-      return { error: "Dieser Slug ist bereits vergeben." };
+      const msg = String((e as { meta?: { target?: string[] } }).meta?.target ?? []);
+      if (msg.includes("sku") || /sku/i.test(String(e))) {
+        return { fieldErrors: { sku: "Diese SKU ist bereits vergeben." } };
+      }
+      return { error: "Dieser Slug oder diese SKU ist bereits vergeben." };
     }
     throw e;
   }
@@ -358,6 +396,9 @@ export async function updateProduct(
   }
   revalidatePath(`/admin/products/${d.id}/edit`);
   revalidatePath("/admin/categories");
+  revalidatePath("/admin/collections");
+  revalidatePath("/kategorien");
+  revalidatePath("/kollektionen");
   return { ok: true };
 }
 

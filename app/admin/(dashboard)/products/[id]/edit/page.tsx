@@ -5,6 +5,7 @@ import { EditProductForm } from "@/app/admin/(dashboard)/products/[id]/edit/edit
 import { ProductLifecycleControls } from "@/app/admin/(dashboard)/products/[id]/edit/product-lifecycle-controls";
 import { getAiContentSettingsPublic } from "@/features/integrations";
 import { adminProductForEditForm } from "@/lib/catalog/admin-product-form";
+import { listShopAssignmentOptionsForAdmin } from "@/lib/catalog/product-shop-membership";
 import { getProductByIdForAdmin, listManufacturersForAdmin } from "@/lib/catalog/queries";
 
 export const dynamic = "force-dynamic";
@@ -27,10 +28,11 @@ export default async function AdminEditProductPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [product, manufacturers, aiSettings] = await Promise.all([
+  const [product, manufacturers, aiSettings, shopAssignment] = await Promise.all([
     getProductByIdForAdmin(id),
     listManufacturersForAdmin(),
     getAiContentSettingsPublic(),
+    listShopAssignmentOptionsForAdmin(),
   ]);
   if (!product) notFound();
   const formProduct = adminProductForEditForm(product);
@@ -70,6 +72,7 @@ export default async function AdminEditProductPage({
         <EditProductForm
           product={formProduct}
           manufacturers={manufacturers}
+          shopAssignment={shopAssignment}
           aiReady={aiSettings.ready}
         />
         <ProductLifecycleControls

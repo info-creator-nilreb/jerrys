@@ -30,6 +30,8 @@ type Props = {
     descriptionKey?: number;
     manufacturerId: string | null;
     productNumber: string | null;
+    /** SKU der Default-Variante (bearbeitbar). */
+    sku: string | null;
     amazonRatingAverage: string;
     amazonRatingCount: string;
     amazonReviewUrl: string;
@@ -59,7 +61,7 @@ export function ProductGeneralFields({ state, manufacturers, defaults }: Props) 
           {fe.title ? <p className="text-sm text-red-600">{fe.title}</p> : null}
         </div>
 
-        <div className="grid gap-6 md:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+        <div className="grid gap-6 md:grid-cols-2">
           <div className="flex flex-col gap-1">
             <label htmlFor="manufacturerId" className="text-xs font-medium text-[#6b7280]">
               Hersteller
@@ -83,7 +85,7 @@ export function ProductGeneralFields({ state, manufacturers, defaults }: Props) 
               <label htmlFor="productNumber" className="text-xs font-medium text-[#6b7280]">
                 Produktnummer
               </label>
-              <InfoIcon title="Interne oder Hersteller-Artikelnummer." />
+              <InfoIcon title="Interne oder Hersteller-Artikelnummer (nicht zwingend die Verkaufs-SKU)." />
             </div>
             <input
               id="productNumber"
@@ -93,6 +95,28 @@ export function ProductGeneralFields({ state, manufacturers, defaults }: Props) 
               className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
             />
           </div>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between gap-2">
+            <label htmlFor="sku" className="text-xs font-medium text-[#6b7280]">
+              SKU (Standard-Variante)
+            </label>
+            <InfoIcon title="Eindeutige Verkaufs-SKU der Standard-Variante. Weitere Varianten-SKUs bearbeitest du unten bei Varianten." />
+          </div>
+          <input
+            id="sku"
+            name="sku"
+            type="text"
+            maxLength={64}
+            placeholder="z. B. KH-50-GR"
+            defaultValue={defaults.sku ?? ""}
+            className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 font-mono text-sm"
+          />
+          <p className="text-xs text-[#6b7280]">
+            Leer lassen, um aus der Produktnummer (oder einer stabilen Fallback-SKU) abzuleiten.
+          </p>
+          {fe.sku ? <p className="text-sm text-red-600">{fe.sku}</p> : null}
         </div>
 
         <div className="flex flex-col gap-1">
