@@ -1,6 +1,8 @@
 import { appendIntegrationOutbox } from "@/features/integrations";
 import { getPrisma } from "@/lib/db/prisma";
+import { isMissingSchemaError } from "@/lib/db/prisma-error";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
+import { ensureShopSettingsColumns } from "@/lib/shop/ensure-shop-settings-columns";
 import {
   getShopSettings,
   SHOP_SETTINGS_DEFAULT_ID,
@@ -151,6 +153,7 @@ export async function updateShopSettingsFromInput(
   const prisma = getPrisma();
 
   try {
+    await ensureShopSettingsColumns();
     await prisma.$transaction(async (tx) => {
       await tx.shopSettings.upsert({
         where: { id: SHOP_SETTINGS_DEFAULT_ID },
@@ -218,6 +221,13 @@ export async function updateShopSettingsFromInput(
     };
   } catch (e) {
     log.error("shop_settings_update_failed", errorMeta(e));
+    if (isMissingSchemaError(e)) {
+      return {
+        ok: false,
+        error:
+          "Datenbank-Schema ist nicht aktuell (fehlende Spalte). Bitte Migration deployen: npm run db:migrate:deploy",
+      };
+    }
     return { ok: false, error: "Einstellungen konnten nicht gespeichert werden." };
   }
 }
