@@ -3,7 +3,7 @@
 **Ziel:** `https://ecom-seven-livid.vercel.app/`  
 **Datum:** 2026-08-13 (UTC)  
 **Scope:** Lasttest (bis 30 parallele Nutzer), Performance (Web Vitals / Lighthouse), Security Surface (eigene Architektur, keine Drittanbieter-Angriffe)  
-**Auth-Hinweis:** In den Cloud-Agent-Secrets lagen **keine** `E2E_ADMIN_*` / Kunden-Credentials vor (nur `AUTH_SECRET`, `COMMERCE_MAINTENANCE_SECRET`, `DATABASE_URL`). Authentifizierte Admin-Tests liefen über den noch aktiven Seed-Account `admin@example.com` / `change-me-now` — das ist selbst ein kritisches Finding (SEC-09).
+**Auth-Hinweis:** Cloud-Agent-Secrets enthalten weiterhin **keine** `E2E_ADMIN_*` / `E2E_CUSTOMER_*` (nur `AUTH_SECRET`, `COMMERCE_MAINTENANCE_SECRET`, `DATABASE_URL`) — bestätigt im frischen Boot §7. Baseline nutzte noch Seed-Admin (SEC-09); Retests §6/§7: Seed-Default liefert **keine** Session. Authentifizierte Admin-/Kunden-Smokes bleiben blockiert.
 
 ---
 
@@ -186,10 +186,10 @@ npx lighthouse https://ecom-seven-livid.vercel.app/ \
 
 ### Offen
 
-5. ~~Nach Deploy: k6 + Lighthouse erneut gegen Preview.~~ → siehe **§6 Retest** (teilweise durch Vercel Security Checkpoint blockiert).  
+5. ~~Nach Deploy: k6 + Lighthouse erneut gegen Preview.~~ → siehe **§6** / **§7 Retest** (k6 weiterhin durch Vercel Security Checkpoint blockiert).  
 6. Workshop-Rate-Limit + shared Rate-Limit für öffentliche APIs.  
 7. Kanonische Site-URL in `llms.txt` / Sitemap.  
-8. Authentifizierter Admin-Nachtest mit `E2E_ADMIN_*` (Secrets fehlen weiterhin).  
+8. Authentifizierter Admin-Nachtest mit `E2E_ADMIN_*` (**Secrets fehlen weiterhin** — frischer Agent-Boot 14:08 UTC).  
 9. Kundenportal-Nachtest mit `E2E_CUSTOMER_*` (Secrets fehlen weiterhin).  
 10. Operator: `PAYPAL_WEBHOOK_ID` + Live-Webhook-URL (nicht durch Agent konfigurieren).  
 11. Operator: Vercel Security Checkpoint / Bot-Protection für Lasttools (k6) whitelisten oder Challenge-Bypass für CI.
@@ -290,3 +290,102 @@ Antwortzeiten unter Last weiterhin **nicht go-live-tauglich** (vergleichbar zur 
 | Last 30 VUs | **Nicht bestanden** / k6 blockiert | curl-p95 ~44 s; k6 durch Checkpoint 403 |
 
 **Empfehlung:** `E2E_ADMIN_*` (+ optional `E2E_CUSTOMER_*`) in die Cursor Cloud Environment injizieren und Auth-Smokes wiederholen; Vercel Security Checkpoint für Lastmessung klären; Server-/Cache-Latenz unter Concurrency weiter adressieren; PayPal-Webhook durch Operator setzen.
+
+---
+
+## 7. Frischer Agent-Nachtest (2026-08-13, ~14:08–14:15 UTC)
+
+**Agent:** neuer Cloud-Boot laut `docs/go-live/HANDOFF_AUTH_AND_RETEST.md` (bc-…-b078)  
+**Ziel:** `https://ecom-seven-livid.vercel.app/`  
+**Artefakte:** `/opt/cursor/artifacts/go-live-tests/` (`auth-smoke-retest2.txt`, `security-surface-retest2.txt`, `ttfb-retest2.csv`, `lighthouse/home-retest2.*`, `k6-retest2.txt`, `curl-load-30vu-retest2.csv`, `curl-status-sample-retest2.txt`, `k6-403-sample-retest2.html`)
+
+### 7.1 Secret-Sanity
+
+| Secret | Status |
+|--------|--------|
+| `CLOUD_AGENT_INJECTED_SECRET_NAMES` | `AUTH_SECRET`, `COMMERCE_MAINTENANCE_SECRET`, `DATABASE_URL` |
+| `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` | **fehlen** |
+| `E2E_CUSTOMER_EMAIL` / `E2E_CUSTOMER_PASSWORD` | **fehlen** |
+
+**Sofortmeldung:** Trotz frischem Boot sind **keine** `E2E_*` Secrets injiziert. Authentifizierte Admin-/Kunden-Smokes weiterhin unmöglich. Kein Raten von Credentials; Seed-Default nicht als Login-Ersatz genutzt.
+
+### 7.2 Auth / Admin
+
+| Check | Ergebnis |
+|-------|----------|
+| Seed-Default `admin@example.com` / `change-me-now` → Session | **PASS** — Session `null` / leer |
+| Falsches Passwort → Session | **PASS** — keine Session |
+| `GET /admin`, `/admin/orders`, `/admin/products`, `/admin/customers`, `/admin/einstellungen` ohne Cookie | **PASS** — HTTP 307 → `/admin/login` |
+| `GET /api/admin/search` ohne Cookie | **PASS** — HTTP 401 |
+| Authentifiziertes `/admin/orders` (SEC-10 Verify) | **BLOCKIERT** — keine `E2E_ADMIN_*` |
+| Kundenportal | **SKIP** — keine `E2E_CUSTOMER_*` |
+
+### 7.3 Security Surface
+
+`bash scripts/security/go-live-surface-check.sh` → erwartete Gates **PASS**.
+
+- PayPal-Webhook: weiterhin **503** `webhook_not_configured` (**bekannt offen**, Operator — nicht konfiguriert).  
+- Rate-Limit Burst `product-suggest` 40×: **0× 429** (SEC-02).  
+- `llms.txt` / Canonical: weiterhin nicht-kanonischer Vercel-Host (SEC-06).
+
+### 7.4 Single-User TTFB (curl, 3 Läufe)
+
+| Pfad | typ. TTFB (dieser Lauf) | §6 Retest | Baseline |
+|------|------------------------:|----------:|---------:|
+| `/` | **2,7–4,5 s** (med ~3,6 s) | 2,0–2,4 s | 2,3–3,7 s |
+| `/produkte` | **1,2–2,7 s** | ~1,2 s | ~1,2 s |
+| `/produkte/design-katzenhoehle` | ~1,8 s | ~1,8 s | ~1,8–1,9 s |
+| `/warenkorb` | ~0,45 s | ~0,45 s | ~0,45 s |
+| `/termine` | ~0,9–1,0 s | ~1,0 s | ~1,0–1,4 s |
+| `/admin/login` | ~66–74 ms | ~60–170 ms | ~60 ms |
+
+Home-/Katalog-TTFB in diesem Lauf **volatiler/langsamer** als §6 (vermutlich Cold-Start / Cache-Miss / Region). Ideal (&lt; 0,8 s) weiterhin verfehlt.
+
+### 7.5 Lighthouse Home (Desktop, `throttling-method=provided`, `--preset=desktop`)
+
+| Metrik | Dieser Lauf | §6 Retest | Baseline |
+|--------|------------:|----------:|---------:|
+| Performance | **67** | 66 | 61 |
+| LCP | **2913 ms** | 3034 ms | 3776 ms |
+| FCP | **2913 ms** | 3034 ms | 3658 ms |
+| CLS | **0** | 0 | 0 |
+| a11y / BP / SEO | 89 / 100 / 92 | 89 / 100 / 92 | — |
+
+Home-LCP weiterhin über „Good“ (2,5 s); leichte weitere Verbesserung ggü. §6.
+
+### 7.6 Lasttest 30 VUs
+
+#### A) `npm run load:k6:go-live`
+
+- **Ergebnis: nicht auswertbar für App-Latenz** — **99,74 %** `http_req_failed` (3094/3102).  
+- Einzel-`curl` mit k6-UA kann 200 liefern; unter Last greift **Vercel Security Checkpoint** (403, Astro-Challenge-Page).  
+- Stichprobe 20 parallele curl: **16× 200 / 4× 403** Checkpoint.  
+- Thresholds `http_req_failed` / `checks` crossed (Messartefakt).  
+- Erwartete echte 200er (wenige): p95 Dauer ~4 s — nicht repräsentativ wegen Blockade.
+
+#### B) Ersatz: curl, 30 parallele Worker, ~120 s
+
+| Metrik | Wert |
+|--------|------|
+| Requests | 188 |
+| HTTP 200 | **90 %** (170) |
+| HTTP 403 (Checkpoint) | **10 %** (18) |
+| p50 `total` (nur 200) | **~20,7 s** |
+| p95 `total` (nur 200) | **~50,5 s** |
+| Requests &lt; 10 s (nur 200) | **~22 %** |
+
+Antwortzeiten unter Last weiterhin **nicht go-live-tauglich** (vergleichbar/schlechter als §6 p95 ~44 s / Baseline ~48 s). Checkpoint bleibt unter Concurrency aktiv.
+
+### 7.7 Gesamturteil (dieser Lauf)
+
+| Block | Ergebnis | Kurzfazit |
+|-------|----------|-----------|
+| Secrets `E2E_*` | **Blocker** | weiterhin nicht injiziert |
+| Seed-Default / Unauth-Gating | **Bestanden** | SEC-09 bestätigt |
+| `/admin/orders` auth | **Nicht geprüft** | braucht `E2E_ADMIN_*` |
+| Kundenportal | **SKIP** | braucht `E2E_CUSTOMER_*` |
+| Security Surface | **Bestanden** (PayPal offen) | fail-closed; Webhook Operator |
+| TTFB / Lighthouse Home | **Teilweise** | LCP leicht besser; TTFB volatil/hoch |
+| Last 30 VUs | **Nicht bestanden** / k6 blockiert | curl-p95 ~50 s; k6 ~100 % Checkpoint |
+
+**Empfehlung (unverändert):** `E2E_ADMIN_*` (+ optional `E2E_CUSTOMER_*`) in Cursor Cloud Environment injizieren und Auth-Smokes wiederholen; Vercel Security Checkpoint für Lasttools klären; SSR/Cache unter Concurrency weiter adressieren; PayPal-Webhook durch Operator setzen.
