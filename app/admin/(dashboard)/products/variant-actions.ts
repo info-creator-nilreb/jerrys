@@ -12,6 +12,7 @@ export type VariantActionState = {
   error?: string;
   fieldErrors?: Record<string, string>;
   ok?: boolean;
+  revision?: number;
 } | null;
 
 function fieldErrorsFromZod(err: z.ZodError): Record<string, string> {
@@ -286,5 +287,5 @@ export async function updateDefaultVariantTitle(
   });
 
   revalidateProductVariantPaths(variant.product);
-  return { ok: true };
+  return { ok: true, revision: Date.now() };
 }

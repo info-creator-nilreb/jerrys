@@ -36,8 +36,10 @@ export function ProductVariantsSection({
     <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
       <h2 className="text-base font-semibold text-[#1f2937]">Varianten & SKU</h2>
       <p className="mt-2 text-sm text-[#6b7280]">
-        Die <strong>Standard-Variante</strong> wird über Preis und Bestand im Formular unten gepflegt.
-        Weitere Varianten haben eigene SKU, Preis und Lager.
+        <strong>Bezeichnung</strong> (z.&nbsp;B. Farbe „Natur“ / „schwarz“) pflegst du hier für jede
+        Variante — auch für die Standard-Variante über <span className="font-medium">Bearbeiten</span>.
+        SKU, Preis und Bestand der Standard-Variante kommen aus dem Produktformular oben; weitere
+        Varianten haben eigene SKU, Preis und Lager.
       </p>
 
       {variants.length > 0 ? (
@@ -81,13 +83,13 @@ export function ProductVariantsSection({
           </div>
           <div className="flex flex-col gap-1 sm:col-span-1">
             <label htmlFor="variant-title" className="text-xs font-medium text-[#6b7280]">
-              Bezeichnung (optional)
+              Bezeichnung (z. B. Farbe)
             </label>
             <input
               id="variant-title"
               name="title"
               className="rounded-md border border-[#e3e4e8] px-3 py-2 text-sm"
-              placeholder="z. B. Rot / Größe M"
+              placeholder="z. B. schwarz"
             />
           </div>
           <div className="flex flex-col gap-1">

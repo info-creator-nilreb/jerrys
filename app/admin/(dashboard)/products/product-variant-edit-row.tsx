@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Pencil } from "lucide-react";
 import { formatPrice, centsToPriceInputString } from "@/lib/catalog/format";
 import {
@@ -12,6 +13,12 @@ import type { AdminProductVariantRow } from "@/app/admin/(dashboard)/products/pr
 
 const initial: VariantActionState = null;
 
+function BezeichnungCell({ title }: { title: string | null }) {
+  const t = title?.trim();
+  if (t) return <>{t}</>;
+  return <span className="text-[#9ca3af]">z. B. Farbe …</span>;
+}
+
 export function ProductVariantEditRow({
   variant,
   currency,
@@ -19,6 +26,7 @@ export function ProductVariantEditRow({
   variant: AdminProductVariantRow;
   currency: string;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
     variant.isDefault ? updateDefaultVariantTitle : updateProductVariant,
@@ -26,12 +34,19 @@ export function ProductVariantEditRow({
   );
   const fe = state?.fieldErrors ?? {};
 
+  useEffect(() => {
+    if (!state?.ok) return;
+    router.refresh();
+  }, [state?.ok, state?.revision, router]);
+
   if (variant.isDefault) {
     return (
       <>
         <tr className="border-b border-[#f3f4f6] text-[#374151]">
           <td className="py-2.5 pr-4 font-mono text-xs">{variant.sku}</td>
-          <td className="py-2.5 pr-4">{variant.title?.trim() || "—"}</td>
+          <td className="py-2.5 pr-4">
+            <BezeichnungCell title={variant.title} />
+          </td>
           <td className="py-2.5 pr-4 tabular-nums">{formatPrice(variant.priceGrossCents, currency)}</td>
           <td className="py-2.5 pr-4 tabular-nums">{variant.availableQuantity}</td>
           <td className="py-2.5">
@@ -51,7 +66,7 @@ export function ProductVariantEditRow({
               aria-controls={`variant-edit-${variant.id}`}
             >
               <Pencil className="size-3.5" aria-hidden />
-              {open ? "Schließen" : "Bezeichnung"}
+              {open ? "Schließen" : "Bearbeiten"}
             </button>
           </td>
         </tr>
@@ -65,23 +80,24 @@ export function ProductVariantEditRow({
               >
                 <input type="hidden" name="variantId" value={variant.id} />
                 <p className="text-xs text-[#6b7280]">
-                  Kunden-sichtbarer Name in der PDP-Auswahl (z.&nbsp;B. „Natur“ oder „beige“). SKU und
-                  Preis bleiben im Hauptformular.
+                  Hier die Farbe bzw. Option der Standard-SKU eintragen (Shop-Auswahl). SKU, Preis und
+                  Bestand bleiben im Produktformular oben.
                 </p>
                 <div className="flex flex-col gap-1">
                   <label
                     htmlFor={`edit-title-${variant.id}`}
                     className="text-xs font-medium text-[#6b7280]"
                   >
-                    Bezeichnung
+                    Bezeichnung (z. B. Farbe)
                   </label>
                   <input
                     id={`edit-title-${variant.id}`}
                     name="title"
                     defaultValue={variant.title ?? ""}
-                    placeholder="z. B. Natur / Standardfarbe"
+                    placeholder="z. B. natur, beige, Standard"
                     maxLength={120}
                     className="rounded-md border border-[#e3e4e8] bg-white px-3 py-2 text-sm"
+                    autoFocus
                   />
                   {fe.title ? <p className="text-xs text-red-600">{fe.title}</p> : null}
                 </div>
@@ -112,7 +128,9 @@ export function ProductVariantEditRow({
     <>
       <tr className="border-b border-[#f3f4f6] text-[#374151]">
         <td className="py-2.5 pr-4 font-mono text-xs">{variant.sku}</td>
-        <td className="py-2.5 pr-4">{variant.title?.trim() || "—"}</td>
+        <td className="py-2.5 pr-4">
+          <BezeichnungCell title={variant.title} />
+        </td>
         <td className="py-2.5 pr-4 tabular-nums">{formatPrice(variant.priceGrossCents, currency)}</td>
         <td className="py-2.5 pr-4 tabular-nums">{variant.availableQuantity}</td>
         <td className="py-2.5">
