@@ -4,6 +4,7 @@ import { getAdminSession } from "@/lib/auth/admin-session";
 import { AdminDevClientNotice } from "@/components/admin/admin-dev-client-notice";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { formatAppVersionLabel, getAppVersion } from "@/lib/app-version";
+import { isTermineFeatureEnabled } from "@/lib/shop/termine-feature";
 
 export const metadata: Metadata = {
   title: {
@@ -31,11 +32,14 @@ export default async function AdminDashboardLayout({
       ? (process.env.AUTH_URL ?? `http://localhost:${devPort}`)
       : "";
 
+  const termineEnabled = await isTermineFeatureEnabled();
+
   return (
     <AdminShell
       appVersion={formatAppVersionLabel(getAppVersion())}
       userEmail={email}
       userName={name || email}
+      termineEnabled={termineEnabled}
     >
       {process.env.NODE_ENV === "development" ? (
         <AdminDevClientNotice devBaseUrl={devBaseUrl} />

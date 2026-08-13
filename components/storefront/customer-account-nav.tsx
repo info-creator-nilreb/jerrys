@@ -3,17 +3,37 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const links = [
+const baseLinks = [
   { href: "/konto", label: "Übersicht", exact: true },
   { href: "/konto/bestellungen", label: "Bestellungen", exact: false },
-  { href: "/konto/termine", label: "Termine", exact: false },
   { href: "/konto/adressen", label: "Adressen", exact: false },
   { href: "/konto/passwort", label: "Passwort", exact: false },
   { href: "/konto/datenschutz", label: "Datenschutz", exact: false },
 ] as const;
 
-export function CustomerAccountNav() {
+const termineLink = {
+  href: "/konto/termine",
+  label: "Termine",
+  exact: false,
+} as const;
+
+export function CustomerAccountNav({
+  showTermine = false,
+}: {
+  /** Feature aktiv und Kunde hat mindestens eine Buchung. */
+  showTermine?: boolean;
+}) {
   const pathname = usePathname() || "/konto";
+  const links = showTermine
+    ? [
+        baseLinks[0],
+        baseLinks[1],
+        termineLink,
+        baseLinks[2],
+        baseLinks[3],
+        baseLinks[4],
+      ]
+    : [...baseLinks];
 
   return (
     <nav

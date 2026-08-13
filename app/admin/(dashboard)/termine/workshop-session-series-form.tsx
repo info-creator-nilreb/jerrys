@@ -8,7 +8,10 @@ import {
   createWorkshopSessionSeriesAction,
   type WorkshopSessionActionState,
 } from "@/app/admin/(dashboard)/termine/actions";
-import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
+import {
+  ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING,
+  AdminFormActionDock,
+} from "@/components/admin/admin-form-action-dock";
 import type { AdminWorkshopSessionDetail } from "@/features/workshops";
 import {
   durationMinutesFromSessionRange,
@@ -65,7 +68,7 @@ export function WorkshopSessionSeriesForm({ template }: Props) {
   }
 
   return (
-    <form action={formAction} className="space-y-8 pb-24">
+    <form action={formAction} className={`space-y-8 ${ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING}`}>
       {state?.ok === false ? (
         <p className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
           {state.message}

@@ -71,7 +71,14 @@ function readInitialAckAt(): string {
   }
 }
 
-export function AdminTopBar({ onOpenMobileNav }: { onOpenMobileNav?: () => void }) {
+export function AdminTopBar({
+  onOpenMobileNav,
+  termineEnabled = true,
+}: {
+  onOpenMobileNav?: () => void;
+  /** Shop-Feature-Flag: Termin-Alerts und Footer-Links in der Glocke. */
+  termineEnabled?: boolean;
+}) {
   const scopeFieldId = useId();
   const searchWrapRef = useRef<HTMLDivElement>(null);
   const bellWrapRef = useRef<HTMLDivElement>(null);
@@ -105,12 +112,12 @@ export function AdminTopBar({ onOpenMobileNav }: { onOpenMobileNav?: () => void 
       if (!res.ok) return;
       const data = (await res.json()) as AdminAlertsResponse;
       setOrderAlerts(data.orders ?? []);
-      setBookingAlerts(data.bookings ?? []);
-      setDateRequestAlerts(data.dateRequests ?? []);
+      setBookingAlerts(termineEnabled ? (data.bookings ?? []) : []);
+      setDateRequestAlerts(termineEnabled ? (data.dateRequests ?? []) : []);
     } finally {
       setAlertLoading(false);
     }
-  }, []);
+  }, [termineEnabled]);
 
   useEffect(() => {
     setAckAt(readInitialAckAt());
@@ -390,7 +397,9 @@ export function AdminTopBar({ onOpenMobileNav }: { onOpenMobileNav?: () => void 
                 <p className="px-3 py-4 text-sm text-[#6b7280]">Lade …</p>
               ) : !hasAlerts ? (
                 <p className="px-3 py-4 text-sm text-[#6b7280]">
-                  Keine neuen Bestellungen oder Termine seit dem letzten Zurücksetzen.
+                  {termineEnabled
+                    ? "Keine neuen Bestellungen oder Termine seit dem letzten Zurücksetzen."
+                    : "Keine neuen Bestellungen seit dem letzten Zurücksetzen."}
                 </p>
               ) : (
                 <div className="divide-y divide-[#f3f4f6]">
@@ -426,7 +435,7 @@ export function AdminTopBar({ onOpenMobileNav }: { onOpenMobileNav?: () => void 
                     </div>
                   ) : null}
 
-                  {bookingAlerts.length > 0 ? (
+                  {termineEnabled && bookingAlerts.length > 0 ? (
                     <div>
                       <p className="px-3 pt-2 pb-1 text-xs font-semibold tracking-wide text-[#9ca3af] uppercase">
                         Terminbuchungen
@@ -462,7 +471,7 @@ export function AdminTopBar({ onOpenMobileNav }: { onOpenMobileNav?: () => void 
                     </div>
                   ) : null}
 
-                  {dateRequestAlerts.length > 0 ? (
+                  {termineEnabled && dateRequestAlerts.length > 0 ? (
                     <div>
                       <p className="px-3 pt-2 pb-1 text-xs font-semibold tracking-wide text-[#9ca3af] uppercase">
                         Wunschtermine
@@ -505,20 +514,24 @@ export function AdminTopBar({ onOpenMobileNav }: { onOpenMobileNav?: () => void 
               >
                 Alle Bestellungen
               </Link>
-              <Link
-                href="/admin/termine"
-                className="text-xs font-medium text-primary hover:underline"
-                onClick={() => setBellOpen(false)}
-              >
-                Termine
-              </Link>
-              <Link
-                href="/admin/termine/wunschtermine"
-                className="text-xs font-medium text-primary hover:underline"
-                onClick={() => setBellOpen(false)}
-              >
-                Wunschtermine
-              </Link>
+              {termineEnabled ? (
+                <>
+                  <Link
+                    href="/admin/termine"
+                    className="text-xs font-medium text-primary hover:underline"
+                    onClick={() => setBellOpen(false)}
+                  >
+                    Termine
+                  </Link>
+                  <Link
+                    href="/admin/termine/wunschtermine"
+                    className="text-xs font-medium text-primary hover:underline"
+                    onClick={() => setBellOpen(false)}
+                  >
+                    Wunschtermine
+                  </Link>
+                </>
+              ) : null}
             </div>
           </div>
         ) : null}
