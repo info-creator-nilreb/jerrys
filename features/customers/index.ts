@@ -36,6 +36,7 @@ export {
   customerMagicLinkRequestSchema,
   customerPasswordResetRequestSchema,
   customerPasswordResetConfirmSchema,
+  customerChangePasswordSchema,
   customerAuthTokenSchema,
 } from "@/features/customers/application/customer-auth-schemas";
 
@@ -51,6 +52,7 @@ export {
   requestCustomerPasswordReset,
   confirmCustomerPasswordReset,
 } from "@/features/customers/application/password-reset";
+export { changeCustomerPassword } from "@/features/customers/application/change-customer-password";
 export { getVerifiedActiveCustomerId } from "@/features/customers/application/get-verified-active-customer-id";
 export {
   listOrdersForCustomer,

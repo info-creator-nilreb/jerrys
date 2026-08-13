@@ -17,6 +17,10 @@ import {
   customerAuthPrimaryButtonClass,
   customerAuthSecondaryLinkClass,
 } from "@/components/storefront/customer-auth-shell";
+import {
+  useStorefrontHeaderOverlayLock,
+  useStorefrontHeaderUi,
+} from "@/components/storefront/storefront-header-ui";
 import { customerSignOutAction } from "@/app/(storefront)/konto/actions";
 
 function useClientMounted(): boolean {
@@ -49,9 +53,10 @@ const MAGIC_MESSAGES: Record<string, { ok: boolean; text: string }> = {
 type Props = {
   isLoggedIn: boolean;
   email: string | null;
+  initials: string | null;
 };
 
-export function HeaderAccountPopover({ isLoggedIn, email }: Props) {
+export function HeaderAccountPopover({ isLoggedIn, email, initials }: Props) {
   const panelId = useId();
   const [userOpen, setUserOpen] = useState(false);
   const [queryDismissed, setQueryDismissed] = useState(false);
@@ -62,6 +67,7 @@ export function HeaderAccountPopover({ isLoggedIn, email }: Props) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
+  const { controlClassName, tone } = useStorefrontHeaderUi();
 
   const kontoParam = searchParams.get("konto");
   const flash =
@@ -79,6 +85,7 @@ export function HeaderAccountPopover({ isLoggedIn, email }: Props) {
       kontoParam === "geloescht" ||
       Boolean(kontoParam?.startsWith("magic-")));
   const open = userOpen || (wantsQueryOpen && !queryDismissed);
+  useStorefrontHeaderOverlayLock("account", open);
 
   const clearKontoQuery = useCallback(() => {
     if (!kontoParam && !callbackUrlParam) return;
@@ -190,6 +197,13 @@ export function HeaderAccountPopover({ isLoggedIn, email }: Props) {
               >
                 Zum Konto
               </Link>
+              <Link
+                href="/konto/passwort"
+                className={`${customerAuthSecondaryLinkClass} block text-center`}
+                onClick={close}
+              >
+                Passwort ändern
+              </Link>
               <form action={customerSignOutAction}>
                 <button
                   type="submit"
@@ -228,8 +242,10 @@ export function HeaderAccountPopover({ isLoggedIn, email }: Props) {
       <button
         ref={triggerRef}
         type="button"
-        className="relative z-[500001] inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-(--foreground-heading) transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-        aria-label={isLoggedIn ? "Mein Konto" : "Anmelden"}
+        className={`relative z-[500001] inline-flex min-h-11 min-w-11 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+          isLoggedIn ? "hover:opacity-90" : controlClassName
+        }`}
+        aria-label={isLoggedIn ? "Mein Konto (angemeldet)" : "Anmelden"}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
         onClick={() => {
@@ -241,7 +257,20 @@ export function HeaderAccountPopover({ isLoggedIn, email }: Props) {
           setUserOpen(true);
         }}
       >
-        <User className="size-6" aria-hidden strokeWidth={1.75} />
+        {isLoggedIn && initials ? (
+          <span
+            className={`inline-flex size-8 items-center justify-center rounded-full text-xs font-semibold tracking-wide ${
+              tone === "transparent"
+                ? "bg-white text-(--foreground-heading) ring-2 ring-white/80"
+                : "bg-primary text-white ring-2 ring-primary/30"
+            }`}
+            aria-hidden
+          >
+            {initials}
+          </span>
+        ) : (
+          <User className="size-6" aria-hidden strokeWidth={1.75} />
+        )}
       </button>
       {mounted && overlay ? createPortal(overlay, document.body) : null}
     </>

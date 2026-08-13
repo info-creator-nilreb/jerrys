@@ -3,6 +3,7 @@ import { User } from "lucide-react";
 import { HeaderAccountPopover } from "@/components/storefront/header-account-popover";
 import { getCustomerSession } from "@/lib/auth/customer-session";
 import { createLogger } from "@/lib/logging/logger";
+import { customerDisplayInitials } from "@/lib/storefront/customer-display-initials";
 
 const log = createLogger("storefront.header-account");
 
@@ -20,17 +21,27 @@ function AccountIconFallback() {
 async function HeaderAccountLinkInner() {
   let isLoggedIn = false;
   let email: string | null = null;
+  let name: string | null = null;
   try {
     const session = await getCustomerSession();
     if (session) {
       isLoggedIn = true;
       email = session.email;
+      name = session.name;
     }
   } catch (e) {
     log.warn("customer_session_lookup_failed", { error: String(e) });
   }
 
-  return <HeaderAccountPopover isLoggedIn={isLoggedIn} email={email} />;
+  const initials = isLoggedIn ? customerDisplayInitials(name, email) : null;
+
+  return (
+    <HeaderAccountPopover
+      isLoggedIn={isLoggedIn}
+      email={email}
+      initials={initials}
+    />
+  );
 }
 
 /** Session-Lookup hinter Suspense — Shell ohne Cookie-Await. */

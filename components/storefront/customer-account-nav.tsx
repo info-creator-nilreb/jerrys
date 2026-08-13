@@ -8,6 +8,7 @@ const links = [
   { href: "/konto/bestellungen", label: "Bestellungen", exact: false },
   { href: "/konto/termine", label: "Termine", exact: false },
   { href: "/konto/adressen", label: "Adressen", exact: false },
+  { href: "/konto/passwort", label: "Passwort", exact: false },
   { href: "/konto/datenschutz", label: "Datenschutz", exact: false },
 ] as const;
 

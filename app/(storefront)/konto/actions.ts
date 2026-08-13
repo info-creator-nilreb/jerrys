@@ -4,16 +4,19 @@ import { headers } from "next/headers";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { signIn, signOut } from "@/auth";
 import {
+  changeCustomerPassword,
   confirmCustomerPasswordReset,
   registerCustomer,
   requestCustomerMagicLink,
   requestCustomerPasswordReset,
   verifyCustomerEmail,
 } from "@/features/customers";
+import { getCustomerSession } from "@/lib/auth/customer-session";
 import { safeInternalPath } from "@/lib/http/request-pathname";
 import { clientIpFromHeaders } from "@/lib/security/client-ip";
 import {
   touchCustomerMagicLinkAttempt,
+  touchCustomerPasswordChangeAttempt,
   touchCustomerPasswordResetAttempt,
   touchCustomerRegisterAttempt,
 } from "@/lib/security/customer-auth-rate-limit";
@@ -119,6 +122,30 @@ export async function confirmPasswordResetAction(
 
   const result = await confirmCustomerPasswordReset({
     token: formData.get("token"),
+    password: formData.get("password"),
+    passwordConfirm: formData.get("passwordConfirm"),
+  });
+  if (!result.ok) {
+    return { ok: false, message: result.message, fieldErrors: result.fieldErrors };
+  }
+  return { ok: true, message: result.message };
+}
+
+export async function changeCustomerPasswordAction(
+  _prev: CustomerAuthActionState,
+  formData: FormData,
+): Promise<CustomerAuthActionState> {
+  const session = await getCustomerSession();
+  if (!session) {
+    return { ok: false, message: "Bitte zuerst anmelden." };
+  }
+
+  const limited = touchCustomerPasswordChangeAttempt(await clientKey());
+  if (!limited.ok) return rateLimitedState(limited.retryAfterSec);
+
+  const currentRaw = String(formData.get("currentPassword") ?? "");
+  const result = await changeCustomerPassword(session.customerId, {
+    currentPassword: currentRaw.length > 0 ? currentRaw : undefined,
     password: formData.get("password"),
     passwordConfirm: formData.get("passwordConfirm"),
   });

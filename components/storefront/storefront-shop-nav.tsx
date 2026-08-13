@@ -4,6 +4,10 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useState } from "react";
+import {
+  useStorefrontHeaderOverlayLock,
+  useStorefrontHeaderUi,
+} from "@/components/storefront/storefront-header-ui";
 import type { DesktopShopNavMode } from "@/lib/shop/shop-settings-defaults";
 import {
   isStorefrontShopNavLinkActive,
@@ -15,11 +19,13 @@ function NavLinkList({
   pathname,
   onNavigate,
   className,
+  inactiveClassName,
 }: {
   links: readonly StorefrontShopNavLink[];
   pathname: string;
   onNavigate?: () => void;
   className?: string;
+  inactiveClassName: string;
 }) {
   return (
     <ul className={className}>
@@ -32,11 +38,7 @@ function NavLinkList({
               onClick={onNavigate}
               className={`block text-sm font-medium transition-colors focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                 onNavigate ? "flex min-h-11 items-center" : ""
-              } ${
-                active
-                  ? "text-primary"
-                  : "text-(--foreground-heading) hover:text-primary"
-              }`}
+              } ${active ? "text-primary" : inactiveClassName}`}
               aria-current={active ? "page" : undefined}
             >
               {label}
@@ -62,9 +64,11 @@ export function StorefrontShopNav({
 }: Props) {
   const pathname = usePathname();
   const menuId = useId();
+  const { controlClassName, navInactiveClassName } = useStorefrontHeaderUi();
   /** Menü gilt nur für die Route, in der es geöffnet wurde — schließt automatisch bei Navigation. */
   const [menuOpenForPath, setMenuOpenForPath] = useState<string | null>(null);
   const drawerOpen = menuOpenForPath === pathname;
+  useStorefrontHeaderOverlayLock("shop-nav", drawerOpen);
 
   const closeDrawer = useCallback(() => setMenuOpenForPath(null), []);
 
@@ -98,6 +102,7 @@ export function StorefrontShopNav({
           <NavLinkList
             links={links}
             pathname={pathname}
+            inactiveClassName={navInactiveClassName}
             className="flex flex-wrap items-center gap-x-5 gap-y-1"
           />
         </nav>
@@ -106,7 +111,7 @@ export function StorefrontShopNav({
       <div className={burgerWrapperClass}>
         <button
           type="button"
-          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-(--foreground-heading) transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${controlClassName}`}
           aria-expanded={drawerOpen}
           aria-controls={menuId}
           aria-label={drawerOpen ? "Menü schließen" : "Menü öffnen"}
@@ -138,6 +143,7 @@ export function StorefrontShopNav({
                 links={links}
                 pathname={pathname}
                 onNavigate={closeDrawer}
+                inactiveClassName="text-(--foreground-heading) hover:text-primary"
                 className="flex flex-col gap-4"
               />
             </nav>

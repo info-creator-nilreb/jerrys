@@ -13,6 +13,10 @@ import {
   type CartFlyoutPreview,
 } from "@/lib/cart/actions";
 import { CartIcon } from "@/components/storefront/cart-icon";
+import {
+  useStorefrontHeaderOverlayLock,
+  useStorefrontHeaderUi,
+} from "@/components/storefront/storefront-header-ui";
 
 type Props = {
   cartBadgeCount: number;
@@ -32,6 +36,8 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
   const mounted = useClientMounted();
   const [preview, setPreview] = useState<CartFlyoutPreview | null>(null);
   const [loading, setLoading] = useState(false);
+  const { controlClassName } = useStorefrontHeaderUi();
+  useStorefrontHeaderOverlayLock("cart", open);
 
   const loadPreview = useCallback(async () => {
     setLoading(true);
@@ -219,7 +225,7 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
     <>
       <button
         type="button"
-        className="relative z-[500001] inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-(--foreground-heading) transition-colors hover:text-primary"
+        className={`relative z-[500001] inline-flex min-h-11 min-w-11 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${controlClassName}`}
         aria-label={`Warenkorb${cartBadgeCount > 0 ? `, ${cartBadgeCount} Artikel` : ""}`}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}

@@ -3,6 +3,10 @@
 import { Search, X } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import {
+  useStorefrontHeaderOverlayLock,
+  useStorefrontHeaderUi,
+} from "@/components/storefront/storefront-header-ui";
 import { StorefrontSearchForm } from "@/components/storefront/storefront-search-form";
 
 function useClientMounted(): boolean {
@@ -19,6 +23,8 @@ export function StorefrontHeaderSearch() {
   const panelId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const { controlClassName } = useStorefrontHeaderUi();
+  useStorefrontHeaderOverlayLock("search", open);
 
   const close = useCallback(() => setOpen(false), []);
 
@@ -96,7 +102,7 @@ export function StorefrontHeaderSearch() {
       <button
         ref={triggerRef}
         type="button"
-        className="relative z-[500001] inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-(--foreground-heading) transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        className={`relative z-[500001] inline-flex min-h-11 min-w-11 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${controlClassName}`}
         aria-label="Produkte suchen"
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
