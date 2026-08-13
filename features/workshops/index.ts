@@ -23,6 +23,7 @@ export {
 export {
   WORKSHOP_BOOKING_EVENT_SELF_CANCELLED,
   WORKSHOP_BOOKING_EVENT_ACCOUNT_ANONYMIZED,
+  WORKSHOP_BOOKING_EVENT_CONFIRMED,
   createWorkshopBookingEvent,
 } from "@/features/workshops/application/workshop-booking-events";
 

@@ -12,13 +12,26 @@ import type {
   AdminSearchScope,
 } from "@/lib/admin/global-search";
 import type { AdminNewOrderAlert } from "@/lib/admin/order-alerts";
+import type {
+  AdminNewWorkshopBookingAlert,
+  AdminNewWorkshopDateRequestAlert,
+} from "@/lib/admin/workshop-alerts";
 
+/** Legacy-Key — wird einmalig auf den gemeinsamen Ack-Key migriert. */
 const ORDER_ACK_STORAGE_KEY = "jerrys_admin_orders_ack_at";
+const ALERT_ACK_STORAGE_KEY = "jerrys_admin_alerts_ack_at";
 
 const dateTimeFmt = new Intl.DateTimeFormat("de-DE", {
   dateStyle: "short",
   timeStyle: "short",
 });
+
+type AdminAlertsResponse = {
+  orders: AdminNewOrderAlert[];
+  bookings: AdminNewWorkshopBookingAlert[];
+  dateRequests: AdminNewWorkshopDateRequestAlert[];
+  count: number;
+};
 
 function SearchScopeSelect({
   id,
@@ -45,6 +58,19 @@ function SearchScopeSelect({
   );
 }
 
+function readInitialAckAt(): string {
+  try {
+    const shared = localStorage.getItem(ALERT_ACK_STORAGE_KEY);
+    if (shared) return shared;
+    const legacy = localStorage.getItem(ORDER_ACK_STORAGE_KEY);
+    const value = legacy || new Date().toISOString();
+    localStorage.setItem(ALERT_ACK_STORAGE_KEY, value);
+    return value;
+  } catch {
+    return new Date().toISOString();
+  }
+}
+
 export function AdminTopBar({ onOpenMobileNav }: { onOpenMobileNav?: () => void }) {
   const scopeFieldId = useId();
   const searchWrapRef = useRef<HTMLDivElement>(null);
@@ -58,7 +84,11 @@ export function AdminTopBar({ onOpenMobileNav }: { onOpenMobileNav?: () => void 
 
   const [ackAt, setAckAt] = useState<string | null>(null);
   const [bellOpen, setBellOpen] = useState(false);
-  const [alerts, setAlerts] = useState<AdminNewOrderAlert[]>([]);
+  const [orderAlerts, setOrderAlerts] = useState<AdminNewOrderAlert[]>([]);
+  const [bookingAlerts, setBookingAlerts] = useState<AdminNewWorkshopBookingAlert[]>([]);
+  const [dateRequestAlerts, setDateRequestAlerts] = useState<
+    AdminNewWorkshopDateRequestAlert[]
+  >([]);
   const [alertLoading, setAlertLoading] = useState(false);
 
   const refreshAlerts = useCallback(async (since: string) => {
@@ -73,24 +103,17 @@ export function AdminTopBar({ onOpenMobileNav }: { onOpenMobileNav?: () => void 
         return;
       }
       if (!res.ok) return;
-      const data = (await res.json()) as { orders: AdminNewOrderAlert[]; count: number };
-      setAlerts(data.orders);
+      const data = (await res.json()) as AdminAlertsResponse;
+      setOrderAlerts(data.orders ?? []);
+      setBookingAlerts(data.bookings ?? []);
+      setDateRequestAlerts(data.dateRequests ?? []);
     } finally {
       setAlertLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    try {
-      let stored = localStorage.getItem(ORDER_ACK_STORAGE_KEY);
-      if (!stored) {
-        stored = new Date().toISOString();
-        localStorage.setItem(ORDER_ACK_STORAGE_KEY, stored);
-      }
-      setAckAt(stored);
-    } catch {
-      setAckAt(new Date().toISOString());
-    }
+    setAckAt(readInitialAckAt());
   }, []);
 
   useEffect(() => {
@@ -175,15 +198,18 @@ export function AdminTopBar({ onOpenMobileNav }: { onOpenMobileNav?: () => void 
     };
   }, [openSearch, bellOpen]);
 
-  const markOrdersSeen = useCallback(() => {
+  const markAlertsSeen = useCallback(() => {
     const next = new Date().toISOString();
     try {
+      localStorage.setItem(ALERT_ACK_STORAGE_KEY, next);
       localStorage.setItem(ORDER_ACK_STORAGE_KEY, next);
     } catch {
       /* ignore */
     }
     setAckAt(next);
-    setAlerts([]);
+    setOrderAlerts([]);
+    setBookingAlerts([]);
+    setDateRequestAlerts([]);
     setBellOpen(false);
   }, []);
 
@@ -193,7 +219,8 @@ export function AdminTopBar({ onOpenMobileNav }: { onOpenMobileNav?: () => void 
     void refreshAlerts(ackAt);
   }, [ackAt, refreshAlerts]);
 
-  const newCount = alerts.length;
+  const newCount = orderAlerts.length + bookingAlerts.length + dateRequestAlerts.length;
+  const hasAlerts = newCount > 0;
   const hasResults =
     results &&
     (results.products.length > 0 || results.orders.length > 0 || results.customers.length > 0);
@@ -330,11 +357,11 @@ export function AdminTopBar({ onOpenMobileNav }: { onOpenMobileNav?: () => void 
         <button
           type="button"
           className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-[#6b7280] hover:bg-[#f3f4f6]"
-          title="Neue Bestellungen"
+          title="Benachrichtigungen"
           aria-label={
             newCount > 0
-              ? `${newCount} neue Bestellung${newCount === 1 ? "" : "en"}`
-              : "Keine neuen Bestellungen"
+              ? `${newCount} neue Benachrichtigung${newCount === 1 ? "" : "en"}`
+              : "Keine neuen Benachrichtigungen"
           }
           onClick={openBell}
         >
@@ -349,56 +376,148 @@ export function AdminTopBar({ onOpenMobileNav }: { onOpenMobileNav?: () => void 
         {bellOpen ? (
           <div className="absolute top-full right-0 z-50 mt-1 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-[#e4e6ea] bg-white shadow-lg">
             <div className="flex items-center justify-between border-b border-[#f3f4f6] px-3 py-2">
-              <span className="text-sm font-semibold text-[#111827]">Neue Bestellungen</span>
+              <span className="text-sm font-semibold text-[#111827]">Benachrichtigungen</span>
               <button
                 type="button"
                 className="text-xs font-medium text-primary hover:underline"
-                onClick={markOrdersSeen}
+                onClick={markAlertsSeen}
               >
                 Alle als gelesen
               </button>
             </div>
-            <div className="max-h-[min(60vh,20rem)] overflow-y-auto">
+            <div className="max-h-[min(60vh,22rem)] overflow-y-auto">
               {alertLoading ? (
                 <p className="px-3 py-4 text-sm text-[#6b7280]">Lade …</p>
-              ) : alerts.length === 0 ? (
-                <p className="px-3 py-4 text-sm text-[#6b7280]">Keine neuen Bestellungen seit dem letzten Zurücksetzen.</p>
+              ) : !hasAlerts ? (
+                <p className="px-3 py-4 text-sm text-[#6b7280]">
+                  Keine neuen Bestellungen oder Termine seit dem letzten Zurücksetzen.
+                </p>
               ) : (
-                <ul>
-                  {alerts.map((o) => (
-                    <li key={o.id} className="border-b border-[#f3f4f6] last:border-b-0">
-                      <Link
-                        href={`/admin/orders/${o.id}`}
-                        className="block px-3 py-3 text-sm hover:bg-[#f7f8fa]"
-                        onClick={() => {
-                          setBellOpen(false);
-                        }}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <span className="font-mono text-xs font-medium text-[#111827]">
-                            {o.orderNumber}
-                          </span>
-                          <span className="shrink-0 text-xs font-medium text-[#374151]">
-                            {formatPrice(o.totalGrossCents, o.currency)}
-                          </span>
-                        </div>
-                        <p className="mt-1 truncate text-xs text-[#6b7280]">{o.email}</p>
-                        <p className="mt-0.5 text-xs text-[#9ca3af]">
-                          {dateTimeFmt.format(new Date(o.createdAt))}
-                        </p>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                <div className="divide-y divide-[#f3f4f6]">
+                  {orderAlerts.length > 0 ? (
+                    <div>
+                      <p className="px-3 pt-2 pb-1 text-xs font-semibold tracking-wide text-[#9ca3af] uppercase">
+                        Bestellungen
+                      </p>
+                      <ul>
+                        {orderAlerts.map((o) => (
+                          <li key={o.id} className="border-t border-[#f3f4f6] first:border-t-0">
+                            <Link
+                              href={`/admin/orders/${o.id}`}
+                              className="block px-3 py-3 text-sm hover:bg-[#f7f8fa]"
+                              onClick={() => setBellOpen(false)}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <span className="font-mono text-xs font-medium text-[#111827]">
+                                  {o.orderNumber}
+                                </span>
+                                <span className="shrink-0 text-xs font-medium text-[#374151]">
+                                  {formatPrice(o.totalGrossCents, o.currency)}
+                                </span>
+                              </div>
+                              <p className="mt-1 truncate text-xs text-[#6b7280]">{o.email}</p>
+                              <p className="mt-0.5 text-xs text-[#9ca3af]">
+                                {dateTimeFmt.format(new Date(o.createdAt))}
+                              </p>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
+                  {bookingAlerts.length > 0 ? (
+                    <div>
+                      <p className="px-3 pt-2 pb-1 text-xs font-semibold tracking-wide text-[#9ca3af] uppercase">
+                        Terminbuchungen
+                      </p>
+                      <ul>
+                        {bookingAlerts.map((b) => (
+                          <li key={b.id} className="border-t border-[#f3f4f6] first:border-t-0">
+                            <Link
+                              href={`/admin/termine/${b.sessionId}/edit`}
+                              className="block px-3 py-3 text-sm hover:bg-[#f7f8fa]"
+                              onClick={() => setBellOpen(false)}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <span className="font-medium text-[#111827]">{b.sessionTitle}</span>
+                                <span className="shrink-0 text-xs font-medium text-[#374151]">
+                                  {b.seatCount} {b.seatCount === 1 ? "Platz" : "Plätze"}
+                                </span>
+                              </div>
+                              <p className="mt-1 truncate text-xs text-[#6b7280]">
+                                {b.contactEmail}
+                                {b.unitPriceCents > 0
+                                  ? ` · ${formatPrice(b.unitPriceCents * b.seatCount, b.currency)}`
+                                  : " · kostenlos"}
+                              </p>
+                              <p className="mt-0.5 text-xs text-[#9ca3af]">
+                                Termin {dateTimeFmt.format(new Date(b.sessionStartsAt))} · bestätigt{" "}
+                                {dateTimeFmt.format(new Date(b.confirmedAt))}
+                              </p>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
+                  {dateRequestAlerts.length > 0 ? (
+                    <div>
+                      <p className="px-3 pt-2 pb-1 text-xs font-semibold tracking-wide text-[#9ca3af] uppercase">
+                        Wunschtermine
+                      </p>
+                      <ul>
+                        {dateRequestAlerts.map((r) => (
+                          <li key={r.id} className="border-t border-[#f3f4f6] first:border-t-0">
+                            <Link
+                              href="/admin/termine/wunschtermine"
+                              className="block px-3 py-3 text-sm hover:bg-[#f7f8fa]"
+                              onClick={() => setBellOpen(false)}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <span className="font-medium text-[#111827]">
+                                  {r.contactName?.trim() || r.contactEmail}
+                                </span>
+                                <span className="shrink-0 text-xs font-medium text-[#374151]">
+                                  {r.seatCount} {r.seatCount === 1 ? "Platz" : "Plätze"}
+                                </span>
+                              </div>
+                              <p className="mt-1 truncate text-xs text-[#6b7280]">{r.contactEmail}</p>
+                              <p className="mt-0.5 text-xs text-[#9ca3af]">
+                                Wunsch {dateTimeFmt.format(new Date(r.preferredStartsAt))} · eingegangen{" "}
+                                {dateTimeFmt.format(new Date(r.createdAt))}
+                              </p>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </div>
               )}
             </div>
-            <div className="border-t border-[#f3f4f6] px-3 py-2">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-[#f3f4f6] px-3 py-2">
               <Link
                 href="/admin/orders"
                 className="text-xs font-medium text-primary hover:underline"
                 onClick={() => setBellOpen(false)}
               >
                 Alle Bestellungen
+              </Link>
+              <Link
+                href="/admin/termine"
+                className="text-xs font-medium text-primary hover:underline"
+                onClick={() => setBellOpen(false)}
+              >
+                Termine
+              </Link>
+              <Link
+                href="/admin/termine/wunschtermine"
+                className="text-xs font-medium text-primary hover:underline"
+                onClick={() => setBellOpen(false)}
+              >
+                Wunschtermine
               </Link>
             </div>
           </div>
