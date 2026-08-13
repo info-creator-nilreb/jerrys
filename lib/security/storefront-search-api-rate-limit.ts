@@ -6,7 +6,8 @@
 import { createSlidingWindowIpRateLimiter } from "@/lib/security/sliding-window-ip-rate-limit";
 
 const WINDOW_MS = 60 * 1000;
-const MAX_ATTEMPTS = 90;
+/** Enger als früher (90): Typeahead bleibt nutzbar, Burst/Abuse trifft früher 429 (SEC-02). */
+const MAX_ATTEMPTS = 35;
 
 const limiter = createSlidingWindowIpRateLimiter(WINDOW_MS, MAX_ATTEMPTS);
 

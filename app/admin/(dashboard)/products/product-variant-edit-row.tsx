@@ -28,15 +28,21 @@ export function ProductVariantEditRow({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [seenSuccessRevision, setSeenSuccessRevision] = useState<number | null>(null);
   const [state, formAction, pending] = useActionState(
     variant.isDefault ? updateDefaultVariantTitle : updateProductVariant,
     initial,
   );
   const fe = state?.fieldErrors ?? {};
 
-  useEffect(() => {
-    if (!state?.ok) return;
+  // Nach erfolgreichem Speichern Editor schließen (State-Anpassung während Render, kein Effect-setState).
+  if (state?.ok && state.revision != null && state.revision !== seenSuccessRevision) {
+    setSeenSuccessRevision(state.revision);
     setOpen(false);
+  }
+
+  useEffect(() => {
+    if (!state?.ok || state.revision == null) return;
     router.refresh();
   }, [state?.ok, state?.revision, router]);
 

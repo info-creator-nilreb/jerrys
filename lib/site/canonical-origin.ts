@@ -1,10 +1,13 @@
 import { publicSiteBaseUrl } from "@/lib/email/template-utils";
 
 /**
- * Absolute Origin für Canonicals, Sitemap, JSON-LD und OG-Bilder.
- * In Development Fallback auf typischen Dev-Port (vgl. `npm run dev`).
+ * Absolute Origin für Canonicals, Sitemap, JSON-LD, `llms.txt` und OG-Bilder.
+ * Bevorzugt die stabile Shop-URL (`NEXT_PUBLIC_SITE_URL`), nicht Preview-`AUTH_URL`/`VERCEL_URL`
+ * (sonst erscheinen ephemeral Hosts in SEO-Artefakten — SEC-06).
  */
 export function canonicalSiteOrigin(): string {
+  const site = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
+  if (site) return site;
   const fromEnv = publicSiteBaseUrl();
   if (fromEnv) return fromEnv;
   if (process.env.NODE_ENV === "development") {

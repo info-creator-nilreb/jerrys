@@ -5,6 +5,8 @@ import { buildContentSecurityPolicy } from "./lib/site/content-security-policy";
 const devPort = process.env.PORT ?? "3001";
 
 const nextConfig: NextConfig = {
+  /** Kein `X-Powered-By: Next.js` in Responses (SEC-05). */
+  poweredByHeader: false,
   /** Dev-Route-Indikator (N): Standard unten links liegt hinter der Admin-Sidebar — rechts platzieren. */
   devIndicators: {
     position: "bottom-right",

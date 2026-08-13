@@ -68,10 +68,12 @@ const getCachedActiveProductsForStorefront = unstable_cache(
 
 export async function listActiveProductsForStorefront(options?: { take?: number }) {
   const take = options?.take;
+  /** Immer den getaggten Cache nutzen — `take` nur als Slice (Homepage-Kuratierung). */
+  const all = await getCachedActiveProductsForStorefront();
   if (take != null && take > 0) {
-    return loadActiveProductsForStorefront(take);
+    return all.slice(0, take);
   }
-  return getCachedActiveProductsForStorefront();
+  return all;
 }
 
 /** Aktive Produkte in ID-Reihenfolge (CMS kuratierte Listen). */

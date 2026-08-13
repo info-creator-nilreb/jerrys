@@ -127,11 +127,11 @@ HTML-Report: `lighthouse/home.report.html` (Artifacts).
 | SEC-01 | **Hoch (Go-Live)** | `PAYPAL_WEBHOOK_ID` auf dieser Umgebung **nicht gesetzt** → Webhooks liefern 503. Return-URL allein ist schwächer (Race/Lost-Redirect). | Vor Live: Webhook-URL + ID in PayPal + Env setzen; Capture/Refund-Events smoke-testen. |
 | SEC-09 | **Kritisch → Retest behoben** | Baseline: Seed-Admin `admin@example.com` / `change-me-now` war gültig. **Retest 13:51 UTC:** Login liefert **keine** Session (DB deaktiviert + Production lehnt insecure Default ab). | Verifiziert; `E2E_ADMIN_*` für positive Admin-Logins setzen. |
 | SEC-10 | **Hoch (Funktional) → Code-Fix im PR, Ziel-URL noch 500** | Baseline: `GET /admin/orders` → **HTTP 500**. Fix im Branch (Formatter aus `"use client"`). **§8 Auth-Verify:** mit `E2E_ADMIN_*` auf Ziel-URL weiterhin **HTTP 500**; Order-Detail `/admin/orders/[id]` → **200**. `llms.txt` zeigt Deploy-Host von `main` (`ecom-ka2en0bh2-…` / `fda34347`) — PR-Preview ist Deployment-Protection (302). | PR-Fix auf Ziel-Alias deployen/promoten, dann Liste erneut auf 200 prüfen. |
-| SEC-02 | Mittel | Rate-Limits sind **in-memory pro Instanz**. Burst 40× `product-suggest` → **0× 429**. | Shared Store (Redis/Upstash) oder Edge/WAF-Rate-Limit für öffentliche APIs. |
-| SEC-03 | Mittel | `/api/workshop/start-checkout` & `complete-checkout` **ohne Rate-Limit** (Hold-/Spam-Fläche). | IP-Rate-Limit analog Checkout; ungültige `sessionId` hart 4xx ohne teure Side-Effects. |
+| SEC-02 | Mittel → teilweise adressiert | Rate-Limits sind **in-memory pro Instanz**. Burst 40× `product-suggest` → zuvor **0× 429**. Kontingent auf **35/min** gesenkt (trifft Burst). | Shared Store (Redis/Upstash) oder Edge/WAF für echte Multi-Instance-Limits. |
+| SEC-03 | Mittel → Code-Fix | `/api/workshop/start-checkout` & `complete-checkout` hatten kein Rate-Limit. | IP-Rate-Limit (30 / 10 min) analog Checkout ergänzt. |
 | SEC-04 | Niedrig | CSP erlaubt `'unsafe-inline'` und `'unsafe-eval'` (PayPal/Next-Kompromiss). | Langfristig Nonces/Hashes; Eval vermeiden wo möglich. |
-| SEC-05 | Niedrig | `x-powered-by: Next.js` gesetzt. | In `next.config` deaktivieren. |
-| SEC-06 | Niedrig | `llms.txt` / `robots.txt` Sitemap zeigen **andere Vercel-Host**-URLs (`ecom-ka2en0bh2-…`) statt kanonischer Domain. | `NEXT_PUBLIC_SITE_URL` / kanonische URL auf Production-Domain setzen. |
+| SEC-05 | Niedrig → Code-Fix | `x-powered-by: Next.js` gesetzt. | `poweredByHeader: false` in `next.config`. |
+| SEC-06 | Niedrig → Code+Env | `llms.txt` / Sitemap zeigten ephemeral Vercel-Hosts. `canonicalSiteOrigin()` bevorzugt jetzt `NEXT_PUBLIC_SITE_URL`. | Operator: `NEXT_PUBLIC_SITE_URL` auf kanonische Production-Domain setzen. |
 | SEC-07 | Info | Zettle `TestMessage` ohne Signatur → `{ok:true}` (Ping). | Akzeptabel; sicherstellen, dass keine Business-Mutation daran hängt (aktuell der Fall). |
 | SEC-08 | Info | Admin-Schutz in Layout/Actions, **nicht** in Edge-Middleware. | Defense-in-Depth optional; aktuell APIs/Actions geprüft — kein offener Admin-Datenleak gefunden. |
 | SEC-11 | Info (positiv) | `COMMERCE_MAINTENANCE_SECRET`: korrekt → 200 Maintenance-Payload; falsch → 401. Falsches Admin-Passwort → keine Session; Sign-out invalidiert Admin-APIs wieder (401). Unauth auf `/admin/*` → 307 Login. | Beibehalten. |
@@ -187,13 +187,13 @@ npx lighthouse https://ecom-seven-livid.vercel.app/ \
 ### Offen
 
 5. ~~Nach Deploy: k6 + Lighthouse erneut gegen Preview.~~ → siehe **§6** / **§7** / **§8** (k6 weiterhin durch Vercel Security Checkpoint blockiert).  
-6. Workshop-Rate-Limit + shared Rate-Limit für öffentliche APIs.  
-7. Kanonische Site-URL in `llms.txt` / Sitemap.  
-8. ~~Authentifizierter Admin-Nachtest mit `E2E_ADMIN_*`.~~ → **§8 ausgeführt**; `/admin/orders` auf Ziel-URL **weiterhin 500** (Deploy des PR-Fixes ausstehend).  
+6. ~~Workshop-Rate-Limit~~ → Code-Fix (SEC-03); shared Rate-Limit für öffentliche APIs weiterhin offen.  
+7. ~~Canonical-Origin-Bevorzugung~~ → Code-Fix; Operator muss `NEXT_PUBLIC_SITE_URL` setzen (SEC-06).  
+8. ~~Authentifizierter Admin-Nachtest mit `E2E_ADMIN_*`.~~ → **§8 ausgeführt**; `/admin/orders` nach Merge auf Ziel-URL erneut prüfen.  
 9. ~~Kundenportal-Nachtest mit `E2E_CUSTOMER_*`.~~ → **§8 bestanden**.  
 10. Operator: `PAYPAL_WEBHOOK_ID` + Live-Webhook-URL (nicht durch Agent konfigurieren).  
 11. Operator: Vercel Security Checkpoint / Bot-Protection für Lasttools (k6) whitelisten oder Challenge-Bypass für CI.  
-12. Operator: PR-#111-Deployment auf `ecom-seven-livid.vercel.app` promoten (oder Alias aktualisieren), damit SEC-10-Fix live ist.
+12. Nach Merge: `/admin/orders` auf Ziel-URL auth-Verify (SEC-10); Home-Cache/`take`-Slice + Reviews-Cache live.
 
 ---
 

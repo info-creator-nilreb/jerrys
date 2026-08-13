@@ -33,6 +33,8 @@ export function ProductPdpDescription({ html, className = "" }: Props) {
         <div
           id={panelId}
           className={bodyClass}
+          // HTML bereits via sanitizeProductDescriptionHtml (Allowlist) bereinigt.
+          // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
           dangerouslySetInnerHTML={{ __html: clean }}
         />
         <div
