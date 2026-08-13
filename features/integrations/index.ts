@@ -89,6 +89,14 @@ export {
   type GenerateCmsAiTextResult,
 } from "@/features/integrations/application/generate-cms-ai-text";
 export {
+  cmsPageSeoFieldForKind,
+  generateCmsPageSeoAiTextDraft,
+  isCmsPageSeoAiKind,
+  type CmsPageSeoAiKind,
+  type CmsPageSeoAiTargetField,
+  type GenerateCmsPageSeoAiTextResult,
+} from "@/features/integrations/application/generate-cms-page-seo-ai-text";
+export {
   generateProductAiAltTextDraft,
   generateProductAiImageDraft,
   editProductAiImageDraft,
