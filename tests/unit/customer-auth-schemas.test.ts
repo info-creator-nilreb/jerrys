@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  customerChangePasswordSchema,
   customerMagicLinkRequestSchema,
   customerPasswordLoginSchema,
   customerRegisterSchema,
@@ -48,5 +49,22 @@ describe("customer auth schemas", () => {
     expect(customerMagicLinkRequestSchema.safeParse({ email: "not-an-email" }).success).toBe(
       false,
     );
+  });
+
+  it("validiert Passwort-Änderung mit Bestätigung wie Registrierung", () => {
+    expect(
+      customerChangePasswordSchema.safeParse({
+        currentPassword: "OldPass1234",
+        password: validPassword,
+        passwordConfirm: validPassword,
+      }).success,
+    ).toBe(true);
+
+    expect(
+      customerChangePasswordSchema.safeParse({
+        password: validPassword,
+        passwordConfirm: "OtherPass1",
+      }).success,
+    ).toBe(false);
   });
 });

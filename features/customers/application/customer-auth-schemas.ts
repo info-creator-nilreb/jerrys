@@ -80,6 +80,23 @@ export const customerPasswordResetConfirmSchema = z
     }
   });
 
+/** Self-Service: neues Passwort + Bestätigung (wie Registrierung); current optional für Magic-Link-Konten. */
+export const customerChangePasswordSchema = z
+  .object({
+    currentPassword: z.string().optional(),
+    password: customerPasswordSchema,
+    passwordConfirm: z.string().min(1, "Bitte Passwort wiederholen."),
+  })
+  .superRefine((data, ctx) => {
+    if (data.password !== data.passwordConfirm) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["passwordConfirm"],
+        message: "Passwörter stimmen nicht überein.",
+      });
+    }
+  });
+
 export const customerAuthTokenSchema = z.object({
   token: z.string().min(1),
 });
