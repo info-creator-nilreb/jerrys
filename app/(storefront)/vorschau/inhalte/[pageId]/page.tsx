@@ -17,8 +17,48 @@ type PageProps = {
   searchParams: Promise<{ token?: string }>;
 };
 
+function PreviewNotice({
+  status,
+  variant = "banner",
+}: {
+  status: "draft" | "published";
+  /** `banner` = volle Breite (Startseite); `card` = in max-w-Artikeln */
+  variant?: "banner" | "card";
+}) {
+  const body = (
+    <>
+      <p className="font-semibold">Vorschau — nicht öffentlich</p>
+      <p className="mt-1 text-amber-900/90">
+        Status: {status === "published" ? "Veröffentlicht" : "Entwurf"}. Diese URL ist
+        signiert, zeitlich begrenzt und nicht für Suchmaschinen bestimmt.
+      </p>
+    </>
+  );
+
+  if (variant === "card") {
+    return (
+      <div
+        className="mb-8 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+        role="status"
+      >
+        {body}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 sm:px-6"
+      role="status"
+    >
+      <div className="mx-auto max-w-5xl">{body}</div>
+    </div>
+  );
+}
+
 /**
  * Signierte, kurzlebige CMS-Vorschau (Draft oder Published).
+ * Layout entspricht der öffentlichen Auslieferung (Startseite full-bleed).
  * Ohne gültiges Token → 404 (kein Auth-Leak / keine Indexierung).
  */
 export default async function ContentPreviewPage({
@@ -39,20 +79,48 @@ export default async function ContentPreviewPage({
     notFound();
   }
 
-  return (
-    <div className={`mx-auto max-w-5xl px-4 sm:px-6 ${storefrontMainPagePaddingClass}`}>
-      <div
-        className="mb-8 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
-        role="status"
+  if (page.pageType === "homepage") {
+    return (
+      <>
+        {/* Abstand unter fixed Header; Blöcke darunter full-bleed wie `/`. */}
+        <div className="pt-24 md:pt-28">
+          <PreviewNotice status={page.status} variant="banner" />
+        </div>
+        <h1 className="sr-only">{page.title}</h1>
+        <ContentBlocksRenderer blocks={page.blocks} pageType="homepage" />
+      </>
+    );
+  }
+
+  if (page.pageType === "legal") {
+    return (
+      <article
+        className={`mx-auto max-w-3xl px-4 sm:px-6 ${storefrontMainPagePaddingClass}`}
       >
-        <p className="font-semibold">Vorschau — nicht öffentlich</p>
-        <p className="mt-1 text-amber-900/90">
-          Status: {page.status === "published" ? "Veröffentlicht" : "Entwurf"}. Diese URL
-          ist signiert, zeitlich begrenzt und nicht für Suchmaschinen bestimmt.
-        </p>
+        <PreviewNotice status={page.status} variant="card" />
+        <header className="mb-8 mt-6">
+          <h1 className="text-3xl font-semibold tracking-tight text-(--foreground-heading) sm:text-4xl">
+            {page.title}
+          </h1>
+        </header>
+        <ContentBlocksRenderer blocks={page.blocks} pageType="legal" />
+      </article>
+    );
+  }
+
+  return (
+    <article
+      className={`mx-auto max-w-5xl px-4 sm:px-6 ${storefrontMainPagePaddingClass}`}
+    >
+      <PreviewNotice status={page.status} variant="card" />
+      <header className="mb-8 mt-6 max-w-3xl">
+        <h1 className="text-3xl font-semibold tracking-tight text-(--foreground-heading) sm:text-4xl">
+          {page.title}
+        </h1>
+      </header>
+      <div className="space-y-10">
+        <ContentBlocksRenderer blocks={page.blocks} pageType={page.pageType} />
       </div>
-      <h1 className="sr-only">{page.title}</h1>
-      <ContentBlocksRenderer blocks={page.blocks} pageType={page.pageType} />
-    </div>
+    </article>
   );
 }
