@@ -8,6 +8,10 @@ import {
   type EmailTemplateFormState,
   type EmailTemplateTestSendState,
 } from "@/app/admin/(dashboard)/emails/actions";
+import {
+  ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING,
+  AdminFormActionDock,
+} from "@/components/admin/admin-form-action-dock";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { EmailTemplateVariableDef } from "@/lib/email/templates/catalog";
 import { prepareEmailPreviewHtml } from "@/lib/email/templates/preview-html";
@@ -142,8 +146,9 @@ export function EmailTemplateEditor({
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
-      <form action={formAction} className="min-w-0 space-y-4">
+    <div className={ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING}>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
+      <form id="email-template-save-form" action={formAction} className="min-w-0 space-y-4">
         <input type="hidden" name="key" value={templateKey} />
         <input type="hidden" name="subject" value={subject} />
         <input type="hidden" name="htmlBody" value={htmlBody} />
@@ -161,25 +166,6 @@ export function EmailTemplateEditor({
               />
               Vorlage aktiv (wird beim Versand genutzt)
             </label>
-            <div className="flex flex-wrap items-center gap-2">
-              {state?.ok ? (
-                <span className="text-sm font-medium text-primary" role="status">
-                  Gespeichert
-                </span>
-              ) : null}
-              {state?.error ? (
-                <span className="text-sm text-red-600" role="alert">
-                  {state.error}
-                </span>
-              ) : null}
-              <button
-                type="submit"
-                disabled={pending}
-                className="inline-flex min-h-10 items-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-(--primary-hover) disabled:opacity-60"
-              >
-                {pending ? "Speichern…" : "Speichern"}
-              </button>
-            </div>
           </div>
 
           <div className="mt-4">
@@ -316,23 +302,6 @@ export function EmailTemplateEditor({
         </div>
       </form>
 
-      <form ref={resetFormRef} action={resetEmailTemplateAction} className="hidden" aria-hidden>
-        <input type="hidden" name="key" value={templateKey} />
-      </form>
-
-      <ConfirmDialog
-        open={resetConfirmOpen}
-        title="Vorlage zurücksetzen?"
-        description="Vorlage auf den Standard zurücksetzen? Deine Anpassungen gehen verloren."
-        confirmLabel="Auf Standard zurücksetzen"
-        variant="danger"
-        onCancel={() => setResetConfirmOpen(false)}
-        onConfirm={() => {
-          setResetConfirmOpen(false);
-          resetFormRef.current?.requestSubmit();
-        }}
-      />
-
       <div className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:self-start">
         <aside className="overflow-hidden rounded-xl border border-[#e8eaed] bg-white p-4 shadow-sm">
           <h2 className="text-sm font-semibold text-[#1f2937]">Variablen</h2>
@@ -406,6 +375,48 @@ export function EmailTemplateEditor({
           </button>
         </form>
       </div>
+      </div>
+
+      <AdminFormActionDock>
+        {state?.ok ? (
+          <span className="mr-auto text-sm font-medium text-primary" role="status">
+            Gespeichert
+          </span>
+        ) : state?.error ? (
+          <span className="mr-auto text-sm text-red-600" role="alert">
+            {state.error}
+          </span>
+        ) : (
+          <span className="mr-auto hidden text-sm text-[#6b7280] sm:inline">
+            Speichern übernimmt die Vorlage für den Live-Versand.
+          </span>
+        )}
+        <button
+          type="submit"
+          form="email-template-save-form"
+          disabled={pending}
+          className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-(--primary-hover) disabled:opacity-60"
+        >
+          {pending ? "Speichern…" : "Speichern"}
+        </button>
+      </AdminFormActionDock>
+
+      <form ref={resetFormRef} action={resetEmailTemplateAction} className="hidden" aria-hidden>
+        <input type="hidden" name="key" value={templateKey} />
+      </form>
+
+      <ConfirmDialog
+        open={resetConfirmOpen}
+        title="Vorlage zurücksetzen?"
+        description="Vorlage auf den Standard zurücksetzen? Deine Anpassungen gehen verloren."
+        confirmLabel="Auf Standard zurücksetzen"
+        variant="danger"
+        onCancel={() => setResetConfirmOpen(false)}
+        onConfirm={() => {
+          setResetConfirmOpen(false);
+          resetFormRef.current?.requestSubmit();
+        }}
+      />
     </div>
   );
 }

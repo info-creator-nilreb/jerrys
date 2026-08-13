@@ -8,7 +8,10 @@ import {
   saveContentPageAction,
   type ContentPageFormState,
 } from "@/app/admin/(dashboard)/inhalte/actions";
-import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
+import {
+  ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING,
+  AdminFormActionDock,
+} from "@/components/admin/admin-form-action-dock";
 import { CmsMediaField } from "@/components/admin/cms-media-field";
 import {
   ContentLivePreview,
@@ -230,7 +233,11 @@ export function ContentPageForm({
   }
 
   const editor = (
-    <form id={formId} action={formAction} className="space-y-8 pb-28">
+    <form
+      id={formId}
+      action={formAction}
+      className={`space-y-8 ${ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING}`}
+    >
       {initial?.id ? <input type="hidden" name="id" value={initial.id} /> : null}
       <input type="hidden" name="blocksJson" value={blocksJson} />
       {pageType === "homepage" ? (

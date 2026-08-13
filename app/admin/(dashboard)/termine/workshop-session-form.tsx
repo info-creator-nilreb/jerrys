@@ -6,7 +6,10 @@ import {
   saveWorkshopSessionDraftAction,
   type WorkshopSessionActionState,
 } from "@/app/admin/(dashboard)/termine/actions";
-import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
+import {
+  ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING,
+  AdminFormActionDock,
+} from "@/components/admin/admin-form-action-dock";
 import type { AdminWorkshopSessionDetail } from "@/features/workshops";
 import { formatDurationLabel } from "@/lib/workshop/duration-format";
 import {
@@ -64,7 +67,7 @@ export function WorkshopSessionForm({ session, readOnly = false }: Props) {
   const durationOptions = workshopSessionDurationOptions();
 
   return (
-    <form action={formAction} className="space-y-8 pb-24">
+    <form action={formAction} className={`space-y-8 ${ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING}`}>
       {session?.id ? <input type="hidden" name="id" value={session.id} /> : null}
 
       {state?.ok === false ? (

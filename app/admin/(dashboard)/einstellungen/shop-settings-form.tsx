@@ -11,6 +11,10 @@ import {
   CoverImageSection,
   LogosSection,
 } from "@/app/admin/(dashboard)/einstellungen/branding-assets-section";
+import {
+  ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING,
+  AdminFormActionDock,
+} from "@/components/admin/admin-form-action-dock";
 import { evaluatePrimaryBrandContrast } from "@/lib/shop/color-contrast";
 import { JERRYS_SHOP_SETTINGS_DEFAULTS } from "@/lib/shop/shop-settings-defaults";
 import type { ShopSettingsDTO } from "@/lib/shop/shop-settings-defaults";
@@ -129,7 +133,10 @@ export function ShopSettingsForm({ defaults }: Props) {
       <LogosSection settings={defaults} />
       <CoverImageSection settings={defaults} />
 
-      <form action={formAction} className="space-y-4 sm:space-y-5">
+      <form
+        action={formAction}
+        className={`space-y-4 sm:space-y-5 ${ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING}`}
+      >
         <SettingsCard
           title="Farben"
           description="Die Markenfarben, die in deinem Shop, in E-Mails und im Admin erscheinen"
@@ -657,32 +664,37 @@ export function ShopSettingsForm({ defaults }: Props) {
           </div>
         </SettingsCard>
 
-        {state?.error ? (
-          <p className="text-sm text-[#b42318]" role="alert">
-            {state.error}
-          </p>
-        ) : null}
-        {state?.ok ? (
-          <div className="space-y-2" role="status">
-            <p className="text-sm font-medium text-primary">Gespeichert.</p>
-            {state.contrastWarnings && state.contrastWarnings.length > 0 ? (
-              <div className="rounded-lg border border-[#f3e0b5] bg-[#fff8e6] px-3 py-3 text-sm text-[#5c4b1f]">
-                <ul className="list-disc space-y-1 pl-4">
-                  {state.contrastWarnings.map((w) => (
-                    <li key={w}>{w}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
+        {state?.ok && state.contrastWarnings && state.contrastWarnings.length > 0 ? (
+          <div
+            className="rounded-lg border border-[#f3e0b5] bg-[#fff8e6] px-3 py-3 text-sm text-[#5c4b1f]"
+            role="status"
+          >
+            <ul className="list-disc space-y-1 pl-4">
+              {state.contrastWarnings.map((w) => (
+                <li key={w}>{w}</li>
+              ))}
+            </ul>
           </div>
         ) : null}
 
-        {/* Speichern im normalen Fluss — kein fixed/sticky Dock (erzeugte Leerraum im scrollbaren main). */}
-        <div className="flex justify-end border-t border-[#e8eaed] pt-4">
+        <AdminFormActionDock>
+          {state?.ok ? (
+            <p className="mr-auto text-sm font-medium text-primary" role="status">
+              Gespeichert.
+            </p>
+          ) : state?.error ? (
+            <p className="mr-auto text-sm text-[#b42318]" role="alert">
+              {state.error}
+            </p>
+          ) : (
+            <span className="mr-auto hidden text-sm text-[#6b7280] sm:inline">
+              Änderungen speichern, um die Einstellungen zu übernehmen.
+            </span>
+          )}
           <button type="submit" disabled={pending} className={saveBtnClass}>
             {pending ? "Speichern …" : "Speichern"}
           </button>
-        </div>
+        </AdminFormActionDock>
       </form>
     </div>
   );
