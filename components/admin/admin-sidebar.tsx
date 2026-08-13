@@ -43,6 +43,7 @@ type NavItem = {
 function isInhaltePagesPath(pathname: string): boolean {
   if (pathname === "/admin/inhalte") return true;
   if (pathname.startsWith("/admin/inhalte/marketing")) return false;
+  if (pathname.startsWith("/admin/inhalte/info-banner")) return false;
   return pathname.startsWith("/admin/inhalte/");
 }
 
@@ -116,6 +117,11 @@ const mainNav: NavItem[] = [
         href: "/admin/inhalte/marketing",
         label: "Marketing",
         isActivePath: (pathname) => pathname.startsWith("/admin/inhalte/marketing"),
+      },
+      {
+        href: "/admin/inhalte/info-banner",
+        label: "Info-Banner",
+        isActivePath: (pathname) => pathname.startsWith("/admin/inhalte/info-banner"),
       },
     ],
   },

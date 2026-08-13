@@ -8,3 +8,17 @@ export const storefrontMainPagePaddingClass =
  */
 export const storefrontHeaderHeightCssVars =
   "[--storefront-header-height:3.75rem] sm:[--storefront-header-height:4rem] md:[--storefront-header-height:4.5rem]";
+
+/**
+ * Header inkl. Info-Banner-Zeile (~2rem) über der Logo-Zeile.
+ */
+export const storefrontHeaderHeightCssVarsWithInfoBanner =
+  "[--storefront-header-height:5.75rem] sm:[--storefront-header-height:6rem] md:[--storefront-header-height:6.5rem]";
+
+export function storefrontHeaderHeightVars(options: {
+  infoBannerVisible: boolean;
+}): string {
+  return options.infoBannerVisible
+    ? storefrontHeaderHeightCssVarsWithInfoBanner
+    : storefrontHeaderHeightCssVars;
+}

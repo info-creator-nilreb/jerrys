@@ -1131,6 +1131,15 @@ model ShopSettings {
   /// Desktop-Header: hidden | inline | burger (Mobil bleibt Burger, sofern Links existieren).
   desktopShopNavMode String @default("inline") @map("desktop_shop_nav_mode")
 
+  /// Info-Banner über dem Header (Versandhinweise, Aktionen); siteweit.
+  infoBannerActive Boolean @default(false) @map("info_banner_active")
+  /// Bis zu 3 Kurztexte (JSON-String-Array), rotierend.
+  infoBannerMessages Json @default("[]") @map("info_banner_messages")
+  /// Anzeigedauer pro Text in Sekunden (4|5|6|8|10).
+  infoBannerDurationSec Int @default(6) @map("info_banner_duration_sec")
+  /// Optionaler Link für die gesamte Bannerzeile (interner Pfad oder HTTPS).
+  infoBannerHref String? @map("info_banner_href")
+
   /// Footer: Kurzbeschreibung/Tagline.
   footerShowTagline Boolean @default(true) @map("footer_show_tagline")
   /// Footer: Shop-Nav (Kategorien / Systemlinks) — oft redundant zur Header-Nav.

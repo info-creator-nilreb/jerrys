@@ -6,6 +6,10 @@ import { getPrisma } from "@/lib/db/prisma";
 import { isMissingSchemaError, isUniqueViolationError } from "@/lib/db/prisma-error";
 import { SHOP_SETTINGS_CACHE_TAG } from "@/lib/shop/shop-settings-cache-tag";
 import {
+  parseInfoBannerDurationSec,
+  parseInfoBannerMessages,
+} from "@/lib/shop/info-banner";
+import {
   JERRYS_SHOP_SETTINGS_DEFAULTS,
   parseDesktopShopNavMode,
   SHOP_SETTINGS_DEFAULT_ID,
@@ -44,6 +48,10 @@ function toDto(
     showAllProductsInNav: boolean;
     showTermineInNav: boolean;
     desktopShopNavMode: string;
+    infoBannerActive: boolean;
+    infoBannerMessages: unknown;
+    infoBannerDurationSec: number;
+    infoBannerHref: string | null;
     footerShowTagline: boolean;
     footerShowShopNav: boolean;
     footerShowCollections: boolean;
@@ -86,6 +94,10 @@ function toDto(
     showAllProductsInNav: row.showAllProductsInNav,
     showTermineInNav: row.showTermineInNav,
     desktopShopNavMode: parseDesktopShopNavMode(row.desktopShopNavMode),
+    infoBannerActive: row.infoBannerActive,
+    infoBannerMessages: parseInfoBannerMessages(row.infoBannerMessages),
+    infoBannerDurationSec: parseInfoBannerDurationSec(row.infoBannerDurationSec),
+    infoBannerHref: row.infoBannerHref ?? d.infoBannerHref,
     footerShowTagline: row.footerShowTagline,
     footerShowShopNav: row.footerShowShopNav,
     footerShowCollections: row.footerShowCollections,
@@ -125,6 +137,10 @@ const createDefaults = () => ({
   showAllProductsInNav: JERRYS_SHOP_SETTINGS_DEFAULTS.showAllProductsInNav,
   showTermineInNav: JERRYS_SHOP_SETTINGS_DEFAULTS.showTermineInNav,
   desktopShopNavMode: JERRYS_SHOP_SETTINGS_DEFAULTS.desktopShopNavMode,
+  infoBannerActive: JERRYS_SHOP_SETTINGS_DEFAULTS.infoBannerActive,
+  infoBannerMessages: JERRYS_SHOP_SETTINGS_DEFAULTS.infoBannerMessages,
+  infoBannerDurationSec: JERRYS_SHOP_SETTINGS_DEFAULTS.infoBannerDurationSec,
+  infoBannerHref: JERRYS_SHOP_SETTINGS_DEFAULTS.infoBannerHref,
   footerShowTagline: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowTagline,
   footerShowShopNav: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowShopNav,
   footerShowCollections: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowCollections,
