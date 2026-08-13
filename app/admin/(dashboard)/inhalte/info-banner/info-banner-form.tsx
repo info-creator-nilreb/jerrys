@@ -193,20 +193,18 @@ export function InfoBannerForm({ defaults }: Props) {
             <label className="inline-flex cursor-pointer items-center gap-2">
               <input
                 type="radio"
-                name="infoBannerBgMode"
                 checked={bgMode === "primary"}
                 onChange={() => setBgMode("primary")}
-                className="size-4 accent-[var(--primary)]"
+                className="size-4 accent-primary"
               />
               Primärfarbe (Standard)
             </label>
             <label className="inline-flex cursor-pointer items-center gap-2">
               <input
                 type="radio"
-                name="infoBannerBgMode"
                 checked={bgMode === "custom"}
                 onChange={() => setBgMode("custom")}
-                className="size-4 accent-[var(--primary)]"
+                className="size-4 accent-primary"
               />
               Eigene Farbe
             </label>
