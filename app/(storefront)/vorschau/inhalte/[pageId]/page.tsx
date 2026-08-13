@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ContentBlocksRenderer } from "@/components/content/content-blocks-renderer";
 import { getContentPageById } from "@/lib/content/content-pages";
+import { HOME_PAGE_STABLE_ID } from "@/lib/content/migrate-storefront-content";
 import { verifyContentPreviewToken } from "@/lib/content/preview-token";
+import { CONTENT_PAGE_HOME_SLUG } from "@/lib/content/reserved-slugs";
 import { storefrontMainPagePaddingClass } from "@/lib/storefront/page-below-header-padding";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +18,18 @@ type PageProps = {
   params: Promise<{ pageId: string }>;
   searchParams: Promise<{ token?: string }>;
 };
+
+function isHomepagePreview(page: {
+  id: string;
+  slug: string;
+  pageType: string;
+}): boolean {
+  return (
+    page.pageType === "homepage" ||
+    page.id === HOME_PAGE_STABLE_ID ||
+    page.slug === CONTENT_PAGE_HOME_SLUG
+  );
+}
 
 function PreviewNotice({
   status,
@@ -48,7 +62,7 @@ function PreviewNotice({
 
   return (
     <div
-      className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 sm:px-6"
+      className="w-full border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 sm:px-6"
       role="status"
     >
       <div className="mx-auto max-w-5xl">{body}</div>
@@ -58,7 +72,7 @@ function PreviewNotice({
 
 /**
  * Signierte, kurzlebige CMS-Vorschau (Draft oder Published).
- * Layout entspricht der öffentlichen Auslieferung (Startseite full-bleed).
+ * Startseite: full-bleed wie `/` (kein max-w-Wrapper um Hero/Blöcke).
  * Ohne gültiges Token → 404 (kein Auth-Leak / keine Indexierung).
  */
 export default async function ContentPreviewPage({
@@ -79,16 +93,18 @@ export default async function ContentPreviewPage({
     notFound();
   }
 
-  if (page.pageType === "homepage") {
+  if (isHomepagePreview(page)) {
     return (
-      <>
-        {/* Abstand unter fixed Header; Blöcke darunter full-bleed wie `/`. */}
-        <div className="pt-24 md:pt-28">
+      <div className="w-full max-w-none">
+        {/* Abstand unter fixed Header; Blöcke darunter kantenbündig wie `/`. */}
+        <div className="w-full pt-24 md:pt-28">
           <PreviewNotice status={page.status} variant="banner" />
         </div>
         <h1 className="sr-only">{page.title}</h1>
-        <ContentBlocksRenderer blocks={page.blocks} pageType="homepage" />
-      </>
+        <div className="w-full max-w-none">
+          <ContentBlocksRenderer blocks={page.blocks} pageType="homepage" />
+        </div>
+      </div>
     );
   }
 
