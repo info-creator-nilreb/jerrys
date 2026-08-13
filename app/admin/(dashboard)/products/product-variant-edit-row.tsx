@@ -36,6 +36,7 @@ export function ProductVariantEditRow({
 
   useEffect(() => {
     if (!state?.ok) return;
+    setOpen(false);
     router.refresh();
   }, [state?.ok, state?.revision, router]);
 
@@ -110,11 +111,6 @@ export function ProductVariantEditRow({
                     {pending ? "Speichern…" : "Bezeichnung speichern"}
                   </button>
                   {state?.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
-                  {state?.ok ? (
-                    <p className="text-sm font-medium text-primary" role="status">
-                      Gespeichert.
-                    </p>
-                  ) : null}
                 </div>
               </form>
             </td>
@@ -260,11 +256,6 @@ export function ProductVariantEditRow({
                   {pending ? "Speichern…" : "Änderungen speichern"}
                 </button>
                 {state?.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
-                {state?.ok ? (
-                  <p className="text-sm font-medium text-primary" role="status">
-                    Gespeichert.
-                  </p>
-                ) : null}
               </div>
             </form>
           </td>
