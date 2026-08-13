@@ -20,13 +20,20 @@ function NavLinkList({
   onNavigate,
   className,
   inactiveClassName,
+  /** Desktop-Inline etwas größer; Drawer bleibt kompakt lesbar. */
+  size = "desktop",
 }: {
   links: readonly StorefrontShopNavLink[];
   pathname: string;
   onNavigate?: () => void;
   className?: string;
   inactiveClassName: string;
+  size?: "desktop" | "drawer";
 }) {
+  const sizeClass =
+    size === "desktop"
+      ? "text-base font-medium tracking-[-0.01em]"
+      : "text-[0.9375rem] font-medium";
   return (
     <ul className={className}>
       {links.map(({ href, label }) => {
@@ -36,7 +43,7 @@ function NavLinkList({
             <Link
               href={href}
               onClick={onNavigate}
-              className={`block text-sm font-medium transition-colors focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+              className={`block ${sizeClass} transition-colors focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                 onNavigate ? "flex min-h-11 items-center" : ""
               } ${active ? "text-primary" : inactiveClassName}`}
               aria-current={active ? "page" : undefined}
@@ -47,6 +54,34 @@ function NavLinkList({
         );
       })}
     </ul>
+  );
+}
+
+/** Desktop-Linkzeile (md+), z. B. zentriert unter dem Logo. */
+export function StorefrontShopNavInlineLinks({
+  links,
+  className,
+}: {
+  links: readonly StorefrontShopNavLink[];
+  className?: string;
+}) {
+  const pathname = usePathname();
+  const { navInactiveClassName } = useStorefrontHeaderUi();
+
+  if (links.length === 0) {
+    return null;
+  }
+
+  return (
+    <nav className={className ?? "hidden md:block"} aria-label="Shop">
+      <NavLinkList
+        links={links}
+        pathname={pathname}
+        inactiveClassName={navInactiveClassName}
+        size="desktop"
+        className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1.5"
+      />
+    </nav>
   );
 }
 
@@ -103,7 +138,8 @@ export function StorefrontShopNav({
             links={links}
             pathname={pathname}
             inactiveClassName={navInactiveClassName}
-            className="flex flex-wrap items-center gap-x-5 gap-y-1"
+            size="desktop"
+            className="flex flex-wrap items-center gap-x-6 gap-y-1.5"
           />
         </nav>
       ) : null}
@@ -143,6 +179,7 @@ export function StorefrontShopNav({
                 links={links}
                 pathname={pathname}
                 onNavigate={closeDrawer}
+                size="drawer"
                 inactiveClassName="text-(--foreground-heading) hover:text-primary"
                 className="flex flex-col gap-4"
               />

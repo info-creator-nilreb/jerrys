@@ -97,7 +97,7 @@ export default async function ContentPreviewPage({
     return (
       <div className="w-full max-w-none">
         {/* Abstand unter fixed Header; Blöcke darunter kantenbündig wie `/`. */}
-        <div className="w-full pt-24 md:pt-28">
+        <div className="w-full pt-[calc(var(--storefront-header-height,3.75rem)+2.25rem)]">
           <PreviewNotice status={page.status} variant="banner" />
         </div>
         <h1 className="sr-only">{page.title}</h1>

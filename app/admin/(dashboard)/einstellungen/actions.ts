@@ -54,9 +54,17 @@ export async function saveShopSettingsAction(
 
   const result = await updateShopSettingsFromInput(shopSettingsInputFromFormData(formData));
   if (!result.ok) {
+    const fieldErrors = result.fieldErrors;
+    const firstFieldError = fieldErrors
+      ? Object.values(fieldErrors).find((m) => typeof m === "string" && m.trim())
+      : undefined;
     return {
-      error: result.error,
-      fieldErrors: result.fieldErrors,
+      error:
+        result.error ??
+        (firstFieldError
+          ? `Bitte Eingaben prüfen: ${firstFieldError}`
+          : "Einstellungen konnten nicht gespeichert werden."),
+      fieldErrors,
     };
   }
 
