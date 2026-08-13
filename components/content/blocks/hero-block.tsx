@@ -1,24 +1,23 @@
-import Image from "next/image";
 import Link from "next/link";
+import { HeroBackgroundCarousel } from "@/components/content/blocks/hero-background-carousel";
 import { HeroScrollHint } from "@/components/storefront/hero-scroll-hint";
-import type { HeroBlockData } from "@/lib/content/blocks/hero";
+import {
+  resolveHeroSlides,
+  type HeroBlockData,
+} from "@/lib/content/blocks/hero";
 
 export function HeroBlock({ data }: { data: HeroBlockData; blockId: string }) {
+  const slides = resolveHeroSlides(data);
+
   return (
     <section className="relative h-dvh max-h-dvh overflow-hidden">
-      <Image
-        src={data.imageUrl}
-        alt={data.imageAlt ?? ""}
-        fill
-        priority
-        quality={90}
-        className="object-cover object-[40%_center] md:object-[35%_32%]"
-        sizes="100vw"
-        unoptimized={data.imageUrl.startsWith("https://")}
-        aria-hidden={!data.imageAlt}
+      <HeroBackgroundCarousel
+        slides={slides}
+        slideDurationSec={data.slideDurationSec}
+        motionEffect={data.motionEffect}
       />
       <div
-        className="absolute inset-0 bg-linear-to-r from-black/55 via-black/20 to-transparent md:from-black/45 md:via-black/10 md:to-transparent"
+        className="absolute inset-0 z-[2] bg-linear-to-r from-black/55 via-black/20 to-transparent md:from-black/45 md:via-black/10 md:to-transparent"
         aria-hidden
       />
       <div className="relative z-10 flex h-full flex-col px-4 pt-[calc(var(--storefront-header-height,3.75rem)+2.25rem)] pb-16 md:px-8 md:pb-20 lg:px-12">
