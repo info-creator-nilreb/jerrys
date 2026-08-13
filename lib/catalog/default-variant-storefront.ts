@@ -48,9 +48,16 @@ export function pickDefaultVariant<T extends { variants: StorefrontVariantCommer
   return product.variants.find((v) => v.isDefault) ?? product.variants[0] ?? null;
 }
 
-export function variantOptionLabel(v: Pick<StorefrontVariantCommerce, "title" | "sku">): string {
+/**
+ * Kunden-sichtbare Variantenbezeichnung — niemals die SKU.
+ * Ohne gepflegte Bezeichnung: „Standard“ (Default) bzw. „Variante“.
+ */
+export function variantOptionLabel(
+  v: Pick<StorefrontVariantCommerce, "title" | "sku" | "isDefault">,
+): string {
   const t = v.title?.trim();
-  return t ? t : v.sku;
+  if (t) return t;
+  return v.isDefault ? "Standard" : "Variante";
 }
 
 export function quantityRulesFromVariant(v: StorefrontVariantCommerce) {

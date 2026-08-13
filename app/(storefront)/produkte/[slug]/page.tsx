@@ -5,6 +5,7 @@ import {
 } from "@/lib/catalog/category-membership";
 import { getActiveProductBySlug } from "@/lib/catalog/queries";
 import { resolvePdpDisplay } from "@/lib/catalog/pdp-resolve-display";
+import { isProductDescriptionRedundantWithLead } from "@/lib/catalog/pdp-description-overlap";
 import { pickDefaultVariant } from "@/lib/catalog/default-variant-storefront";
 import {
   resolveProductBreadcrumbItems,
@@ -128,6 +129,9 @@ export default async function ProduktDetailPage({
     leadDisplay || product.subtitle || textPreviewFromHtml(product.description);
 
   const hasSpecsPanel = display.leftSpecs.length > 0 || display.propertySpecs.length > 0;
+  const showFullDescription =
+    Boolean(product.description?.trim()) &&
+    !isProductDescriptionRedundantWithLead(product.description, leadDisplay);
 
   return (
     <>
@@ -206,7 +210,9 @@ export default async function ProduktDetailPage({
 
               <ProductPdpUspRow usps={display.usps} />
 
-              <ProductPdpDescription html={product.description} />
+              {showFullDescription ? (
+                <ProductPdpDescription html={product.description} />
+              ) : null}
 
               {product.showWorkshopCalendar ? (
                 <div className="mt-6 border-t border-(--surface-muted) pt-6">
@@ -227,6 +233,7 @@ export default async function ProduktDetailPage({
                 listPriceGrossCents={defaultVariant.listPriceGrossCents}
                 deliveryTimeKeyFallback={defaultVariant.deliveryTimeKey}
                 payPalConfigured={isPayPalConfigured()}
+                paypalClientId={process.env.PAYPAL_CLIENT_ID?.trim() ?? ""}
                 variants={product.variants}
               />
             </article>

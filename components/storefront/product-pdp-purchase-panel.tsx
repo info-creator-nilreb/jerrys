@@ -19,6 +19,7 @@ export function ProductPdpPurchasePanel({
   listPriceGrossCents,
   deliveryTimeKeyFallback,
   payPalConfigured,
+  paypalClientId,
   variants,
 }: {
   productId: string;
@@ -26,6 +27,7 @@ export function ProductPdpPurchasePanel({
   listPriceGrossCents: number | null;
   deliveryTimeKeyFallback: string | null;
   payPalConfigured: boolean;
+  paypalClientId: string;
   variants: StorefrontVariantCommerce[];
 }) {
   const initialId = variants.find((v) => v.isDefault)?.id ?? variants[0]?.id ?? "";
@@ -53,6 +55,8 @@ export function ProductPdpPurchasePanel({
   });
   const inStock = selected.availableQuantity > 0;
   const showPicker = variants.length > 1;
+  const expressQty = expressQuantity ?? qtyRules.minOrderQty;
+  const expressTotalEstimate = selected.priceGrossCents * expressQty;
 
   return (
     <div className="mt-6 space-y-5 border-t border-(--surface-muted) pt-6">
@@ -85,6 +89,10 @@ export function ProductPdpPurchasePanel({
                       {variantOptionLabel(v)}
                     </span>
                     <span className="mt-0.5 block text-(--foreground-muted)">
+                      <span className="font-mono text-[0.7rem] tracking-tight text-(--foreground-muted)">
+                        SKU {v.sku}
+                      </span>
+                      {" · "}
                       {formatPrice(v.priceGrossCents, currency)}
                       {v.availableQuantity <= 0 ? " · derzeit nicht verfügbar" : null}
                     </span>
@@ -135,14 +143,16 @@ export function ProductPdpPurchasePanel({
         layout="pdp"
       />
 
-      {payPalConfigured ? (
-        <ProductExpressCheckout
-          enabled={canAdd}
-          productId={productId}
-          productVariantId={selected.id}
-          quantity={expressQuantity ?? qtyRules.minOrderQty}
-        />
-      ) : null}
+      <ProductExpressCheckout
+        enabled={canAdd}
+        productId={productId}
+        productVariantId={selected.id}
+        quantity={expressQty}
+        payPalConfigured={payPalConfigured}
+        paypalClientId={paypalClientId}
+        currency={currency}
+        totalGrossCents={expressTotalEstimate}
+      />
 
       <p className="text-center text-[0.7rem] leading-snug text-(--foreground-muted)">
         Im Checkout:{" "}
