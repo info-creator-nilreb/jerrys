@@ -3,7 +3,7 @@
 **Ziel:** `https://ecom-seven-livid.vercel.app/`  
 **Datum:** 2026-08-13 (UTC)  
 **Scope:** Lasttest (bis 30 parallele Nutzer), Performance (Web Vitals / Lighthouse), Security Surface (eigene Architektur, keine Drittanbieter-Angriffe)  
-**Auth-Hinweis:** Admin-/Kunden-Login-Flows wurden **nicht** mit Session getestet — Zugangsdaten lagen in der Agent-Umgebung nicht vor.
+**Auth-Hinweis:** In den Cloud-Agent-Secrets lagen **keine** `E2E_ADMIN_*` / Kunden-Credentials vor (nur `AUTH_SECRET`, `COMMERCE_MAINTENANCE_SECRET`, `DATABASE_URL`). Authentifizierte Admin-Tests liefen über den noch aktiven Seed-Account `admin@example.com` / `change-me-now` — das ist selbst ein kritisches Finding (SEC-09).
 
 ---
 
@@ -13,7 +13,7 @@
 |------|----------|-----------|
 | Lasttest (30 VUs) | **Nicht bestanden** | Keine 5xx-Welle, aber Antwortzeiten unter Last unakzeptabel (p95 ~48 s). |
 | Performance / Web Vitals | **Teilweise** | Leichtere Seiten OK; Startseite/PDP mit LCP über „Good“-Budget. |
-| Security Surface | **Grundsätzlich solide, mit Go-Live-Blockern** | Admin/Internal/Webhooks fail-closed; **PayPal-Webhook nicht konfiguriert**; Rate-Limits auf Serverless schwach. |
+| Security Surface | **Grundsätzlich solide, mit Go-Live-Blockern** | Admin/Internal/Webhooks fail-closed; **PayPal-Webhook nicht konfiguriert**; **Seed-Admin-Passwort noch aktiv**; `/admin/orders` → HTTP 500; Rate-Limits auf Serverless schwach. |
 
 **Empfehlung vor Livegang:** Zuerst Server-/DB-Latenz und Caching der schweren SSR-Seiten adressieren sowie `PAYPAL_WEBHOOK_ID` (und Live-Webhook-URL) setzen. Danach Lasttest wiederholen.
 
@@ -125,6 +125,8 @@ HTML-Report: `lighthouse/home.report.html` (Artifacts).
 | ID | Schwere | Finding | Empfehlung |
 |----|---------|---------|------------|
 | SEC-01 | **Hoch (Go-Live)** | `PAYPAL_WEBHOOK_ID` auf dieser Umgebung **nicht gesetzt** → Webhooks liefern 503. Return-URL allein ist schwächer (Race/Lost-Redirect). | Vor Live: Webhook-URL + ID in PayPal + Env setzen; Capture/Refund-Events smoke-testen. |
+| SEC-09 | **Kritisch (Go-Live)** | Seed-Admin `admin@example.com` mit Default-Passwort `change-me-now` ist auf der Preview **noch gültig**; Login → Session `subjectKind=admin` → Admin-APIs (Search, Order-Alerts mit E-Mail/Betrag). Zweiter Admin in DB: `berlin.alexander@icloud.com`. | Sofort Passwort rotieren oder Seed-User löschen/deaktivieren; vor Live kein Default-Seed-Passwort. |
+| SEC-10 | **Hoch (Funktional)** | Authentifiziert: `GET /admin/orders` liefert **HTTP 500** (Error-Page). Order-Detail `/admin/orders/[id]` ist 200. | Bestellliste vor Livegang fixen; Stacktrace in Vercel-Logs prüfen. |
 | SEC-02 | Mittel | Rate-Limits sind **in-memory pro Instanz**. Burst 40× `product-suggest` → **0× 429**. | Shared Store (Redis/Upstash) oder Edge/WAF-Rate-Limit für öffentliche APIs. |
 | SEC-03 | Mittel | `/api/workshop/start-checkout` & `complete-checkout` **ohne Rate-Limit** (Hold-/Spam-Fläche). | IP-Rate-Limit analog Checkout; ungültige `sessionId` hart 4xx ohne teure Side-Effects. |
 | SEC-04 | Niedrig | CSP erlaubt `'unsafe-inline'` und `'unsafe-eval'` (PayPal/Next-Kompromiss). | Langfristig Nonces/Hashes; Eval vermeiden wo möglich. |
@@ -132,17 +134,26 @@ HTML-Report: `lighthouse/home.report.html` (Artifacts).
 | SEC-06 | Niedrig | `llms.txt` / `robots.txt` Sitemap zeigen **andere Vercel-Host**-URLs (`ecom-ka2en0bh2-…`) statt kanonischer Domain. | `NEXT_PUBLIC_SITE_URL` / kanonische URL auf Production-Domain setzen. |
 | SEC-07 | Info | Zettle `TestMessage` ohne Signatur → `{ok:true}` (Ping). | Akzeptabel; sicherstellen, dass keine Business-Mutation daran hängt (aktuell der Fall). |
 | SEC-08 | Info | Admin-Schutz in Layout/Actions, **nicht** in Edge-Middleware. | Defense-in-Depth optional; aktuell APIs/Actions geprüft — kein offener Admin-Datenleak gefunden. |
+| SEC-11 | Info (positiv) | `COMMERCE_MAINTENANCE_SECRET`: korrekt → 200 Maintenance-Payload; falsch → 401. Falsches Admin-Passwort → keine Session; Sign-out invalidiert Admin-APIs wieder (401). Unauth auf `/admin/*` → 307 Login. | Beibehalten. |
 
 ### Öffentliche Oberfläche (bewusst)
 
 Gast-Checkout, Cart-Actions, Storefront-Suggest, `katalog.json`, Webhooks (signiert) — erwartbar für Commerce. Keine ungeschützte Admin-JSON-API gefunden.
 
-### Nicht abgedeckt (Credentials fehlen)
+### Authentifizierte Admin-Checks (Nachtest)
 
-- Admin-Login Brute-Force-Verhalten mit gültigem User  
+- Login Seed-Default → **erfolgreich** (SEC-09)  
+- Admin-Seiten 200: Dashboard, Products, Customers, Bestand, Categories, Collections, Promotions, Versand, Emails, Einstellungen, Integrationen, Termine, Inhalte, Marketing  
+- **`/admin/orders` → 500** (SEC-10); Order-Detail OK  
+- `/api/admin/search`, `/api/admin/order-alerts` mit Session → 200 (Alerts enthalten Order-E-Mails)  
+- Falsches Passwort → Session `null`  
+- Sign-out → Admin-API wieder 401  
+
+### Weiterhin nicht abgedeckt
+
+- Kundenportal-Login / Magic-Link / DSGVO-Export (keine `E2E_CUSTOMER_*` Secrets)  
 - Authentifizierte Admin-Server-Actions / IDOR zwischen Admins  
-- Kundenportal-Session, Magic-Link, DSGVO-Export  
-- Echter Checkout-Happy-Path (würde PayPal Sandbox berühren — außerhalb Scope)
+- Echter Checkout-Happy-Path gegen PayPal (außerhalb Scope)
 
 ---
 
@@ -166,8 +177,10 @@ npx lighthouse https://ecom-seven-livid.vercel.app/ \
 
 ## 5. Nächste Schritte (kurz)
 
-1. Performance/Last der Startseite + Katalog beheben, dann k6 erneut.  
-2. PayPal-Webhook auf dieser/Prod-Umgebung konfigurieren.  
-3. Test-Credentials bereitstellen → Auth-/Admin-Security-Nachtest.  
-4. Workshop-Rate-Limit + shared Rate-Limit für öffentliche APIs.  
-5. Kanonische Site-URL in `llms.txt` / Sitemap korrigieren.
+1. **Sofort:** Seed-Admin-Passwort ändern/löschen (`admin@example.com` / `change-me-now`).  
+2. **`/admin/orders` 500** beheben.  
+3. Performance/Last der Startseite + Katalog beheben, dann k6 erneut.  
+4. PayPal-Webhook auf dieser/Prod-Umgebung konfigurieren.  
+5. Für Agent-Nachtests: Secrets `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` (und optional Customer) in der **Cursor Cloud Environment** hinterlegen — nicht nur in Vercel.  
+6. Workshop-Rate-Limit + shared Rate-Limit für öffentliche APIs.  
+7. Kanonische Site-URL in `llms.txt` / Sitemap korrigieren.
