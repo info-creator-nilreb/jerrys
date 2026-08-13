@@ -50,6 +50,33 @@ function NavLinkList({
   );
 }
 
+/** Desktop-Linkzeile (md+), z. B. zentriert unter dem Logo. */
+export function StorefrontShopNavInlineLinks({
+  links,
+  className,
+}: {
+  links: readonly StorefrontShopNavLink[];
+  className?: string;
+}) {
+  const pathname = usePathname();
+  const { navInactiveClassName } = useStorefrontHeaderUi();
+
+  if (links.length === 0) {
+    return null;
+  }
+
+  return (
+    <nav className={className ?? "hidden md:block"} aria-label="Shop">
+      <NavLinkList
+        links={links}
+        pathname={pathname}
+        inactiveClassName={navInactiveClassName}
+        className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1"
+      />
+    </nav>
+  );
+}
+
 type Props = {
   links: readonly StorefrontShopNavLink[];
   /** Desktop: ausgeblendet, Inline-Links oder Burger. Mobil: immer Burger, sofern Links. */

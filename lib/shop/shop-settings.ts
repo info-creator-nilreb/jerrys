@@ -8,6 +8,7 @@ import { SHOP_SETTINGS_CACHE_TAG } from "@/lib/shop/shop-settings-cache-tag";
 import {
   JERRYS_SHOP_SETTINGS_DEFAULTS,
   parseDesktopShopNavMode,
+  parseHeaderNavPlacement,
   SHOP_SETTINGS_DEFAULT_ID,
   type ShopSettingsDTO,
 } from "@/lib/shop/shop-settings-defaults";
@@ -44,6 +45,7 @@ function toDto(
     showAllProductsInNav: boolean;
     showTermineInNav: boolean;
     desktopShopNavMode: string;
+    headerNavPlacement: string;
     footerShowTagline: boolean;
     footerShowShopNav: boolean;
     footerShowCollections: boolean;
@@ -86,6 +88,7 @@ function toDto(
     showAllProductsInNav: row.showAllProductsInNav,
     showTermineInNav: row.showTermineInNav,
     desktopShopNavMode: parseDesktopShopNavMode(row.desktopShopNavMode),
+    headerNavPlacement: parseHeaderNavPlacement(row.headerNavPlacement),
     footerShowTagline: row.footerShowTagline,
     footerShowShopNav: row.footerShowShopNav,
     footerShowCollections: row.footerShowCollections,
@@ -125,6 +128,7 @@ const createDefaults = () => ({
   showAllProductsInNav: JERRYS_SHOP_SETTINGS_DEFAULTS.showAllProductsInNav,
   showTermineInNav: JERRYS_SHOP_SETTINGS_DEFAULTS.showTermineInNav,
   desktopShopNavMode: JERRYS_SHOP_SETTINGS_DEFAULTS.desktopShopNavMode,
+  headerNavPlacement: JERRYS_SHOP_SETTINGS_DEFAULTS.headerNavPlacement,
   footerShowTagline: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowTagline,
   footerShowShopNav: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowShopNav,
   footerShowCollections: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowCollections,

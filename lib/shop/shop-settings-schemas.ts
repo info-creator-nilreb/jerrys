@@ -1,7 +1,10 @@
 import { z } from "zod";
 import { emailSchema, nonEmptyString } from "@/lib/validation/form";
 import { evaluatePrimaryBrandContrast, isHexColor } from "@/lib/shop/color-contrast";
-import { DESKTOP_SHOP_NAV_MODES } from "@/lib/shop/shop-settings-defaults";
+import {
+  DESKTOP_SHOP_NAV_MODES,
+  HEADER_NAV_PLACEMENTS,
+} from "@/lib/shop/shop-settings-defaults";
 
 const HEX_COLOR_MSG = "Farbe als #RRGGBB angeben.";
 
@@ -72,6 +75,7 @@ export const shopSettingsValuesSchema = z.object({
   showAllProductsInNav: z.boolean(),
   showTermineInNav: z.boolean(),
   desktopShopNavMode: z.enum(DESKTOP_SHOP_NAV_MODES),
+  headerNavPlacement: z.enum(HEADER_NAV_PLACEMENTS),
   footerShowTagline: z.boolean(),
   footerShowShopNav: z.boolean(),
   footerShowCollections: z.boolean(),

@@ -9,6 +9,7 @@ import {
 import {
   JERRYS_SHOP_SETTINGS_DEFAULTS,
   parseDesktopShopNavMode,
+  parseHeaderNavPlacement,
 } from "@/lib/shop/shop-settings-defaults";
 import {
   parseShopSettingsUpdate,
@@ -80,6 +81,7 @@ export function shopSettingsInputFromFormData(formData: FormData): Record<string
     showAllProductsInNav: formCheckbox(formData, "showAllProductsInNav"),
     showTermineInNav: formCheckbox(formData, "showTermineInNav"),
     desktopShopNavMode: parseDesktopShopNavMode(formData.get("desktopShopNavMode")),
+    headerNavPlacement: parseHeaderNavPlacement(formData.get("headerNavPlacement")),
     footerShowTagline: formCheckbox(formData, "footerShowTagline"),
     footerShowShopNav: formCheckbox(formData, "footerShowShopNav", false),
     footerShowCollections: formCheckbox(formData, "footerShowCollections"),
@@ -120,6 +122,7 @@ function createDefaultsRow(values: ShopSettingsValues) {
     showAllProductsInNav: values.showAllProductsInNav,
     showTermineInNav: values.showTermineInNav,
     desktopShopNavMode: values.desktopShopNavMode,
+    headerNavPlacement: values.headerNavPlacement,
     footerShowTagline: values.footerShowTagline,
     footerShowShopNav: values.footerShowShopNav,
     footerShowCollections: values.footerShowCollections,
@@ -173,6 +176,7 @@ export async function updateShopSettingsFromInput(
           showAllProductsInNav: values.showAllProductsInNav,
           showTermineInNav: values.showTermineInNav,
           desktopShopNavMode: values.desktopShopNavMode,
+          headerNavPlacement: values.headerNavPlacement,
           footerShowTagline: values.footerShowTagline,
           footerShowShopNav: values.footerShowShopNav,
           footerShowCollections: values.footerShowCollections,
@@ -195,6 +199,7 @@ export async function updateShopSettingsFromInput(
           showAllProductsInNav: values.showAllProductsInNav,
           showTermineInNav: values.showTermineInNav,
           desktopShopNavMode: values.desktopShopNavMode,
+          headerNavPlacement: values.headerNavPlacement,
           footerShowShopNav: values.footerShowShopNav,
           footerShowCollections: values.footerShowCollections,
           footerShowCmsLinks: values.footerShowCmsLinks,

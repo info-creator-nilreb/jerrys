@@ -146,6 +146,7 @@ async function main() {
         showAllProductsInNav: shopDefaults.showAllProductsInNav,
         showTermineInNav: shopDefaults.showTermineInNav,
         desktopShopNavMode: shopDefaults.desktopShopNavMode,
+        headerNavPlacement: shopDefaults.headerNavPlacement,
         footerShowTagline: shopDefaults.footerShowTagline,
         footerShowShopNav: shopDefaults.footerShowShopNav,
         footerShowCollections: shopDefaults.footerShowCollections,
