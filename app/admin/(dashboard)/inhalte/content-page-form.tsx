@@ -3,10 +3,12 @@
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import { useActionState, useId, useMemo, useState } from "react";
 import { ContentBlockFields } from "@/app/admin/(dashboard)/inhalte/content-block-fields";
+import { CmsPageSeoAiTextAssistant } from "@/app/admin/(dashboard)/inhalte/cms-page-seo-ai-text-assistant";
 import {
   saveContentPageAction,
   type ContentPageFormState,
 } from "@/app/admin/(dashboard)/inhalte/actions";
+import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
 import { CmsMediaField } from "@/components/admin/cms-media-field";
 import {
   ContentLivePreview,
@@ -56,6 +58,45 @@ function newClientId(): string {
   return `tmp_${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function strData(data: Record<string, unknown>, key: string): string {
+  const v = data[key];
+  return typeof v === "string" ? v : "";
+}
+
+/** Kurzer Seitenkontext für SEO-KI aus sichtbaren Blocktexten. */
+function buildPageContextFromBlocks(blocks: EditorBlock[]): string {
+  const parts: string[] = [];
+  for (const block of blocks) {
+    if (block.type === "hero") {
+      const eyebrow = strData(block.data, "eyebrow").trim();
+      const headline = strData(block.data, "headline").trim();
+      if (eyebrow) parts.push(eyebrow);
+      if (headline) parts.push(headline);
+    } else if (block.type === "richText") {
+      const html = strData(block.data, "html");
+      const plain = html
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/p>/gi, "\n")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (plain) parts.push(plain.slice(0, 600));
+    } else if (block.type === "imageText") {
+      const t = strData(block.data, "title").trim();
+      const body = strData(block.data, "body").trim();
+      if (t) parts.push(t);
+      if (body) parts.push(body.slice(0, 400));
+    } else if (block.type === "uspStrip") {
+      const title = strData(block.data, "title").trim();
+      const intro = strData(block.data, "intro").trim();
+      if (title) parts.push(title);
+      if (intro) parts.push(intro);
+    }
+    if (parts.join("\n").length > 2200) break;
+  }
+  return parts.join("\n").slice(0, 2500);
+}
+
 export function ContentPageForm({
   initial,
   previewProducts = [],
@@ -73,6 +114,8 @@ export function ContentPageForm({
 
   const [pageType, setPageType] = useState(initial?.pageType ?? "content");
   const [title, setTitle] = useState(initial?.title ?? "");
+  const [seoTitle, setSeoTitle] = useState(initial?.seoTitle ?? "");
+  const [seoDescription, setSeoDescription] = useState(initial?.seoDescription ?? "");
   const [ogImageUrl, setOgImageUrl] = useState(initial?.ogImageUrl ?? "");
   const [slug, setSlug] = useState(
     initial?.slug ?? (pageType === "homepage" ? CONTENT_PAGE_HOME_SLUG : ""),
@@ -110,6 +153,8 @@ export function ContentPageForm({
     [blocks],
   );
 
+  const pageContext = useMemo(() => buildPageContextFromBlocks(blocks), [blocks]);
+
   const fe = state?.fieldErrors ?? {};
 
   function moveBlock(index: number, dir: -1 | 1) {
@@ -137,7 +182,7 @@ export function ContentPageForm({
   }
 
   const editor = (
-    <form id={formId} action={formAction} className="space-y-8">
+    <form id={formId} action={formAction} className="space-y-8 pb-28">
       {initial?.id ? <input type="hidden" name="id" value={initial.id} /> : null}
       <input type="hidden" name="blocksJson" value={blocksJson} />
       {pageType === "homepage" ? (
@@ -213,13 +258,30 @@ export function ContentPageForm({
             ) : null}
             {fe.slug ? <p className="mt-1 text-sm text-red-600">{fe.slug}</p> : null}
           </label>
+
+          <CmsPageSeoAiTextAssistant
+            aiReady={aiReady}
+            pageTitle={title}
+            pageType={pageType}
+            existingSeoTitle={seoTitle}
+            existingSeoDescription={seoDescription}
+            pageContext={pageContext}
+            onApply={(target, value) => {
+              if (target === "seoTitle") setSeoTitle(value);
+              else setSeoDescription(value);
+            }}
+          />
+
           <label className="text-sm text-[#5c5f66]">
             SEO-Titel
             <input
               name="seoTitle"
-              defaultValue={initial?.seoTitle ?? ""}
+              value={seoTitle}
+              onChange={(e) => setSeoTitle(e.target.value)}
+              maxLength={70}
               className={fieldClass}
             />
+            <span className="mt-1 block text-xs text-[#9ca3af]">{seoTitle.length}/70</span>
           </label>
           <label className="text-sm text-[#5c5f66]">
             Canonical-Pfad
@@ -234,9 +296,14 @@ export function ContentPageForm({
             SEO-Description
             <textarea
               name="seoDescription"
-              defaultValue={initial?.seoDescription ?? ""}
+              value={seoDescription}
+              onChange={(e) => setSeoDescription(e.target.value)}
+              maxLength={320}
               className={`${fieldClass} min-h-20`}
             />
+            <span className="mt-1 block text-xs text-[#9ca3af]">
+              {seoDescription.length}/320
+            </span>
           </label>
           <CmsMediaField
             label="OG-Bild"
@@ -386,16 +453,29 @@ export function ContentPageForm({
       {state?.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
       {state?.ok ? <p className="text-sm font-medium text-primary">Gespeichert.</p> : null}
 
-      <div className="flex justify-end">
+      <AdminFormActionDock>
+        {state?.ok ? (
+          <p className="mr-auto text-sm font-medium text-primary" role="status">
+            Gespeichert.
+          </p>
+        ) : state?.error ? (
+          <p className="mr-auto text-sm text-red-600" role="alert">
+            {state.error}
+          </p>
+        ) : (
+          <span className="mr-auto hidden text-sm text-[#6b7280] sm:inline">
+            Änderungen speichern, um die Seite zu aktualisieren.
+          </span>
+        )}
         <button
           type="submit"
           disabled={pending}
           form={formId}
-          className="min-h-11 min-w-[9rem] rounded-md bg-primary px-5 text-sm font-semibold text-white shadow-sm hover:bg-(--primary-hover) disabled:opacity-60"
+          className="rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-(--primary-hover) disabled:opacity-60"
         >
           {pending ? "Speichern…" : "Speichern"}
         </button>
-      </div>
+      </AdminFormActionDock>
     </form>
   );
 
