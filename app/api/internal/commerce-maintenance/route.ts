@@ -1,6 +1,9 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { publishIntegrationOutboxBatch } from "@/features/integrations";
+import {
+  getIntegrationOutboxBacklogStats,
+  publishIntegrationOutboxBatch,
+} from "@/features/integrations";
 import {
   expireStaleStockReservations,
   getZettleConnectionPublic,
@@ -8,6 +11,10 @@ import {
   syncZettlePurchases,
 } from "@/features/inventory";
 import { runWorkshopMaintenance } from "@/features/workshops";
+import {
+  parseCommerceMaintenanceMode,
+  type CommerceMaintenanceMode,
+} from "@/lib/commerce/maintenance-mode";
 import { getPrisma } from "@/lib/db/prisma";
 import { getInstagramConnectionPublic } from "@/lib/instagram/connection";
 import { syncInstagramMediaFeed } from "@/lib/instagram/sync-media";
@@ -77,22 +84,45 @@ async function runZettleSyncIfConnected() {
   }
 }
 
-async function runCommerceMaintenance() {
+async function resolveMaintenanceMode(req: NextRequest): Promise<CommerceMaintenanceMode> {
+  const fromQuery = req.nextUrl.searchParams.get("mode");
+  if (fromQuery) {
+    return parseCommerceMaintenanceMode(fromQuery);
+  }
+
+  if (req.method === "POST") {
+    const contentType = req.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json")) {
+      try {
+        const body = (await req.clone().json()) as { mode?: unknown };
+        if (typeof body?.mode === "string") {
+          return parseCommerceMaintenanceMode(body.mode);
+        }
+      } catch {
+        /* leerer/ungültiger Body → Default */
+      }
+    }
+  }
+
+  return "full";
+}
+
+async function runCommerceMaintenance(mode: CommerceMaintenanceMode) {
   const prisma = getPrisma();
-  const [expired, outbox, workshops, paypalReconcile, instagram, zettle] = await Promise.all([
+
+  const [expired, workshops, paypalReconcile, outboxBacklog] = await Promise.all([
     expireStaleStockReservations(prisma),
-    publishIntegrationOutboxBatch(prisma),
     runWorkshopMaintenance(prisma),
     reconcilePendingPayPalPayments(prisma, {
       limit: 25,
       source: "paypal_reconciliation",
     }),
-    runInstagramSyncIfConnected(),
-    runZettleSyncIfConnected(),
+    getIntegrationOutboxBacklogStats(prisma),
   ]);
-  return {
+
+  const criticalBody = {
+    mode,
     expiredReservations: expired,
-    outbox,
     workshops,
     paypalReconcile: {
       scanned: paypalReconcile.scanned,
@@ -101,6 +131,29 @@ async function runCommerceMaintenance() {
       failed: paypalReconcile.failed,
       skipped: paypalReconcile.skipped,
     },
+    outboxBacklog,
+  };
+
+  if (mode === "critical") {
+    return {
+      ...criticalBody,
+      outbox: { skipped: true as const, reason: "critical_mode" },
+      instagram: { skipped: true as const, reason: "critical_mode" },
+      zettle: { skipped: true as const, reason: "critical_mode" },
+    };
+  }
+
+  const [outbox, instagram, zettle] = await Promise.all([
+    publishIntegrationOutboxBatch(prisma),
+    runInstagramSyncIfConnected(),
+    runZettleSyncIfConnected(),
+  ]);
+
+  return {
+    ...criticalBody,
+    outbox,
+    /** Nach Publisher erneut messen — Alert-Felder aktuell halten. */
+    outboxBacklog: await getIntegrationOutboxBacklogStats(prisma),
     instagram,
     zettle,
   };
@@ -108,24 +161,27 @@ async function runCommerceMaintenance() {
 
 /**
  * GET — Vercel Cron (sendet Authorization: Bearer CRON_SECRET).
- * Gleiche Logik wie POST; manuell testbar mit CRON_SECRET oder COMMERCE_MAINTENANCE_SECRET.
+ * Query `?mode=critical|full` (Default: full). Manuell mit CRON_SECRET oder COMMERCE_MAINTENANCE_SECRET.
  */
 export async function GET(req: NextRequest) {
   if (!isAuthorized(req)) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
-  const body = await runCommerceMaintenance();
+  const mode = await resolveMaintenanceMode(req);
+  const body = await runCommerceMaintenance(mode);
   return NextResponse.json({ ok: true, ...body });
 }
 
 /**
- * POST — Reservierungs-Ablauf + Workshop-Holds + Outbox + Zettle-Pull (manuell/Curl).
+ * POST — manuell/GitHub Actions.
+ * `?mode=critical|full` oder JSON `{ "mode": "critical" }` (Default: full).
  * Erfordert COMMERCE_MAINTENANCE_SECRET (oder CRON_SECRET als Bearer).
  */
 export async function POST(req: NextRequest) {
   if (!isAuthorized(req)) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
-  const body = await runCommerceMaintenance();
+  const mode = await resolveMaintenanceMode(req);
+  const body = await runCommerceMaintenance(mode);
   return NextResponse.json({ ok: true, ...body });
 }

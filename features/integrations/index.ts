@@ -1,6 +1,11 @@
 export { appendIntegrationOutbox } from "@/features/integrations/application/append-integration-outbox";
 export { publishIntegrationOutboxBatch } from "@/features/integrations/application/publish-integration-outbox-batch";
 export {
+  getIntegrationOutboxBacklogStats,
+  OUTBOX_STALE_PENDING_MS,
+  type IntegrationOutboxBacklogStats,
+} from "@/features/integrations/application/outbox-backlog-stats";
+export {
   beginWebhookInboxProcessing,
   markWebhookInboxFailed,
   markWebhookInboxProcessed,

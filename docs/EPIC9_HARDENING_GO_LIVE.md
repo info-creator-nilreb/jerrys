@@ -64,14 +64,16 @@ Siehe Abschnitt unten; vor Production-Cutover abarbeiten.
 - [ ] Migrationen auf Staging rehearsed (expand/contract); Rollback-Pfad verstanden
 - [ ] Secrets Preview ≠ Production (`AUTH_SECRET`, `DATABASE_URL`, PayPal Sandbox vs Live)
 - [ ] PayPal Sandbox: Create → Approve/Return → Capture; Webhook-URL + `PAYPAL_WEBHOOK_ID` gesetzt
-- [ ] `commerce-maintenance` Cron/Secret auf Staging oder manueller Call OK
+- [ ] `commerce-maintenance` Cron/Secret auf Staging oder manueller Call OK (`?mode=critical` und `?mode=full`)
+- [ ] GitHub Actions Secrets gesetzt: `COMMERCE_MAINTENANCE_SITE_URL` + `COMMERCE_MAINTENANCE_SECRET` (ohne sie läuft nur Vercel-Tages-Cron — zu selten für Workshop-Holds)
 - [ ] `npm run validate` + relevante E2E grün auf Release-Commit
 
 ### Production readiness
 
 - [ ] `PAYPAL_ENV=live` + Live-Credentials nur in Production; Webhook auf Production-Host
 - [ ] Transaction-Pooler `DATABASE_URL` (`:6543`); `DIRECT_DATABASE_URL` für Migrate
-- [ ] Alerts verdrahtet (Payment-Fehler, Webhook-Signatur, Outbox-Backlog, 5xx) — mindestens Log-Queries/Dashboards benannt
+- [ ] Alerts verdrahtet (Payment-Fehler, Webhook-Signatur, Outbox-Backlog via `outboxBacklog.stalePendingCount` / `oldestPendingAgeSeconds` > 15 Min., 5xx) — mindestens Log-Queries/Dashboards benannt
+- [ ] Workflow „Commerce maintenance“ in GitHub Actions auf Production-URL grün (manuell `workflow_dispatch` mit `critical`)
 - [ ] Restore-Übung geplant oder dokumentiert ([OPERATIONS.md](./OPERATIONS.md) Backup and Recovery)
 - [ ] Support kennt Runbooks: PayPal-Ausfall, „bezahlt aber nicht finalisiert“, Webhook-Backlog
 - [ ] Cutover: Feature-Risiken bewusst (kein stiller Live-PayPal ohne Webhook-ID)
