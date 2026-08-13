@@ -98,6 +98,10 @@ export type ProductFormState = {
   error?: string;
   fieldErrors?: Record<string, string>;
   ok?: boolean;
+  /** Einmaliger Stempel, damit Client-Effects bei wiederholtem ok:true erneut laufen. */
+  revision?: number;
+  /** Welche Medien-Aktion erfolgreich war (für UI-Feedback). */
+  mediaIntent?: "delete" | "cover";
 } | null;
 
 const updateProductFormSchema = productCoreSchema.and(
@@ -465,6 +469,18 @@ export async function addProductImage(
   return { ok: true };
 }
 
+async function tryUnlinkLocalProductUpload(url: string): Promise<void> {
+  if (!url.startsWith("/media/product-uploads/")) return;
+  const rel = url.replace(/^\//, "");
+  const abs = path.join(process.cwd(), "public", rel);
+  if (!existsSync(abs)) return;
+  try {
+    await unlink(abs);
+  } catch {
+    /* Datei schon weg / ephemeral FS — DB-Löschung bleibt maßgeblich */
+  }
+}
+
 async function deleteProductImageById(imageId: string): Promise<ProductFormState> {
   const image = await getPrisma().productImage.findUnique({
     where: { id: imageId },
@@ -474,38 +490,34 @@ async function deleteProductImageById(imageId: string): Promise<ProductFormState
     return { error: "Bild nicht gefunden." };
   }
 
-  if (image.url.startsWith("/media/product-uploads/")) {
-    const rel = image.url.replace(/^\//, "");
-    const abs = path.join(process.cwd(), "public", rel);
-    if (existsSync(abs)) {
-      try {
-        await unlink(abs);
-      } catch {
-        /* ignore */
+  try {
+    await tryUnlinkLocalProductUpload(image.url);
+
+    await getPrisma().$transaction(async (tx) => {
+      await tx.productImage.delete({ where: { id: imageId } });
+      if (image.isCover) {
+        const next = await tx.productImage.findFirst({
+          where: { productId: image.productId },
+          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        });
+        if (next) {
+          await tx.productImage.update({
+            where: { id: next.id },
+            data: { isCover: true },
+          });
+        }
       }
-    }
-  }
-
-  await getPrisma().productImage.delete({ where: { id: imageId } });
-
-  if (image.isCover) {
-    const next = await getPrisma().productImage.findFirst({
-      where: { productId: image.productId },
-      orderBy: { sortOrder: "asc" },
     });
-    if (next) {
-      await getPrisma().productImage.update({
-        where: { id: next.id },
-        data: { isCover: true },
-      });
-    }
+  } catch (e) {
+    log.error("product_image_delete_failed", { imageId, ...errorMeta(e) });
+    return { error: "Bild konnte nicht gelöscht werden. Bitte erneut versuchen." };
   }
 
   revalidatePath("/");
   revalidatePath("/produkte");
   revalidatePath(`/produkte/${image.product.slug}`);
   revalidatePath(`/admin/products/${image.product.id}/edit`);
-  return { ok: true };
+  return { ok: true, revision: Date.now(), mediaIntent: "delete" };
 }
 
 async function setProductCoverImageById(imageId: string): Promise<ProductFormState> {
@@ -532,7 +544,7 @@ async function setProductCoverImageById(imageId: string): Promise<ProductFormSta
   revalidatePath("/produkte");
   revalidatePath(`/produkte/${image.product.slug}`);
   revalidatePath(`/admin/products/${image.product.id}/edit`);
-  return { ok: true };
+  return { ok: true, revision: Date.now(), mediaIntent: "cover" };
 }
 
 /** Form-Action: intent = `delete` | `cover`, Feld `imageId`. */
@@ -558,6 +570,27 @@ export async function productImageMediaAction(
     return setProductCoverImageById(imageId);
   }
   return { error: "Unbekannte Aktion." };
+}
+
+/** Direkt aufrufbar aus Client-Transitions (zuverlässiger als mehrfach geteilte Form-Actions). */
+export async function deleteProductImage(imageId: string): Promise<ProductFormState> {
+  const session = await getAdminSession();
+  if (!session?.user) {
+    return { error: "Nicht angemeldet." };
+  }
+  const id = imageId.trim();
+  if (!id) return { error: "Bild nicht gefunden." };
+  return deleteProductImageById(id);
+}
+
+export async function setProductCoverImage(imageId: string): Promise<ProductFormState> {
+  const session = await getAdminSession();
+  if (!session?.user) {
+    return { error: "Nicht angemeldet." };
+  }
+  const id = imageId.trim();
+  if (!id) return { error: "Bild nicht gefunden." };
+  return setProductCoverImageById(id);
 }
 
 export async function uploadProductImages(

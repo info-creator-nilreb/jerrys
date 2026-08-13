@@ -1,48 +1,48 @@
 "use client";
 
-import { useActionState, useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Trash2 } from "lucide-react";
 import {
-  productImageMediaAction,
+  deleteProductImage,
+  setProductCoverImage,
   uploadProductImages,
   type ProductFormState,
 } from "@/app/admin/(dashboard)/products/actions";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type ImageRow = { id: string; url: string; alt: string; sortOrder: number; isCover: boolean };
 
-const mediaInitial: ProductFormState = null;
-
 export function ProductMediaSection({
   productId,
-  images,
+  images: imagesProp,
 }: {
   productId: string;
   images: ImageRow[];
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [images, setImages] = useState<ImageRow[]>(imagesProp);
   const [dragOver, setDragOver] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [uploadErr, setUploadErr] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [uploadPending, startUploadTransition] = useTransition();
-  const [mediaState, mediaFormAction, mediaPending] = useActionState(
-    productImageMediaAction,
-    mediaInitial,
-  );
+  const [mediaPending, startMediaTransition] = useTransition();
+
+  useEffect(() => {
+    setImages(imagesProp);
+  }, [imagesProp]);
 
   const refresh = useCallback(() => {
     router.refresh();
   }, [router]);
 
-  useEffect(() => {
-    if (!mediaState?.ok) return;
-    refresh();
-  }, [mediaState?.ok, refresh]);
-
   const onUpload = useCallback(
-    async (files: FileList | null) => {
+    (files: FileList | null) => {
       if (!files?.length) return;
-      setUploadErr(null);
+      setError(null);
       setMessage(null);
       const fd = new FormData();
       for (const f of Array.from(files)) {
@@ -50,27 +50,79 @@ export function ProductMediaSection({
       }
       startUploadTransition(async () => {
         const res: ProductFormState = await uploadProductImages(productId, fd);
-        if (res?.error) setUploadErr(res.error);
-        else {
-          setMessage("Dateien hochgeladen.");
-          refresh();
+        if (res?.error) {
+          setError(res.error);
+          return;
         }
+        setMessage("Dateien hochgeladen.");
+        refresh();
       });
     },
     [productId, refresh],
   );
 
+  const onSetCover = useCallback(
+    (imageId: string) => {
+      setError(null);
+      setMessage(null);
+      setPendingId(imageId);
+      startMediaTransition(async () => {
+        const res = await setProductCoverImage(imageId);
+        setPendingId(null);
+        if (res?.error) {
+          setError(res.error);
+          return;
+        }
+        setImages((prev) =>
+          prev.map((img) => ({ ...img, isCover: img.id === imageId })),
+        );
+        setMessage("Cover aktualisiert.");
+        refresh();
+      });
+    },
+    [refresh],
+  );
+
+  const onConfirmDelete = useCallback(() => {
+    const imageId = confirmDeleteId;
+    if (!imageId) return;
+    setConfirmDeleteId(null);
+    setError(null);
+    setMessage(null);
+    setPendingId(imageId);
+    startMediaTransition(async () => {
+      const res = await deleteProductImage(imageId);
+      setPendingId(null);
+      if (res?.error) {
+        setError(res.error);
+        return;
+      }
+      setImages((prev) => {
+        const remaining = prev.filter((img) => img.id !== imageId);
+        if (remaining.length === 0) return remaining;
+        if (remaining.some((img) => img.isCover)) return remaining;
+        return remaining.map((img, index) => ({
+          ...img,
+          isCover: index === 0,
+        }));
+      });
+      setMessage("Bild gelöscht.");
+      refresh();
+    });
+  }, [confirmDeleteId, refresh]);
+
   const cover = images.find((i) => i.isCover) ?? images[0];
-  const thumbs = images;
-  const err = mediaState?.error ?? uploadErr;
   const pending = uploadPending || mediaPending;
+  const confirmImage = confirmDeleteId
+    ? images.find((i) => i.id === confirmDeleteId)
+    : null;
 
   return (
     <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
       <div>
         <h2 className="text-base font-semibold text-[#1f2937]">Medien</h2>
         <p className="mt-1 text-sm text-[#6b7280]">
-          Füge Dateien zur Mediengalerie des Produkts hinzu.
+          Dateien zur Galerie hinzufügen oder nicht mehr benötigte Bilder entfernen.
         </p>
       </div>
       <div className="mt-6 h-px bg-[#e8eaed]" />
@@ -87,7 +139,7 @@ export function ProductMediaSection({
         onDrop={(e) => {
           e.preventDefault();
           setDragOver(false);
-          void onUpload(e.dataTransfer.files);
+          onUpload(e.dataTransfer.files);
         }}
       >
         <p className="text-center text-sm text-[#6b7280]">Dateien zum Hochladen hierhin ziehen</p>
@@ -109,14 +161,22 @@ export function ProductMediaSection({
           multiple
           className="hidden"
           onChange={(e) => {
-            void onUpload(e.target.files);
+            onUpload(e.target.files);
             e.target.value = "";
           }}
         />
       </div>
 
-      {err ? <p className="mt-3 text-sm text-red-600">{err}</p> : null}
-      {message ? <p className="mt-3 text-sm text-primary">{message}</p> : null}
+      {error ? (
+        <p className="mt-3 text-sm text-red-600" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {message ? (
+        <p className="mt-3 text-sm text-primary" role="status">
+          {message}
+        </p>
+      ) : null}
 
       {images.length > 0 ? (
         <div className="mt-10 grid gap-6 md:grid-cols-[minmax(0,220px)_1fr]">
@@ -134,15 +194,15 @@ export function ProductMediaSection({
           <div>
             <p className="mb-3 text-xs font-medium text-[#6b7280]">Galerie</p>
             <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
-              {thumbs.map((img) => (
-                <li key={img.id} className="relative">
-                  <form action={mediaFormAction}>
-                    <input type="hidden" name="intent" value="cover" />
-                    <input type="hidden" name="imageId" value={img.id} />
+              {images.map((img) => {
+                const busy = pendingId === img.id && mediaPending;
+                return (
+                  <li key={img.id} className="relative flex flex-col gap-1">
                     <button
-                      type="submit"
-                      disabled={mediaPending}
-                      className={`relative block aspect-square w-full overflow-hidden rounded-md border-2 bg-[#f9fafb] transition-colors ${
+                      type="button"
+                      disabled={pending}
+                      onClick={() => onSetCover(img.id)}
+                      className={`relative block aspect-square w-full overflow-hidden rounded-md border-2 bg-[#f9fafb] transition-colors disabled:opacity-50 ${
                         img.isCover
                           ? "border-primary"
                           : "border-[#e5e7eb] hover:border-primary/50"
@@ -157,24 +217,39 @@ export function ProductMediaSection({
                         </span>
                       ) : null}
                     </button>
-                  </form>
-                  <form action={mediaFormAction} className="mt-1">
-                    <input type="hidden" name="intent" value="delete" />
-                    <input type="hidden" name="imageId" value={img.id} />
                     <button
-                      type="submit"
-                      disabled={mediaPending}
-                      className="w-full text-center text-xs text-red-600 hover:underline disabled:opacity-50"
+                      type="button"
+                      disabled={pending}
+                      onClick={() => setConfirmDeleteId(img.id)}
+                      className="inline-flex w-full items-center justify-center gap-1 rounded-md px-1 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                      aria-label="Bild löschen"
                     >
-                      Löschen
+                      <Trash2 className="size-3.5" aria-hidden />
+                      {busy ? "Löschen…" : "Löschen"}
                     </button>
-                  </form>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>
-      ) : null}
+      ) : (
+        <p className="mt-6 text-sm text-[#6b7280]">Noch keine Bilder in der Galerie.</p>
+      )}
+
+      <ConfirmDialog
+        open={confirmDeleteId != null}
+        title="Bild löschen?"
+        description={
+          confirmImage?.isCover
+            ? "Dieses Cover-Bild wirklich entfernen? Ein anderes Galeriebild wird automatisch Cover."
+            : "Dieses Produktbild wirklich unwiderruflich aus der Galerie entfernen?"
+        }
+        confirmLabel="Bild löschen"
+        cancelLabel="Abbrechen"
+        onConfirm={onConfirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </section>
   );
 }
