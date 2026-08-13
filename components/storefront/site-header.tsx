@@ -5,7 +5,10 @@ import { StorefrontHeaderSearch } from "@/components/storefront/storefront-heade
 import { listActiveCategoriesForNav } from "@/lib/catalog/category-queries";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 import { resolveShopBrandingAssetUrl } from "@/lib/shop/branding-asset-fallbacks";
-import { infoBannerIsVisible } from "@/lib/shop/info-banner";
+import {
+  infoBannerIsVisible,
+  resolveInfoBannerBgColor,
+} from "@/lib/shop/info-banner";
 import { getShopSettings } from "@/lib/shop/shop-settings";
 import { buildStorefrontShopNavLinks } from "@/lib/storefront/shop-nav-links";
 
@@ -47,6 +50,10 @@ export async function SiteHeader() {
               messages: settings.infoBannerMessages,
               durationSec: settings.infoBannerDurationSec,
               href: settings.infoBannerHref,
+              bgColor: resolveInfoBannerBgColor(
+                settings.infoBannerBgColor,
+                settings.primaryColor,
+              ),
             }
           : null
       }

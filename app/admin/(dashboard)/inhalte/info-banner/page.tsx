@@ -36,6 +36,8 @@ export default async function AdminInfoBannerPage() {
           messages: settings.infoBannerMessages,
           durationSec: settings.infoBannerDurationSec,
           href: settings.infoBannerHref,
+          bgColor: settings.infoBannerBgColor,
+          primaryColor: settings.primaryColor,
         }}
       />
     </div>

@@ -1139,6 +1139,8 @@ model ShopSettings {
   infoBannerDurationSec Int @default(6) @map("info_banner_duration_sec")
   /// Optionaler Link für die gesamte Bannerzeile (interner Pfad oder HTTPS).
   infoBannerHref String? @map("info_banner_href")
+  /// Banner-Hintergrund als #RRGGBB; null = Shop-Primärfarbe.
+  infoBannerBgColor String? @map("info_banner_bg_color")
 
   /// Footer: Kurzbeschreibung/Tagline.
   footerShowTagline Boolean @default(true) @map("footer_show_tagline")

@@ -34,6 +34,7 @@ function SiteHeaderChrome({
     messages: string[];
     durationSec: number;
     href: string | null;
+    bgColor: string;
   } | null;
   trailing: ReactNode;
 }) {
@@ -62,6 +63,7 @@ function SiteHeaderChrome({
             messages={infoBanner.messages}
             durationSec={infoBanner.durationSec}
             href={infoBanner.href}
+            bgColor={infoBanner.bgColor}
           />
         ) : null}
         <div className="flex w-full items-center gap-2 px-4 py-3 md:gap-3 md:px-6 md:py-3.5 lg:px-8 xl:px-10">
@@ -108,6 +110,7 @@ export function SiteHeaderShell({
     messages: string[];
     durationSec: number;
     href: string | null;
+    bgColor: string;
   } | null;
   trailing: ReactNode;
 }) {

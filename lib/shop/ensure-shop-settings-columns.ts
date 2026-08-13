@@ -34,6 +34,10 @@ export async function ensureShopSettingsColumns(): Promise<void> {
           ALTER TABLE "shop_settings"
             ADD COLUMN IF NOT EXISTS "info_banner_href" TEXT
         `);
+        await prisma.$executeRawUnsafe(`
+          ALTER TABLE "shop_settings"
+            ADD COLUMN IF NOT EXISTS "info_banner_bg_color" TEXT
+        `);
       } catch (e) {
         log.warn("ensure_shop_settings_columns_failed", errorMeta(e));
         ensurePromise = null;

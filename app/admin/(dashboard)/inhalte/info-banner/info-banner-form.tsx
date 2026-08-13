@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import {
   saveInfoBannerAction,
   type InfoBannerFormState,
@@ -11,10 +11,14 @@ import {
   INFO_BANNER_DURATIONS_SEC,
   INFO_BANNER_MAX_MESSAGES,
   INFO_BANNER_MESSAGE_MAX_LEN,
+  resolveInfoBannerBgColor,
+  resolveInfoBannerFgColor,
 } from "@/lib/shop/info-banner";
 
 const fieldClass =
   "mt-1 w-full rounded-md border border-[#e3e4e8] px-3 py-2.5 text-sm text-[#1f2937] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25";
+
+type BgMode = "primary" | "custom";
 
 type Props = {
   defaults: {
@@ -22,6 +26,8 @@ type Props = {
     messages: string[];
     durationSec: number;
     href: string | null;
+    bgColor: string | null;
+    primaryColor: string;
   };
 };
 
@@ -35,21 +41,52 @@ export function InfoBannerForm({ defaults }: Props) {
   );
   const [durationSec, setDurationSec] = useState(defaults.durationSec);
   const [href, setHref] = useState(defaults.href ?? "");
+  const [bgMode, setBgMode] = useState<BgMode>(defaults.bgColor ? "custom" : "primary");
+  const [customBg, setCustomBg] = useState(
+    defaults.bgColor ?? defaults.primaryColor,
+  );
+
+  // Nur aus dem Action-Ergebnis syncen — nicht aus defaults nach Refresh,
+  // sonst kann ein kurzlebig stale Cache den Haken wieder entfernen.
+  useEffect(() => {
+    if (!state?.ok || !state.saved) return;
+    setActive(state.saved.active);
+    setMessages(state.saved.messages.length > 0 ? [...state.saved.messages] : [""]);
+    setDurationSec(state.saved.durationSec);
+    setHref(state.saved.href ?? "");
+    setBgMode(state.saved.bgColor ? "custom" : "primary");
+    if (state.saved.bgColor) {
+      setCustomBg(state.saved.bgColor);
+    } else {
+      setCustomBg(defaults.primaryColor);
+    }
+  }, [state, defaults.primaryColor]);
 
   const fe = state?.fieldErrors ?? {};
+  const previewBg = resolveInfoBannerBgColor(
+    bgMode === "custom" ? customBg : null,
+    defaults.primaryColor,
+  );
+  const previewFg = resolveInfoBannerFgColor(previewBg);
+  const customHex = /^#[0-9a-fA-F]{6}$/.test(customBg) ? customBg : defaults.primaryColor;
 
   return (
     <form action={formAction} className="space-y-6">
+      <input type="hidden" name="infoBannerActive" value={active ? "true" : "false"} />
+      <input
+        type="hidden"
+        name="infoBannerBgColor"
+        value={bgMode === "primary" ? "primary" : customBg}
+      />
+
       <div className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
         <label className="flex cursor-pointer items-start gap-2.5 text-sm text-[#374151]">
-          <input type="hidden" name="infoBannerActive" value="false" />
           <input
             type="checkbox"
-            name="infoBannerActive"
-            value="true"
             checked={active}
             onChange={(e) => setActive(e.target.checked)}
             className="checkbox-primary mt-0.5 size-4"
+            aria-label="Info-Banner aktiv"
           />
           <span>
             <span className="font-medium">Info-Banner aktiv</span>
@@ -146,6 +183,66 @@ export function InfoBannerForm({ defaults }: Props) {
             )}
           </label>
         </div>
+
+        <fieldset className="mt-6 space-y-3 border-t border-[#e8eaed] pt-6">
+          <legend className="text-sm font-medium text-[#1f2937]">Hintergrundfarbe</legend>
+          <p className="text-xs text-[#6b7280]">
+            Standard ist die Shop-Primärfarbe. Optional eine eigene Farbe wählen.
+          </p>
+          <div className="flex flex-wrap gap-4 text-sm text-[#374151]">
+            <label className="inline-flex cursor-pointer items-center gap-2">
+              <input
+                type="radio"
+                name="infoBannerBgMode"
+                checked={bgMode === "primary"}
+                onChange={() => setBgMode("primary")}
+                className="size-4 accent-[var(--primary)]"
+              />
+              Primärfarbe (Standard)
+            </label>
+            <label className="inline-flex cursor-pointer items-center gap-2">
+              <input
+                type="radio"
+                name="infoBannerBgMode"
+                checked={bgMode === "custom"}
+                onChange={() => setBgMode("custom")}
+                className="size-4 accent-[var(--primary)]"
+              />
+              Eigene Farbe
+            </label>
+          </div>
+          {bgMode === "custom" ? (
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-[#e8eaed] bg-[#fafbfc] p-3">
+              <label className="relative size-12 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-[#d2d5d9] shadow-sm">
+                <span className="absolute inset-0" style={{ backgroundColor: customHex }} aria-hidden />
+                <input
+                  type="color"
+                  aria-label="Banner-Hintergrund wählen"
+                  value={customHex}
+                  onChange={(e) => setCustomBg(e.target.value)}
+                  className="absolute inset-0 cursor-pointer opacity-0"
+                />
+              </label>
+              <input
+                value={customBg}
+                onChange={(e) => setCustomBg(e.target.value)}
+                pattern="#[0-9A-Fa-f]{6}"
+                aria-label="Banner-Hintergrund Hex"
+                className="min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-sm text-[#6b7280] outline-none focus:text-[#1f2937]"
+              />
+            </div>
+          ) : null}
+          {fe.infoBannerBgColor ? (
+            <p className="text-sm text-red-600">{fe.infoBannerBgColor}</p>
+          ) : null}
+          <div
+            className="rounded-md px-4 py-2 text-center text-xs font-medium tracking-wide sm:text-sm"
+            style={{ backgroundColor: previewBg, color: previewFg }}
+            aria-hidden
+          >
+            Vorschau: Ab 59 Euro versandkostenfrei
+          </div>
+        </fieldset>
 
         {state?.ok ? (
           <p className="mt-4 text-sm text-emerald-700" role="status">

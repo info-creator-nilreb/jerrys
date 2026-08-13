@@ -3,17 +3,20 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePrefersReducedMotion } from "@/components/storefront/use-prefers-reduced-motion";
+import { resolveInfoBannerFgColor } from "@/lib/shop/info-banner";
 
 type Props = {
   messages: readonly string[];
   durationSec: number;
   href?: string | null;
+  bgColor: string;
 };
 
-export function SiteInfoBanner({ messages, durationSec, href }: Props) {
+export function SiteInfoBanner({ messages, durationSec, href, bgColor }: Props) {
   const reducedMotion = usePrefersReducedMotion();
   const [index, setIndex] = useState(0);
   const n = messages.length;
+  const fg = resolveInfoBannerFgColor(bgColor);
 
   useEffect(() => {
     if (n <= 1 || reducedMotion) return;
@@ -28,7 +31,8 @@ export function SiteInfoBanner({ messages, durationSec, href }: Props) {
 
   const text = messages[Math.min(index, n - 1)]!;
   const className =
-    "block w-full bg-[#9a8f84] px-4 py-2 text-center text-xs font-medium tracking-wide text-white sm:text-sm";
+    "block w-full px-4 py-2 text-center text-xs font-medium tracking-wide sm:text-sm";
+  const style = { backgroundColor: bgColor, color: fg };
 
   const inner = (
     <span
@@ -45,7 +49,8 @@ export function SiteInfoBanner({ messages, durationSec, href }: Props) {
       return (
         <a
           href={href}
-          className={`${className} transition-colors hover:bg-[#8a8076]`}
+          className={`${className} transition-opacity hover:opacity-90`}
+          style={style}
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -54,14 +59,18 @@ export function SiteInfoBanner({ messages, durationSec, href }: Props) {
       );
     }
     return (
-      <Link href={href} className={`${className} transition-colors hover:bg-[#8a8076]`}>
+      <Link
+        href={href}
+        className={`${className} transition-opacity hover:opacity-90`}
+        style={style}
+      >
         {inner}
       </Link>
     );
   }
 
   return (
-    <div className={className} role="status">
+    <div className={className} style={style} role="status">
       {inner}
     </div>
   );

@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   infoBannerIsVisible,
+  parseInfoBannerBgColorInput,
   parseInfoBannerDurationSec,
   parseInfoBannerMessages,
+  resolveInfoBannerBgColor,
+  resolveInfoBannerFgColor,
 } from "@/lib/shop/info-banner";
 import { infoBannerInputFromFormData } from "@/lib/shop/update-info-banner";
 
@@ -35,21 +38,59 @@ describe("infoBannerIsVisible", () => {
   });
 });
 
+describe("resolveInfoBannerBgColor", () => {
+  it("nutzt Override oder Primärfarbe", () => {
+    expect(resolveInfoBannerBgColor(null, "#8bbe25")).toBe("#8bbe25");
+    expect(resolveInfoBannerBgColor("primary", "#8bbe25")).toBe("#8bbe25");
+    expect(resolveInfoBannerBgColor("#9a8f84", "#8bbe25")).toBe("#9a8f84");
+  });
+});
+
+describe("resolveInfoBannerFgColor", () => {
+  it("wählt hellen oder dunklen Text", () => {
+    // Primärgrün: weiße Schrift (wie Marken-Buttons)
+    expect(resolveInfoBannerFgColor("#8bbe25")).toBe("#ffffff");
+    expect(resolveInfoBannerFgColor("#1f2937")).toBe("#ffffff");
+    expect(resolveInfoBannerFgColor("#f5f5f4")).toBe("#1f2937");
+  });
+});
+
+describe("parseInfoBannerBgColorInput", () => {
+  it("mapped primary/leer auf null", () => {
+    expect(parseInfoBannerBgColorInput("primary")).toEqual({ ok: true, color: null });
+    expect(parseInfoBannerBgColorInput("")).toEqual({ ok: true, color: null });
+    expect(parseInfoBannerBgColorInput("#AbCdEf")).toEqual({ ok: true, color: "#abcdef" });
+    expect(parseInfoBannerBgColorInput("rot").ok).toBe(false);
+  });
+});
+
 describe("infoBannerInputFromFormData", () => {
-  it("liest Checkbox, Texte und Dauer", () => {
+  it("liest aktiven Flag aus einzelnem Hidden-Feld", () => {
     const fd = new FormData();
-    fd.set("infoBannerActive", "false");
-    fd.append("infoBannerActive", "true");
+    fd.set("infoBannerActive", "true");
     fd.set("message0", "Versandfrei ab 59 €");
     fd.set("message1", "Aktion bis Sonntag");
     fd.set("message2", "");
     fd.set("infoBannerDurationSec", "8");
     fd.set("infoBannerHref", "/versand");
+    fd.set("infoBannerBgColor", "primary");
 
     const input = infoBannerInputFromFormData(fd);
     expect(input.active).toBe(true);
     expect(input.messages).toEqual(["Versandfrei ab 59 €", "Aktion bis Sonntag"]);
     expect(input.durationSec).toBe(8);
     expect(input.hrefRaw).toBe("/versand");
+    expect(input.bgColorRaw).toBe("primary");
+  });
+
+  it("liest false und eigene Farbe", () => {
+    const fd = new FormData();
+    fd.set("infoBannerActive", "false");
+    fd.set("message0", "Hi");
+    fd.set("infoBannerDurationSec", "6");
+    fd.set("infoBannerBgColor", "#9a8f84");
+    const input = infoBannerInputFromFormData(fd);
+    expect(input.active).toBe(false);
+    expect(input.bgColorRaw).toBe("#9a8f84");
   });
 });

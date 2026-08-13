@@ -53,6 +53,7 @@ function toDto(
     infoBannerMessages: unknown;
     infoBannerDurationSec: number;
     infoBannerHref: string | null;
+    infoBannerBgColor: string | null;
     footerShowTagline: boolean;
     footerShowShopNav: boolean;
     footerShowCollections: boolean;
@@ -99,6 +100,7 @@ function toDto(
     infoBannerMessages: parseInfoBannerMessages(row.infoBannerMessages),
     infoBannerDurationSec: parseInfoBannerDurationSec(row.infoBannerDurationSec),
     infoBannerHref: row.infoBannerHref ?? d.infoBannerHref,
+    infoBannerBgColor: row.infoBannerBgColor ?? d.infoBannerBgColor,
     footerShowTagline: row.footerShowTagline,
     footerShowShopNav: row.footerShowShopNav,
     footerShowCollections: row.footerShowCollections,
@@ -142,6 +144,7 @@ const createDefaults = () => ({
   infoBannerMessages: JERRYS_SHOP_SETTINGS_DEFAULTS.infoBannerMessages,
   infoBannerDurationSec: JERRYS_SHOP_SETTINGS_DEFAULTS.infoBannerDurationSec,
   infoBannerHref: JERRYS_SHOP_SETTINGS_DEFAULTS.infoBannerHref,
+  infoBannerBgColor: JERRYS_SHOP_SETTINGS_DEFAULTS.infoBannerBgColor,
   footerShowTagline: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowTagline,
   footerShowShopNav: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowShopNav,
   footerShowCollections: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowCollections,
