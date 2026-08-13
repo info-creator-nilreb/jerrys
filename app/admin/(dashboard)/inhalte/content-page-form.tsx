@@ -2,7 +2,10 @@
 
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import { useActionState, useEffect, useId, useMemo, useRef, useState } from "react";
-import { ContentBlockFields } from "@/app/admin/(dashboard)/inhalte/content-block-fields";
+import {
+  ContentBlockFields,
+  type CmsCollectionOption,
+} from "@/app/admin/(dashboard)/inhalte/content-block-fields";
 import { CmsPageSeoAiTextAssistant } from "@/app/admin/(dashboard)/inhalte/cms-page-seo-ai-text-assistant";
 import {
   saveContentPageAction,
@@ -101,10 +104,12 @@ function buildPageContextFromBlocks(blocks: EditorBlock[]): string {
 export function ContentPageForm({
   initial,
   previewProducts = [],
+  previewCollections = [],
   aiReady = false,
 }: {
   initial?: InitialPage;
   previewProducts?: LivePreviewProduct[];
+  previewCollections?: CmsCollectionOption[];
   aiReady?: boolean;
 }) {
   const formId = useId();
@@ -486,6 +491,7 @@ export function ContentPageForm({
                       aiReady={aiReady}
                       pageTitle={title}
                       pageType={pageType}
+                      collections={previewCollections}
                       onChange={(data) =>
                         setBlocks((prev) =>
                           prev.map((b) =>
@@ -540,6 +546,7 @@ export function ContentPageForm({
           pageType={pageType}
           blocks={previewBlocks}
           products={previewProducts}
+          collections={previewCollections}
           hasUnsavedChanges={hasUnsavedChanges}
         />
       </aside>
