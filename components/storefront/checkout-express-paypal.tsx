@@ -114,6 +114,7 @@ export function CheckoutExpressPayPalOnly({
   const paypalButtonsRef = useRef<PayPalButtonsInstance | null>(null);
   const applePaySessionRef = useRef<PayPalApplePaySession | null>(null);
   const idempotencyKeyRef = useRef<string | null>(null);
+  const lastExpressPaypalOrderIdRef = useRef<string | null>(null);
   const pdpExpressRef = useRef(pdpExpress);
   pdpExpressRef.current = pdpExpress;
   const [sdkError, setSdkError] = useState<string | null>(null);
@@ -175,6 +176,7 @@ export function CheckoutExpressPayPalOnly({
     if (!res.ok || !data.paypalOrderId) {
       throw new Error(data.error ?? "PayPal Express konnte nicht gestartet werden.");
     }
+    lastExpressPaypalOrderIdRef.current = data.paypalOrderId;
     return data.paypalOrderId;
   }, [ensureIdempotencyKey, preparePdpCartIfNeeded, router]);
 
@@ -194,10 +196,31 @@ export function CheckoutExpressPayPalOnly({
       if (!res.ok || !data.ok) {
         throw new Error(data.error ?? "PayPal Express konnte nicht abgeschlossen werden.");
       }
+      lastExpressPaypalOrderIdRef.current = null;
+      idempotencyKeyRef.current = null;
       router.push(data.redirectUrl ?? `/checkout/erfolg?nr=${encodeURIComponent(data.orderNumber ?? "")}`);
     },
     [router],
   );
+
+  const cancelExpressOrder = useCallback(async (paypalOrderId?: string | null) => {
+    const id =
+      (typeof paypalOrderId === "string" ? paypalOrderId.trim() : "") ||
+      lastExpressPaypalOrderIdRef.current ||
+      "";
+    if (!id) return;
+    try {
+      await fetch("/api/checkout/paypal/express-cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paypalOrderId: id }),
+      });
+    } catch {
+      // Abbruch-Cleanup best effort — Bestand läuft sonst über Reservation-Expiry aus.
+    }
+    lastExpressPaypalOrderIdRef.current = null;
+    idempotencyKeyRef.current = null;
+  }, []);
 
   useEffect(() => {
     setSdkError(null);
@@ -235,7 +258,10 @@ export function CheckoutExpressPayPalOnly({
             setBusy(false);
           }
         },
-        onCancel: () => setSdkError("PayPal Express wurde abgebrochen. Es wurde nichts abgebucht."),
+        onCancel: async (data: { orderID?: string }) => {
+          await cancelExpressOrder(data.orderID);
+          setSdkError("PayPal Express wurde abgebrochen. Es wurde nichts abgebucht.");
+        },
         onError: (err: unknown) => {
           console.error(err);
           setSdkError(err instanceof Error ? err.message : "PayPal Express ist fehlgeschlagen.");
@@ -288,6 +314,7 @@ export function CheckoutExpressPayPalOnly({
     };
   }, [
     approveExpressOrder,
+    cancelExpressOrder,
     createExpressOrder,
     currency,
     enabled,
@@ -357,12 +384,14 @@ export function CheckoutExpressPayPalOnly({
           console.error(e);
           setSdkError(e instanceof Error ? e.message : "Apple Pay konnte nicht abgeschlossen werden.");
           session.completePayment({ status: ApplePaySession.STATUS_FAILURE });
+          await cancelExpressOrder(lastExpressPaypalOrderIdRef.current);
         } finally {
           setBusy(false);
         }
       };
 
       session.oncancel = () => {
+        void cancelExpressOrder(lastExpressPaypalOrderIdRef.current);
         setBusy(false);
         setSdkError("Apple Pay wurde abgebrochen. Es wurde nichts abgebucht.");
       };

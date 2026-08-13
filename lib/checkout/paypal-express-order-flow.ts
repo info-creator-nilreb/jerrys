@@ -3,6 +3,10 @@ import {
   expressAddressFromPayPalOrder,
   type ApplePayContactLike,
 } from "@/lib/checkout/paypal-express-address";
+import {
+  PAYPAL_EXPRESS_PLACEHOLDER_EMAIL,
+  PAYPAL_EXPRESS_PLACEHOLDER_SHIPPING,
+} from "@/lib/checkout/paypal-express-placeholder";
 import { completePayPalCaptureFlow } from "@/lib/checkout/complete-paypal-capture-flow";
 import { getPrisma } from "@/lib/db/prisma";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
@@ -21,15 +25,15 @@ export type CreatePayPalExpressOrderResult =
   | { ok: true; paymentReady: false; orderNumber: string }
   | { ok: false; error: string; fieldErrors?: Record<string, string> };
 
+/**
+ * Technischer Checkout-Body bis PayPal Adresse/E-Mail liefert.
+ * Erzeugt eine `pending_payment`-Bestellung (Bestand + PayPal-Order), aber
+ * keine Admin-Kundenzeile — siehe `orderContributesToAdminCustomer`.
+ */
 function placeholderExpressCheckoutBody(idempotencyKey: string): Record<string, unknown> {
   return {
-    email: "paypal-express@example.invalid",
-    shippingFirstName: "PayPal",
-    shippingLastName: "Express",
-    shippingLine1: "Musterstrasse 1",
-    shippingZip: "10115",
-    shippingCity: "Berlin",
-    shippingCountry: "DE",
+    email: PAYPAL_EXPRESS_PLACEHOLDER_EMAIL,
+    ...PAYPAL_EXPRESS_PLACEHOLDER_SHIPPING,
     billingUseShipping: "on",
     phone: "",
     paymentMethod: "paypal",
