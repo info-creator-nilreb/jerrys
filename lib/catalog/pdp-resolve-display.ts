@@ -7,6 +7,11 @@ import {
   reconcileAttributesAndFeatureBullets,
   type ProductAttribute,
 } from "@/features/catalog";
+import {
+  MAX_PRODUCT_USPS,
+  pickDistinctUspIcon,
+  type UspIconName,
+} from "@/lib/catalog/usp-icons";
 
 export type PdpProductFamily = "pet" | "jewelry" | "general";
 
@@ -126,17 +131,6 @@ function isGermanyOrigin(raw: string | null | undefined): boolean {
   return /\b(deutschland|germany|de)\b/i.test(raw);
 }
 
-function iconForBullet(line: string, family: PdpProductFamily): PdpSpecIcon {
-  const t = line.toLowerCase();
-  if (/sicher|geborgen|schutz|rückzug/.test(t)) return family === "pet" ? "paw" : "shield";
-  if (/stil|zeitlos|design|schön|elegant/.test(t)) return "heart";
-  if (/pflege|klima|nachhalt|öko|bio/.test(t)) return "leaf";
-  if (/qualität|handarbeit|handmade|made by/.test(t)) return "sparkles";
-  if (family === "jewelry") return "gem";
-  if (family === "pet") return "paw";
-  return "sparkles";
-}
-
 function propertiesIconForFamily(family: PdpProductFamily): PdpSpecIcon {
   if (family === "pet") return "paw";
   if (family === "jewelry") return "gem";
@@ -240,36 +234,45 @@ export function resolvePdpDisplay(product: {
     null;
 
   const usps: PdpResolvedUsp[] = [];
-  if (isGermanyOrigin(origin)) {
-    usps.push({
-      id: "origin-de",
-      title: "Made in Germany",
-      subtitle: "Hochwertige Qualität",
-      icon: "flag-de",
-    });
-  }
+  const usedIcons = new Set<UspIconName>();
 
-  const themeLabel = attrValues(attributes, "theme.label");
-  if (themeLabel && usps.length < 3) {
-    usps.push({
-      id: "theme-label",
-      title: themeLabel,
-      subtitle: null,
-      icon: family === "jewelry" ? "gem" : "sparkles",
-    });
-  }
-
-  // Weitere USPs aus kurzen Feature-Bullets (nicht aus „Label: Wert“-Merkmalen)
+  // Händler-USPs zuerst — WYSIWYG: was im Admin steht, erscheint auf der PDP.
   for (const line of reconciled.featureBullets) {
-    if (usps.length >= 3) break;
+    if (usps.length >= MAX_PRODUCT_USPS) break;
     const t = line.trim();
     if (!t || t.includes(":")) continue;
     if (usps.some((u) => u.title === t)) continue;
+    const icon = pickDistinctUspIcon(t, family, usedIcons);
+    usedIcons.add(icon);
     usps.push({
       id: `bullet-${usps.length}`,
       title: t,
       subtitle: null,
-      icon: iconForBullet(t, family),
+      icon,
+    });
+  }
+
+  // Auto-Badges nur noch freie Slots füllen (keine versteckten 4. Claims).
+  if (usps.length < MAX_PRODUCT_USPS && isGermanyOrigin(origin)) {
+    const icon: UspIconName = "flag-de";
+    usedIcons.add(icon);
+    usps.push({
+      id: "origin-de",
+      title: "Made in Germany",
+      subtitle: "Hochwertige Qualität",
+      icon,
+    });
+  }
+
+  const themeLabel = attrValues(attributes, "theme.label");
+  if (themeLabel && usps.length < MAX_PRODUCT_USPS) {
+    const icon = pickDistinctUspIcon(themeLabel, family, usedIcons);
+    usedIcons.add(icon);
+    usps.push({
+      id: "theme-label",
+      title: themeLabel,
+      subtitle: null,
+      icon,
     });
   }
 

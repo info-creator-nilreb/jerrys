@@ -114,8 +114,33 @@ describe("resolvePdpDisplay", () => {
       ],
     });
     expect(d.propertyLines).toEqual([]);
+    // Bei 3 Händler-USPs kein Auto-„Made in Germany“ mehr (WYSIWYG, max. 3).
+    expect(d.usps.map((u) => u.title)).toEqual([
+      "Stabil & langlebig",
+      "Pflegeleicht abwischbar",
+      "Angenehm geschlossene Form",
+    ]);
+    expect(new Set(d.usps.map((u) => u.icon)).size).toBeGreaterThanOrEqual(2);
+  });
+
+  it("füllt freie USP-Slots mit Made in Germany", () => {
+    const d = resolvePdpDisplay({
+      slug: "ring",
+      title: "Ring",
+      leadText: null,
+      dimensionsText: null,
+      weightText: null,
+      materialText: null,
+      featureBullets: ["Handgearbeitet"],
+      attributes: [
+        {
+          key: "custom.herstellungsland",
+          label: "Herstellungsland",
+          values: ["Deutschland"],
+        },
+      ],
+    });
+    expect(d.usps[0]?.title).toBe("Handgearbeitet");
     expect(d.usps.some((u) => u.title === "Made in Germany")).toBe(true);
-    expect(d.usps.some((u) => u.title === "Stabil & langlebig")).toBe(true);
-    expect(d.usps.filter((u) => u.title === "Stabil & langlebig")).toHaveLength(1);
   });
 });

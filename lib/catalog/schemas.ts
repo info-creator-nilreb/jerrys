@@ -50,13 +50,13 @@ function optionalPositiveIntMin1Nullable(val: unknown): number | null {
   return n;
 }
 
-/** Eine Zeile pro Verkaufsargument/USP; max. 20 Zeilen, je 200 Zeichen (nach Trim). */
+/** Eine Zeile pro Verkaufsargument/USP; max. 3 (= PDP), je 200 Zeichen (nach Trim). */
 const featureBulletsField = z.string().transform((raw) =>
   String(raw ?? "")
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter(Boolean)
-    .slice(0, 20)
+    .slice(0, 3)
     .map((l) => (l.length > 200 ? l.slice(0, 200) : l)),
 );
 

@@ -313,7 +313,7 @@ export function splitFeatureBulletsAndAttributes(bullets: string[]): {
     });
   }
   return {
-    freeBullets: freeBullets.slice(0, 20),
+    freeBullets: freeBullets.slice(0, 3),
     attributes: normalizeProductAttributes(attrs),
   };
 }
