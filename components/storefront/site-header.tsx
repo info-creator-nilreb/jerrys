@@ -1,10 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { HeaderAccountLink } from "@/components/storefront/header-account-link";
-import { HeaderCartFlyout } from "@/components/storefront/header-cart-flyout";
+import { HeaderCartLink } from "@/components/storefront/header-cart-link";
 import { StorefrontHeaderSearch } from "@/components/storefront/storefront-header-search";
 import { StorefrontShopNav } from "@/components/storefront/storefront-shop-nav";
-import { getStorefrontCartBadgeCount } from "@/lib/cart/badge";
 import { listActiveCategoriesForNav } from "@/lib/catalog/category-queries";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 import { resolveShopBrandingAssetUrl } from "@/lib/shop/branding-asset-fallbacks";
@@ -17,8 +16,7 @@ const LOGO_W = 256;
 const LOGO_H = 128;
 
 export async function SiteHeader() {
-  const [cartCount, settings, categoriesResult] = await Promise.all([
-    getStorefrontCartBadgeCount(),
+  const [settings, categoriesResult] = await Promise.all([
     getShopSettings(),
     listActiveCategoriesForNav().catch((e) => {
       if (!isDatabaseUnreachable(e)) throw e;
@@ -64,7 +62,7 @@ export async function SiteHeader() {
         <div className="flex min-w-0 flex-1 items-center justify-end gap-0.5 sm:gap-1">
           <StorefrontHeaderSearch />
           <HeaderAccountLink />
-          <HeaderCartFlyout cartBadgeCount={cartCount} />
+          <HeaderCartLink />
         </div>
       </div>
     </header>

@@ -60,8 +60,8 @@ Zusätzlicher Burst mit `curl` (30 parallele `GET /`): alle **HTTP 200**, total 
 
 1. **P0:** Startseite und Katalog-SSR profilen (DB-Queries, Sequenz vs. Parallel, Payload).  
 2. **P0:** Caching/`unstable_cache`/ISR bzw. Partial Prerender wo fachlich möglich; schwere Blöcke streamen.  
-3. **P1:** Vercel-Function-/Region-/DB-Pooler-Limits prüfen (Cold Start, Connection Pool).  
-4. **P1:** Lasttest nach Fix erneut mit `scripts/load/k6-go-live-30vu-stability.js`.
+3. **P1:** Vercel-Function-/Region-/DB-Pooler-Limits prüfen (Cold Start, Connection Pool). → siehe **§9** (`allowExitOnIdle`, Idle 5 s; Operator: Transaction-Pooler `:6543`).  
+4. **P1:** Lasttest nach Fix erneut mit `scripts/load/k6-go-live-30vu-stability.js`. → nach Deploy von §9.
 
 ---
 
@@ -193,7 +193,33 @@ npx lighthouse https://ecom-seven-livid.vercel.app/ \
 9. ~~Kundenportal-Nachtest mit `E2E_CUSTOMER_*`.~~ → **§8 bestanden**.  
 10. Operator: `PAYPAL_WEBHOOK_ID` + Live-Webhook-URL (nicht durch Agent konfigurieren).  
 11. Operator: Vercel Security Checkpoint / Bot-Protection für Lasttools (k6) whitelisten oder Challenge-Bypass für CI.  
-12. Nach Merge: `/admin/orders` auf Ziel-URL auth-Verify (SEC-10); Home-Cache/`take`-Slice + Reviews-Cache live.
+12. ~~Nach Merge: `/admin/orders` auf Ziel-URL auth-Verify (SEC-10).~~ → post-merge **200**.  
+13. **P1 (§9):** Header-Suspense, Home-Block-Streaming, `/produkte` CLS-Skeleton, PG-Pool Idle — Retest nach Deploy.
+
+---
+
+## 9. P1 Performance / Pool / CLS (2026-08-13)
+
+**Branch:** `cursor/go-live-p1-perf-pool-cls-9f5a`
+
+### Code
+
+| Maßnahme | Dateien | Ziel |
+|----------|---------|------|
+| Cart- + Account-Badge als Suspense-Inseln (Cookie-Await nicht mehr im Header-Shell) | `site-header.tsx`, `header-cart-link.tsx`, `header-account-link.tsx` | Früheres Streaming / weniger blockiertes Layout |
+| CMS-DB-Blöcke einzeln hinter Suspense; Hero sync | `content-blocks-renderer.tsx` | Home-TTFB/LCP |
+| `/produkte` Toolbar-Fallback mit fester Höhe; Subtitle-`min-h` | `produkte/page.tsx`, `product-card.tsx` | CLS &lt; 0,1 |
+| PG-Pool `allowExitOnIdle` + Idle 5 s | `pg-pool-config.ts` | Weniger Session-Slot-Druck unter Concurrency |
+| `force-dynamic` von `/` und `/produkte` entfernt | jeweilige `page.tsx` | Caches/Streaming nutzen |
+
+### Operator (unverändert)
+
+- Runtime-`DATABASE_URL` = Transaction Pooler Port **6543** (nicht Session 5432).  
+- PayPal-Webhook, k6 Checkpoint.
+
+### Retest
+
+Nach Production-Deploy: TTFB Home, Lighthouse Home + `/produkte` CLS, curl-30VU / k6 erneut; Ergebnisse hier ergänzen.
 
 ---
 

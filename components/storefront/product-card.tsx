@@ -66,11 +66,9 @@ export function ProductCard({ product }: { product: StorefrontProductCard }) {
         <div className="relative z-10 flex min-h-0 flex-1 flex-col pointer-events-none p-6 md:p-7">
           <div className="min-h-0 flex-1">
             <h3 className="text-xl font-semibold text-(--foreground-heading) md:text-2xl">{product.title}</h3>
-            {product.subtitle ? (
-              <p className="mt-2 text-base leading-snug text-(--foreground-muted) md:text-[1.05rem]">
-                {product.subtitle}
-              </p>
-            ) : null}
+            <p className="mt-2 min-h-[2.75rem] text-base leading-snug text-(--foreground-muted) md:min-h-[3rem] md:text-[1.05rem]">
+              {product.subtitle?.trim() ? product.subtitle : "\u00a0"}
+            </p>
             <div className="mt-3 shrink-0 md:min-h-[3.75rem]">
               {product.amazonRatingAverage != null && product.amazonRatingCount != null ? (
                 <AmazonRatingDisplay

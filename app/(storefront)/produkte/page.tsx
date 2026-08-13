@@ -26,8 +26,6 @@ import {
 import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 
-export const dynamic = "force-dynamic";
-
 export async function generateMetadata({
   searchParams,
 }: {
@@ -182,7 +180,18 @@ export default async function ProduktePage({
         </p>
       ) : (
         <>
-          <Suspense fallback={null}>
+          <Suspense
+            fallback={
+              <div
+                className="mt-8 flex min-h-11 flex-wrap items-center gap-3"
+                aria-hidden
+              >
+                <div className="h-11 w-28 rounded-md bg-(--surface-soft)" />
+                <div className="h-11 w-36 rounded-md bg-(--surface-soft)" />
+                <div className="ml-auto h-5 w-24 rounded bg-(--surface-soft)" />
+              </div>
+            }
+          >
             <CollectionCatalogToolbar
               sort={sort}
               onlyAvailable={listingFilters.onlyAvailable}

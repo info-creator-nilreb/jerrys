@@ -17,7 +17,7 @@ function AccountIconFallback() {
   );
 }
 
-export async function HeaderAccountLink() {
+async function HeaderAccountLinkInner() {
   let isLoggedIn = false;
   let email: string | null = null;
   try {
@@ -30,9 +30,14 @@ export async function HeaderAccountLink() {
     log.warn("customer_session_lookup_failed", { error: String(e) });
   }
 
+  return <HeaderAccountPopover isLoggedIn={isLoggedIn} email={email} />;
+}
+
+/** Session-Lookup hinter Suspense — Shell ohne Cookie-Await. */
+export function HeaderAccountLink() {
   return (
     <Suspense fallback={<AccountIconFallback />}>
-      <HeaderAccountPopover isLoggedIn={isLoggedIn} email={email} />
+      <HeaderAccountLinkInner />
     </Suspense>
   );
 }
