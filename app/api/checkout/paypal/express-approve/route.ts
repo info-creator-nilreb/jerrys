@@ -13,7 +13,7 @@ import { canonicalSiteOrigin } from "@/lib/site/canonical-origin";
 
 function messageForCode(code: Exclude<ApprovePayPalExpressOrderResult, { ok: true }>["code"]): string {
   if (code === "adresse") return "PayPal hat keine vollständige Lieferadresse übermittelt.";
-  if (code === "land") return "PayPal Express ist aktuell nur für Lieferadressen in Deutschland verfügbar.";
+  if (code === "land") return "In dieses Lieferland versenden wir derzeit nicht.";
   if (code === "betrag") return "Der PayPal-Betrag passt nicht zur Bestellung.";
   if (code === "capture") return "Die PayPal-Zahlung konnte nicht abgeschlossen werden.";
   return "PayPal Express konnte nicht abgeschlossen werden.";

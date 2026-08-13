@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createPayPalExpressOrder } from "@/lib/checkout/paypal-express-order-flow";
+import { quoteExpressShippingForCart } from "@/lib/checkout/express-shipping-quote";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 import { clientIpFromRequest } from "@/lib/security/client-ip";
 import {
@@ -7,6 +7,7 @@ import {
   touchPayPalCheckoutApiAttempt,
 } from "@/lib/security/paypal-checkout-api-rate-limit";
 
+/** Versandquote für Apple-Pay-/Express-Sheet (noch ohne Pending-Order). */
 export async function POST(req: NextRequest) {
   const limited = touchPayPalCheckoutApiAttempt(clientIpFromRequest(req));
   if (!limited.ok) {
@@ -20,35 +21,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "PayPal ist nicht konfiguriert." }, { status: 503 });
   }
 
-  let body: Record<string, unknown> = {};
+  let body: { shippingCountry?: unknown } = {};
   try {
-    body = (await req.json()) as Record<string, unknown>;
+    body = (await req.json()) as { shippingCountry?: unknown };
   } catch {
     body = {};
   }
 
-  const result = await createPayPalExpressOrder({
-    idempotencyKey: body.idempotencyKey,
-    shippingCountry: body.shippingCountry,
-  });
-
-  if (!result.ok) {
+  const quote = await quoteExpressShippingForCart(body.shippingCountry);
+  if (!quote.ok) {
     return NextResponse.json(
-      { ok: false, error: result.error, fieldErrors: result.fieldErrors },
-      { status: 400 },
-    );
-  }
-
-  if (!result.paymentReady) {
-    return NextResponse.json(
-      { ok: false, alreadyComplete: true, orderNumber: result.orderNumber },
-      { status: 409 },
+      { ok: false, code: quote.code, error: quote.message },
+      { status: quote.code === "land" ? 422 : 400 },
     );
   }
 
   return NextResponse.json({
     ok: true,
-    paypalOrderId: result.paypalOrderId,
-    orderNumber: result.orderNumber,
+    shippingCountry: quote.shippingCountry,
+    shippingCents: quote.shippingCents,
+    subtotalCents: quote.subtotalCents,
+    totalGrossCents: quote.totalGrossCents,
+    currency: quote.currency,
   });
 }
