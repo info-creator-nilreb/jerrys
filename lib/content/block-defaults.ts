@@ -11,6 +11,9 @@ export function defaultDataForContentBlockType(
         headline: "Neue Überschrift",
         imageUrl: "/media/hero-mood.jpg",
         imageAlt: "",
+        images: [{ url: "/media/hero-mood.jpg", alt: "" }],
+        slideDurationSec: 6,
+        motionEffect: "fade",
         ctaLabel: "",
         ctaHref: "",
       };
@@ -30,17 +33,25 @@ export function defaultDataForContentBlockType(
     case "productCategoryPick":
       return {
         title: "Produkte",
-        mode: "category",
+        mode: "collection",
         categorySlug: "",
+        collectionSlug: "",
         productIds: [],
         limit: 12,
+        showAllCta: true,
+        showAllLabel: "Alle anzeigen",
+        showAllHref: "",
       };
     case "curatedProductList":
       return {
         title: "Auswahl",
-        source: "ids",
+        source: "collection",
         productIds: [],
+        collectionSlug: "",
         limit: 12,
+        showAllCta: true,
+        showAllLabel: "Alle anzeigen",
+        showAllHref: "",
       };
     case "uspStrip":
       return {

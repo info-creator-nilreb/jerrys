@@ -13,6 +13,7 @@ import {
 import {
   JERRYS_SHOP_SETTINGS_DEFAULTS,
   parseDesktopShopNavMode,
+  parseHeaderNavPlacement,
   SHOP_SETTINGS_DEFAULT_ID,
   type ShopSettingsDTO,
 } from "@/lib/shop/shop-settings-defaults";
@@ -49,6 +50,7 @@ function toDto(
     showAllProductsInNav: boolean;
     showTermineInNav: boolean;
     desktopShopNavMode: string;
+    headerNavPlacement: string;
     infoBannerActive: boolean;
     infoBannerMessages: unknown;
     infoBannerDurationSec: number;
@@ -96,6 +98,7 @@ function toDto(
     showAllProductsInNav: row.showAllProductsInNav,
     showTermineInNav: row.showTermineInNav,
     desktopShopNavMode: parseDesktopShopNavMode(row.desktopShopNavMode),
+    headerNavPlacement: parseHeaderNavPlacement(row.headerNavPlacement),
     infoBannerActive: row.infoBannerActive,
     infoBannerMessages: parseInfoBannerMessages(row.infoBannerMessages),
     infoBannerDurationSec: parseInfoBannerDurationSec(row.infoBannerDurationSec),
@@ -140,6 +143,7 @@ const createDefaults = () => ({
   showAllProductsInNav: JERRYS_SHOP_SETTINGS_DEFAULTS.showAllProductsInNav,
   showTermineInNav: JERRYS_SHOP_SETTINGS_DEFAULTS.showTermineInNav,
   desktopShopNavMode: JERRYS_SHOP_SETTINGS_DEFAULTS.desktopShopNavMode,
+  headerNavPlacement: JERRYS_SHOP_SETTINGS_DEFAULTS.headerNavPlacement,
   infoBannerActive: JERRYS_SHOP_SETTINGS_DEFAULTS.infoBannerActive,
   infoBannerMessages: JERRYS_SHOP_SETTINGS_DEFAULTS.infoBannerMessages,
   infoBannerDurationSec: JERRYS_SHOP_SETTINGS_DEFAULTS.infoBannerDurationSec,

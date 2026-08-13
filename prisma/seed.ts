@@ -146,6 +146,7 @@ async function main() {
         showAllProductsInNav: shopDefaults.showAllProductsInNav,
         showTermineInNav: shopDefaults.showTermineInNav,
         desktopShopNavMode: shopDefaults.desktopShopNavMode,
+        headerNavPlacement: shopDefaults.headerNavPlacement,
         infoBannerActive: shopDefaults.infoBannerActive,
         infoBannerMessages: shopDefaults.infoBannerMessages,
         infoBannerDurationSec: shopDefaults.infoBannerDurationSec,

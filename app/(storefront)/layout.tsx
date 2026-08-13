@@ -4,7 +4,7 @@ import { SiteHeader } from "@/components/storefront/site-header";
 import { SiteJsonLd } from "@/components/storefront/site-json-ld";
 import { infoBannerIsVisible } from "@/lib/shop/info-banner";
 import { getShopSettings } from "@/lib/shop/shop-settings";
-import { storefrontHeaderHeightVars } from "@/lib/storefront/page-below-header-padding";
+import { storefrontHeaderHeightVarsForNav } from "@/lib/storefront/page-below-header-padding";
 
 export default async function StorefrontLayout({
   children,
@@ -12,7 +12,9 @@ export default async function StorefrontLayout({
   children: React.ReactNode;
 }) {
   const settings = await getShopSettings();
-  const headerHeightVars = storefrontHeaderHeightVars({
+  const headerHeightVars = storefrontHeaderHeightVarsForNav({
+    desktopMode: settings.desktopShopNavMode,
+    navPlacement: settings.headerNavPlacement,
     infoBannerVisible: infoBannerIsVisible({
       active: settings.infoBannerActive,
       messages: settings.infoBannerMessages,

@@ -27,6 +27,7 @@ describe("shopSettingsInputFromFormData", () => {
     fd.append("showAllProductsInNav", "true");
     fd.set("showTermineInNav", "false");
     fd.set("desktopShopNavMode", "burger");
+    fd.set("headerNavPlacement", "under");
     fd.set("footerShowTagline", "true");
     fd.set("footerShowShopNav", "false");
     fd.set("footerShowCollections", "true");
@@ -45,6 +46,7 @@ describe("shopSettingsInputFromFormData", () => {
     expect(input.showAllProductsInNav).toBe(true);
     expect(input.showTermineInNav).toBe(false);
     expect(input.desktopShopNavMode).toBe("burger");
+    expect(input.headerNavPlacement).toBe("under");
     expect(input.footerShowShopNav).toBe(false);
     expect(input.footerShowCollections).toBe(true);
     expect(input.footerShowLegalRueckgabe).toBe(false);
@@ -61,6 +63,7 @@ describe("shopSettingsInputFromFormData", () => {
     expect(parsed.data.showAllProductsInNav).toBe(true);
     expect(parsed.data.showTermineInNav).toBe(false);
     expect(parsed.data.desktopShopNavMode).toBe("burger");
+    expect(parsed.data.headerNavPlacement).toBe("under");
     expect(parsed.data.footerShowShopNav).toBe(false);
     expect(parsed.data.footerShowLegalVersand).toBe(true);
   });

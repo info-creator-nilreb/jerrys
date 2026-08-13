@@ -169,6 +169,7 @@ export function AdminSidebar({
   appVersion,
   userEmail,
   userName,
+  termineEnabled = true,
   mobileOpen = false,
   onNavigate,
   className = "",
@@ -178,6 +179,8 @@ export function AdminSidebar({
   appVersion: string;
   userEmail: string;
   userName: string;
+  /** Shop-Feature-Flag: Menüpunkt Termine. */
+  termineEnabled?: boolean;
   /** Off-canvas auf Viewports &lt; lg */
   mobileOpen?: boolean;
   onNavigate?: () => void;
@@ -186,6 +189,9 @@ export function AdminSidebar({
   const pathname = usePathname();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const navItems = termineEnabled
+    ? mainNav
+    : mainNav.filter((item) => item.href !== "/admin/termine");
 
   useEffect(() => {
     function close(ev: MouseEvent) {
@@ -275,7 +281,7 @@ export function AdminSidebar({
         className="flex flex-1 flex-col overflow-y-auto py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         aria-label="Hauptnavigation"
       >
-        {mainNav.map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           const active = itemActive(item);
           const children = item.children;

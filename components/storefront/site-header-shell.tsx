@@ -8,9 +8,15 @@ import {
   useStorefrontHeaderUi,
 } from "@/components/storefront/storefront-header-ui";
 import { SiteInfoBanner } from "@/components/storefront/site-info-banner";
-import { StorefrontShopNav } from "@/components/storefront/storefront-shop-nav";
-import type { DesktopShopNavMode } from "@/lib/shop/shop-settings-defaults";
-import { storefrontHeaderHeightVars } from "@/lib/storefront/page-below-header-padding";
+import {
+  StorefrontShopNav,
+  StorefrontShopNavInlineLinks,
+} from "@/components/storefront/storefront-shop-nav";
+import type {
+  DesktopShopNavMode,
+  HeaderNavPlacement,
+} from "@/lib/shop/shop-settings-defaults";
+import { storefrontHeaderHeightVarsForNav } from "@/lib/storefront/page-below-header-padding";
 import type { StorefrontShopNavLink } from "@/lib/storefront/shop-nav-links";
 
 const LOGO_W = 256;
@@ -22,6 +28,7 @@ function SiteHeaderChrome({
   logoDarkSrc,
   shopNavLinks,
   desktopMode,
+  navPlacement,
   infoBanner,
   trailing,
 }: {
@@ -30,6 +37,7 @@ function SiteHeaderChrome({
   logoDarkSrc: string;
   shopNavLinks: StorefrontShopNavLink[];
   desktopMode: DesktopShopNavMode;
+  navPlacement: HeaderNavPlacement;
   infoBanner: {
     messages: string[];
     durationSec: number;
@@ -41,9 +49,30 @@ function SiteHeaderChrome({
   const { tone, setHovered } = useStorefrontHeaderUi();
   const transparent = tone === "transparent";
   const logoSrc = transparent ? logoDarkSrc : logoLightSrc;
-  const heightVars = storefrontHeaderHeightVars({
+  const navUnderLogo = desktopMode === "inline" && navPlacement === "under";
+  /** Unter dem Logo: links nur Mobil-Burger; Desktop-Links in der zweiten Zeile. */
+  const leftNavMode: DesktopShopNavMode = navUnderLogo ? "hidden" : desktopMode;
+  const heightVars = storefrontHeaderHeightVarsForNav({
+    desktopMode,
+    navPlacement,
     infoBannerVisible: infoBanner != null,
   });
+
+  const logo = (
+    <Link href="/" className="shrink-0" aria-label={shopName}>
+      <Image
+        key={logoSrc}
+        src={logoSrc}
+        alt={shopName}
+        width={LOGO_W}
+        height={LOGO_H}
+        className="h-9 w-auto sm:h-10 md:h-11"
+        sizes="(max-width:768px) 180px, 220px"
+        priority
+        unoptimized
+      />
+    </Link>
+  );
 
   return (
     <header
@@ -55,6 +84,7 @@ function SiteHeaderChrome({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       data-header-tone={tone}
+      data-nav-placement={navUnderLogo ? "under" : "beside"}
       data-info-banner={infoBanner ? "on" : "off"}
     >
       <div className="flex w-full flex-col">
@@ -68,25 +98,18 @@ function SiteHeaderChrome({
         ) : null}
         <div className="flex w-full items-center gap-2 px-4 py-3 md:gap-3 md:px-6 md:py-3.5 lg:px-8 xl:px-10">
           <div className="flex min-w-0 flex-1 items-center">
-            <StorefrontShopNav links={shopNavLinks} desktopMode={desktopMode} />
+            <StorefrontShopNav links={shopNavLinks} desktopMode={leftNavMode} />
           </div>
-          <Link href="/" className="shrink-0" aria-label={shopName}>
-            <Image
-              key={logoSrc}
-              src={logoSrc}
-              alt={shopName}
-              width={LOGO_W}
-              height={LOGO_H}
-              className="h-9 w-auto sm:h-10 md:h-11"
-              sizes="(max-width:768px) 180px, 220px"
-              priority
-              unoptimized
-            />
-          </Link>
+          {logo}
           <div className="flex min-w-0 flex-1 items-center justify-end gap-0.5 sm:gap-1">
             {trailing}
           </div>
         </div>
+        {navUnderLogo ? (
+          <div className="hidden px-4 pb-2.5 md:block md:px-6 lg:px-8 xl:px-10">
+            <StorefrontShopNavInlineLinks links={shopNavLinks} className="block" />
+          </div>
+        ) : null}
       </div>
     </header>
   );
@@ -98,6 +121,7 @@ export function SiteHeaderShell({
   logoDarkSrc,
   shopNavLinks,
   desktopMode,
+  navPlacement = "beside",
   infoBanner = null,
   trailing,
 }: {
@@ -106,6 +130,7 @@ export function SiteHeaderShell({
   logoDarkSrc: string;
   shopNavLinks: StorefrontShopNavLink[];
   desktopMode: DesktopShopNavMode;
+  navPlacement?: HeaderNavPlacement;
   infoBanner?: {
     messages: string[];
     durationSec: number;
@@ -122,6 +147,7 @@ export function SiteHeaderShell({
         logoDarkSrc={logoDarkSrc}
         shopNavLinks={shopNavLinks}
         desktopMode={desktopMode}
+        navPlacement={navPlacement}
         infoBanner={infoBanner}
         trailing={trailing}
       />

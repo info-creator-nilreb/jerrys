@@ -1130,6 +1130,8 @@ model ShopSettings {
   showTermineInNav Boolean @default(true) @map("show_termine_in_nav")
   /// Desktop-Header: hidden | inline | burger (Mobil bleibt Burger, sofern Links existieren).
   desktopShopNavMode String @default("inline") @map("desktop_shop_nav_mode")
+  /// Bei inline: Linkzeile neben dem Logo (beside) oder darunter (under).
+  headerNavPlacement String @default("beside") @map("header_nav_placement")
 
   /// Info-Banner über dem Header (Versandhinweise, Aktionen); siteweit.
   infoBannerActive Boolean @default(false) @map("info_banner_active")

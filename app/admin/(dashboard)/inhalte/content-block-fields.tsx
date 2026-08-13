@@ -1,15 +1,29 @@
 "use client";
 
+import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { CmsBlockAiTextAssistant } from "@/app/admin/(dashboard)/inhalte/cms-block-ai-text-assistant";
 import { AdminRichTextEditor } from "@/components/admin/admin-rich-text-editor";
 import { CmsMediaField } from "@/components/admin/cms-media-field";
 import type { ContentBlockType } from "@/lib/content/block-types";
 import {
+  HERO_MOTION_EFFECT_LABELS,
+  HERO_MOTION_EFFECTS,
+  HERO_SLIDE_DURATIONS_SEC,
+  type HeroMotionEffect,
+  type HeroSlide,
+} from "@/lib/content/blocks/hero";
+import {
   HERO_CTA_CUSTOM_VALUE,
   HERO_CTA_TARGET_PRESETS,
   resolveHeroCtaSelectValue,
 } from "@/lib/content/hero-cta-targets";
+
+export type CmsCollectionOption = {
+  slug: string;
+  title: string;
+  productIds: string[];
+};
 
 type Props = {
   type: ContentBlockType;
@@ -18,6 +32,8 @@ type Props = {
   aiReady?: boolean;
   pageTitle?: string;
   pageType?: string;
+  /** Aktive Kollektionen für Produktblöcke (Slug + Produkt-IDs für Vorschau). */
+  collections?: CmsCollectionOption[];
 };
 
 function str(data: Record<string, unknown>, key: string): string {
@@ -45,10 +61,40 @@ export function ContentBlockFields({
   aiReady = false,
   pageTitle = "",
   pageType = "content",
+  collections = [],
 }: Props) {
   const set = (key: string, value: unknown) => onChange({ ...data, [key]: value });
 
   if (type === "hero") {
+    const slides: HeroSlide[] = (() => {
+      if (Array.isArray(data.images) && data.images.length > 0) {
+        return data.images
+          .filter((x): x is Record<string, unknown> => !!x && typeof x === "object")
+          .map((x) => ({
+            url: typeof x.url === "string" ? x.url : "",
+            alt: typeof x.alt === "string" ? x.alt : null,
+          }))
+          .filter((s) => s.url.trim() !== "");
+      }
+      const legacy = str(data, "imageUrl");
+      return legacy
+        ? [{ url: legacy, alt: str(data, "imageAlt") || null }]
+        : [{ url: "/media/hero-mood.jpg", alt: null }];
+    })();
+
+    const setSlides = (next: HeroSlide[]) => {
+      const normalized = next.length > 0 ? next : [{ url: "/media/hero-mood.jpg", alt: null }];
+      onChange({
+        ...data,
+        images: normalized,
+        imageUrl: normalized[0]!.url,
+        imageAlt: normalized[0]!.alt ?? "",
+      });
+    };
+
+    const motionEffect = (str(data, "motionEffect") || "fade") as HeroMotionEffect;
+    const duration = num(data, "slideDurationSec", 6);
+
     return (
       <div className="space-y-4">
         <CmsBlockAiTextAssistant
@@ -71,7 +117,7 @@ export function ContentBlockFields({
               onChange={(e) => set("headline", e.target.value)}
             />
           </label>
-          <label className="text-sm text-[#5c5f66]">
+          <label className="text-sm text-[#5c5f66] sm:col-span-2">
             Eyebrow
             <input
               className={fieldClass}
@@ -79,13 +125,162 @@ export function ContentBlockFields({
               onChange={(e) => set("eyebrow", e.target.value)}
             />
           </label>
-          <CmsMediaField
-            label="Hero-Bild"
-            value={str(data, "imageUrl")}
-            onChange={(url) => set("imageUrl", url)}
-            required
-            hint="Upload, Medienbibliothek oder URL"
-          />
+
+          <div className="space-y-3 sm:col-span-2">
+            <div>
+              <p className="text-sm font-medium text-[#374151]">
+                Hintergrundbilder <span className="text-primary">*</span>
+              </p>
+              <p className="mt-0.5 text-xs text-[#6b7280]">
+                Ein oder mehrere Bilder — bei mehreren als Karussell. Max. 8 Folien.
+              </p>
+            </div>
+            <ul className="space-y-3">
+              {slides.map((slide, index) => (
+                <li
+                  key={`hero-slide-${index}`}
+                  className="rounded-lg border border-[#e8eaed] bg-[#fafafa] p-3"
+                >
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
+                      Bild {index + 1}
+                    </p>
+                    <div className="flex items-center gap-0.5">
+                      <button
+                        type="button"
+                        className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-md text-[#5c5f66] hover:bg-white disabled:opacity-40"
+                        aria-label="Bild nach oben"
+                        disabled={index === 0}
+                        onClick={() => {
+                          const next = [...slides];
+                          const tmp = next[index - 1]!;
+                          next[index - 1] = next[index]!;
+                          next[index] = tmp;
+                          setSlides(next);
+                        }}
+                      >
+                        <ChevronUp className="size-4" aria-hidden strokeWidth={1.75} />
+                      </button>
+                      <button
+                        type="button"
+                        className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-md text-[#5c5f66] hover:bg-white disabled:opacity-40"
+                        aria-label="Bild nach unten"
+                        disabled={index >= slides.length - 1}
+                        onClick={() => {
+                          const next = [...slides];
+                          const tmp = next[index + 1]!;
+                          next[index + 1] = next[index]!;
+                          next[index] = tmp;
+                          setSlides(next);
+                        }}
+                      >
+                        <ChevronDown className="size-4" aria-hidden strokeWidth={1.75} />
+                      </button>
+                      <button
+                        type="button"
+                        className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-md text-red-600 hover:bg-red-50 disabled:opacity-40"
+                        aria-label="Bild entfernen"
+                        disabled={slides.length <= 1}
+                        onClick={() => setSlides(slides.filter((_, i) => i !== index))}
+                      >
+                        <Trash2 className="size-4" aria-hidden strokeWidth={1.75} />
+                      </button>
+                    </div>
+                  </div>
+                  <CmsMediaField
+                    label="Bilddatei"
+                    value={slide.url}
+                    onChange={(url) => {
+                      const next = slides.map((s, i) =>
+                        i === index ? { ...s, url } : s,
+                      );
+                      setSlides(next);
+                    }}
+                    required
+                    hint="Upload, Medienbibliothek oder URL"
+                  />
+                  <label className="mt-2 block text-sm text-[#5c5f66]">
+                    Alt-Text (optional)
+                    <input
+                      className={fieldClass}
+                      value={slide.alt ?? ""}
+                      onChange={(e) => {
+                        const next = slides.map((s, i) =>
+                          i === index
+                            ? { ...s, alt: e.target.value.trim() || null }
+                            : s,
+                        );
+                        setSlides(next);
+                      }}
+                      maxLength={160}
+                    />
+                  </label>
+                </li>
+              ))}
+            </ul>
+            {slides.length < 8 ? (
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                onClick={() =>
+                  setSlides([...slides, { url: "/media/hero-mood.jpg", alt: null }])
+                }
+              >
+                <Plus className="size-4" aria-hidden strokeWidth={1.75} />
+                Weiteres Bild hinzufügen
+              </button>
+            ) : null}
+          </div>
+
+          <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
+            <label className="text-sm text-[#5c5f66]">
+              {slides.length > 1 ? "Anzeigedauer pro Bild" : "Motion-Dauer"}
+              <select
+                className={fieldClass}
+                value={duration}
+                onChange={(e) => set("slideDurationSec", Number(e.target.value))}
+              >
+                {HERO_SLIDE_DURATIONS_SEC.map((sec) => (
+                  <option key={sec} value={sec}>
+                    {sec} Sekunden
+                  </option>
+                ))}
+              </select>
+              <span className="mt-1 block text-xs text-[#6b7280]">
+                {slides.length > 1
+                  ? "Wie lange jedes Bild sichtbar bleibt, bevor gewechselt wird."
+                  : "Dauer für Zoom/Drift bei einem einzelnen Bild."}
+              </span>
+            </label>
+            <label className="text-sm text-[#5c5f66]">
+              Bild-Motion
+              <select
+                className={fieldClass}
+                value={
+                  (HERO_MOTION_EFFECTS as readonly string[]).includes(motionEffect)
+                    ? motionEffect
+                    : "fade"
+                }
+                onChange={(e) => set("motionEffect", e.target.value)}
+              >
+                {HERO_MOTION_EFFECTS.map((effect) => (
+                  <option key={effect} value={effect}>
+                    {HERO_MOTION_EFFECT_LABELS[effect].title}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-1 block text-xs text-[#6b7280]">
+                {
+                  HERO_MOTION_EFFECT_LABELS[
+                    (HERO_MOTION_EFFECTS as readonly string[]).includes(motionEffect)
+                      ? motionEffect
+                      : "fade"
+                  ].hint
+                }
+              </span>
+            </label>
+          </div>
+
           <div className="space-y-3 sm:col-span-2">
             <p className="text-sm font-medium text-[#374151]">Call-to-Action</p>
             <p className="text-xs text-[#6b7280]">
@@ -384,6 +579,18 @@ export function ContentBlockFields({
     const ids = Array.isArray(data.productIds)
       ? data.productIds.filter((x): x is string => typeof x === "string").join(", ")
       : "";
+    const curatedSource = str(data, "source") || "ids";
+    const pickMode = str(data, "mode") || "collection";
+    const usesCollection =
+      (type === "curatedProductList" && curatedSource === "collection") ||
+      (type === "productCategoryPick" && pickMode === "collection");
+    const usesCategory =
+      type === "productCategoryPick" && pickMode === "category";
+    const usesProductIds =
+      (type === "curatedProductList" && curatedSource === "ids") ||
+      (type === "productCategoryPick" && pickMode === "productIds");
+    const showAllCta = bool(data, "showAllCta", false);
+
     return (
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="text-sm text-[#5c5f66] sm:col-span-2">
@@ -399,55 +606,82 @@ export function ContentBlockFields({
             Quelle
             <select
               className={fieldClass}
-              value={str(data, "source") || "ids"}
+              value={curatedSource}
               onChange={(e) => set("source", e.target.value)}
             >
+              <option value="collection">Kollektion</option>
               <option value="ids">Produkt-IDs</option>
               <option value="allActive">Alle aktiven Produkte</option>
             </select>
           </label>
         ) : null}
         {type === "productCategoryPick" ? (
-          <>
-            <label className="text-sm text-[#5c5f66]">
-              Modus
-              <select
-                className={fieldClass}
-                value={str(data, "mode") || "category"}
-                onChange={(e) => set("mode", e.target.value)}
-              >
-                <option value="category">Kategorie</option>
-                <option value="productIds">Produkt-IDs</option>
-              </select>
-            </label>
-            <label className="text-sm text-[#5c5f66]">
-              Kategorie-Slug
-              <input
-                className={fieldClass}
-                value={str(data, "categorySlug")}
-                onChange={(e) => set("categorySlug", e.target.value)}
-              />
-            </label>
-          </>
+          <label className="text-sm text-[#5c5f66] sm:col-span-2">
+            Quelle
+            <select
+              className={fieldClass}
+              value={pickMode}
+              onChange={(e) => set("mode", e.target.value)}
+            >
+              <option value="collection">Kollektion</option>
+              <option value="category">Kategorie</option>
+              <option value="productIds">Produkt-IDs</option>
+            </select>
+          </label>
         ) : null}
-        <label className="text-sm text-[#5c5f66] sm:col-span-2">
-          Produkt-IDs (kommagetrennt)
-          <input
-            className={fieldClass}
-            value={ids}
-            onChange={(e) =>
-              set(
-                "productIds",
-                e.target.value
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean),
-              )
-            }
-          />
-        </label>
+        {usesCollection ? (
+          <label className="text-sm text-[#5c5f66] sm:col-span-2">
+            Kollektion
+            <select
+              className={fieldClass}
+              value={str(data, "collectionSlug")}
+              onChange={(e) => set("collectionSlug", e.target.value)}
+            >
+              <option value="">Kollektion wählen …</option>
+              {collections.map((c) => (
+                <option key={c.slug} value={c.slug}>
+                  {c.title}
+                </option>
+              ))}
+            </select>
+            {collections.length === 0 ? (
+              <span className="mt-1 block text-xs text-[#6b7280]">
+                Keine aktiven Kollektionen — bitte unter Katalog → Kollektionen anlegen.
+              </span>
+            ) : null}
+          </label>
+        ) : null}
+        {usesCategory ? (
+          <label className="text-sm text-[#5c5f66] sm:col-span-2">
+            Kategorie-Slug
+            <input
+              className={fieldClass}
+              value={str(data, "categorySlug")}
+              onChange={(e) => set("categorySlug", e.target.value)}
+              placeholder="z. B. katzenmoebel"
+            />
+          </label>
+        ) : null}
+        {usesProductIds ? (
+          <label className="text-sm text-[#5c5f66] sm:col-span-2">
+            Produkt-IDs (kommagetrennt)
+            <input
+              className={fieldClass}
+              value={ids}
+              onChange={(e) =>
+                set(
+                  "productIds",
+                  e.target.value
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean),
+                )
+              }
+            />
+          </label>
+        ) : null}
         <label className="text-sm text-[#5c5f66]">
-          Limit
+          Anzahl anzeigen
           <input
             type="number"
             min={1}
@@ -457,6 +691,51 @@ export function ContentBlockFields({
             onChange={(e) => set("limit", Number(e.target.value) || 12)}
           />
         </label>
+        <div className="sm:col-span-2 space-y-3 rounded-lg border border-[#e8eaed] bg-[#fafafa] p-3">
+          <label className="flex cursor-pointer items-start gap-2.5 text-sm text-[#374151]">
+            <input
+              type="checkbox"
+              className="checkbox-primary mt-0.5 size-4"
+              checked={showAllCta}
+              onChange={(e) => set("showAllCta", e.target.checked)}
+            />
+            <span>
+              <span className="font-medium">Button „Alle anzeigen“</span>
+              <span className="mt-0.5 block text-xs text-[#6b7280]">
+                Unter der Produktliste. Ziel automatisch aus Kollektion/Kategorie/Katalog,
+                sofern kein eigener Pfad gesetzt ist.
+              </span>
+            </span>
+          </label>
+          {showAllCta ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="text-sm text-[#5c5f66]">
+                Button-Text
+                <input
+                  className={fieldClass}
+                  value={str(data, "showAllLabel")}
+                  placeholder="Alle anzeigen"
+                  onChange={(e) => set("showAllLabel", e.target.value)}
+                />
+              </label>
+              <label className="text-sm text-[#5c5f66]">
+                Ziel-Pfad (optional)
+                <input
+                  className={fieldClass}
+                  value={str(data, "showAllHref")}
+                  placeholder={
+                    usesCollection
+                      ? "/kollektionen/…"
+                      : usesCategory
+                        ? "/kategorien/…"
+                        : "/produkte"
+                  }
+                  onChange={(e) => set("showAllHref", e.target.value)}
+                />
+              </label>
+            </div>
+          ) : null}
+        </div>
       </div>
     );
   }

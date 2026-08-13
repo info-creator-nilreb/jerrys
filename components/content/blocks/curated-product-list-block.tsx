@@ -1,5 +1,11 @@
+import Link from "next/link";
 import { ProductCard } from "@/components/storefront/product-card";
 import type { CuratedProductListBlockData } from "@/lib/content/blocks/curated-product-list";
+import {
+  resolveProductBlockShowAllHref,
+  resolveProductBlockShowAllLabel,
+} from "@/lib/content/blocks/product-block-show-all";
+import { listActiveProductsByCollectionSlugForStorefront } from "@/lib/catalog/collection-queries";
 import {
   listActiveProductsByIdsForStorefront,
   listActiveProductsForStorefront,
@@ -18,6 +24,11 @@ export async function CuratedProductListBlock({
       products = await listActiveProductsForStorefront({
         take: Math.max(1, data.limit),
       });
+    } else if (data.source === "collection" && data.collectionSlug) {
+      products = await listActiveProductsByCollectionSlugForStorefront(
+        data.collectionSlug,
+        data.limit,
+      );
     } else {
       products = await listActiveProductsByIdsForStorefront(
         data.productIds,
@@ -29,6 +40,14 @@ export async function CuratedProductListBlock({
     return null;
   }
   if (products.length === 0) return null;
+
+  const showAllHref = resolveProductBlockShowAllHref({
+    showAllCta: data.showAllCta,
+    showAllHref: data.showAllHref,
+    kind: data.source === "collection" ? "collection" : "catalog",
+    collectionSlug: data.collectionSlug,
+  });
+  const showAllLabel = resolveProductBlockShowAllLabel(data.showAllLabel);
 
   return (
     <section
@@ -51,6 +70,16 @@ export async function CuratedProductListBlock({
             </div>
           ))}
         </div>
+        {showAllHref ? (
+          <div className="mt-10 flex justify-center">
+            <Link
+              href={showAllHref}
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-(--primary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            >
+              {showAllLabel}
+            </Link>
+          </div>
+        ) : null}
       </div>
     </section>
   );

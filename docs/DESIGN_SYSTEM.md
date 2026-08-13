@@ -63,7 +63,7 @@ Do not introduce another interactive accent color. The existing navy admin sideb
 
 - Product imagery is the primary visual element; preserve aspect ratio and prevent layout shift.
 - Header remains compact. Cart and account actions are easy to find; navigation does not overwhelm the catalog.
-- **Primary shop navigation (header / mobile drawer):** stable **product categories** (`/kategorien/…`) are the menu source; optional system links „Alle Produkte“ / „Termine“ via ShopSettings toggles (Shopify-like). Desktop presentation: `inline` | `burger` | `hidden` (`desktopShopNavMode`); mobile keeps burger when links exist. Categories expose products via linked **collections** (ADR 0010). Cap top-level category links (default 6). Unlinked campaign collections stay secondary (e.g. footer). Rules: [EPIC10_PRODUCT_CATEGORIES.md](./EPIC10_PRODUCT_CATEGORIES.md), breadcrumbs: [STOREFRONT_BREADCRUMBS.md](./STOREFRONT_BREADCRUMBS.md).
+- **Primary shop navigation (header / mobile drawer):** stable **product categories** (`/kategorien/…`) are the menu source; optional system links „Alle Produkte“ / „Termine“ via ShopSettings toggles (Shopify-like). Desktop presentation: `inline` | `burger` | `hidden` (`desktopShopNavMode`); when `inline`, placement `beside` | `under` (`headerNavPlacement`) relative to the logo; mobile keeps burger when links exist. Categories expose products via linked **collections** (ADR 0010). Cap top-level category links (default 6). Unlinked campaign collections stay secondary (e.g. footer). Rules: [EPIC10_PRODUCT_CATEGORIES.md](./EPIC10_PRODUCT_CATEGORIES.md), breadcrumbs: [STOREFRONT_BREADCRUMBS.md](./STOREFRONT_BREADCRUMBS.md).
 - Collection pages provide clear filtering and sorting with active-filter feedback and removable filter chips.
 - Product cards show image, name, optional concise subtitle/badge, price, availability, and one unambiguous action.
 - Product detail pages place title, price, variant, availability, quantity, and add-to-cart near each other. Supporting content follows in scannable sections.
@@ -80,7 +80,7 @@ Do not introduce another interactive accent color. The existing navy admin sideb
 - Index pages use searchable, filterable, paginated tables or lists. Preserve filters in the URL when practical.
 - Tables use clear column headers, restrained density, aligned numeric data, row-level actions, and an intentional mobile fallback.
 - Detail pages separate summary, timeline/status, customer, payment, fulfillment, and audit information without duplicating truth.
-- Forms use a readable maximum width, persistent labels, optional help text, inline errors, and a sticky action dock only for long forms.
+- Forms use a readable maximum width, persistent labels, optional help text, inline errors, and a sticky save action dock (`AdminFormActionDock`) as the default for pages with a primary Speichern action. Inline/list actions (toggles, refunds, multi-panel settings) stay in place.
 - Status badges combine wording and semantic styling. Similar-looking badges must not represent incompatible order, payment, fulfillment, or booking states.
 - Destructive, financial, inventory, role, and capacity actions show impact before confirmation and report the resulting authoritative server state.
 - Background jobs and provider calls display `queued`, `processing`, `succeeded`, or `failed` rather than pretending to finish synchronously.

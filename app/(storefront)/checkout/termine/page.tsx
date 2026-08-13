@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { randomUUID } from "crypto";
+import { notFound } from "next/navigation";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import type { CheckoutSummaryLine } from "@/components/storefront/checkout-summary-aside";
 import { WorkshopCheckoutForm } from "@/components/storefront/workshop-checkout-form";
@@ -13,6 +14,7 @@ import { getCustomerSession } from "@/lib/auth/customer-session";
 import { getWorkshopBookingHoldIdFromCookie } from "@/lib/workshop/workshop-booking-cookie";
 import { getShippingCountriesForStorefront } from "@/lib/shop/shipping-countries-for-storefront";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
+import { isTermineFeatureEnabled } from "@/lib/shop/termine-feature";
 import { formatWorkshopSessionDateTime } from "@/lib/workshop/format-session-datetime";
 import { getWorkshopCheckoutCatalogLine } from "@/lib/workshop/workshop-checkout-catalog-query";
 
@@ -31,6 +33,10 @@ export default async function WorkshopCheckoutPage({
 }: {
   searchParams: Promise<{ fehler?: string }>;
 }) {
+  if (!(await isTermineFeatureEnabled())) {
+    notFound();
+  }
+
   const sp = await searchParams;
   const checkoutError = sp.fehler?.trim() || null;
 

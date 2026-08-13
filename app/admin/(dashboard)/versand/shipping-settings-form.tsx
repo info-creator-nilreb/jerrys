@@ -6,7 +6,10 @@ import {
   type ShippingSettingsFormState,
   type ShopShippingSettingsForAdminForm,
 } from "@/app/admin/(dashboard)/versand/actions";
-import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
+import {
+  ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING,
+  AdminFormActionDock,
+} from "@/components/admin/admin-form-action-dock";
 import { centsToPriceInputString } from "@/lib/catalog/format";
 import { SHOP_SHIPPING_COUNTRY_OPTIONS } from "@/lib/catalog/shipping-countries-catalog";
 
@@ -30,7 +33,7 @@ export function ShippingSettingsForm({ defaults }: Props) {
   const freeCents = defaults.freeShippingFromSubtotalGrossCents;
 
   return (
-    <form action={formAction} className="space-y-8">
+    <form action={formAction} className={`space-y-8 ${ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING}`}>
       <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
         <h2 className="text-base font-semibold text-[#1f2937]">Lieferländer</h2>
         <p className="mt-2 text-xs leading-relaxed text-[#6b7280]">
@@ -126,23 +129,23 @@ export function ShippingSettingsForm({ defaults }: Props) {
         </div>
       </section>
 
-      {state?.error ? (
-        <p className="text-sm text-red-600" role="alert">
-          {state.error}
-        </p>
-      ) : null}
-      {state?.ok ? (
-        <p className="text-sm font-medium text-primary" role="status">
-          Gespeichert.
-        </p>
-      ) : null}
-
       <AdminFormActionDock>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-          <button type="submit" disabled={pending} className={saveBtnClass}>
-            {pending ? "Speichern …" : "Speichern"}
-          </button>
-        </div>
+        {state?.ok ? (
+          <p className="mr-auto text-sm font-medium text-primary" role="status">
+            Gespeichert.
+          </p>
+        ) : state?.error ? (
+          <p className="mr-auto text-sm text-red-600" role="alert">
+            {state.error}
+          </p>
+        ) : (
+          <span className="mr-auto hidden text-sm text-[#6b7280] sm:inline">
+            Änderungen speichern, um den Versand zu aktualisieren.
+          </span>
+        )}
+        <button type="submit" disabled={pending} className={saveBtnClass}>
+          {pending ? "Speichern …" : "Speichern"}
+        </button>
       </AdminFormActionDock>
     </form>
   );

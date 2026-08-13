@@ -11,9 +11,17 @@ import {
   CoverImageSection,
   LogosSection,
 } from "@/app/admin/(dashboard)/einstellungen/branding-assets-section";
+import {
+  ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING,
+  AdminFormActionDock,
+} from "@/components/admin/admin-form-action-dock";
 import { evaluatePrimaryBrandContrast } from "@/lib/shop/color-contrast";
-import { JERRYS_SHOP_SETTINGS_DEFAULTS } from "@/lib/shop/shop-settings-defaults";
-import type { ShopSettingsDTO } from "@/lib/shop/shop-settings-defaults";
+import {
+  JERRYS_SHOP_SETTINGS_DEFAULTS,
+  type DesktopShopNavMode,
+  type HeaderNavPlacement,
+  type ShopSettingsDTO,
+} from "@/lib/shop/shop-settings-defaults";
 
 const initial: ShopSettingsFormState = null;
 
@@ -117,6 +125,12 @@ export function ShopSettingsForm({ defaults }: Props) {
   const [primaryHoverColor, setPrimaryHoverColor] = useState(defaults.primaryHoverColor);
   const [instagramUrl, setInstagramUrl] = useState(defaults.instagramUrl ?? "");
   const [facebookUrl, setFacebookUrl] = useState(defaults.facebookUrl ?? "");
+  const [desktopShopNavMode, setDesktopShopNavMode] = useState<DesktopShopNavMode>(
+    defaults.desktopShopNavMode,
+  );
+  const [headerNavPlacement, setHeaderNavPlacement] = useState<HeaderNavPlacement>(
+    defaults.headerNavPlacement,
+  );
 
   const fe = state?.fieldErrors ?? {};
   const liveContrast = useMemo(
@@ -129,7 +143,10 @@ export function ShopSettingsForm({ defaults }: Props) {
       <LogosSection settings={defaults} />
       <CoverImageSection settings={defaults} />
 
-      <form action={formAction} className="space-y-4 sm:space-y-5">
+      <form
+        action={formAction}
+        className={`space-y-4 sm:space-y-5 ${ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING}`}
+      >
         <SettingsCard
           title="Farben"
           description="Die Markenfarben, die in deinem Shop, in E-Mails und im Admin erscheinen"
@@ -258,9 +275,10 @@ export function ShopSettingsForm({ defaults }: Props) {
                 className="checkbox-primary mt-0.5 size-4"
               />
               <span>
-                <span className="font-medium">„Termine“ anzeigen</span>
+                <span className="font-medium">Termine-Feature aktiv</span>
                 <span className="mt-0.5 block text-xs text-[#6b7280]">
-                  Link zum Gruppenkalender (/termine)
+                  Shop-Navigation, Buchung und Admin-Bereich „Termine“. Im Kundenkonto erscheint
+                  der Menüpunkt erst nach der ersten Buchung.
                 </span>
               </span>
             </label>
@@ -276,7 +294,7 @@ export function ShopSettingsForm({ defaults }: Props) {
                   {
                     value: "inline",
                     title: "Sichtbar im Header",
-                    hint: "Klassische Linkzeile neben dem Logo (bisheriges Verhalten)",
+                    hint: "Linkzeile im Header (Position wählbar)",
                   },
                   {
                     value: "burger",
@@ -298,7 +316,8 @@ export function ShopSettingsForm({ defaults }: Props) {
                     type="radio"
                     name="desktopShopNavMode"
                     value={opt.value}
-                    defaultChecked={defaults.desktopShopNavMode === opt.value}
+                    checked={desktopShopNavMode === opt.value}
+                    onChange={() => setDesktopShopNavMode(opt.value)}
                     className="mt-1 size-3.5 accent-primary"
                   />
                   <span>
@@ -308,6 +327,51 @@ export function ShopSettingsForm({ defaults }: Props) {
                 </label>
               ))}
             </fieldset>
+
+            {desktopShopNavMode === "inline" ? (
+              <fieldset className="mt-4 space-y-2 border-t border-[#e8eaed] pt-4">
+                <legend className="text-sm font-medium text-[#1f2937]">
+                  Position der Linkzeile
+                </legend>
+                <p className="text-xs text-[#6b7280]">
+                  Nur Desktop. Mobil bleibt das Menü-Icon links neben dem Logo.
+                </p>
+                {(
+                  [
+                    {
+                      value: "beside",
+                      title: "Links neben dem Logo",
+                      hint: "Klassische Anordnung in einer Zeile mit Logo und Warenkorb",
+                    },
+                    {
+                      value: "under",
+                      title: "Unter dem Logo",
+                      hint: "Logo zentriert oben, Navigationslinks darunter",
+                    },
+                  ] as const
+                ).map((opt) => (
+                  <label
+                    key={opt.value}
+                    className="flex cursor-pointer items-start gap-2.5 text-sm text-[#374151]"
+                  >
+                    <input
+                      type="radio"
+                      name="headerNavPlacement"
+                      value={opt.value}
+                      checked={headerNavPlacement === opt.value}
+                      onChange={() => setHeaderNavPlacement(opt.value)}
+                      className="mt-1 size-3.5 accent-primary"
+                    />
+                    <span>
+                      <span className="font-medium">{opt.title}</span>
+                      <span className="mt-0.5 block text-xs text-[#6b7280]">{opt.hint}</span>
+                    </span>
+                  </label>
+                ))}
+              </fieldset>
+            ) : (
+              <input type="hidden" name="headerNavPlacement" value={headerNavPlacement} />
+            )}
           </div>
         </SettingsCard>
 
@@ -327,7 +391,7 @@ export function ShopSettingsForm({ defaults }: Props) {
                 {
                   name: "footerShowShopNav",
                   title: "Shop-Navigation",
-                  hint: "Kategorien sowie „Alle Produkte“ / „Termine“ — oft redundant zum Header",
+                  hint: "Kategorien sowie „Alle Produkte“ / ggf. „Termine“ (nur bei aktivem Feature)",
                   defaultChecked: defaults.footerShowShopNav,
                 },
                 {
@@ -657,32 +721,37 @@ export function ShopSettingsForm({ defaults }: Props) {
           </div>
         </SettingsCard>
 
-        {state?.error ? (
-          <p className="text-sm text-[#b42318]" role="alert">
-            {state.error}
-          </p>
-        ) : null}
-        {state?.ok ? (
-          <div className="space-y-2" role="status">
-            <p className="text-sm font-medium text-primary">Gespeichert.</p>
-            {state.contrastWarnings && state.contrastWarnings.length > 0 ? (
-              <div className="rounded-lg border border-[#f3e0b5] bg-[#fff8e6] px-3 py-3 text-sm text-[#5c4b1f]">
-                <ul className="list-disc space-y-1 pl-4">
-                  {state.contrastWarnings.map((w) => (
-                    <li key={w}>{w}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
+        {state?.ok && state.contrastWarnings && state.contrastWarnings.length > 0 ? (
+          <div
+            className="rounded-lg border border-[#f3e0b5] bg-[#fff8e6] px-3 py-3 text-sm text-[#5c4b1f]"
+            role="status"
+          >
+            <ul className="list-disc space-y-1 pl-4">
+              {state.contrastWarnings.map((w) => (
+                <li key={w}>{w}</li>
+              ))}
+            </ul>
           </div>
         ) : null}
 
-        {/* Speichern im normalen Fluss — kein fixed/sticky Dock (erzeugte Leerraum im scrollbaren main). */}
-        <div className="flex justify-end border-t border-[#e8eaed] pt-4">
+        <AdminFormActionDock>
+          {state?.ok ? (
+            <p className="mr-auto text-sm font-medium text-primary" role="status">
+              Gespeichert.
+            </p>
+          ) : state?.error ? (
+            <p className="mr-auto text-sm text-[#b42318]" role="alert">
+              {state.error}
+            </p>
+          ) : (
+            <span className="mr-auto hidden text-sm text-[#6b7280] sm:inline">
+              Änderungen speichern, um die Einstellungen zu übernehmen.
+            </span>
+          )}
           <button type="submit" disabled={pending} className={saveBtnClass}>
             {pending ? "Speichern …" : "Speichern"}
           </button>
-        </div>
+        </AdminFormActionDock>
       </form>
     </div>
   );

@@ -2,7 +2,16 @@
 
 import Image from "next/image";
 import { useDeferredValue, useMemo } from "react";
+import { HeroBackgroundCarousel } from "@/components/content/blocks/hero-background-carousel";
 import { UspIcon } from "@/components/storefront/usp-icons";
+import {
+  HERO_MOTION_EFFECTS,
+  HERO_SLIDE_DURATIONS_SEC,
+  resolveHeroSlides,
+  type HeroBlockData,
+  type HeroMotionEffect,
+  type HeroSlideDurationSec,
+} from "@/lib/content/blocks/hero";
 import { isContentBlockType, type ContentBlockType } from "@/lib/content/block-types";
 import { sanitizeContentRichTextHtml } from "@/lib/content/sanitize-content-html";
 
@@ -10,6 +19,12 @@ export type LivePreviewProduct = {
   id: string;
   title: string;
   imageUrl: string | null;
+};
+
+export type LivePreviewCollection = {
+  slug: string;
+  title: string;
+  productIds: string[];
 };
 
 export type LivePreviewBlock = {
@@ -36,9 +51,11 @@ function num(data: Record<string, unknown>, key: string, fallback: number): numb
 function PreviewBlock({
   block,
   products,
+  collections,
 }: {
   block: LivePreviewBlock;
   products: LivePreviewProduct[];
+  collections: LivePreviewCollection[];
 }) {
   const type = block.type;
   const data = block.data;
@@ -50,18 +67,42 @@ function PreviewBlock({
   }
 
   if (type === "hero") {
-    const imageUrl = str(data, "imageUrl") || "/media/hero-mood.jpg";
+    const images = Array.isArray(data.images)
+      ? data.images
+          .filter((x): x is Record<string, unknown> => !!x && typeof x === "object")
+          .map((x) => ({
+            url: typeof x.url === "string" ? x.url : "",
+            alt: typeof x.alt === "string" ? x.alt : null,
+          }))
+          .filter((s) => s.url.trim() !== "")
+      : [];
+    const slides = resolveHeroSlides({
+      imageUrl: str(data, "imageUrl") || "/media/hero-mood.jpg",
+      imageAlt: str(data, "imageAlt") || null,
+      images,
+    } as Pick<HeroBlockData, "imageUrl" | "imageAlt" | "images">);
+    const durationRaw = num(data, "slideDurationSec", 6);
+    const slideDurationSec = (
+      (HERO_SLIDE_DURATIONS_SEC as readonly number[]).includes(durationRaw)
+        ? durationRaw
+        : 6
+    ) as HeroSlideDurationSec;
+    const motionRaw = str(data, "motionEffect") || "fade";
+    const motionEffect = (
+      (HERO_MOTION_EFFECTS as readonly string[]).includes(motionRaw)
+        ? motionRaw
+        : "fade"
+    ) as HeroMotionEffect;
+
     return (
       <section className="relative aspect-[4/5] min-h-72 overflow-hidden bg-[#111] sm:aspect-[16/10] sm:min-h-80">
-        <Image
-          src={imageUrl}
-          alt=""
-          fill
-          className="object-cover object-[40%_center] opacity-90"
-          sizes="400px"
-          unoptimized={imageUrl.startsWith("https://")}
+        <HeroBackgroundCarousel
+          slides={slides}
+          slideDurationSec={slideDurationSec}
+          motionEffect={motionEffect}
+          compact
         />
-        <div className="absolute inset-0 bg-linear-to-r from-black/60 via-black/20 to-transparent" />
+        <div className="absolute inset-0 z-[2] bg-linear-to-r from-black/60 via-black/20 to-transparent" />
         <div className="relative z-10 flex h-full flex-col justify-center px-4 py-8">
           {str(data, "eyebrow") ? (
             <p className="text-[10px] font-medium tracking-wide text-primary uppercase">
@@ -183,18 +224,37 @@ function PreviewBlock({
 
   if (type === "curatedProductList" || type === "productCategoryPick") {
     const source = str(data, "source") || "ids";
+    const mode = str(data, "mode") || "collection";
+    const collectionSlug = str(data, "collectionSlug");
     const ids = Array.isArray(data.productIds)
       ? data.productIds.filter((x): x is string => typeof x === "string")
       : [];
     const limit =
       typeof data.limit === "number" && Number.isFinite(data.limit) ? data.limit : 12;
-    const list =
-      type === "curatedProductList" && source === "allActive"
-        ? products.slice(0, limit)
-        : ids
-            .map((id) => products.find((p) => p.id === id))
-            .filter((p): p is LivePreviewProduct => Boolean(p))
-            .slice(0, limit);
+    const usesCollection =
+      (type === "curatedProductList" && source === "collection") ||
+      (type === "productCategoryPick" && mode === "collection");
+    const collection = usesCollection
+      ? collections.find((c) => c.slug === collectionSlug)
+      : undefined;
+    const list = (() => {
+      if (type === "curatedProductList" && source === "allActive") {
+        return products.slice(0, limit);
+      }
+      if (usesCollection) {
+        const collectionIds = collection?.productIds ?? [];
+        return collectionIds
+          .map((id) => products.find((p) => p.id === id))
+          .filter((p): p is LivePreviewProduct => Boolean(p))
+          .slice(0, limit);
+      }
+      return ids
+        .map((id) => products.find((p) => p.id === id))
+        .filter((p): p is LivePreviewProduct => Boolean(p))
+        .slice(0, limit);
+    })();
+    const showAllCta = bool(data, "showAllCta", false);
+    const showAllLabel = str(data, "showAllLabel").trim() || "Alle anzeigen";
 
     return (
       <section className="bg-[#f8faf8] px-4 py-8">
@@ -203,9 +263,13 @@ function PreviewBlock({
         ) : null}
         {list.length === 0 ? (
           <p className="mt-4 text-center text-xs text-[#9ca3af]">
-            {source === "allActive"
+            {type === "curatedProductList" && source === "allActive"
               ? "Alle aktiven Produkte (Vorschau: Katalog-Snapshot)."
-              : "Keine Produkt-IDs / keine Treffer."}
+              : usesCollection
+                ? collectionSlug
+                  ? "Keine Produkte in dieser Kollektion (Vorschau)."
+                  : "Bitte Kollektion wählen."
+                : "Keine Produkt-IDs / keine Treffer."}
           </p>
         ) : (
           <ul className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -231,6 +295,13 @@ function PreviewBlock({
             ))}
           </ul>
         )}
+        {showAllCta ? (
+          <div className="mt-4 flex justify-center">
+            <span className="inline-flex rounded-md bg-primary px-3 py-1.5 text-[11px] font-semibold text-white">
+              {showAllLabel}
+            </span>
+          </div>
+        ) : null}
       </section>
     );
   }
@@ -335,12 +406,14 @@ export function ContentLivePreview({
   pageType,
   blocks,
   products,
+  collections = [],
   hasUnsavedChanges = false,
 }: {
   title: string;
   pageType: "homepage" | "content" | "legal";
   blocks: LivePreviewBlock[];
   products: LivePreviewProduct[];
+  collections?: LivePreviewCollection[];
   /** true = Editor weicht vom letzten gespeicherten Stand ab */
   hasUnsavedChanges?: boolean;
 }) {
@@ -350,9 +423,14 @@ export function ContentLivePreview({
   const body = useMemo(
     () =>
       deferredBlocks.map((block) => (
-        <PreviewBlock key={block.clientId} block={block} products={products} />
+        <PreviewBlock
+          key={block.clientId}
+          block={block}
+          products={products}
+          collections={collections}
+        />
       )),
-    [deferredBlocks, products],
+    [deferredBlocks, products, collections],
   );
 
   return (

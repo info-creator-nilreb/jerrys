@@ -34,6 +34,7 @@ export {
 
 export {
   listWorkshopBookingsForCustomer,
+  customerHasWorkshopBookings,
   getWorkshopBookingForCustomer,
   selfCancelWorkshopBookingForCustomer,
   cancelConfirmedWorkshopBookingsForAnonymizedCustomer,

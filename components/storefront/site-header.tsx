@@ -44,6 +44,7 @@ export async function SiteHeader() {
       logoDarkSrc={logoDarkSrc}
       shopNavLinks={shopNavLinks}
       desktopMode={settings.desktopShopNavMode}
+      navPlacement={settings.headerNavPlacement}
       infoBanner={
         showBanner
           ? {

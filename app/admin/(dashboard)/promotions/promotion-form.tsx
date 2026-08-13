@@ -7,6 +7,10 @@ import {
   savePromotion,
   type PromotionFormState,
 } from "@/app/admin/(dashboard)/promotions/actions";
+import {
+  ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING,
+  AdminFormActionDock,
+} from "@/components/admin/admin-form-action-dock";
 import { PROMOTION_TYPES, type PromotionTypeId } from "@/lib/promotions/types";
 import type { Promotion } from "@/app/generated/prisma/client";
 
@@ -93,7 +97,7 @@ export function PromotionForm({
   const isCheapestItemPercent = promotionType === "cheapest_item_percent";
 
   return (
-    <form onSubmit={onSubmit} className="w-full space-y-10">
+    <form onSubmit={onSubmit} className={`w-full space-y-10 ${ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING}`}>
       {initialPromotion?.id ? <input type="hidden" name="id" value={initialPromotion.id} /> : null}
       <input type="hidden" name="promotionType" value={promotionType} />
 
@@ -487,16 +491,13 @@ export function PromotionForm({
         </label>
       </section>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="submit"
-          name="intent"
-          value="publish"
-          disabled={pending}
-          className="rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-(--primary-hover) disabled:opacity-50"
+      <AdminFormActionDock>
+        <Link
+          href="/admin/promotions"
+          className="mr-auto rounded-md px-4 py-2.5 text-sm font-medium text-[#6b7280] hover:text-[#374151]"
         >
-          Speichern
-        </button>
+          Abbrechen
+        </Link>
         <button
           type="submit"
           name="intent"
@@ -506,13 +507,16 @@ export function PromotionForm({
         >
           Speichern als Entwurf
         </button>
-        <Link
-          href="/admin/promotions"
-          className="rounded-md px-4 py-2.5 text-sm font-medium text-[#6b7280] hover:text-[#374151]"
+        <button
+          type="submit"
+          name="intent"
+          value="publish"
+          disabled={pending}
+          className="rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-(--primary-hover) disabled:opacity-50"
         >
-          Abbrechen
-        </Link>
-      </div>
+          Speichern
+        </button>
+      </AdminFormActionDock>
 
       {!isFreeShipping ? <input type="hidden" name="freeShippingCountryScope" value="all" /> : null}
     </form>

@@ -11,11 +11,14 @@ export function AdminShell({
   appVersion,
   userEmail,
   userName,
+  termineEnabled = true,
 }: {
   children: ReactNode;
   appVersion: string;
   userEmail: string;
   userName: string;
+  /** Shop-Feature-Flag: Admin-Menüpunkt und Glocken-Termine. */
+  termineEnabled?: boolean;
 }) {
   const { collapsed, toggle } = useSidebarCollapsed();
   const pathname = usePathname();
@@ -67,6 +70,7 @@ export function AdminShell({
         appVersion={appVersion}
         userEmail={userEmail}
         userName={userName}
+        termineEnabled={termineEnabled}
         mobileOpen={mobileNavOpen}
         onNavigate={() => setMobileNavOpenForPath(null)}
         className={`fixed inset-y-0 left-0 z-50 w-[min(100%,18rem)] transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-auto lg:translate-x-0 ${
@@ -82,7 +86,10 @@ export function AdminShell({
           } as CSSProperties
         }
       >
-        <AdminTopBar onOpenMobileNav={() => setMobileNavOpenForPath(pathname)} />
+        <AdminTopBar
+          onOpenMobileNav={() => setMobileNavOpenForPath(pathname)}
+          termineEnabled={termineEnabled}
+        />
         <main className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5 lg:p-8">{children}</main>
       </div>
     </div>

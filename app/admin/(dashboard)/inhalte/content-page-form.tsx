@@ -2,13 +2,19 @@
 
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import { useActionState, useEffect, useId, useMemo, useRef, useState } from "react";
-import { ContentBlockFields } from "@/app/admin/(dashboard)/inhalte/content-block-fields";
+import {
+  ContentBlockFields,
+  type CmsCollectionOption,
+} from "@/app/admin/(dashboard)/inhalte/content-block-fields";
 import { CmsPageSeoAiTextAssistant } from "@/app/admin/(dashboard)/inhalte/cms-page-seo-ai-text-assistant";
 import {
   saveContentPageAction,
   type ContentPageFormState,
 } from "@/app/admin/(dashboard)/inhalte/actions";
-import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
+import {
+  ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING,
+  AdminFormActionDock,
+} from "@/components/admin/admin-form-action-dock";
 import { CmsMediaField } from "@/components/admin/cms-media-field";
 import {
   ContentLivePreview,
@@ -101,10 +107,12 @@ function buildPageContextFromBlocks(blocks: EditorBlock[]): string {
 export function ContentPageForm({
   initial,
   previewProducts = [],
+  previewCollections = [],
   aiReady = false,
 }: {
   initial?: InitialPage;
   previewProducts?: LivePreviewProduct[];
+  previewCollections?: CmsCollectionOption[];
   aiReady?: boolean;
 }) {
   const formId = useId();
@@ -230,7 +238,11 @@ export function ContentPageForm({
   }
 
   const editor = (
-    <form id={formId} action={formAction} className="space-y-8 pb-28">
+    <form
+      id={formId}
+      action={formAction}
+      className={`space-y-8 ${ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING}`}
+    >
       {initial?.id ? <input type="hidden" name="id" value={initial.id} /> : null}
       <input type="hidden" name="blocksJson" value={blocksJson} />
       {pageType === "homepage" ? (
@@ -486,6 +498,7 @@ export function ContentPageForm({
                       aiReady={aiReady}
                       pageTitle={title}
                       pageType={pageType}
+                      collections={previewCollections}
                       onChange={(data) =>
                         setBlocks((prev) =>
                           prev.map((b) =>
@@ -540,6 +553,7 @@ export function ContentPageForm({
           pageType={pageType}
           blocks={previewBlocks}
           products={previewProducts}
+          collections={previewCollections}
           hasUnsavedChanges={hasUnsavedChanges}
         />
       </aside>

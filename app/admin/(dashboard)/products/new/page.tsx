@@ -1,34 +1,23 @@
-import Link from "next/link";
-import { CreateProductForm } from "@/app/admin/(dashboard)/products/new/create-product-form";
-import { listShopAssignmentOptionsForAdmin } from "@/lib/catalog/product-shop-membership";
-import { listManufacturersForAdmin } from "@/lib/catalog/queries";
+import { redirect } from "next/navigation";
+import { getAdminSession } from "@/lib/auth/admin-session";
+import { createProductDraft } from "@/lib/catalog/create-product-draft";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Neues Produkt",
 };
 
+/**
+ * Neues Produkt = sofort Entwurf anlegen und in die volle Bearbeiten-UI wechseln
+ * (Medien-Upload, KI-Text/Bild, Varianten — gleiche Möglichkeiten wie beim Bearbeiten).
+ */
 export default async function AdminNewProductPage() {
-  const [manufacturers, shopAssignment] = await Promise.all([
-    listManufacturersForAdmin(),
-    listShopAssignmentOptionsForAdmin(),
-  ]);
+  const session = await getAdminSession();
+  if (!session?.user) {
+    redirect("/admin/login");
+  }
 
-  return (
-    <div className="mx-auto max-w-4xl rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm sm:p-8">
-      <p className="text-sm text-[#6b7280]">
-        <Link href="/admin/products" className="font-medium text-primary hover:underline">
-          ← Zurück zum Katalog
-        </Link>
-      </p>
-      <h1 className="mt-4 text-xl font-semibold tracking-tight text-[#1f2937] sm:text-2xl">
-        Neues Produkt
-      </h1>
-      <p className="mt-2 text-sm text-[#6b7280]">
-        Slug erscheint in der URL (/produkte/…). Weitere Bilder kannst du nach dem Anlegen unter Bearbeiten hochladen.
-      </p>
-      <div className="mt-8">
-        <CreateProductForm manufacturers={manufacturers} shopAssignment={shopAssignment} />
-      </div>
-    </div>
-  );
+  const draft = await createProductDraft();
+  redirect(`/admin/products/${draft.id}/edit?neu=1`);
 }

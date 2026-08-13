@@ -20,6 +20,18 @@ export function parseDesktopShopNavMode(value: unknown): DesktopShopNavMode {
   return isDesktopShopNavMode(value) ? value : "inline";
 }
 
+/** Position der sichtbaren Desktop-Linkzeile relativ zum Logo. */
+export const HEADER_NAV_PLACEMENTS = ["beside", "under"] as const;
+export type HeaderNavPlacement = (typeof HEADER_NAV_PLACEMENTS)[number];
+
+export function isHeaderNavPlacement(value: unknown): value is HeaderNavPlacement {
+  return value === "beside" || value === "under";
+}
+
+export function parseHeaderNavPlacement(value: unknown): HeaderNavPlacement {
+  return isHeaderNavPlacement(value) ? value : "beside";
+}
+
 export type ShopSettingsDefaults = {
   shopName: string;
   shortDescription: string;
@@ -45,6 +57,8 @@ export type ShopSettingsDefaults = {
   showAllProductsInNav: boolean;
   showTermineInNav: boolean;
   desktopShopNavMode: DesktopShopNavMode;
+  /** Nur bei desktopShopNavMode=inline: Linkzeile links neben oder unter dem Logo. */
+  headerNavPlacement: HeaderNavPlacement;
   infoBannerActive: boolean;
   infoBannerMessages: string[];
   infoBannerDurationSec: InfoBannerDurationSec;
@@ -88,6 +102,7 @@ export const JERRYS_SHOP_SETTINGS_DEFAULTS: ShopSettingsDefaults = {
   showAllProductsInNav: true,
   showTermineInNav: true,
   desktopShopNavMode: "inline",
+  headerNavPlacement: "beside",
   infoBannerActive: false,
   infoBannerMessages: [],
   infoBannerDurationSec: 6,

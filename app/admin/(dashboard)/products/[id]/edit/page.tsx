@@ -12,10 +12,16 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ neu?: string }>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
+  if (sp.neu === "1") {
+    return { title: "Neues Produkt" };
+  }
   const product = await getProductByIdForAdmin(id);
   return {
     title: product ? `Bearbeiten: ${product.title}` : "Produkt",
@@ -24,10 +30,15 @@ export async function generateMetadata({
 
 export default async function AdminEditProductPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ neu?: string }>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
+  const isNewDraft = sp.neu === "1";
+
   const [product, manufacturers, aiSettings, shopAssignment] = await Promise.all([
     getProductByIdForAdmin(id),
     listManufacturersForAdmin(),
@@ -47,9 +58,13 @@ export default async function AdminEditProductPage({
             </Link>
           </p>
           <h1 className="mt-4 text-xl font-semibold tracking-tight text-[#1f2937] sm:text-2xl">
-            Produkt bearbeiten
+            {isNewDraft ? "Neues Produkt" : "Produkt bearbeiten"}
           </h1>
-          <p className="mt-1 text-sm text-[#6b7280]">{product.title}</p>
+          <p className="mt-1 text-sm text-[#6b7280]">
+            {isNewDraft
+              ? "Gleicher Editor wie beim Bearbeiten: KI, Bild-Upload, Varianten und alle Shop-Felder. Speichern übernimmt dauerhaft; bis dahin bleibt das Produkt im Shop unsichtbar."
+              : product.title}
+          </p>
         </div>
         {product.isActive ? (
           <a
@@ -67,13 +82,14 @@ export default async function AdminEditProductPage({
           </span>
         )}
       </div>
-      {/* pb-28: Platz für den sticky AdminFormActionDock — Lifecycle nicht verdecken */}
+      {/* Platz für den sticky AdminFormActionDock — Lifecycle nicht verdecken */}
       <div className="mt-8 flex flex-col gap-8 pb-28">
         <EditProductForm
           product={formProduct}
           manufacturers={manufacturers}
           shopAssignment={shopAssignment}
           aiReady={aiSettings.ready}
+          isNewDraft={isNewDraft}
         />
         <ProductLifecycleControls
           productId={product.id}
