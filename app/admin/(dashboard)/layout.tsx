@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth/admin-session";
 import { AdminDevClientNotice } from "@/components/admin/admin-dev-client-notice";
 import { AdminShell } from "@/components/admin/admin-shell";
-import packageJson from "../../../package.json";
+import { formatAppVersionLabel, getAppVersion } from "@/lib/app-version";
 
 export const metadata: Metadata = {
   title: {
@@ -33,7 +33,7 @@ export default async function AdminDashboardLayout({
 
   return (
     <AdminShell
-      appVersion={packageJson.version}
+      appVersion={formatAppVersionLabel(getAppVersion())}
       userEmail={email}
       userName={name || email}
     >

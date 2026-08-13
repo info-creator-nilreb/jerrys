@@ -223,7 +223,10 @@ export function AdminSidebar({
     >
       <div className="border-b border-white/10 px-3 py-4">
         {collapsed && !mobileOpen ? (
-          <div className="flex justify-center px-0.5" title="jerry's Admin">
+          <div
+            className="flex justify-center px-0.5"
+            title={`jerry's Admin ${appVersion.startsWith("v") ? appVersion : `v${appVersion}`}`}
+          >
             <Image
               src="/branding/jerrys-logo-white.png"
               alt=""
@@ -254,7 +257,9 @@ export function AdminSidebar({
                   aria-hidden
                 />
               </div>
-              <p className="text-xs text-white/50">v{appVersion}</p>
+              <p className="text-xs text-white/50" title={`Version ${appVersion}`}>
+                {appVersion.startsWith("v") ? appVersion : `v${appVersion}`}
+              </p>
             </div>
           </div>
         )}
