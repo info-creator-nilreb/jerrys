@@ -171,3 +171,48 @@ export async function capturePayPalCheckoutOrder(paypalOrderId: string): Promise
     `PayPal Capture fehlgeschlagen (${captureRes.status}): ${captureJson.message ?? JSON.stringify(captureJson.details ?? captureJson).slice(0, 300)}`,
   );
 }
+
+/**
+ * Betrag einer offenen PayPal-Order anpassen (Express: Versand nach Lieferland).
+ * Nutzt `purchase_units[0]` bzw. `reference_id=default`.
+ */
+export async function patchPayPalCheckoutOrderAmount(params: {
+  paypalOrderId: string;
+  totalGrossCents: number;
+  currency: string;
+}): Promise<void> {
+  const token = await getPayPalAccessToken();
+  const currency = params.currency.trim().toUpperCase();
+  const value = moneyStringFromGrossCents(params.totalGrossCents);
+  const orderId = params.paypalOrderId.trim();
+
+  const existing = await fetchPayPalOrder(orderId, token);
+  const referenceId =
+    (existing.purchase_units?.[0] as { reference_id?: string } | undefined)?.reference_id ??
+    "default";
+
+  const patchBody = [
+    {
+      op: "replace",
+      path: `/purchase_units/@reference_id=='${referenceId}'/amount`,
+      value: {
+        currency_code: currency,
+        value,
+      },
+    },
+  ];
+
+  const res = await fetch(`${paypalApiBaseUrl()}/v2/checkout/orders/${orderId}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(patchBody),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`PayPal Order patch fehlgeschlagen (${res.status}): ${text.slice(0, 300)}`);
+  }
+}

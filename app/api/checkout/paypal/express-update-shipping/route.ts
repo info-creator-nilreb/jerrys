@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createPayPalExpressOrder } from "@/lib/checkout/paypal-express-order-flow";
+import { updatePayPalExpressShipping } from "@/lib/checkout/paypal-express-update-shipping";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 import { clientIpFromRequest } from "@/lib/security/client-ip";
 import {
@@ -7,6 +7,9 @@ import {
   touchPayPalCheckoutApiAttempt,
 } from "@/lib/security/paypal-checkout-api-rate-limit";
 
+/**
+ * PayPal `onShippingAddressChange`: Pending-Order + PayPal-Betrag an Lieferland anpassen.
+ */
 export async function POST(req: NextRequest) {
   const limited = touchPayPalCheckoutApiAttempt(clientIpFromRequest(req));
   if (!limited.ok) {
@@ -20,35 +23,36 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "PayPal ist nicht konfiguriert." }, { status: 503 });
   }
 
-  let body: Record<string, unknown> = {};
+  let body: { paypalOrderId?: unknown; shippingCountry?: unknown } = {};
   try {
-    body = (await req.json()) as Record<string, unknown>;
+    body = (await req.json()) as typeof body;
   } catch {
     body = {};
   }
 
-  const result = await createPayPalExpressOrder({
-    idempotencyKey: body.idempotencyKey,
+  const paypalOrderId =
+    typeof body.paypalOrderId === "string" ? body.paypalOrderId.trim() : "";
+  if (!paypalOrderId) {
+    return NextResponse.json({ ok: false, error: "paypalOrderId fehlt." }, { status: 400 });
+  }
+
+  const result = await updatePayPalExpressShipping({
+    paypalOrderId,
     shippingCountry: body.shippingCountry,
   });
 
   if (!result.ok) {
     return NextResponse.json(
-      { ok: false, error: result.error, fieldErrors: result.fieldErrors },
-      { status: 400 },
-    );
-  }
-
-  if (!result.paymentReady) {
-    return NextResponse.json(
-      { ok: false, alreadyComplete: true, orderNumber: result.orderNumber },
-      { status: 409 },
+      { ok: false, code: result.code, error: result.message },
+      { status: result.code === "land" ? 422 : 400 },
     );
   }
 
   return NextResponse.json({
     ok: true,
-    paypalOrderId: result.paypalOrderId,
-    orderNumber: result.orderNumber,
+    shippingCountry: result.shippingCountry,
+    shippingCents: result.shippingCents,
+    totalGrossCents: result.totalGrossCents,
+    currency: result.currency,
   });
 }

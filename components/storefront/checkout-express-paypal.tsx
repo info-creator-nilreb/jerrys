@@ -176,13 +176,22 @@ export function CheckoutExpressPayPalOnly({
     }
   }, []);
 
-  const createExpressOrder = useCallback(async () => {
+  const selectedShippingCountryRef = useRef<string | null>(null);
+
+  const createExpressOrder = useCallback(async (shippingCountry?: string | null) => {
     setSdkError(null);
     await preparePdpCartIfNeeded();
+    const country =
+      (typeof shippingCountry === "string" && shippingCountry.trim()) ||
+      selectedShippingCountryRef.current ||
+      undefined;
     const res = await fetch("/api/checkout/paypal/express-create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idempotencyKey: ensureIdempotencyKey() }),
+      body: JSON.stringify({
+        idempotencyKey: ensureIdempotencyKey(),
+        shippingCountry: country,
+      }),
     });
     const data = (await res.json().catch(() => ({}))) as {
       ok?: boolean;
@@ -200,6 +209,46 @@ export function CheckoutExpressPayPalOnly({
     lastExpressPaypalOrderIdRef.current = data.paypalOrderId;
     return data.paypalOrderId;
   }, [ensureIdempotencyKey, preparePdpCartIfNeeded, router]);
+
+  const updateExpressShipping = useCallback(async (paypalOrderId: string, shippingCountry: string) => {
+    const res = await fetch("/api/checkout/paypal/express-update-shipping", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paypalOrderId, shippingCountry }),
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      error?: string;
+      totalGrossCents?: number;
+    };
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error ?? "Versand für dieses Land nicht möglich.");
+    }
+    if (typeof data.totalGrossCents === "number") {
+      liveTotalCentsRef.current = data.totalGrossCents;
+      setLiveTotalCents(data.totalGrossCents);
+    }
+  }, []);
+
+  const quoteExpressShipping = useCallback(async (shippingCountry: string) => {
+    const res = await fetch("/api/checkout/paypal/express-shipping-quote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ shippingCountry }),
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      error?: string;
+      totalGrossCents?: number;
+    };
+    if (!res.ok || !data.ok || typeof data.totalGrossCents !== "number") {
+      throw new Error(data.error ?? "Versand für dieses Land nicht möglich.");
+    }
+    liveTotalCentsRef.current = data.totalGrossCents;
+    setLiveTotalCents(data.totalGrossCents);
+    selectedShippingCountryRef.current = shippingCountry.trim().toUpperCase();
+    return data.totalGrossCents;
+  }, []);
 
   const approveExpressOrder = useCallback(
     async (paypalOrderId: string, applePayShippingContact?: unknown) => {
@@ -246,9 +295,13 @@ export function CheckoutExpressPayPalOnly({
   const createExpressOrderRef = useRef(createExpressOrder);
   const approveExpressOrderRef = useRef(approveExpressOrder);
   const cancelExpressOrderRef = useRef(cancelExpressOrder);
+  const updateExpressShippingRef = useRef(updateExpressShipping);
+  const quoteExpressShippingRef = useRef(quoteExpressShipping);
   createExpressOrderRef.current = createExpressOrder;
   approveExpressOrderRef.current = approveExpressOrder;
   cancelExpressOrderRef.current = cancelExpressOrder;
+  updateExpressShippingRef.current = updateExpressShipping;
+  quoteExpressShippingRef.current = quoteExpressShipping;
 
   // SDK nur bei echten Config-Änderungen neu mounten — nicht bei jedem Total-Update
   // (sonst reißt liveTotalCents den Apple-Pay-Flow mitten im Sheet ab).
@@ -280,6 +333,27 @@ export function CheckoutExpressPayPalOnly({
         fundingSource: paypal.FUNDING?.PAYPAL,
         style: { layout: "vertical", color: "gold", shape: "rect", label: "paypal", height: 44 },
         createOrder: () => createExpressOrderRef.current(),
+        onShippingAddressChange: async (data: {
+          orderID?: string;
+          shippingAddress?: { countryCode?: string };
+          errors?: { ADDRESS_ERROR?: string };
+        }) => {
+          const country = data.shippingAddress?.countryCode?.trim().toUpperCase() ?? "";
+          const orderId = data.orderID ?? lastExpressPaypalOrderIdRef.current ?? "";
+          if (!country || !orderId) {
+            throw new Error(data.errors?.ADDRESS_ERROR ?? "Lieferadresse ungültig.");
+          }
+          try {
+            await updateExpressShippingRef.current(orderId, country);
+            selectedShippingCountryRef.current = country;
+          } catch (e) {
+            throw new Error(
+              e instanceof Error
+                ? e.message
+                : (data.errors?.ADDRESS_ERROR ?? "Lieferung an diese Adresse nicht möglich."),
+            );
+          }
+        },
         onApprove: async (data: { orderID?: string }) => {
           const orderId = data.orderID;
           if (!orderId) throw new Error("PayPal Order-ID fehlt.");
@@ -443,14 +517,49 @@ export function CheckoutExpressPayPalOnly({
     };
 
     // Ohne diese Completions schließt Safari das Sheet nach dem kurzen Anzeigen.
+    // Premium-Muster: Versand anhand Lieferland neu quoten und Total im Sheet aktualisieren.
     session.onpaymentmethodselected = () => {
       session.completePaymentMethodSelection(totalUpdate());
     };
-    session.onshippingcontactselected = () => {
-      session.completeShippingContactSelection({
-        ...totalUpdate(),
-        newLineItems: [],
-      });
+    session.onshippingcontactselected = (event: unknown) => {
+      void (async () => {
+        const contact = (event as { shippingContact?: { countryCode?: string } }).shippingContact;
+        const country = contact?.countryCode?.trim().toUpperCase() ?? "";
+        try {
+          if (!country) throw new Error("Lieferland fehlt.");
+          await quoteExpressShippingRef.current(country);
+          session.completeShippingContactSelection({
+            ...totalUpdate(),
+            newLineItems: [],
+          });
+        } catch (e) {
+          console.error(e);
+          const ApplePayErrorCtor = (
+            window as unknown as {
+              ApplePayError?: new (
+                code: string,
+                contactField: string,
+                message: string,
+              ) => unknown;
+            }
+          ).ApplePayError;
+          const errors =
+            ApplePayErrorCtor != null
+              ? [
+                  new ApplePayErrorCtor(
+                    "shippingContactInvalid",
+                    "countryCode",
+                    e instanceof Error ? e.message : "Lieferung in dieses Land nicht möglich.",
+                  ),
+                ]
+              : [];
+          session.completeShippingContactSelection({
+            ...totalUpdate(),
+            newLineItems: [],
+            errors,
+          });
+        }
+      })();
     };
     session.onshippingmethodselected = () => {
       session.completeShippingMethodSelection(totalUpdate());
@@ -459,7 +568,10 @@ export function CheckoutExpressPayPalOnly({
     session.onpaymentauthorized = (event) => {
       void (async () => {
         try {
-          const orderId = await createExpressOrderRef.current();
+          const country =
+            (event.payment.shippingContact as { countryCode?: string } | undefined)?.countryCode ??
+            selectedShippingCountryRef.current;
+          const orderId = await createExpressOrderRef.current(country);
           await applepay.confirmOrder({
             orderId,
             token: event.payment.token,
@@ -528,7 +640,7 @@ export function CheckoutExpressPayPalOnly({
         <Link href="/datenschutz" target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">
           Datenschutzerklärung
         </Link>
-        . PayPal bzw. Apple Pay übermittelt die Lieferadresse; der MVP berechnet Versand für Deutschland.
+        . Versandkosten richten sich nach der Lieferadresse aus PayPal bzw. Apple Pay.
       </p>
     </div>
   );
