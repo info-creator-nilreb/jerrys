@@ -34,7 +34,7 @@ export function HeroBlock({ data }: { data: HeroBlockData; blockId: string }) {
           {data.ctaLabel && data.ctaHref ? (
             <Link
               href={data.ctaHref}
-              className="mt-8 inline-flex rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-(--primary-hover)"
+              className="mt-8 inline-flex w-fit items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-(--primary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-black/40"
             >
               {data.ctaLabel}
             </Link>
