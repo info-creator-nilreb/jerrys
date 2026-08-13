@@ -6,6 +6,10 @@ import {
   saveCategory,
   type CategoryFormState,
 } from "@/app/admin/(dashboard)/categories/actions";
+import {
+  ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING,
+  AdminFormActionDock,
+} from "@/components/admin/admin-form-action-dock";
 
 const initial: CategoryFormState = null;
 
@@ -43,7 +47,7 @@ export function CategoryForm({
   }, [state?.ok, router]);
 
   return (
-    <form action={formAction} className="space-y-8">
+    <form action={formAction} className={`space-y-8 ${ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING}`}>
       {category ? <input type="hidden" name="id" value={category.id} /> : null}
 
       <section className="grid gap-4 sm:grid-cols-2">
@@ -177,20 +181,28 @@ export function CategoryForm({
         {fe.collectionIds ? <p className="mt-2 text-xs text-red-600">{fe.collectionIds}</p> : null}
       </section>
 
-      {state?.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
-      {state?.ok ? (
-        <p className="text-sm font-medium text-primary" role="status">
-          Gespeichert.
-        </p>
-      ) : null}
-
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-(--primary-hover) disabled:opacity-60"
-      >
-        {pending ? "Wird gespeichert…" : submitLabel}
-      </button>
+      <AdminFormActionDock>
+        {state?.ok ? (
+          <p className="mr-auto text-sm font-medium text-primary" role="status">
+            Gespeichert.
+          </p>
+        ) : state?.error ? (
+          <p className="mr-auto text-sm text-red-600" role="alert">
+            {state.error}
+          </p>
+        ) : (
+          <span className="mr-auto hidden text-sm text-[#6b7280] sm:inline">
+            Änderungen speichern, um die Kategorie zu aktualisieren.
+          </span>
+        )}
+        <button
+          type="submit"
+          disabled={pending}
+          className="rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-(--primary-hover) disabled:opacity-60"
+        >
+          {pending ? "Wird gespeichert…" : submitLabel}
+        </button>
+      </AdminFormActionDock>
     </form>
   );
 }

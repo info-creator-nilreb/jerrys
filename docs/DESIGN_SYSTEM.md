@@ -80,7 +80,7 @@ Do not introduce another interactive accent color. The existing navy admin sideb
 - Index pages use searchable, filterable, paginated tables or lists. Preserve filters in the URL when practical.
 - Tables use clear column headers, restrained density, aligned numeric data, row-level actions, and an intentional mobile fallback.
 - Detail pages separate summary, timeline/status, customer, payment, fulfillment, and audit information without duplicating truth.
-- Forms use a readable maximum width, persistent labels, optional help text, inline errors, and a sticky action dock only for long forms.
+- Forms use a readable maximum width, persistent labels, optional help text, inline errors, and a sticky save action dock (`AdminFormActionDock`) as the default for pages with a primary Speichern action. Inline/list actions (toggles, refunds, multi-panel settings) stay in place.
 - Status badges combine wording and semantic styling. Similar-looking badges must not represent incompatible order, payment, fulfillment, or booking states.
 - Destructive, financial, inventory, role, and capacity actions show impact before confirmation and report the resulting authoritative server state.
 - Background jobs and provider calls display `queued`, `processing`, `succeeded`, or `failed` rather than pretending to finish synchronously.

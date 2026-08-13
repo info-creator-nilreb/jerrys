@@ -6,7 +6,10 @@ import {
   type ProductFormState,
 } from "@/app/admin/(dashboard)/products/actions";
 import { ProductFormFields } from "@/app/admin/(dashboard)/products/product-form-fields";
-import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
+import {
+  ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING,
+  AdminFormActionDock,
+} from "@/components/admin/admin-form-action-dock";
 import type { AdminShopAssignmentOption } from "@/lib/catalog/product-shop-assignment";
 
 const initialState: ProductFormState = null;
@@ -24,7 +27,10 @@ export function CreateProductForm({
   const [state, formAction, pending] = useActionState(createProduct, initialState);
 
   return (
-    <form action={formAction} className="flex max-w-4xl flex-col gap-8 pb-28">
+    <form
+      action={formAction}
+      className={`flex max-w-4xl flex-col gap-8 ${ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING}`}
+    >
       <ProductFormFields
         state={state}
         manufacturers={manufacturers}
