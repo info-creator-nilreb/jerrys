@@ -4,7 +4,7 @@ import type { PoolConfig } from "pg";
  * Bei Änderungen an URL- oder SSL-Handling erhöhen, damit der Dev-Pool-Cache in
  * `getPrisma()` verworfen wird (sonst bleibt z. B. eine alte URL mit `sslmode` aktiv).
  */
-export const PG_POOL_CONFIG_VERSION = 4;
+export const PG_POOL_CONFIG_VERSION = 5;
 
 /**
  * App-seitige Pool-Größe für `pg.Pool`.
@@ -119,12 +119,15 @@ export function createPgPoolConfig(connectionString: string): PoolConfig {
   /**
    * Langsamere Netze / DNS; Idle-Verbindungen schnell zurückgeben.
    * `max` bewusst klein halten — siehe {@link resolvePgPoolMax}.
+   * `allowExitOnIdle`: Serverless darf den Event-Loop beenden, wenn der Pool idle ist
+   * (weniger gehaltene Session-Slots unter Vercel-Concurrency).
    */
   return {
     ...base,
     max: resolvePgPoolMax(),
-    idleTimeoutMillis: 10_000,
+    idleTimeoutMillis: 5_000,
     connectionTimeoutMillis: 20_000,
     keepAlive: true,
+    allowExitOnIdle: true,
   };
 }

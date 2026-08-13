@@ -70,7 +70,8 @@ describe("createPgPoolConfig", () => {
     expect((cfg.ssl as { rejectUnauthorized: boolean }).rejectUnauthorized).toBe(false);
     expect(cfg.connectionString).not.toContain("sslmode");
     expect(cfg.max).toBe(resolvePgPoolMax());
-    expect(cfg.idleTimeoutMillis).toBe(10_000);
+    expect(cfg.idleTimeoutMillis).toBe(5_000);
+    expect(cfg.allowExitOnIdle).toBe(true);
 
     if (prevSsl === undefined) {
       delete process.env.DATABASE_SSL_REJECT_UNAUTHORIZED;
