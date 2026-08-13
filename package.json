@@ -27,6 +27,8 @@
     "lighthouse:local": "echo 'Dev-Server starten, dann: npx lighthouse http://127.0.0.1:${PORT:-3001} --only-categories=performance,accessibility,best-practices,seo --view'",
     "lighthouse:ci": "npx --yes @lhci/cli@0.14.0 autorun",
     "load:k6": "k6 run scripts/load/k6-smoke.js",
+    "load:k6:go-live": "k6 run scripts/load/k6-go-live-30vu-stability.js",
+    "security:surface": "bash scripts/security/go-live-surface-check.sh",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:migrate:status": "prisma migrate status",
