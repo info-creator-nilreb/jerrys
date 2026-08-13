@@ -11,8 +11,6 @@ type Defaults = {
   dimensionsText: string;
   weightText: string;
   materialText: string;
-  featureBullets: string;
-  featureBulletsKey?: number;
 };
 
 type Props = {
@@ -27,8 +25,8 @@ export function ProductStorefrontDetailFields({ state, defaults }: Props) {
     <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
       <h2 className="text-base font-semibold text-[#1f2937]">Produktdetail (Shop)</h2>
       <p className="mt-1 text-sm text-[#6b7280]">
-        Felder für die Produktdetailseite: Claim-Zeile, Kurztext, Maße/Material und Verkaufsargumente
-        (USPs). Strukturierte Angaben gehören unter Merkmale.
+        Felder für die Produktdetailseite: Claim-Zeile, Kurztext sowie Maße, Gewicht und Material.
+        Strukturierte Fakten gehören unter Merkmale; Werbe-Claims unter Verkaufsargumente (USPs).
       </p>
       <div className="mt-6 h-px bg-[#e8eaed]" />
       <div className="mt-6 flex flex-col gap-6">
@@ -148,27 +146,6 @@ export function ProductStorefrontDetailFields({ state, defaults }: Props) {
             className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
           />
           {fe.materialText ? <p className="text-sm text-red-600">{fe.materialText}</p> : null}
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label htmlFor="featureBullets" className="text-xs font-medium text-[#6b7280]">
-            Verkaufsargumente / USPs (optional)
-          </label>
-          <textarea
-            key={defaults.featureBulletsKey ?? 0}
-            id="featureBullets"
-            name="featureBullets"
-            rows={4}
-            defaultValue={defaults.featureBullets}
-            placeholder={"Stabil & langlebig\nPflegeleicht abwischbar"}
-            className="resize-y rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
-          />
-          <p className="text-xs text-[#6b7280]">
-            Kurze Werbeaussagen (eine pro Zeile) — erscheinen als USP-Icons auf der Produktdetailseite,
-            nicht als separate Stichpunktliste. Herkunft, Farbe, Material usw. bitte unter{" "}
-            <span className="font-medium">Merkmale</span> pflegen. Maximal 3 USPs werden angezeigt
-            (zzgl. Made in Germany / Theme, falls vorhanden).
-          </p>
         </div>
       </div>
     </section>

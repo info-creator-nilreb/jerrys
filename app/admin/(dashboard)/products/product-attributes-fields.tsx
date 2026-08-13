@@ -64,9 +64,8 @@ export function ProductAttributesFields({ state, defaults }: Props) {
         <div>
           <h2 className="text-base font-semibold text-[#1f2937]">Merkmale</h2>
           <p className="mt-1 text-sm text-[#6b7280]">
-            Strukturierte Produktangaben (Herkunft, Farbe, Größe …) als Label/Wert für die
-            Produktdetails. Kurze Werbeaussagen gehören unter Verkaufsargumente / USPs — nicht hier
-            als Stichpunkte duplizieren.
+            Fakten als Label + Wert für die Produktdetails (z.&nbsp;B. Herkunft → Deutschland, Farbe →
+            beige). Keine Werbe-Claims — die gehören zeilenweise unter Verkaufsargumente (USPs).
           </p>
         </div>
         <button

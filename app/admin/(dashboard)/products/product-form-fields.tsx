@@ -7,6 +7,7 @@ import { ProductGeneralFields } from "@/app/admin/(dashboard)/products/product-g
 import { ProductPricesSection } from "@/app/admin/(dashboard)/products/product-prices-section";
 import { ProductShopAssignmentFields } from "@/app/admin/(dashboard)/products/product-shop-assignment-fields";
 import { ProductStorefrontDetailFields } from "@/app/admin/(dashboard)/products/product-storefront-detail-fields";
+import { ProductUspFields } from "@/app/admin/(dashboard)/products/product-usp-fields";
 import type { AdminShopAssignmentOption } from "@/lib/catalog/product-shop-assignment";
 
 type Mfr = { id: string; name: string };
@@ -49,11 +50,12 @@ export function ProductFormFields({ state, manufacturers, shopAssignment }: Prop
           dimensionsText: "",
           weightText: "",
           materialText: "",
-          featureBullets: "",
         }}
       />
 
       <ProductAttributesFields state={state} defaults={[]} />
+
+      <ProductUspFields state={state} defaults={[]} />
 
       <ProductShopAssignmentFields
         state={state}

@@ -15,6 +15,7 @@ import { ProductPricesSection } from "@/app/admin/(dashboard)/products/product-p
 import { ProductMediaSection } from "@/app/admin/(dashboard)/products/product-media-section";
 import { ProductShopAssignmentFields } from "@/app/admin/(dashboard)/products/product-shop-assignment-fields";
 import { ProductStorefrontDetailFields } from "@/app/admin/(dashboard)/products/product-storefront-detail-fields";
+import { ProductUspFields } from "@/app/admin/(dashboard)/products/product-usp-fields";
 import { ProductVariantsSection } from "@/app/admin/(dashboard)/products/product-variants-section";
 import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
 import type { ProductAttribute } from "@/features/catalog";
@@ -115,7 +116,7 @@ export function EditProductForm({
   const [descriptionKey, setDescriptionKey] = useState(0);
   const [leadText, setLeadText] = useState(product.leadText ?? "");
   const [leadTextKey, setLeadTextKey] = useState(0);
-  const [featureBullets, setFeatureBullets] = useState(product.featureBullets.join("\n"));
+  const [featureBullets, setFeatureBullets] = useState<string[]>(product.featureBullets);
   const [featureBulletsKey, setFeatureBulletsKey] = useState(0);
 
   useEffect(() => {
@@ -158,7 +159,12 @@ export function EditProductForm({
             setLeadTextKey((k) => k + 1);
             return;
           }
-          setFeatureBullets(value);
+          setFeatureBullets(
+            value
+              .split(/\r?\n/)
+              .map((l) => l.trim())
+              .filter(Boolean),
+          );
           setFeatureBulletsKey((k) => k + 1);
         }}
       />
@@ -203,14 +209,18 @@ export function EditProductForm({
             dimensionsText: product.dimensionsText ?? "",
             weightText: product.weightText ?? "",
             materialText: product.materialText ?? "",
-            featureBullets,
-            featureBulletsKey,
           }}
         />
 
         <ProductAttributesFields
           state={state}
           defaults={product.attributes ?? []}
+        />
+
+        <ProductUspFields
+          key={featureBulletsKey}
+          state={state}
+          defaults={featureBullets}
         />
 
         <ProductShopAssignmentFields

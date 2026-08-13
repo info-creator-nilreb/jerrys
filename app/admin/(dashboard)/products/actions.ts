@@ -33,6 +33,13 @@ function formIdList(formData: FormData, key: string): string[] {
     .filter(Boolean);
 }
 
+/** USPs: zeilenweise `featureBullet` (neu) oder Newline-Textarea `featureBullets` (Fallback). */
+function featureBulletsFromFormData(formData: FormData): string {
+  const rows = formIdList(formData, "featureBullet");
+  if (rows.length > 0) return rows.join("\n");
+  return String(formData.get("featureBullets") ?? "");
+}
+
 const log = createLogger("admin.products");
 
 function isUniqueConstraintError(e: unknown): boolean {
@@ -138,7 +145,7 @@ export async function createProduct(
     dimensionsText: String(formData.get("dimensionsText") ?? ""),
     weightText: String(formData.get("weightText") ?? ""),
     materialText: String(formData.get("materialText") ?? ""),
-    featureBullets: String(formData.get("featureBullets") ?? ""),
+    featureBullets: featureBulletsFromFormData(formData),
     attributes: attributesFromFormData(formData),
     isBestseller: formData.get("isBestseller") === "on",
     showWorkshopCalendar: formData.get("showWorkshopCalendar") === "on",
@@ -288,7 +295,7 @@ export async function updateProduct(
     dimensionsText: String(formData.get("dimensionsText") ?? ""),
     weightText: String(formData.get("weightText") ?? ""),
     materialText: String(formData.get("materialText") ?? ""),
-    featureBullets: String(formData.get("featureBullets") ?? ""),
+    featureBullets: featureBulletsFromFormData(formData),
     attributes: attributesFromFormData(formData),
     isBestseller: formData.get("isBestseller") === "on",
     showWorkshopCalendar: formData.get("showWorkshopCalendar") === "on",
