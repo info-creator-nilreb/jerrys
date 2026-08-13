@@ -5,6 +5,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 The shop is developed as a modular monolith and deployed on Vercel.
 
 - [Engineering rules](docs/AGENT.md)
+- [Architecture sketch](docs/ARCHITECTURE_SKETCH.md) (compact)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Platform roadmap and epics](docs/PLATFORM_ROADMAP.md)
 - [Storefront and admin design system](docs/DESIGN_SYSTEM.md)

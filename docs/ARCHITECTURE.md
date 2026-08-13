@@ -1,5 +1,7 @@
 # ARCHITECTURE.md
 
+Kompakte Skizze (Stack, Module, Runtime-Parameter): [ARCHITECTURE_SKETCH.md](./ARCHITECTURE_SKETCH.md).
+
 ## Target Architecture
 Build a **modular monolith** using a single Next.js application.
 
