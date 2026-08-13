@@ -77,6 +77,12 @@ function moneyStringFromGrossCents(cents: number): string {
   return (cents / 100).toFixed(2);
 }
 
+export type PdpExpressLine = {
+  productId: string;
+  productVariantId: string;
+  quantity: number;
+};
+
 type Props = {
   /** Ohne PayPal-Credentials keine Express-Zahlung. */
   payPalConfigured: boolean;
@@ -84,7 +90,14 @@ type Props = {
   currency?: string;
   totalGrossCents?: number;
   /** Legacy-Prop: die Komponente wird heute im Warenkorb genutzt. */
-  variant?: "checkout" | "cart";
+  variant?: "checkout" | "cart" | "pdp";
+  /**
+   * Shopify-ähnlich auf der PDP: vor createOrder Warenkorb auf diese Position setzen
+   * (Buy-now / Dynamic Checkout).
+   */
+  pdpExpress?: PdpExpressLine | null;
+  /** Buttons deaktivieren (z. B. nicht bestellbar). */
+  enabled?: boolean;
 };
 
 export function CheckoutExpressPayPalOnly({
@@ -92,15 +105,25 @@ export function CheckoutExpressPayPalOnly({
   paypalClientId,
   currency = "EUR",
   totalGrossCents = 0,
+  variant = "cart",
+  pdpExpress = null,
+  enabled = true,
 }: Props) {
   const router = useRouter();
   const paypalContainerRef = useRef<HTMLDivElement>(null);
   const paypalButtonsRef = useRef<PayPalButtonsInstance | null>(null);
   const applePaySessionRef = useRef<PayPalApplePaySession | null>(null);
   const idempotencyKeyRef = useRef<string | null>(null);
+  const pdpExpressRef = useRef(pdpExpress);
+  pdpExpressRef.current = pdpExpress;
   const [sdkError, setSdkError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [applePayConfig, setApplePayConfig] = useState<PayPalApplePayConfig | null>(null);
+  const [liveTotalCents, setLiveTotalCents] = useState(totalGrossCents);
+
+  useEffect(() => {
+    setLiveTotalCents(totalGrossCents);
+  }, [totalGrossCents]);
 
   const ensureIdempotencyKey = useCallback((): string | undefined => {
     if (!idempotencyKeyRef.current) {
@@ -110,8 +133,30 @@ export function CheckoutExpressPayPalOnly({
     return idempotencyKeyRef.current ?? undefined;
   }, []);
 
+  const preparePdpCartIfNeeded = useCallback(async () => {
+    const line = pdpExpressRef.current;
+    if (!line) return;
+    const res = await fetch("/api/checkout/paypal/express-prepare-pdp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(line),
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      error?: string;
+      totalGrossCents?: number;
+    };
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error ?? "Express-Warenkorb konnte nicht vorbereitet werden.");
+    }
+    if (typeof data.totalGrossCents === "number") {
+      setLiveTotalCents(data.totalGrossCents);
+    }
+  }, []);
+
   const createExpressOrder = useCallback(async () => {
     setSdkError(null);
+    await preparePdpCartIfNeeded();
     const res = await fetch("/api/checkout/paypal/express-create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -131,7 +176,7 @@ export function CheckoutExpressPayPalOnly({
       throw new Error(data.error ?? "PayPal Express konnte nicht gestartet werden.");
     }
     return data.paypalOrderId;
-  }, [ensureIdempotencyKey, router]);
+  }, [ensureIdempotencyKey, preparePdpCartIfNeeded, router]);
 
   const approveExpressOrder = useCallback(
     async (paypalOrderId: string, applePayShippingContact?: unknown) => {
@@ -161,7 +206,7 @@ export function CheckoutExpressPayPalOnly({
     paypalButtonsRef.current = null;
     if (paypalContainerRef.current) paypalContainerRef.current.innerHTML = "";
 
-    if (!payPalConfigured || !paypalClientId.trim()) return;
+    if (!enabled || !payPalConfigured || !paypalClientId.trim()) return;
 
     const scriptId = `paypal-js-express-checkout-${currency.trim().toUpperCase()}`;
     let cancelled = false;
@@ -206,7 +251,7 @@ export function CheckoutExpressPayPalOnly({
       }
 
       const ApplePaySession = currentApplePaySession();
-      if (typeof paypal.Applepay === "function" && ApplePaySession?.canMakePayments() && totalGrossCents > 0) {
+      if (typeof paypal.Applepay === "function" && ApplePaySession?.canMakePayments() && liveTotalCents > 0) {
         try {
           const applepay = paypal.Applepay();
           const config = await applepay.config();
@@ -241,9 +286,26 @@ export function CheckoutExpressPayPalOnly({
       paypalButtonsRef.current = null;
       if (paypalContainerRef.current) paypalContainerRef.current.innerHTML = "";
     };
-  }, [approveExpressOrder, createExpressOrder, currency, payPalConfigured, paypalClientId, totalGrossCents]);
+  }, [
+    approveExpressOrder,
+    createExpressOrder,
+    currency,
+    enabled,
+    liveTotalCents,
+    payPalConfigured,
+    paypalClientId,
+    pdpExpress?.productVariantId,
+    pdpExpress?.quantity,
+  ]);
 
   if (!payPalConfigured || !paypalClientId.trim()) return null;
+  if (!enabled) {
+    return (
+      <p className="text-xs text-(--foreground-muted)" role="status">
+        Express Checkout ist für diese Auswahl derzeit nicht verfügbar.
+      </p>
+    );
+  }
 
   const startApplePay = async () => {
     const ApplePaySession = currentApplePaySession();
@@ -263,7 +325,7 @@ export function CheckoutExpressPayPalOnly({
         total: {
           label: "jerry's",
           type: "final",
-          amount: moneyStringFromGrossCents(totalGrossCents),
+          amount: moneyStringFromGrossCents(liveTotalCents),
         },
       });
 
@@ -312,8 +374,11 @@ export function CheckoutExpressPayPalOnly({
     }
   };
 
+  const alignClass =
+    variant === "pdp" ? "text-left" : "text-left lg:text-right";
+
   return (
-    <div className="w-full max-w-md space-y-3 text-left lg:text-right" aria-busy={busy}>
+    <div className={`w-full max-w-md space-y-3 ${alignClass}`} aria-busy={busy}>
       {applePayConfig ? (
         <button
           type="button"

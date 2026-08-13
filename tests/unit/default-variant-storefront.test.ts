@@ -48,8 +48,9 @@ describe("default-variant-storefront", () => {
     });
   });
 
-  it("variantOptionLabel nutzt Titel oder SKU", () => {
-    expect(variantOptionLabel({ title: " Rot ", sku: "A" })).toBe("Rot");
-    expect(variantOptionLabel({ title: null, sku: "A" })).toBe("A");
+  it("variantOptionLabel nutzt Bezeichnung, nie die SKU", () => {
+    expect(variantOptionLabel({ title: " Rot ", sku: "A", isDefault: false })).toBe("Rot");
+    expect(variantOptionLabel({ title: null, sku: "je-1001", isDefault: true })).toBe("Standard");
+    expect(variantOptionLabel({ title: null, sku: "je-1002", isDefault: false })).toBe("Variante");
   });
 });

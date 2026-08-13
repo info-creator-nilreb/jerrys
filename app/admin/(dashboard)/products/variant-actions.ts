@@ -206,7 +206,10 @@ export async function updateProductVariant(
     return { error: "Variante nicht gefunden." };
   }
   if (variant.isDefault) {
-    return { error: "Die Standard-Variante wird über das Hauptformular gepflegt." };
+    return {
+      error:
+        "Preis/SKU der Standard-Variante über das Hauptformular. Bezeichnung separat speichern.",
+    };
   }
 
   const net = netCentsFromGross(gross, variant.taxRatePercent);
@@ -230,6 +233,57 @@ export async function updateProductVariant(
     }
     throw e;
   }
+
+  revalidateProductVariantPaths(variant.product);
+  return { ok: true };
+}
+
+const updateDefaultVariantTitleSchema = z.object({
+  variantId: nonEmptyString,
+  title: z
+    .string()
+    .trim()
+    .transform((s) => (s === "" ? null : s.slice(0, 120)))
+    .nullable(),
+});
+
+/** Nur Bezeichnung der Standard-Variante (SKU/Preis bleiben im Hauptformular). */
+export async function updateDefaultVariantTitle(
+  _prev: VariantActionState,
+  formData: FormData,
+): Promise<VariantActionState> {
+  const session = await getAdminSession();
+  if (!session?.user) {
+    return { error: "Nicht angemeldet." };
+  }
+
+  const parsed = updateDefaultVariantTitleSchema.safeParse({
+    variantId: formData.get("variantId"),
+    title: formData.get("title") ?? "",
+  });
+  if (!parsed.success) {
+    return { fieldErrors: fieldErrorsFromZod(parsed.error) };
+  }
+
+  const variant = await getPrisma().productVariant.findUnique({
+    where: { id: parsed.data.variantId },
+    select: {
+      id: true,
+      isDefault: true,
+      product: { select: { id: true, slug: true } },
+    },
+  });
+  if (!variant) {
+    return { error: "Variante nicht gefunden." };
+  }
+  if (!variant.isDefault) {
+    return { error: "Nur für die Standard-Variante." };
+  }
+
+  await getPrisma().productVariant.update({
+    where: { id: variant.id },
+    data: { title: parsed.data.title },
+  });
 
   revalidateProductVariantPaths(variant.product);
   return { ok: true };

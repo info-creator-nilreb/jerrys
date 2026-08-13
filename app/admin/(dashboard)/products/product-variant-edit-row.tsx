@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { Pencil } from "lucide-react";
 import { formatPrice, centsToPriceInputString } from "@/lib/catalog/format";
 import {
+  updateDefaultVariantTitle,
   updateProductVariant,
   type VariantActionState,
 } from "@/app/admin/(dashboard)/products/variant-actions";
@@ -19,26 +20,91 @@ export function ProductVariantEditRow({
   currency: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [state, formAction, pending] = useActionState(updateProductVariant, initial);
+  const [state, formAction, pending] = useActionState(
+    variant.isDefault ? updateDefaultVariantTitle : updateProductVariant,
+    initial,
+  );
   const fe = state?.fieldErrors ?? {};
 
   if (variant.isDefault) {
     return (
-      <tr className="border-b border-[#f3f4f6] text-[#374151]">
-        <td className="py-2.5 pr-4 font-mono text-xs">{variant.sku}</td>
-        <td className="py-2.5 pr-4">{variant.title?.trim() || "—"}</td>
-        <td className="py-2.5 pr-4 tabular-nums">{formatPrice(variant.priceGrossCents, currency)}</td>
-        <td className="py-2.5 pr-4 tabular-nums">{variant.availableQuantity}</td>
-        <td className="py-2.5">
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-            Standard
-          </span>
-          {!variant.isActive ? (
-            <span className="ml-1 text-xs text-[#6b7280]">inaktiv</span>
-          ) : null}
-        </td>
-        <td className="py-2.5 text-xs text-[#6b7280]">Hauptformular</td>
-      </tr>
+      <>
+        <tr className="border-b border-[#f3f4f6] text-[#374151]">
+          <td className="py-2.5 pr-4 font-mono text-xs">{variant.sku}</td>
+          <td className="py-2.5 pr-4">{variant.title?.trim() || "—"}</td>
+          <td className="py-2.5 pr-4 tabular-nums">{formatPrice(variant.priceGrossCents, currency)}</td>
+          <td className="py-2.5 pr-4 tabular-nums">{variant.availableQuantity}</td>
+          <td className="py-2.5">
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+              Standard
+            </span>
+            {!variant.isActive ? (
+              <span className="ml-1 text-xs text-[#6b7280]">inaktiv</span>
+            ) : null}
+          </td>
+          <td className="py-2.5">
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              className="inline-flex items-center gap-1 rounded-md border border-[#e3e4e8] px-2 py-1 text-xs font-medium text-[#374151] hover:bg-[#f9fafb]"
+              aria-expanded={open}
+              aria-controls={`variant-edit-${variant.id}`}
+            >
+              <Pencil className="size-3.5" aria-hidden />
+              {open ? "Schließen" : "Bezeichnung"}
+            </button>
+          </td>
+        </tr>
+        {open ? (
+          <tr className="border-b border-[#f3f4f6] bg-[#f9fafb]">
+            <td colSpan={6} className="px-3 py-4">
+              <form
+                id={`variant-edit-${variant.id}`}
+                action={formAction}
+                className="flex max-w-xl flex-col gap-3"
+              >
+                <input type="hidden" name="variantId" value={variant.id} />
+                <p className="text-xs text-[#6b7280]">
+                  Kunden-sichtbarer Name in der PDP-Auswahl (z.&nbsp;B. „Natur“ oder „beige“). SKU und
+                  Preis bleiben im Hauptformular.
+                </p>
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor={`edit-title-${variant.id}`}
+                    className="text-xs font-medium text-[#6b7280]"
+                  >
+                    Bezeichnung
+                  </label>
+                  <input
+                    id={`edit-title-${variant.id}`}
+                    name="title"
+                    defaultValue={variant.title ?? ""}
+                    placeholder="z. B. Natur / Standardfarbe"
+                    maxLength={120}
+                    className="rounded-md border border-[#e3e4e8] bg-white px-3 py-2 text-sm"
+                  />
+                  {fe.title ? <p className="text-xs text-red-600">{fe.title}</p> : null}
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="submit"
+                    disabled={pending}
+                    className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-(--primary-hover) disabled:opacity-60"
+                  >
+                    {pending ? "Speichern…" : "Bezeichnung speichern"}
+                  </button>
+                  {state?.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+                  {state?.ok ? (
+                    <p className="text-sm font-medium text-primary" role="status">
+                      Gespeichert.
+                    </p>
+                  ) : null}
+                </div>
+              </form>
+            </td>
+          </tr>
+        ) : null}
+      </>
     );
   }
 
@@ -87,7 +153,7 @@ export function ProductVariantEditRow({
                   name="sku"
                   required
                   defaultValue={variant.sku}
-                  className="rounded-md border border-[#e3e4e8] bg-white px-3 py-2 text-sm"
+                  className="rounded-md border border-[#e3e4e8] bg-white px-3 py-2 text-sm font-mono"
                 />
                 {fe.sku ? <p className="text-xs text-red-600">{fe.sku}</p> : null}
               </div>
@@ -96,12 +162,13 @@ export function ProductVariantEditRow({
                   htmlFor={`edit-title-${variant.id}`}
                   className="text-xs font-medium text-[#6b7280]"
                 >
-                  Bezeichnung
+                  Bezeichnung (z. B. Farbe)
                 </label>
                 <input
                   id={`edit-title-${variant.id}`}
                   name="title"
                   defaultValue={variant.title ?? ""}
+                  placeholder="z. B. schwarz"
                   className="rounded-md border border-[#e3e4e8] bg-white px-3 py-2 text-sm"
                 />
               </div>
