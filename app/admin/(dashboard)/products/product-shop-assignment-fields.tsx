@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ProductFormState } from "@/app/admin/(dashboard)/products/actions";
-import type { AdminShopAssignmentOption } from "@/lib/catalog/product-shop-membership";
+import type { AdminShopAssignmentOption } from "@/lib/catalog/product-shop-assignment";
 
 type Props = {
   state: ProductFormState;

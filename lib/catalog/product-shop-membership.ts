@@ -1,5 +1,10 @@
+import "server-only";
+
 import type { Prisma } from "@/app/generated/prisma/client";
+import type { AdminShopAssignmentOption } from "@/lib/catalog/product-shop-assignment";
 import { getPrisma } from "@/lib/db/prisma";
+
+export type { AdminShopAssignmentOption } from "@/lib/catalog/product-shop-assignment";
 
 type Tx = Prisma.TransactionClient;
 
@@ -166,21 +171,6 @@ export async function syncProductShopMemberships(
   }
 }
 
-export type AdminShopAssignmentOption = {
-  categories: Array<{
-    id: string;
-    title: string;
-    slug: string;
-    parentTitle: string | null;
-    primaryCollectionId: string | null;
-  }>;
-  campaignCollections: Array<{
-    id: string;
-    title: string;
-    slug: string;
-  }>;
-};
-
 /** Optionen für die Produktmaske (Kategorien + Merchandising-Kollektionen). */
 export async function listShopAssignmentOptionsForAdmin(): Promise<AdminShopAssignmentOption> {
   const prisma = getPrisma();
@@ -216,19 +206,4 @@ export async function listShopAssignmentOptionsForAdmin(): Promise<AdminShopAssi
     })),
     campaignCollections,
   };
-}
-
-/** Aktuelle Kategorie-/Extra-Auswahl eines Produkts für die Edit-Maske. */
-export function resolveSelectedShopAssignment(input: {
-  membershipCollectionIds: string[];
-  options: AdminShopAssignmentOption;
-}): { categoryIds: string[]; extraCollectionIds: string[] } {
-  const memberSet = new Set(input.membershipCollectionIds);
-  const categoryIds = input.options.categories
-    .filter((c) => c.primaryCollectionId && memberSet.has(c.primaryCollectionId))
-    .map((c) => c.id);
-  const extraCollectionIds = input.options.campaignCollections
-    .filter((c) => memberSet.has(c.id))
-    .map((c) => c.id);
-  return { categoryIds, extraCollectionIds };
 }

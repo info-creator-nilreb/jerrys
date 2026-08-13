@@ -7,7 +7,7 @@ import {
 } from "@/app/admin/(dashboard)/products/actions";
 import { ProductFormFields } from "@/app/admin/(dashboard)/products/product-form-fields";
 import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
-import type { AdminShopAssignmentOption } from "@/lib/catalog/product-shop-membership";
+import type { AdminShopAssignmentOption } from "@/lib/catalog/product-shop-assignment";
 
 const initialState: ProductFormState = null;
 

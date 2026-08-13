@@ -7,7 +7,7 @@ import { ProductGeneralFields } from "@/app/admin/(dashboard)/products/product-g
 import { ProductPricesSection } from "@/app/admin/(dashboard)/products/product-prices-section";
 import { ProductShopAssignmentFields } from "@/app/admin/(dashboard)/products/product-shop-assignment-fields";
 import { ProductStorefrontDetailFields } from "@/app/admin/(dashboard)/products/product-storefront-detail-fields";
-import type { AdminShopAssignmentOption } from "@/lib/catalog/product-shop-membership";
+import type { AdminShopAssignmentOption } from "@/lib/catalog/product-shop-assignment";
 
 type Mfr = { id: string; name: string };
 

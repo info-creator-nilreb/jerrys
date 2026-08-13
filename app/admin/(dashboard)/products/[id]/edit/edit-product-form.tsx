@@ -18,8 +18,10 @@ import { ProductStorefrontDetailFields } from "@/app/admin/(dashboard)/products/
 import { ProductVariantsSection } from "@/app/admin/(dashboard)/products/product-variants-section";
 import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
 import type { ProductAttribute } from "@/features/catalog";
-import type { AdminShopAssignmentOption } from "@/lib/catalog/product-shop-membership";
-import { resolveSelectedShopAssignment } from "@/lib/catalog/product-shop-membership";
+import {
+  resolveSelectedShopAssignment,
+  type AdminShopAssignmentOption,
+} from "@/lib/catalog/product-shop-assignment";
 
 function plainDescriptionToHtml(description: string | null): string {
   if (!description?.trim()) return "";
