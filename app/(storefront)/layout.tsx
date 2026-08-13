@@ -2,6 +2,7 @@ import { CookieConsentBanner } from "@/components/storefront/cookie-consent/cook
 import { SiteFooter } from "@/components/storefront/site-footer";
 import { SiteHeader } from "@/components/storefront/site-header";
 import { SiteJsonLd } from "@/components/storefront/site-json-ld";
+import { infoBannerIsVisible } from "@/lib/shop/info-banner";
 import { getShopSettings } from "@/lib/shop/shop-settings";
 import { storefrontHeaderHeightVarsForNav } from "@/lib/storefront/page-below-header-padding";
 
@@ -14,6 +15,10 @@ export default async function StorefrontLayout({
   const headerHeightVars = storefrontHeaderHeightVarsForNav({
     desktopMode: settings.desktopShopNavMode,
     navPlacement: settings.headerNavPlacement,
+    infoBannerVisible: infoBannerIsVisible({
+      active: settings.infoBannerActive,
+      messages: settings.infoBannerMessages,
+    }),
   });
 
   return (

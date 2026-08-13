@@ -2,6 +2,8 @@
  * Heutige jerry’s-Defaults für ShopSettings (Epic 11 Slice 1 / ADR-0006).
  * Quelle: `app/globals.css`, Storefront-Metadata, Impressum, E-Mail-Layout.
  */
+import type { InfoBannerDurationSec } from "@/lib/shop/info-banner";
+
 export const SHOP_SETTINGS_DEFAULT_ID = "default" as const;
 
 /** Desktop-Darstellung der Shop-Hauptnavigation. */
@@ -57,6 +59,12 @@ export type ShopSettingsDefaults = {
   desktopShopNavMode: DesktopShopNavMode;
   /** Nur bei desktopShopNavMode=inline: Linkzeile links neben oder unter dem Logo. */
   headerNavPlacement: HeaderNavPlacement;
+  infoBannerActive: boolean;
+  infoBannerMessages: string[];
+  infoBannerDurationSec: InfoBannerDurationSec;
+  infoBannerHref: string | null;
+  /** null = Primärfarbe des Shops zur Laufzeit. */
+  infoBannerBgColor: string | null;
   footerShowTagline: boolean;
   footerShowShopNav: boolean;
   footerShowCollections: boolean;
@@ -95,6 +103,11 @@ export const JERRYS_SHOP_SETTINGS_DEFAULTS: ShopSettingsDefaults = {
   showTermineInNav: true,
   desktopShopNavMode: "inline",
   headerNavPlacement: "beside",
+  infoBannerActive: false,
+  infoBannerMessages: [],
+  infoBannerDurationSec: 6,
+  infoBannerHref: null,
+  infoBannerBgColor: null,
   // Footer: schlank by default — Shop-Nav bleibt im Header; Rückgabe oft redundant zu Widerruf.
   footerShowTagline: true,
   footerShowShopNav: false,

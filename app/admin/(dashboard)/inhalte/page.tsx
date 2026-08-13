@@ -29,6 +29,12 @@ export default async function AdminInhaltePage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
+            href="/admin/inhalte/info-banner"
+            className="inline-flex min-h-11 items-center rounded-md border border-[#e3e4e8] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
+          >
+            Info-Banner
+          </Link>
+          <Link
             href="/admin/inhalte/marketing"
             className="inline-flex min-h-11 items-center rounded-md border border-[#e3e4e8] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
           >

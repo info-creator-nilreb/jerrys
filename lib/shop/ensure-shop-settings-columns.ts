@@ -18,6 +18,26 @@ export async function ensureShopSettingsColumns(): Promise<void> {
           ALTER TABLE "shop_settings"
             ADD COLUMN IF NOT EXISTS "header_nav_placement" TEXT NOT NULL DEFAULT 'beside'
         `);
+        await prisma.$executeRawUnsafe(`
+          ALTER TABLE "shop_settings"
+            ADD COLUMN IF NOT EXISTS "info_banner_active" BOOLEAN NOT NULL DEFAULT false
+        `);
+        await prisma.$executeRawUnsafe(`
+          ALTER TABLE "shop_settings"
+            ADD COLUMN IF NOT EXISTS "info_banner_messages" JSONB NOT NULL DEFAULT '[]'
+        `);
+        await prisma.$executeRawUnsafe(`
+          ALTER TABLE "shop_settings"
+            ADD COLUMN IF NOT EXISTS "info_banner_duration_sec" INTEGER NOT NULL DEFAULT 6
+        `);
+        await prisma.$executeRawUnsafe(`
+          ALTER TABLE "shop_settings"
+            ADD COLUMN IF NOT EXISTS "info_banner_href" TEXT
+        `);
+        await prisma.$executeRawUnsafe(`
+          ALTER TABLE "shop_settings"
+            ADD COLUMN IF NOT EXISTS "info_banner_bg_color" TEXT
+        `);
       } catch (e) {
         log.warn("ensure_shop_settings_columns_failed", errorMeta(e));
         ensurePromise = null;

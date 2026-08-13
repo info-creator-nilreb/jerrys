@@ -7,6 +7,7 @@ import {
   StorefrontHeaderUiProvider,
   useStorefrontHeaderUi,
 } from "@/components/storefront/storefront-header-ui";
+import { SiteInfoBanner } from "@/components/storefront/site-info-banner";
 import {
   StorefrontShopNav,
   StorefrontShopNavInlineLinks,
@@ -28,6 +29,7 @@ function SiteHeaderChrome({
   shopNavLinks,
   desktopMode,
   navPlacement,
+  infoBanner,
   trailing,
 }: {
   shopName: string;
@@ -36,6 +38,12 @@ function SiteHeaderChrome({
   shopNavLinks: StorefrontShopNavLink[];
   desktopMode: DesktopShopNavMode;
   navPlacement: HeaderNavPlacement;
+  infoBanner: {
+    messages: string[];
+    durationSec: number;
+    href: string | null;
+    bgColor: string;
+  } | null;
   trailing: ReactNode;
 }) {
   const { tone, setHovered } = useStorefrontHeaderUi();
@@ -47,6 +55,7 @@ function SiteHeaderChrome({
   const heightVars = storefrontHeaderHeightVarsForNav({
     desktopMode,
     navPlacement,
+    infoBannerVisible: infoBanner != null,
   });
 
   const logo = (
@@ -76,8 +85,17 @@ function SiteHeaderChrome({
       onMouseLeave={() => setHovered(false)}
       data-header-tone={tone}
       data-nav-placement={navUnderLogo ? "under" : "beside"}
+      data-info-banner={infoBanner ? "on" : "off"}
     >
       <div className="flex w-full flex-col">
+        {infoBanner ? (
+          <SiteInfoBanner
+            messages={infoBanner.messages}
+            durationSec={infoBanner.durationSec}
+            href={infoBanner.href}
+            bgColor={infoBanner.bgColor}
+          />
+        ) : null}
         <div className="flex w-full items-center gap-2 px-4 py-3 md:gap-3 md:px-6 md:py-3.5 lg:px-8 xl:px-10">
           <div className="flex min-w-0 flex-1 items-center">
             <StorefrontShopNav links={shopNavLinks} desktopMode={leftNavMode} />
@@ -104,6 +122,7 @@ export function SiteHeaderShell({
   shopNavLinks,
   desktopMode,
   navPlacement = "beside",
+  infoBanner = null,
   trailing,
 }: {
   shopName: string;
@@ -112,6 +131,12 @@ export function SiteHeaderShell({
   shopNavLinks: StorefrontShopNavLink[];
   desktopMode: DesktopShopNavMode;
   navPlacement?: HeaderNavPlacement;
+  infoBanner?: {
+    messages: string[];
+    durationSec: number;
+    href: string | null;
+    bgColor: string;
+  } | null;
   trailing: ReactNode;
 }) {
   return (
@@ -123,6 +148,7 @@ export function SiteHeaderShell({
         shopNavLinks={shopNavLinks}
         desktopMode={desktopMode}
         navPlacement={navPlacement}
+        infoBanner={infoBanner}
         trailing={trailing}
       />
     </StorefrontHeaderUiProvider>
