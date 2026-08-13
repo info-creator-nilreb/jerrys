@@ -15,8 +15,9 @@ export async function CuratedProductListBlock({
   let products: Awaited<ReturnType<typeof listActiveProductsForStorefront>> = [];
   try {
     if (data.source === "allActive") {
-      const all = await listActiveProductsForStorefront();
-      products = all.slice(0, Math.max(1, data.limit));
+      products = await listActiveProductsForStorefront({
+        take: Math.max(1, data.limit),
+      });
     } else {
       products = await listActiveProductsByIdsForStorefront(
         data.productIds,

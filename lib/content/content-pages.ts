@@ -1,6 +1,9 @@
 import type { ContentPageStatus, ContentPageType, Prisma } from "@/app/generated/prisma/client";
+import { unstable_cache } from "next/cache";
+import { cache } from "react";
 import { getPrisma } from "@/lib/db/prisma";
 import { isMissingSchemaError } from "@/lib/db/prisma-error";
+import { CONTENT_PAGES_CACHE_TAG } from "@/lib/content/content-pages-cache-tag";
 import {
   CONTENT_PAGE_HOME_SLUG,
   normalizeContentSlug,
@@ -164,10 +167,52 @@ export async function getContentPageById(
   }
 }
 
-/** Startseiten-CMS-Zeile falls vorhanden (Slug `home`). */
-export async function getHomepageContentPage(): Promise<ContentPageDTO | null> {
-  return getContentPageBySlug(CONTENT_PAGE_HOME_SLUG);
+type ContentPageCached = Omit<ContentPageDTO, "publishedAt" | "updatedAt" | "blocks"> & {
+  publishedAt: string | null;
+  updatedAt: string;
+  blocks: Array<Omit<ContentBlockDTO, "updatedAt"> & { updatedAt: string }>;
+};
+
+function serializeContentPage(page: ContentPageDTO): ContentPageCached {
+  return {
+    ...page,
+    publishedAt: page.publishedAt ? page.publishedAt.toISOString() : null,
+    updatedAt: page.updatedAt.toISOString(),
+    blocks: page.blocks.map((b) => ({
+      ...b,
+      updatedAt: b.updatedAt.toISOString(),
+    })),
+  };
 }
+
+function reviveContentPage(page: ContentPageCached): ContentPageDTO {
+  return {
+    ...page,
+    publishedAt: page.publishedAt ? new Date(page.publishedAt) : null,
+    updatedAt: new Date(page.updatedAt),
+    blocks: page.blocks.map((b) => ({
+      ...b,
+      updatedAt: new Date(b.updatedAt),
+    })),
+  };
+}
+
+const getCachedHomepageContentPage = unstable_cache(
+  async (): Promise<ContentPageCached | null> => {
+    const page = await getContentPageBySlug(CONTENT_PAGE_HOME_SLUG);
+    return page ? serializeContentPage(page) : null;
+  },
+  ["content-page-home"],
+  { tags: [CONTENT_PAGES_CACHE_TAG], revalidate: 60 },
+);
+
+/** Startseiten-CMS-Zeile falls vorhanden (Slug `home`). Request-dedupliziert + kurz gecacht. */
+export const getHomepageContentPage = cache(
+  async (): Promise<ContentPageDTO | null> => {
+    const cached = await getCachedHomepageContentPage();
+    return cached ? reviveContentPage(cached) : null;
+  },
+);
 
 export async function listContentPages(options?: {
   status?: ContentPageStatus;

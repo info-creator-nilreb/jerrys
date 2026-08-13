@@ -30,29 +30,23 @@ export async function SiteFooter() {
   };
   let shopLinks = buildStorefrontShopNavLinks([], navOptions);
   let merchandisingLinks: ReturnType<typeof resolveFooterMerchandisingLinks> = [];
+  /** Nur published CMS-Content-Seiten — Drafts nie (Epic 12 Slice 4). */
+  let cmsContentLinks: Array<{ href: string; label: string }> = [];
   try {
-    const categories = await listActiveCategoriesForNav();
+    const [categories, collections, cmsLinks] = await Promise.all([
+      listActiveCategoriesForNav(),
+      listActiveCollectionsForStorefront(),
+      listPublishedContentNavLinks(),
+    ]);
     shopLinks = buildStorefrontShopNavLinks(
       categories.map((c) => ({ slug: c.slug, title: c.title })),
       navOptions,
     );
-  } catch (e) {
-    if (!isDatabaseUnreachable(e)) throw e;
-  }
-  try {
-    const collections = await listActiveCollectionsForStorefront();
     merchandisingLinks = resolveFooterMerchandisingLinks(
       shopLinks,
       collections.filter((c) => c._count.products > 0).map((c) => ({ slug: c.slug, title: c.title })),
     );
-  } catch (e) {
-    if (!isDatabaseUnreachable(e)) throw e;
-  }
-
-  /** Nur published CMS-Content-Seiten — Drafts nie (Epic 12 Slice 4). */
-  let cmsContentLinks: Array<{ href: string; label: string }> = [];
-  try {
-    cmsContentLinks = await listPublishedContentNavLinks();
+    cmsContentLinks = cmsLinks;
   } catch (e) {
     if (!isDatabaseUnreachable(e)) throw e;
   }

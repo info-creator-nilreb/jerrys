@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getAdminSession } from "@/lib/auth/admin-session";
+import { updateStorefrontCatalogCacheTag } from "@/lib/catalog/storefront-catalog-cache";
 import {
   attributesFromFormData,
   reconcileAttributesAndFeatureBullets,
@@ -250,6 +251,7 @@ export async function createProduct(
     throw e;
   }
 
+  updateStorefrontCatalogCacheTag();
   revalidatePath("/");
   revalidatePath("/produkte");
   revalidatePath("/kategorien");
@@ -400,6 +402,7 @@ export async function updateProduct(
   }
 
   revalidatePath("/");
+  updateStorefrontCatalogCacheTag();
   revalidatePath("/produkte");
   revalidatePath(`/produkte/${d.slug}`);
   if (previousSlug !== d.slug) {
@@ -463,6 +466,7 @@ export async function addProductImage(
   });
 
   revalidatePath("/");
+  updateStorefrontCatalogCacheTag();
   revalidatePath("/produkte");
   revalidatePath(`/produkte/${product.slug}`);
   revalidatePath(`/admin/products/${product.id}/edit`);
@@ -514,6 +518,7 @@ async function deleteProductImageById(imageId: string): Promise<ProductFormState
   }
 
   revalidatePath("/");
+  updateStorefrontCatalogCacheTag();
   revalidatePath("/produkte");
   revalidatePath(`/produkte/${image.product.slug}`);
   revalidatePath(`/admin/products/${image.product.id}/edit`);
@@ -541,6 +546,7 @@ async function setProductCoverImageById(imageId: string): Promise<ProductFormSta
   ]);
 
   revalidatePath("/");
+  updateStorefrontCatalogCacheTag();
   revalidatePath("/produkte");
   revalidatePath(`/produkte/${image.product.slug}`);
   revalidatePath(`/admin/products/${image.product.id}/edit`);
@@ -665,6 +671,7 @@ export async function uploadProductImages(
   }
 
   revalidatePath("/");
+  updateStorefrontCatalogCacheTag();
   revalidatePath("/produkte");
   revalidatePath(`/produkte/${product.slug}`);
   revalidatePath(`/admin/products/${productId}/edit`);

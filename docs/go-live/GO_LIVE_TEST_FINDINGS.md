@@ -177,10 +177,16 @@ npx lighthouse https://ecom-seven-livid.vercel.app/ \
 
 ## 5. Nächste Schritte (kurz)
 
-1. **Sofort:** Seed-Admin-Passwort ändern/löschen (`admin@example.com` / `change-me-now`).  
-2. **`/admin/orders` 500** beheben.  
-3. Performance/Last der Startseite + Katalog beheben, dann k6 erneut.  
-4. PayPal-Webhook auf dieser/Prod-Umgebung konfigurieren.  
-5. Für Agent-Nachtests: Secrets `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` (und optional Customer) in der **Cursor Cloud Environment** hinterlegen — nicht nur in Vercel.  
+### Umgesetzt im Branch (Code + DB)
+
+1. **Seed-Admin:** `admin@example.com` in der Preview-DB **deaktiviert**; Auth lehnt `change-me-now` in `NODE_ENV=production` ab; Seed schreibt Default-Passwort nicht mehr in Prod-like Envs.  
+2. **`/admin/orders` 500:** Ursache war Server-Import von `formatOrderCreatedAt` aus `"use client"` — Formatter nach `lib/orders/format-order-created-at.ts` verschoben.  
+3. **Performance:** `unstable_cache` (60 s + Tags) für Homepage-CMS, Produkt-/Kategorie-/Kollektionslisten; `Promise.all` in Header/Footer/`/produkte`; Bild-`take: 5`; Curated-List mit DB-`take`.  
+4. **PayPal-Webhook:** weiterhin **Operator-Schritt** — in Vercel `PAYPAL_WEBHOOK_ID` setzen und Webhook-URL auf `/api/webhooks/paypal` (siehe `.env.example`).
+
+### Offen
+
+5. Nach Deploy: k6 + Lighthouse erneut gegen Preview.  
 6. Workshop-Rate-Limit + shared Rate-Limit für öffentliche APIs.  
-7. Kanonische Site-URL in `llms.txt` / Sitemap korrigieren.
+7. Kanonische Site-URL in `llms.txt` / Sitemap.  
+8. Kundenportal-Nachtest mit `E2E_CUSTOMER_*` (Secrets in Cursor Environment, neuer Agent-Lauf).

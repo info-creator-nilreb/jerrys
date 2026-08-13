@@ -76,24 +76,40 @@ async function seedDefaultVariantForProduct(
 async function main() {
   const prisma = getPrisma();
   const email = process.env.ADMIN_SEED_EMAIL ?? "admin@example.com";
-  const password = process.env.ADMIN_SEED_PASSWORD ?? "change-me-now";
-
-  const passwordHash = await hash(password, 12);
+  const defaultPassword = "change-me-now";
+  const password = process.env.ADMIN_SEED_PASSWORD ?? defaultPassword;
+  const isProdLike =
+    process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
 
   try {
-    await prisma.adminUser.upsert({
-      where: { email },
-      create: {
-        email,
-        passwordHash,
-        role: "admin",
-        isActive: true,
-      },
-      update: {
-        passwordHash,
-        isActive: true,
-      },
-    });
+    if (isProdLike && password === defaultPassword) {
+      // Nie Seed-Default in Prod/Preview schreiben; bekannten Seed-User deaktivieren.
+      const deactivated = await prisma.adminUser.updateMany({
+        where: { email: "admin@example.com", isActive: true },
+        data: { isActive: false },
+      });
+      console.warn(
+        `Skipped admin seed with default password in production-like env` +
+          (deactivated.count
+            ? ` (deactivated ${deactivated.count} admin@example.com)`
+            : ""),
+      );
+    } else {
+      const passwordHash = await hash(password, 12);
+      await prisma.adminUser.upsert({
+        where: { email },
+        create: {
+          email,
+          passwordHash,
+          role: "admin",
+          isActive: true,
+        },
+        update: {
+          passwordHash,
+          isActive: true,
+        },
+      });
+    }
 
     await prisma.manufacturer.upsert({
       where: { id: "seed_mfr_jerrys" },
@@ -576,7 +592,11 @@ async function main() {
     await prisma.$disconnect();
   }
 
-  console.log(`Seeded admin user: ${email} (override with ADMIN_SEED_EMAIL / ADMIN_SEED_PASSWORD)`);
+  if (!(isProdLike && password === defaultPassword)) {
+    console.log(
+      `Seeded admin user: ${email} (override with ADMIN_SEED_EMAIL / ADMIN_SEED_PASSWORD)`,
+    );
+  }
 }
 
 main().catch((e) => {

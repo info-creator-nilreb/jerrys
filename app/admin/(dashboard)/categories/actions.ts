@@ -6,6 +6,7 @@ import { z } from "zod";
 import { getAdminSession } from "@/lib/auth/admin-session";
 import { replaceCategoryCollectionMemberships } from "@/lib/catalog/category-membership";
 import { categoryUpsertSchema } from "@/lib/catalog/category-schemas";
+import { updateStorefrontCatalogCacheTag } from "@/lib/catalog/storefront-catalog-cache";
 import { getPrisma } from "@/lib/db/prisma";
 
 export type CategoryFormState = {
@@ -33,6 +34,7 @@ function isUniqueConstraintError(e: unknown): boolean {
 }
 
 function revalidateCategoryPaths(slug: string) {
+  updateStorefrontCatalogCacheTag();
   revalidatePath("/admin/categories");
   revalidatePath(`/kategorien/${slug}`);
   revalidatePath("/kategorien");
