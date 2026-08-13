@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { CheckoutExpressPayPalOnly } from "@/components/storefront/checkout-express-paypal";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
-import { CartLineTableRow } from "@/components/storefront/cart-line-table-row";
+import {
+  CartLineMobileCard,
+  CartLineTableRow,
+} from "@/components/storefront/cart-line-table-row";
 import { PriceEUR } from "@/components/storefront/price-eur";
 import { updateCartCustomerNote } from "@/lib/cart/actions";
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
@@ -80,7 +83,15 @@ export default async function WarenkorbPage({
         </p>
       ) : (
         <>
-          <div className="mt-10 overflow-x-auto">
+          {/* Mobil: Kartenliste mit sichtbarer Menge */}
+          <ul className="mt-10 md:hidden">
+            {lines.map((line) => (
+              <CartLineMobileCard key={line.id} line={line} />
+            ))}
+          </ul>
+
+          {/* Desktop: Tabelle */}
+          <div className="mt-10 hidden overflow-x-auto md:block">
             <table className="w-full min-w-[52rem] table-fixed border-collapse text-left text-sm">
               <colgroup>
                 <col className="min-w-0" />
