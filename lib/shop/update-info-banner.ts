@@ -1,5 +1,7 @@
 import { getPrisma } from "@/lib/db/prisma";
+import { isMissingSchemaError } from "@/lib/db/prisma-error";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
+import { ensureShopSettingsColumns } from "@/lib/shop/ensure-shop-settings-columns";
 import {
   INFO_BANNER_MAX_MESSAGES,
   INFO_BANNER_MESSAGE_MAX_LEN,
@@ -92,6 +94,7 @@ export async function updateInfoBannerFromFormData(
   const d = JERRYS_SHOP_SETTINGS_DEFAULTS;
 
   try {
+    await ensureShopSettingsColumns();
     const prisma = getPrisma();
     await prisma.shopSettings.upsert({
       where: { id: SHOP_SETTINGS_DEFAULT_ID },
@@ -121,6 +124,13 @@ export async function updateInfoBannerFromFormData(
     return { ok: true, settings: await getShopSettings() };
   } catch (e) {
     log.error("info_banner_update_failed", errorMeta(e));
+    if (isMissingSchemaError(e)) {
+      return {
+        ok: false,
+        error:
+          "Datenbank-Schema ist nicht aktuell. Bitte Migration deployen: npm run db:migrate:deploy",
+      };
+    }
     return { ok: false, error: "Info-Banner konnte nicht gespeichert werden." };
   }
 }

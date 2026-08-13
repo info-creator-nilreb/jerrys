@@ -4,6 +4,7 @@ import { unstable_cache } from "next/cache";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 import { getPrisma } from "@/lib/db/prisma";
 import { isMissingSchemaError, isUniqueViolationError } from "@/lib/db/prisma-error";
+import { ensureShopSettingsColumns } from "@/lib/shop/ensure-shop-settings-columns";
 import { SHOP_SETTINGS_CACHE_TAG } from "@/lib/shop/shop-settings-cache-tag";
 import {
   parseInfoBannerDurationSec,
@@ -153,6 +154,7 @@ const createDefaults = () => ({
 });
 
 async function loadShopSettingsFromDb(): Promise<ShopSettingsCached> {
+  await ensureShopSettingsColumns();
   const prisma = getPrisma();
   let row = await prisma.shopSettings.findUnique({
     where: { id: SHOP_SETTINGS_DEFAULT_ID },
