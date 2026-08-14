@@ -4,6 +4,7 @@ import {
   orderAddressText,
   orderAddressesTwoColumnHtml,
   orderBillingAddressHtml,
+  orderShippingAddressAndTrackingHtml,
   orderShippingAddressHtml,
   shippingAddressFromOrder,
   type OrderAddressSource,
@@ -67,5 +68,19 @@ describe("order address fragments", () => {
     expect(html).toContain("Musterstraße 12");
     expect(html).toContain("Rechnungsweg 3");
     expect(html).toContain('href="mailto:kunde@example.com"');
+  });
+
+  it("zeigt Tracking-Link mit kurzem Anzeigenamen statt voller URL", () => {
+    const trackUrl = "https://nolp.dhl.de/nextt-online-public/setShipmentOverview?lang=de&piececode=1234567890";
+    const html = orderShippingAddressAndTrackingHtml(sampleOrder, {
+      carrierLine: "DHL · 1234567890",
+      trackUrl,
+      primaryColor: "#8bbe25",
+    });
+
+    expect(html).toContain("Versand &amp; Tracking");
+    expect(html).toContain('href="https://nolp.dhl.de/nextt-online-public/setShipmentOverview?lang=de&amp;piececode=1234567890"');
+    expect(html).toContain("Sendung verfolgen");
+    expect(html).not.toContain("piececode=1234567890</a>");
   });
 });

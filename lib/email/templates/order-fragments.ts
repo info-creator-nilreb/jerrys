@@ -163,7 +163,8 @@ function orderShippingTrackingColumnHtml(input: {
     body += `<p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:${bodyColor}">${escapeHtmlForEmail(input.carrierLine.trim())}</p>`;
   }
   if (input.trackUrl?.trim()) {
-    body += `<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55"><a href="${escapeHtmlForEmail(input.trackUrl.trim())}" style="color:${escapeHtmlForEmail(input.primaryColor)};font-weight:600;text-decoration:none">${escapeHtmlForEmail(input.trackUrl.trim())}</a></p>`;
+    const url = escapeHtmlForEmail(input.trackUrl.trim());
+    body += `<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55"><a href="${url}" style="color:${escapeHtmlForEmail(input.primaryColor)};font-weight:600;text-decoration:none">Sendung verfolgen</a></p>`;
   }
   if (!body) {
     body = `<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:${bodyColor}">—</p>`;
