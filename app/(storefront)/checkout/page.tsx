@@ -121,6 +121,7 @@ export default async function CheckoutPage({
         </div>
       ) : null}
       </div>
+      <div className={paypalCancelled || paypalError ? "mt-5" : undefined}>
       <CheckoutForm
           idempotencyKey={idempotencyKey}
           lines={summaryLines}
@@ -138,6 +139,7 @@ export default async function CheckoutPage({
           canSaveAddressToAccount={Boolean(verifiedCustomerId)}
           showContactLogin={!session}
         />
+      </div>
     </div>
   );
 }

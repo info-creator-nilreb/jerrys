@@ -29,9 +29,12 @@ describe("checkout form column width", () => {
     expect(summary).toContain("CHECKOUT_SUMMARY_PANEL_CLASS");
     expect(summary).toContain("CHECKOUT_SUMMARY_CONTENT_CLASS");
     expect(CHECKOUT_SUMMARY_PANEL_CLASS).toContain("surface-subtle");
-    expect(CHECKOUT_SUMMARY_CONTENT_CLASS).toContain("max-w-sm");
+    expect(CHECKOUT_SUMMARY_CONTENT_CLASS).toContain("max-w-[12rem]");
 
     expect(form).toContain("justify-center");
     expect(form).toContain("text-center");
+
+    const page = readFileSync(path.resolve("app/(storefront)/checkout/page.tsx"), "utf8");
+    expect(page).toContain('paypalCancelled || paypalError ? "mt-5"');
   });
 });
