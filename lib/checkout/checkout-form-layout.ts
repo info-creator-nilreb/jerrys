@@ -8,5 +8,5 @@ export const CHECKOUT_FORM_COLUMN_CLASS = "w-full max-w-xl";
 export const CHECKOUT_SUMMARY_PANEL_CLASS =
   "bg-(--surface-subtle) lg:min-h-[calc(100dvh-5.5rem)]";
 
-/** Inhalt in der Summary-Spalte: schmaler als die graue Fläche (~⅓ der Formularspalte). */
-export const CHECKOUT_SUMMARY_CONTENT_CLASS = "w-full max-w-[16rem] lg:max-w-[12rem]";
+/** Inhalt in der Summary-Spalte: halbe Breite der grauen Fläche. */
+export const CHECKOUT_SUMMARY_CONTENT_CLASS = "w-1/2 min-w-0";
