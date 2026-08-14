@@ -4,6 +4,11 @@ import { CHECKOUT_FIELD_SHELL } from "@/lib/checkout/checkout-field-shell";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+/** Parent-Checkout löst denselben Card-Fields-Submit aus wie der interne Bestellbutton. */
+export type PayPalCardFieldsSubmitRef = {
+  current: (() => Promise<void>) | null;
+};
+
 type FieldControl = { render: (el: HTMLElement) => Promise<void>; close?: () => void };
 
 type CardFieldsInstance = {
@@ -110,12 +115,24 @@ export function PayPalCardFieldsCheckout({
   paypalClientId,
   currency,
   onEligibleChange,
+  onBusyChange,
+  hidePayButton = false,
+  submitRef,
+  nested = false,
+  className,
 }: {
   formId: string;
   paypalClientId: string;
   currency: string;
   /** `true` nur bei nutzbaren Card Fields (klassischer Form-Submit wird dann ausgeblendet). */
   onEligibleChange?: (eligible: boolean) => void;
+  onBusyChange?: (busy: boolean) => void;
+  /** true = Bestellbutton bleibt im Checkout-Formular (nach AGB), nicht in diesem Block. */
+  hidePayButton?: boolean;
+  submitRef?: PayPalCardFieldsSubmitRef;
+  /** Unter der Karten-Option in der Zahlungsliste (Rahmen/Innenabstand). */
+  nested?: boolean;
+  className?: string;
 }) {
   const router = useRouter();
   const nameRef = useRef<HTMLDivElement>(null);
@@ -129,6 +146,14 @@ export function PayPalCardFieldsCheckout({
   const [sdkError, setSdkError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [eligibility, setEligibility] = useState<Eligibility>("loading");
+
+  const setBusyState = useCallback(
+    (next: boolean) => {
+      setBusy(next);
+      onBusyChange?.(next);
+    },
+    [onBusyChange],
+  );
 
   const notifyEligible = useCallback(
     (eligible: boolean) => {
@@ -320,7 +345,7 @@ export function PayPalCardFieldsCheckout({
     const cf = cardFieldsRef.current;
     if (!cf) return;
 
-    setBusy(true);
+    setBusyState(true);
     setSdkError(null);
     try {
       const state = await cf.getState();
@@ -332,9 +357,24 @@ export function PayPalCardFieldsCheckout({
     } catch (e) {
       setSdkError(e instanceof Error ? e.message : "Zahlung fehlgeschlagen.");
     } finally {
-      setBusy(false);
+      setBusyState(false);
     }
   };
+
+  const handlePayRef = useRef(handlePay);
+  handlePayRef.current = handlePay;
+
+  useEffect(() => {
+    if (!submitRef) return;
+    submitRef.current = () => handlePayRef.current();
+    return () => {
+      submitRef.current = null;
+    };
+  }, [submitRef]);
+
+  useEffect(() => {
+    return () => onBusyChange?.(false);
+  }, [onBusyChange]);
 
   if (!paypalClientId.trim()) {
     return null;
@@ -345,9 +385,16 @@ export function PayPalCardFieldsCheckout({
   }
 
   const showSkeleton = eligibility === "loading";
+  const layoutClass = [
+    nested ? "border-t border-[#e5e7eb] px-3 py-3" : "mt-4 max-w-lg",
+    "space-y-4",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <div className="mt-4 max-w-lg space-y-4" aria-busy={showSkeleton}>
+    <div id="checkout-card-fields" className={layoutClass} aria-busy={showSkeleton}>
       {showSkeleton ? (
         <span className="sr-only">Kartenfelder werden geladen.</span>
       ) : null}
@@ -392,15 +439,17 @@ export function PayPalCardFieldsCheckout({
         Google Pay, SEPA) können angezeigt werden, wenn Ihr Konto und das Gerät das unterstützen.
       </p>
 
-      <button
-        type="button"
-        disabled={busy || eligibility !== "eligible"}
-        aria-busy={busy}
-        onClick={() => void handlePay()}
-        className="w-full rounded-md bg-primary py-3.5 text-sm font-semibold uppercase tracking-wide text-white shadow-sm transition-colors hover:bg-(--primary-hover) disabled:opacity-50"
-      >
-        {busy ? "Wird verarbeitet…" : "Jetzt kostenpflichtig bestellen"}
-      </button>
+      {hidePayButton ? null : (
+        <button
+          type="button"
+          disabled={busy || eligibility !== "eligible"}
+          aria-busy={busy}
+          onClick={() => void handlePay()}
+          className="w-full rounded-md bg-primary py-3.5 text-sm font-semibold uppercase tracking-wide text-white shadow-sm transition-colors hover:bg-(--primary-hover) disabled:opacity-50"
+        >
+          {busy ? "Wird verarbeitet…" : "Jetzt kostenpflichtig bestellen"}
+        </button>
+      )}
     </div>
   );
 }

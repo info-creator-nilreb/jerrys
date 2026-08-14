@@ -29,7 +29,10 @@ import {
   CheckoutPaymentMethods,
   type CheckoutPayPalMethodId,
 } from "@/components/storefront/checkout-payment-methods";
-import { PayPalCardFieldsCheckout } from "@/components/storefront/paypal-card-fields-checkout";
+import {
+  PayPalCardFieldsCheckout,
+  type PayPalCardFieldsSubmitRef,
+} from "@/components/storefront/paypal-card-fields-checkout";
 import { SmartAddressFields } from "@/components/storefront/smart-address-fields";
 import { CheckoutDeliveryMethodToggle } from "@/components/storefront/checkout-delivery-method-toggle";
 import { computeCheckoutOrderTotalsWithDiscount } from "@/lib/promotions/checkout-totals";
@@ -221,8 +224,10 @@ export function CheckoutForm({
     addressPrefill?.billingUseShipping === "no",
   );
   const [liveErrors, setLiveErrors] = useState<Record<string, string>>({});
-  /** Wenn PayPal Advanced Card Fields aktiv sind, ersetzen sie den klassischen Form-Submit. */
+  /** Wenn PayPal Advanced Card Fields aktiv sind, löst der Bestellbutton deren Submit aus. */
   const [payPalCardFieldsPrimary, setPayPalCardFieldsPrimary] = useState(false);
+  const [cardPayBusy, setCardPayBusy] = useState(false);
+  const cardFieldsSubmitRef = useRef<PayPalCardFieldsSubmitRef["current"]>(null);
   /** Nur bei „Debit- oder Kreditkarte“ werden die Hosted Card Fields gemountet. */
   const [payPalSurface, setPayPalSurface] = useState<CheckoutPayPalMethodId>("paypal");
   const [shippingCountry, setShippingCountry] = useState(prefillCountry);
@@ -386,7 +391,10 @@ export function CheckoutForm({
 
   const onPayPalSurfaceChange = (id: CheckoutPayPalMethodId) => {
     setPayPalSurface(id);
-    if (id !== "card") setPayPalCardFieldsPrimary(false);
+    if (id !== "card") {
+      setPayPalCardFieldsPrimary(false);
+      setCardPayBusy(false);
+    }
   };
 
   useEffect(() => {
@@ -530,6 +538,8 @@ export function CheckoutForm({
   };
 
   const workshopMpa = Boolean(workshopBookingId);
+  const useCardPayButton =
+    payPalConfigured && !workshopMpa && payPalSurface === "card" && payPalCardFieldsPrimary;
 
   const clearLive = (key: string) => {
     setLiveErrors((prev) => {
@@ -1029,6 +1039,20 @@ export function CheckoutForm({
                   : undefined
               }
               cardInline={!workshopMpa}
+              cardFields={
+                payPalConfigured && !workshopMpa ? (
+                  <PayPalCardFieldsCheckout
+                    formId={STOREFRONT_CHECKOUT_FORM_ID}
+                    paypalClientId={payPalClientId}
+                    currency={currency}
+                    hidePayButton
+                    nested
+                    submitRef={cardFieldsSubmitRef}
+                    onEligibleChange={setPayPalCardFieldsPrimary}
+                    onBusyChange={setCardPayBusy}
+                  />
+                ) : null
+              }
             />
           ) : workshopMpa && displayTotals.totalCents === 0 ? (
             <p className="mt-2 text-sm text-[#6b7280]">Kostenlos — keine Zahlung nötig.</p>
@@ -1037,33 +1061,29 @@ export function CheckoutForm({
 
         {legalConsentBlock}
 
-        {payPalConfigured && !workshopMpa && payPalSurface === "card" ? (
-          <div className="mt-6 max-w-lg">
-            <PayPalCardFieldsCheckout
-              formId={STOREFRONT_CHECKOUT_FORM_ID}
-              paypalClientId={payPalClientId}
-              currency={currency}
-              onEligibleChange={setPayPalCardFieldsPrimary}
-            />
-          </div>
-        ) : null}
-
-        {(!payPalConfigured || workshopMpa || payPalSurface !== "card" || !payPalCardFieldsPrimary) && (
-          <button
-            type="submit"
-            disabled={workshopMpa ? false : pending}
-            aria-busy={workshopMpa ? undefined : pending}
-            className="mt-8 w-full rounded-md bg-primary py-3.5 text-sm font-semibold uppercase tracking-wide text-white shadow-sm transition-colors hover:bg-(--primary-hover) disabled:opacity-50 lg:max-w-md"
-          >
-            {workshopMpa
-              ? displayTotals.totalCents === 0
-                ? "Jetzt verbindlich buchen"
-                : "Weiter zur Zahlung"
+        <button
+          type={useCardPayButton ? "button" : "submit"}
+          disabled={workshopMpa ? false : useCardPayButton ? cardPayBusy : pending}
+          aria-busy={workshopMpa ? undefined : useCardPayButton ? cardPayBusy : pending}
+          onClick={
+            useCardPayButton
+              ? () => {
+                  void cardFieldsSubmitRef.current?.();
+                }
+              : undefined
+          }
+          className="mt-8 w-full rounded-md bg-primary py-3.5 text-sm font-semibold uppercase tracking-wide text-white shadow-sm transition-colors hover:bg-(--primary-hover) disabled:opacity-50 lg:max-w-md"
+        >
+          {workshopMpa
+            ? displayTotals.totalCents === 0
+              ? "Jetzt verbindlich buchen"
+              : "Weiter zur Zahlung"
+            : useCardPayButton && cardPayBusy
+              ? "Wird verarbeitet…"
               : pending
                 ? "Wird gesendet…"
                 : "Jetzt kostenpflichtig bestellen"}
-          </button>
-        )}
+        </button>
 
         <nav
           aria-label="Rechtliche Informationen"

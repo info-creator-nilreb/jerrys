@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
+import { showCheckoutInlineCardFields } from "@/lib/checkout/inline-card-fields";
 
 /**
  * Darstellung der über PayPal / Advanced Checkout typischerweise verfügbaren Wege.
@@ -71,6 +72,7 @@ export function CheckoutPaymentMethods({
   onChange,
   submitLabel = "Jetzt kostenpflichtig bestellen",
   cardInline = true,
+  cardFields = null,
 }: {
   value: CheckoutPayPalMethodId;
   onChange: (id: CheckoutPayPalMethodId) => void;
@@ -81,13 +83,18 @@ export function CheckoutPaymentMethods({
    * true = Kartendaten direkt im Checkout (Advanced Card Fields).
    */
   cardInline?: boolean;
+  /**
+   * Hosted Card Fields: unter der Karten-Option, noch in der Zahlungssektion —
+   * AGB und Bestellbutton folgen danach wie bei den anderen Zahlungsarten.
+   */
+  cardFields?: ReactNode;
 }) {
   const hintId = useId();
 
   const hint =
     value === "card" && cardInline ? (
       <>
-        Geben Sie unten Ihre Kartendaten ein (sichere Felder von PayPal) und schließen Sie mit{" "}
+        Geben Sie Ihre Kartendaten ein (sichere Felder von PayPal) und schließen Sie mit{" "}
         <span className="font-medium text-[#374151]">„{submitLabel}“</span> ab.
       </>
     ) : value === "card" ? (
@@ -106,25 +113,41 @@ export function CheckoutPaymentMethods({
     <div className="mt-4 max-w-lg">
       <fieldset className="overflow-hidden rounded-lg border border-[#e5e7eb] bg-white p-0">
         <legend className="sr-only">Mögliche Zahlungswege über PayPal</legend>
-        {CHECKOUT_PAYPAL_METHOD_ROWS.map((row, i) => (
-          <label
-            key={row.id}
-            className={`flex cursor-pointer items-center gap-3 px-3 py-2.5 transition-colors hover:bg-[#fafafa] ${
-              value === row.id ? "bg-[#f9fafb]" : ""
-            } ${i < CHECKOUT_PAYPAL_METHOD_ROWS.length - 1 ? "border-b border-[#e5e7eb]" : ""}`}
-          >
-            <input
-              type="radio"
-              name="checkoutPayPalSurface"
-              className="size-4 shrink-0 accent-primary"
-              checked={value === row.id}
-              onChange={() => onChange(row.id)}
-              aria-describedby={hintId}
-            />
-            <span className="min-w-0 flex-1 text-sm text-[#1f2937]">{row.label}</span>
-            <MethodBrand brand={row.brand} />
-          </label>
-        ))}
+        {CHECKOUT_PAYPAL_METHOD_ROWS.map((row, i) => {
+          const selected = value === row.id;
+          const showCardFields = showCheckoutInlineCardFields(
+            row.id,
+            value,
+            cardInline,
+            Boolean(cardFields),
+          );
+          return (
+            <div
+              key={row.id}
+              className={`${selected ? "bg-[#f9fafb]" : ""} ${
+                i < CHECKOUT_PAYPAL_METHOD_ROWS.length - 1 ? "border-b border-[#e5e7eb]" : ""
+              }`}
+            >
+              <label
+                className={`flex cursor-pointer items-center gap-3 px-3 py-2.5 transition-colors hover:bg-[#fafafa] ${
+                  selected ? "bg-[#f9fafb]" : ""
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="checkoutPayPalSurface"
+                  className="size-4 shrink-0 accent-primary"
+                  checked={selected}
+                  onChange={() => onChange(row.id)}
+                  aria-describedby={hintId}
+                />
+                <span className="min-w-0 flex-1 text-sm text-[#1f2937]">{row.label}</span>
+                <MethodBrand brand={row.brand} />
+              </label>
+              {showCardFields ? cardFields : null}
+            </div>
+          );
+        })}
       </fieldset>
       <p id={hintId} className="mt-2 text-xs leading-relaxed text-[#6b7280]">
         {hint}
