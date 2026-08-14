@@ -50,14 +50,15 @@ export function InfoBannerForm({ defaults }: Props) {
   // sonst kann ein kurzlebig stale Cache den Haken wieder entfernen.
   useEffect(() => {
     if (!state?.ok || !state.saved) return;
+    const saved = state.saved;
     startTransition(() => {
-      setActive(state.saved.active);
-      setMessages(state.saved.messages.length > 0 ? [...state.saved.messages] : [""]);
-      setDurationSec(state.saved.durationSec);
-      setHref(state.saved.href ?? "");
-      setBgMode(state.saved.bgColor ? "custom" : "primary");
-      if (state.saved.bgColor) {
-        setCustomBg(state.saved.bgColor);
+      setActive(saved.active);
+      setMessages(saved.messages.length > 0 ? [...saved.messages] : [""]);
+      setDurationSec(saved.durationSec);
+      setHref(saved.href ?? "");
+      setBgMode(saved.bgColor ? "custom" : "primary");
+      if (saved.bgColor) {
+        setCustomBg(saved.bgColor);
       } else {
         setCustomBg(defaults.primaryColor);
       }
