@@ -23,6 +23,10 @@ export type ShopifyImportOptions = MapShopifyOptions & {
   checkExistingInDb?: boolean;
   /** Remote-Bilder (Shopify-CDN) nach Blob/lokal spiegeln (nur apply). */
   mirrorImages?: boolean;
+  /** Ungültige Datensätze nicht importieren (Shopify-ähnlich). Default false in CLI, true im Admin. */
+  skipInvalid?: boolean;
+  /** Nur diese Handles importieren (Apply); fehlende = überspringen. */
+  includeHandles?: readonly string[];
 };
 
 export type ShopifyImportProductResult = {
@@ -48,6 +52,45 @@ export type ShopifyImportProductResult = {
   imageCount: number;
   message?: string;
 };
+
+/** Entscheidet, ob ein Produkt beim Apply übersprungen wird (Auswahl / ungültig). */
+export function resolveProductImportSkip(
+  draft: Pick<CatalogImportProduct, "sourceHandle" | "errors">,
+  options: Pick<ShopifyImportOptions, "skipInvalid" | "includeHandles">,
+): { skip: true; message: string } | { skip: false } {
+  const includeSet =
+    options.includeHandles && options.includeHandles.length > 0
+      ? new Set(options.includeHandles)
+      : null;
+
+  if (includeSet && !includeSet.has(draft.sourceHandle)) {
+    return { skip: true, message: "Nicht ausgewählt." };
+  }
+
+  if (draft.errors.length > 0) {
+    if (options.skipInvalid) {
+      return { skip: true, message: "Ungültig — übersprungen." };
+    }
+  }
+
+  return { skip: false };
+}
+
+function skippedProductResult(
+  draft: CatalogImportProduct,
+  message: string,
+): ShopifyImportProductResult {
+  return {
+    handle: draft.sourceHandle,
+    slug: draft.slug,
+    status: "skipped",
+    errors: draft.errors,
+    warnings: draft.warnings,
+    variantCount: draft.variants.length,
+    imageCount: draft.images.length,
+    message,
+  };
+}
 
 export type ShopifyImportReport = {
   mode: ShopifyImportMode;
@@ -507,6 +550,14 @@ export async function importShopifyProductsFromCsv(
   } else {
     dbChecked = true;
     for (const draft of mapped) {
+      const skip = resolveProductImportSkip(draft, options);
+      if (skip.skip) {
+        products.push(skippedProductResult(draft, skip.message));
+        skippedCount += 1;
+        if (draft.errors.length > 0) invalidCount += 1;
+        continue;
+      }
+
       const result = await applyOne(draft, Boolean(options.updateExisting), mirrorImages);
       products.push(result);
       if (result.status === "invalid") invalidCount += 1;

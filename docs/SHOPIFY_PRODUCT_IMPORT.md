@@ -108,9 +108,11 @@ Auf Vercel kein Schreiben nach `public/` (read-only) — ohne Blob bleiben **Sho
 Unter **Einstellungen → Importe → Produkte** (`/admin/einstellungen/importe/produkte`):
 
 1. CSV hochladen oder per Drag-and-Drop ablegen (max. 5 MB).
-2. Optionen: Steuersatz, Lieferzeit, bestehende aktualisieren, **Entwurf**, **Bilder spiegeln**.
-3. **Vorschau prüfen** (Dry-Run inkl. DB-Slug-Check).
-4. Bestätigen → **Import starten** (schreibt nur bei 0 ungültigen Produkten).
+2. Optionen: Steuersatz, Lieferzeit, bestehende aktualisieren, **Entwurf**, **Bilder spiegeln**, **Ungültige überspringen** (Standard an).
+3. **Vorschau prüfen** (Dry-Run inkl. DB-Slug-Check) — pro Zeile Import per Checkbox wählen (ungültige sind deaktiviert).
+4. Bestätigen → **Import starten** (schreibt nur ausgewählte, importierbare Produkte).
+
+Wie bei Shopify blockiert ein einzelnes ungültiges Produkt den Import nicht, wenn **Ungültige überspringen** aktiv ist.
 
 Dieselbe Application-Schicht wie die CLI (`importShopifyProductsFromCsv`).
 Alte URL `/admin/products/import` leitet um.

@@ -227,3 +227,46 @@ describe("planShopifyCsvImport", () => {
     expect(objs[0]).toEqual({ Handle: "x", Title: "y" });
   });
 });
+
+describe("resolveProductImportSkip", () => {
+  it("überspringt nicht ausgewählte Handles", async () => {
+    const { resolveProductImportSkip } = await import(
+      "@/features/catalog/application/import-shopify-csv"
+    );
+    const draft = {
+      sourceHandle: "a",
+      slug: "a",
+      errors: [],
+    } as Pick<
+      import("@/features/catalog/domain/shopify-map").CatalogImportProduct,
+      "sourceHandle" | "slug" | "errors"
+    >;
+
+    expect(
+      resolveProductImportSkip(draft, { includeHandles: ["b"] }),
+    ).toEqual({ skip: true, message: "Nicht ausgewählt." });
+    expect(
+      resolveProductImportSkip(draft, { includeHandles: ["a"] }),
+    ).toEqual({ skip: false });
+  });
+
+  it("überspringt ungültige bei skipInvalid", async () => {
+    const { resolveProductImportSkip } = await import(
+      "@/features/catalog/application/import-shopify-csv"
+    );
+    const draft = {
+      sourceHandle: "bad",
+      slug: "bad",
+      errors: ["Handle ungültig"],
+    } as Pick<
+      import("@/features/catalog/domain/shopify-map").CatalogImportProduct,
+      "sourceHandle" | "slug" | "errors"
+    >;
+
+    expect(resolveProductImportSkip(draft, { skipInvalid: true })).toEqual({
+      skip: true,
+      message: "Ungültig — übersprungen.",
+    });
+    expect(resolveProductImportSkip(draft, { skipInvalid: false })).toEqual({ skip: false });
+  });
+});

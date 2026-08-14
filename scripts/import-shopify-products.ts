@@ -36,6 +36,7 @@ Optional:
   --update               Bestehende Slugs/SKUs aktualisieren
   --draft                Unvollständige als Entwurf (inaktiv); SKUs generieren
   --mirror-images        Bilder von Shopify-CDN spiegeln (Blob/lokal)
+  --skip-invalid         Ungültige Zeilen überspringen (Apply; wie Shopify)
   --tax 7|19             Steuersatz (Default 19, Brutto-Annahme)
   --delivery <key>       ${DELIVERY_TIME_OPTIONS.map((o) => o.value).join(" | ")}
   --help                 Diese Hilfe
@@ -66,6 +67,7 @@ async function main() {
   const updateExisting = hasFlag(argv, "--update");
   const allowIncompleteAsDraft = hasFlag(argv, "--draft");
   const mirrorImages = hasFlag(argv, "--mirror-images");
+  const skipInvalid = hasFlag(argv, "--skip-invalid");
   const taxRaw = argValue(argv, "--tax") ?? "19";
   const tax = Number(taxRaw);
   if (tax !== 7 && tax !== 19) {
@@ -88,6 +90,7 @@ async function main() {
     deliveryTimeKey: deliveryRaw as DeliveryTimeKey,
     allowIncompleteAsDraft,
     mirrorImages,
+    skipInvalid,
   });
 
   const summary = {
@@ -117,7 +120,7 @@ async function main() {
 
   await getPrisma().$disconnect();
 
-  if (report.invalidCount > 0) {
+  if (report.invalidCount > 0 && !skipInvalid) {
     process.exitCode = 2;
   }
 }

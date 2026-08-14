@@ -12,7 +12,16 @@ import {
   SHOPIFY_IMPORT_MAX_BYTES,
   type ShopifyImportActionState,
   type ShopifyImportAdminSummary,
+  type ShopifyImportProductRow,
 } from "@/app/admin/(dashboard)/einstellungen/importe/produkte/import-shared";
+
+function isProductImportSelectable(status: ShopifyImportProductRow["status"]): boolean {
+  return status !== "invalid" && status !== "would_skip";
+}
+
+function defaultSelectedHandles(products: ShopifyImportProductRow[]): Set<string> {
+  return new Set(products.filter((p) => isProductImportSelectable(p.status)).map((p) => p.handle));
+}
 
 function statusLabel(status: string): string {
   switch (status) {
@@ -87,7 +96,17 @@ function SummaryCards({ summary }: { summary: ShopifyImportAdminSummary }) {
   );
 }
 
-function ResultTable({ summary }: { summary: ShopifyImportAdminSummary }) {
+function ResultTable({
+  summary,
+  selectable = false,
+  selectedHandles,
+  onToggleHandle,
+}: {
+  summary: ShopifyImportAdminSummary;
+  selectable?: boolean;
+  selectedHandles?: Set<string>;
+  onToggleHandle?: (handle: string, checked: boolean) => void;
+}) {
   if (summary.products.length === 0) {
     return <p className="mt-6 text-sm text-[#6b7280]">Keine Produkte in der CSV erkannt.</p>;
   }
@@ -99,6 +118,11 @@ function ResultTable({ summary }: { summary: ShopifyImportAdminSummary }) {
       <table className="min-w-full text-left text-sm">
         <thead className="border-b border-[#e8eaed] bg-[#f7f8fa] text-[#374151]">
           <tr>
+            {selectable ? (
+              <th className="w-10 px-3 py-2.5 font-medium">
+                <span className="sr-only">Importieren</span>
+              </th>
+            ) : null}
             <th className="px-3 py-2.5 font-medium">Handle / Slug</th>
             <th className="px-3 py-2.5 font-medium">Status</th>
             <th className="px-3 py-2.5 font-medium">Varianten</th>
@@ -123,8 +147,26 @@ function ResultTable({ summary }: { summary: ShopifyImportAdminSummary }) {
             const canLink =
               Boolean(row.productId) &&
               (row.status === "created" || row.status === "updated");
+            const importSelectable = isProductImportSelectable(row.status);
+            const checked = selectedHandles?.has(row.handle) ?? false;
             return (
               <tr key={`${row.handle}-${row.status}-${row.slug}`} className="bg-white align-top">
+                {selectable ? (
+                  <td className="px-3 py-2.5">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={!importSelectable}
+                      onChange={(e) => onToggleHandle?.(row.handle, e.target.checked)}
+                      aria-label={
+                        importSelectable
+                          ? `${row.slug} importieren`
+                          : `${row.slug} — nicht importierbar`
+                      }
+                      className="size-4 rounded border-[#d1d5db] text-primary focus:ring-primary disabled:opacity-40"
+                    />
+                  </td>
+                ) : null}
                 <td className="px-3 py-2.5">
                   <div className="font-medium text-[#1f2937]">{row.slug}</div>
                   {row.handle !== row.slug ? (
@@ -198,6 +240,8 @@ function buildImportFormData(opts: {
   updateExisting: boolean;
   allowIncompleteAsDraft: boolean;
   mirrorImages: boolean;
+  skipInvalid: boolean;
+  includeHandles?: string[];
   confirmApply?: boolean;
 }): FormData {
   const fd = new FormData();
@@ -207,6 +251,10 @@ function buildImportFormData(opts: {
   if (opts.updateExisting) fd.set("updateExisting", "true");
   if (opts.allowIncompleteAsDraft) fd.set("allowIncompleteAsDraft", "true");
   if (opts.mirrorImages) fd.set("mirrorImages", "true");
+  if (opts.skipInvalid) fd.set("skipInvalid", "true");
+  if (opts.includeHandles?.length) {
+    fd.set("includeHandles", JSON.stringify(opts.includeHandles));
+  }
   if (opts.confirmApply) fd.set("confirmApply", "true");
   return fd;
 }
@@ -233,6 +281,8 @@ export function ShopifyImportForm() {
   const [updateExisting, setUpdateExisting] = useState(false);
   const [allowIncompleteAsDraft, setAllowIncompleteAsDraft] = useState(true);
   const [mirrorImages, setMirrorImages] = useState(true);
+  const [skipInvalid, setSkipInvalid] = useState(true);
+  const [selectedHandles, setSelectedHandles] = useState<Set<string>>(() => new Set());
   const [confirmApply, setConfirmApply] = useState(false);
   const [state, setState] = useState<ShopifyImportActionState>(null);
   const [pending, startTransition] = useTransition();
@@ -240,12 +290,13 @@ export function ShopifyImportForm() {
 
   const summary = state?.summary;
   const applyDone = Boolean(state?.ok && summary?.mode === "apply");
+  const selectedCount = selectedHandles.size;
   const canApply =
     Boolean(state?.ok && summary?.mode === "dry-run") &&
-    (summary?.invalidCount ?? 1) === 0 &&
-    (summary?.validCount ?? 0) > 0 &&
+    selectedCount > 0 &&
     !applyDone &&
-    file != null;
+    file != null &&
+    (skipInvalid || (summary?.invalidCount ?? 0) === 0);
 
   const assignFile = useCallback((next: File | null, invalidMessage?: string) => {
     if (!next) {
@@ -261,6 +312,7 @@ export function ShopifyImportForm() {
     setFile(next);
     setState(null);
     setConfirmApply(false);
+    setSelectedHandles(new Set());
   }, []);
 
   function runPreview() {
@@ -277,10 +329,14 @@ export function ShopifyImportForm() {
       updateExisting,
       allowIncompleteAsDraft,
       mirrorImages,
+      skipInvalid,
     });
     startTransition(async () => {
       const next = await previewShopifyCsvImport(null, fd);
       setState(next);
+      if (next?.summary?.mode === "dry-run") {
+        setSelectedHandles(defaultSelectedHandles(next.summary.products));
+      }
       setPhase("idle");
     });
   }
@@ -295,6 +351,8 @@ export function ShopifyImportForm() {
       updateExisting,
       allowIncompleteAsDraft,
       mirrorImages,
+      skipInvalid,
+      includeHandles: [...selectedHandles],
       confirmApply: true,
     });
     startTransition(async () => {
@@ -492,6 +550,27 @@ export function ShopifyImportForm() {
         <label className="flex items-start gap-3 text-sm text-[#374151]">
           <input
             type="checkbox"
+            checked={skipInvalid}
+            disabled={pending}
+            onChange={(e) => {
+              setSkipInvalid(e.target.checked);
+              setState(null);
+              setConfirmApply(false);
+            }}
+            className="mt-0.5 size-4 rounded border-[#d1d5db] text-primary focus:ring-primary"
+          />
+          <span>
+            <span className="font-medium">Ungültige Produkte überspringen</span>
+            <span className="mt-0.5 block text-[#6b7280]">
+              Wie bei Shopify: gültige Zeilen importieren, fehlerhafte Handles (z. B. ungültiger
+              Slug) auslassen — Import wird nicht blockiert.
+            </span>
+          </span>
+        </label>
+
+        <label className="flex items-start gap-3 text-sm text-[#374151]">
+          <input
+            type="checkbox"
             checked={mirrorImages}
             disabled={pending}
             onChange={(e) => {
@@ -552,10 +631,63 @@ export function ShopifyImportForm() {
               : "Noch nichts geschrieben. Prüfe Status und Hinweise, bevor du importierst."}
           </p>
           <SummaryCards summary={summary} />
-          <ResultTable summary={summary} />
+          {summary.mode === "dry-run" && summary.invalidCount > 0 && skipInvalid ? (
+            <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {summary.invalidCount} ungültige(s) Produkt(e) werden beim Import übersprungen. In der
+              Tabelle abwählen oder Handle in Shopify korrigieren.
+            </p>
+          ) : null}
+          {summary.mode === "dry-run" ? (
+            <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+              <span className="text-[#6b7280]">
+                <span className="font-medium text-[#374151]">{selectedCount}</span> von{" "}
+                {summary.products.filter((p) => isProductImportSelectable(p.status)).length}{" "}
+                importierbaren Produkten ausgewählt
+              </span>
+              <button
+                type="button"
+                className="font-medium text-primary hover:underline"
+                onClick={() =>
+                  setSelectedHandles(defaultSelectedHandles(summary.products))
+                }
+              >
+                Alle gültigen
+              </button>
+              <button
+                type="button"
+                className="font-medium text-primary hover:underline"
+                onClick={() => setSelectedHandles(new Set())}
+              >
+                Keine
+              </button>
+            </div>
+          ) : null}
+          <ResultTable
+            summary={summary}
+            selectable={summary.mode === "dry-run"}
+            selectedHandles={selectedHandles}
+            onToggleHandle={(handle, checked) => {
+              setSelectedHandles((prev) => {
+                const next = new Set(prev);
+                if (checked) next.add(handle);
+                else next.delete(handle);
+                return next;
+              });
+              setConfirmApply(false);
+            }}
+          />
 
           {canApply ? (
             <div className="mt-8 space-y-4 border-t border-[#e8eaed] pt-6">
+              <p className="text-sm text-[#6b7280]">
+                Es werden{" "}
+                <span className="font-medium text-[#374151]">{selectedCount}</span> Produkte
+                importiert
+                {skipInvalid && summary.invalidCount > 0
+                  ? ` (${summary.invalidCount} ungültige übersprungen)`
+                  : ""}
+                .
+              </p>
               <label className="flex items-start gap-3 text-sm text-[#374151]">
                 <input
                   type="checkbox"

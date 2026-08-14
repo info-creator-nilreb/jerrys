@@ -46,6 +46,40 @@ function parseFlag(formData: FormData, name: string): boolean {
   return v === "on" || v === "true" || v === "1";
 }
 
+function parseIncludeHandles(formData: FormData): string[] | null {
+  const raw = formData.get("includeHandles");
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return null;
+    return parsed.filter((h): h is string => typeof h === "string" && h.trim().length > 0);
+  } catch {
+    return null;
+  }
+}
+
+function importOptionsFromForm(formData: FormData, mode: "dry-run" | "apply") {
+  const taxRatePercent = parseTaxRate(formData);
+  const deliveryTimeKey = parseDeliveryKey(formData);
+  if (taxRatePercent == null || deliveryTimeKey == null) return { error: true as const };
+
+  const includeHandles = parseIncludeHandles(formData);
+  return {
+    error: false as const,
+    options: {
+      mode,
+      updateExisting: parseUpdateExisting(formData),
+      taxRatePercent,
+      deliveryTimeKey,
+      checkExistingInDb: mode === "dry-run",
+      allowIncompleteAsDraft: parseFlag(formData, "allowIncompleteAsDraft"),
+      mirrorImages: parseFlag(formData, "mirrorImages"),
+      skipInvalid: parseFlag(formData, "skipInvalid"),
+      includeHandles: includeHandles ?? undefined,
+    },
+  };
+}
+
 async function readCsvFromFormData(
   formData: FormData,
 ): Promise<{ text: string } | { error: string }> {
@@ -103,26 +137,14 @@ export async function previewShopifyCsvImport(
   const csv = await readCsvFromFormData(formData);
   if ("error" in csv) return { error: csv.error };
 
-  const taxRatePercent = parseTaxRate(formData);
-  if (taxRatePercent == null) return { error: "Steuersatz muss 7 oder 19 sein." };
-
-  const deliveryTimeKey = parseDeliveryKey(formData);
-  if (deliveryTimeKey == null) return { error: "Ungültige Lieferzeit." };
-
-  const updateExisting = parseUpdateExisting(formData);
-  const allowIncompleteAsDraft = parseFlag(formData, "allowIncompleteAsDraft");
-  const mirrorImages = parseFlag(formData, "mirrorImages");
+  const parsed = importOptionsFromForm(formData, "dry-run");
+  if (parsed.error) {
+    if (parseTaxRate(formData) == null) return { error: "Steuersatz muss 7 oder 19 sein." };
+    return { error: "Ungültige Lieferzeit." };
+  }
 
   try {
-    const report = await importShopifyProductsFromCsv(csv.text, {
-      mode: "dry-run",
-      updateExisting,
-      taxRatePercent,
-      deliveryTimeKey,
-      checkExistingInDb: true,
-      allowIncompleteAsDraft,
-      mirrorImages,
-    });
+    const report = await importShopifyProductsFromCsv(csv.text, parsed.options);
     return { ok: true, summary: toSummary(report) };
   } catch (e) {
     log.error("preview_failed", errorMeta(e));
@@ -144,44 +166,55 @@ export async function applyShopifyCsvImport(
   const csv = await readCsvFromFormData(formData);
   if ("error" in csv) return { error: csv.error };
 
-  const taxRatePercent = parseTaxRate(formData);
-  if (taxRatePercent == null) return { error: "Steuersatz muss 7 oder 19 sein." };
+  const parsed = importOptionsFromForm(formData, "apply");
+  if (parsed.error) {
+    if (parseTaxRate(formData) == null) return { error: "Steuersatz muss 7 oder 19 sein." };
+    return { error: "Ungültige Lieferzeit." };
+  }
 
-  const deliveryTimeKey = parseDeliveryKey(formData);
-  if (deliveryTimeKey == null) return { error: "Ungültige Lieferzeit." };
-
-  const updateExisting = parseUpdateExisting(formData);
-  const allowIncompleteAsDraft = parseFlag(formData, "allowIncompleteAsDraft");
-  const mirrorImages = parseFlag(formData, "mirrorImages");
+  const includeHandles = parsed.options.includeHandles;
+  if (!includeHandles?.length) {
+    return { error: "Keine Produkte ausgewählt — mindestens eines in der Vorschau markieren." };
+  }
 
   try {
     const preview = await importShopifyProductsFromCsv(csv.text, {
+      ...parsed.options,
       mode: "dry-run",
-      updateExisting,
-      taxRatePercent,
-      deliveryTimeKey,
       checkExistingInDb: true,
-      allowIncompleteAsDraft,
-      mirrorImages,
     });
-    if (preview.invalidCount > 0) {
+
+    const selectedInvalid = preview.products.filter(
+      (p) => includeHandles.includes(p.handle) && p.status === "invalid",
+    );
+    if (selectedInvalid.length > 0) {
       return {
-        error: `${preview.invalidCount} Produkt(e) ungültig — Import abgebrochen.`,
+        error: `${selectedInvalid.length} ausgewählte(s) Produkt(e) ungültig — abwählen oder in Shopify korrigieren.`,
         summary: toSummary(preview),
       };
     }
-    if (preview.validCount === 0) {
-      return { error: "Keine gültigen Produkte in der CSV.", summary: toSummary(preview) };
+
+    if (!parsed.options.skipInvalid && preview.invalidCount > 0) {
+      return {
+        error: `${preview.invalidCount} Produkt(e) ungültig — „Ungültige überspringen“ aktivieren oder Handle korrigieren.`,
+        summary: toSummary(preview),
+      };
     }
 
-    const report = await importShopifyProductsFromCsv(csv.text, {
-      mode: "apply",
-      updateExisting,
-      taxRatePercent,
-      deliveryTimeKey,
-      allowIncompleteAsDraft,
-      mirrorImages,
-    });
+    const importableSelected = preview.products.filter(
+      (p) =>
+        includeHandles.includes(p.handle) &&
+        p.status !== "invalid" &&
+        p.status !== "would_skip",
+    );
+    if (importableSelected.length === 0) {
+      return {
+        error: "Keine importierbaren Produkte in der Auswahl.",
+        summary: toSummary(preview),
+      };
+    }
+
+    const report = await importShopifyProductsFromCsv(csv.text, parsed.options);
 
     revalidatePath("/admin/products");
     revalidatePath("/admin/bestand");
