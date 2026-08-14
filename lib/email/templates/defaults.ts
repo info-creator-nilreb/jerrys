@@ -128,8 +128,8 @@ const DEFAULTS: Record<EmailTemplateKey, Omit<EmailTemplateDefaultContent, "key"
       "",
       "Bestellung ansehen: {{email.cta_url}}",
       "",
-      "Liebe Grüße",
-      "{{shop.name}}",
+      "Viele Grüße",
+      "Dein {{shop.name}}-Team",
     ].join("\n"),
   },
   order_shipped: {
