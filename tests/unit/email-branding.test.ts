@@ -85,6 +85,26 @@ describe("wrapTransactionalEmailHtml mit Branding", () => {
     expect(html).toContain('width="200"');
     expect(html).toContain("-ms-interpolation-mode:bicubic");
   });
+
+  it("Instagram-Link im Footer nutzt helle Schrift, nicht Primärgrün", () => {
+    const branding = {
+      ...defaultTransactionalEmailBranding(),
+      instagramUrl: "https://www.instagram.com/test/",
+      primary: "#8bbe25",
+    };
+    const html = wrapTransactionalEmailHtml({
+      variant: "order",
+      documentTitle: "Test",
+      heading: "Hallo",
+      intro: "Intro",
+      bodyHtml: "<p>Body</p>",
+      cta: { href: "https://example.com", label: "CTA" },
+      branding,
+    });
+    expect(html).toContain("Instagram");
+    expect(html).toContain("color:#e5e7eb");
+    expect(html).not.toMatch(/Instagram<\/td><\/tr><\/table><\/a><\/td><\/tr><\/table>[\s\S]*color:#8bbe25/);
+  });
 });
 
 describe("resolveEmailLogoAbsoluteUrl", () => {

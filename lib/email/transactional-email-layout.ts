@@ -126,10 +126,10 @@ function footerLegalLink(href: string, label: string): string {
 function footerSocialRow(branding: TransactionalEmailBranding): string {
   const url = branding.instagramUrl?.trim();
   if (!url) return "";
-  const primary = branding.primary;
+  const { footerText } = TRANSACTIONAL_EMAIL_DESIGN;
   const aria = escapeHtmlForEmail(`${branding.shopName} auf Instagram`);
   const igMark = footerIconImg("instagram", "Instagram");
-  return `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:20px auto 0"><tr><td align="center" style="padding:0 10px"><a href="${escapeHtmlForEmail(url)}" style="text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:600;color:${primary}" aria-label="${aria}"><table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto"><tr><td style="vertical-align:middle;line-height:0;padding-right:8px">${igMark}</td><td style="vertical-align:middle;color:${primary}">Instagram</td></tr></table></a></td></tr></table>`;
+  return `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:20px auto 0"><tr><td align="center" style="padding:0 10px"><a href="${escapeHtmlForEmail(url)}" style="text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:600;color:${footerText}" aria-label="${aria}"><table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto"><tr><td style="vertical-align:middle;line-height:0;padding-right:8px">${igMark}</td><td style="vertical-align:middle;color:${footerText}">Instagram</td></tr></table></a></td></tr></table>`;
 }
 
 function footerUspRow(): string {
