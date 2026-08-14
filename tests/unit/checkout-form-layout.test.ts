@@ -29,7 +29,10 @@ describe("checkout form column width", () => {
     expect(summary).toContain("CHECKOUT_SUMMARY_PANEL_CLASS");
     expect(summary).toContain("CHECKOUT_SUMMARY_CONTENT_CLASS");
     expect(CHECKOUT_SUMMARY_PANEL_CLASS).toContain("surface-subtle");
-    expect(CHECKOUT_SUMMARY_CONTENT_CLASS).toContain("w-1/2");
+    expect(CHECKOUT_SUMMARY_CONTENT_CLASS).toContain("w-full");
+    expect(CHECKOUT_SUMMARY_CONTENT_CLASS).toContain("lg:w-1/2");
+    expect(summary).toContain("aria-expanded={mobileExpanded}");
+    expect(summary).toContain("lg:hidden");
 
     expect(form).toContain("justify-center");
     expect(form).toContain("text-center");
