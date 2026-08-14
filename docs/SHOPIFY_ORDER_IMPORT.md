@@ -39,6 +39,17 @@ Importierte Bestellungen:
 
 Positionen ohne SKU-Match werden dem inaktiven Platzhalter-Produkt `shopify-import-legacy-item` zugeordnet. Titel und Preis bleiben in den Snapshots sichtbar.
 
+## Admin-UI
+
+Unter **Bestellungen → Shopify-Import** (`/admin/orders/shopify-import`):
+
+1. CSV hochladen oder per Drag-and-Drop ablegen (max. 5 MB).
+2. Optionen: Steuersatz, bestehende Import-Bestellungen aktualisieren.
+3. **Vorschau prüfen** (Dry-Run inkl. DB-Check).
+4. Bestätigen → **Import starten** (schreibt nur bei 0 ungültigen Bestellungen).
+
+Dieselbe Application-Schicht wie die CLI (`importShopifyOrdersFromCsv`).
+
 ## CLI
 
 ```bash
@@ -63,6 +74,5 @@ npm run orders:import-shopify -- --file ./shopify-orders.csv --apply --update
 
 ## Nächste Ausbaustufen
 
-1. Admin-UI (wie Produktimport).
-2. ~~Auto-Zuordnung direkt nach E-Mail-Verifikation.~~ (umgesetzt)
-3. Shopify GraphQL Admin API statt CSV.
+1. ~~Admin-UI (wie Produktimport).~~ (umgesetzt unter `/admin/orders/shopify-import`)
+2. Shopify GraphQL Admin API statt CSV.

@@ -47,6 +47,10 @@ function isInhaltePagesPath(pathname: string): boolean {
   return pathname.startsWith("/admin/inhalte/");
 }
 
+function isOrdersPath(pathname: string): boolean {
+  return pathname.startsWith("/admin/orders");
+}
+
 function isKatalogPath(pathname: string): boolean {
   return (
     pathname.startsWith("/admin/products") ||
@@ -62,7 +66,26 @@ function isKatalogPath(pathname: string): boolean {
  */
 const mainNav: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: IconDashboard },
-  { href: "/admin/orders", label: "Bestellungen", icon: IconOrders },
+  {
+    href: "/admin/orders",
+    label: "Bestellungen",
+    icon: IconOrders,
+    isActivePath: isOrdersPath,
+    children: [
+      {
+        href: "/admin/orders",
+        label: "Übersicht",
+        isActivePath: (pathname) =>
+          pathname.startsWith("/admin/orders") &&
+          !pathname.startsWith("/admin/orders/shopify-import"),
+      },
+      {
+        href: "/admin/orders/shopify-import",
+        label: "Shopify-Import",
+        isActivePath: (pathname) => pathname.startsWith("/admin/orders/shopify-import"),
+      },
+    ],
+  },
   { href: "/admin/termine", label: "Termine", icon: IconWorkshops },
   {
     href: "/admin/products",

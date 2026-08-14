@@ -1,11 +1,4 @@
 import { getPrisma } from "@/lib/db/prisma";
-const ORDER_EVENT_PLACED = "order.placed" as const;
-
-/** Gleiche Normalisierung wie `normalizeCustomerEmail` (Gastbestell-Zuordnung). */
-function normalizeImportEmail(email: string): string {
-  return email.trim().toLowerCase();
-}
-
 import { parseShopifyOrderCsv } from "@/features/orders/domain/shopify-order-csv";
 import {
   SHOPIFY_LEGACY_PRODUCT_SLUG,
@@ -14,6 +7,13 @@ import {
   type CatalogImportOrder,
   type MapShopifyOrderOptions,
 } from "@/features/orders/domain/shopify-order-map";
+
+const ORDER_EVENT_PLACED = "order.placed" as const;
+
+/** Gleiche Normalisierung wie `normalizeCustomerEmail` (Gastbestell-Zuordnung). */
+function normalizeImportEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
 
 export type ShopifyOrderImportMode = "dry-run" | "apply";
 
@@ -42,6 +42,8 @@ export type ShopifyOrderImportOrderResult = {
   errors: string[];
   warnings: string[];
   lineCount: number;
+  /** Nach create/update für Admin-Links. */
+  orderId?: string;
   message?: string;
 };
 
@@ -165,6 +167,7 @@ function resultFromMapped(
   mapped: CatalogImportOrder,
   status: ShopifyOrderImportOrderResult["status"],
   message?: string,
+  orderId?: string,
 ): ShopifyOrderImportOrderResult {
   return {
     shopifyName: mapped.shopifyName,
@@ -174,6 +177,7 @@ function resultFromMapped(
     errors: mapped.errors,
     warnings: mapped.warnings,
     lineCount: mapped.lineItems.length,
+    orderId,
     message,
   };
 }
@@ -286,10 +290,10 @@ async function applyOneOrder(
           },
         });
       });
-      return resultFromMapped(mapped, "updated");
+      return resultFromMapped(mapped, "updated", undefined, existing.id);
     }
 
-    await prisma.$transaction(async (tx) => {
+    const createdId = await prisma.$transaction(async (tx) => {
       const order = await tx.order.create({
         data: {
           ...orderFields,
@@ -307,8 +311,9 @@ async function applyOneOrder(
           },
         },
       });
+      return order.id;
     });
-    return resultFromMapped(mapped, "created");
+    return resultFromMapped(mapped, "created", undefined, createdId);
   } catch (e) {
     mapped.errors.push(e instanceof Error ? e.message : String(e));
     return resultFromMapped(mapped, "error", "Speichern fehlgeschlagen.");
