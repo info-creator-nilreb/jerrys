@@ -8,7 +8,6 @@ import {
   DEFAULT_HERO_FOCUS_Y,
   heroFocusFromClientPoint,
   heroFocusMarkerOffset,
-  heroObjectPosition,
 } from "@/lib/content/blocks/hero";
 
 type Props = {
@@ -94,112 +93,57 @@ export function HeroFocusPicker({ imageUrl, focusX, focusY, onChange }: Props) {
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-[#9ca3af]">
-            Motiv wählen
-          </p>
-          <div
-            ref={frameRef}
-            tabIndex={0}
-            aria-label="Bildschwerpunkt auf dem Motiv setzen. Pfeiltasten verschieben den Punkt."
-            className="relative aspect-[16/10] cursor-crosshair overflow-hidden rounded-md border border-[#e3e4e8] bg-[#111] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerUp}
-            onKeyDown={(e) => {
-              const step = e.shiftKey ? 5 : 1;
-              if (e.key === "ArrowLeft") {
-                e.preventDefault();
-                onChange(Math.max(0, Math.round((focusX - step) * 10) / 10), focusY);
-              } else if (e.key === "ArrowRight") {
-                e.preventDefault();
-                onChange(Math.min(100, Math.round((focusX + step) * 10) / 10), focusY);
-              } else if (e.key === "ArrowUp") {
-                e.preventDefault();
-                onChange(focusX, Math.max(0, Math.round((focusY - step) * 10) / 10));
-              } else if (e.key === "ArrowDown") {
-                e.preventDefault();
-                onChange(focusX, Math.min(100, Math.round((focusY + step) * 10) / 10));
-              }
-            }}
-          >
-            <Image
-              src={imageUrl}
-              alt=""
-              fill
-              className="pointer-events-none object-contain"
-              sizes="320px"
-              unoptimized={
-                imageUrl.startsWith("https://") || imageUrl.endsWith(".svg")
-              }
-              onLoad={(e) => {
-                const img = e.currentTarget;
-                setImageSize({
-                  width: img.naturalWidth,
-                  height: img.naturalHeight,
-                });
-              }}
-            />
-            <span
-              className="pointer-events-none absolute size-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-primary shadow-[0_0_0_1px_rgba(0,0,0,0.35)]"
-              style={{ left: marker.left, top: marker.top }}
-              aria-hidden
-            >
-              <Crosshair
-                className="absolute inset-0 m-auto size-3.5 text-white"
-                strokeWidth={2.25}
-              />
-            </span>
-          </div>
-        </div>
-
-        <div>
-          <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-[#9ca3af]">
-            Hero-Ausschnitt
-          </p>
-          <div className="relative aspect-[16/10] overflow-hidden rounded-md border border-[#e3e4e8] bg-[#111]">
-            <Image
-              src={imageUrl}
-              alt=""
-              fill
-              className="object-cover"
-              style={{ objectPosition: heroObjectPosition({ focusX, focusY }) }}
-              sizes="320px"
-              unoptimized={
-                imageUrl.startsWith("https://") || imageUrl.endsWith(".svg")
-              }
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-2 sm:grid-cols-2">
-        <label className="text-xs text-[#5c5f66]">
-          Horizontal {focusX}%
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={0.5}
-            value={focusX}
-            onChange={(e) => onChange(Number(e.target.value), focusY)}
-            className="mt-1 h-2 w-full cursor-pointer accent-primary"
+      <div
+        ref={frameRef}
+        tabIndex={0}
+        aria-label="Bildschwerpunkt auf dem Motiv setzen. Pfeiltasten verschieben den Punkt."
+        className="relative aspect-[16/10] max-w-md cursor-crosshair overflow-hidden rounded-md border border-[#e3e4e8] bg-[#111] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onKeyDown={(e) => {
+          const step = e.shiftKey ? 5 : 1;
+          if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            onChange(Math.max(0, Math.round((focusX - step) * 10) / 10), focusY);
+          } else if (e.key === "ArrowRight") {
+            e.preventDefault();
+            onChange(Math.min(100, Math.round((focusX + step) * 10) / 10), focusY);
+          } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            onChange(focusX, Math.max(0, Math.round((focusY - step) * 10) / 10));
+          } else if (e.key === "ArrowDown") {
+            e.preventDefault();
+            onChange(focusX, Math.min(100, Math.round((focusY + step) * 10) / 10));
+          }
+        }}
+      >
+        <Image
+          src={imageUrl}
+          alt=""
+          fill
+          className="pointer-events-none object-contain"
+          sizes="448px"
+          unoptimized={imageUrl.startsWith("https://") || imageUrl.endsWith(".svg")}
+          onLoad={(e) => {
+            const img = e.currentTarget;
+            setImageSize({
+              width: img.naturalWidth,
+              height: img.naturalHeight,
+            });
+          }}
+        />
+        <span
+          className="pointer-events-none absolute size-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-primary shadow-[0_0_0_1px_rgba(0,0,0,0.35)]"
+          style={{ left: marker.left, top: marker.top }}
+          aria-hidden
+        >
+          <Crosshair
+            className="absolute inset-0 m-auto size-3.5 text-white"
+            strokeWidth={2.25}
           />
-        </label>
-        <label className="text-xs text-[#5c5f66]">
-          Vertikal {focusY}%
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={0.5}
-            value={focusY}
-            onChange={(e) => onChange(focusX, Number(e.target.value))}
-            className="mt-1 h-2 w-full cursor-pointer accent-primary"
-          />
-        </label>
+        </span>
       </div>
 
       {!isDefault ? (
