@@ -19,5 +19,6 @@ export function paypalExpressSdkSrc(clientId: string, currency: string): string 
 export function isPayPalApplePayConfigEligible(
   config: { isEligible?: boolean } | null | undefined,
 ): boolean {
-  return Boolean(config) && config.isEligible !== false;
+  if (!config) return false;
+  return config.isEligible !== false;
 }
