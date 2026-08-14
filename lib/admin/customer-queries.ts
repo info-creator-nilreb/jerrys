@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { cache } from "react";
 import { orderContributesToAdminCustomer } from "@/lib/checkout/paypal-express-placeholder";
 import { getPrisma } from "@/lib/db/prisma";
 
@@ -96,7 +97,7 @@ function shippingSnapshot(o: OrderRowForCustomers): string {
   ].join("|");
 }
 
-export async function listCustomersForAdmin(): Promise<AdminCustomerListRow[]> {
+async function buildAllCustomerRows(): Promise<AdminCustomerListRow[]> {
   const orders = (await getPrisma().order.findMany({
     orderBy: { createdAt: "desc" },
     select: orderSelectForCustomers,
@@ -111,7 +112,6 @@ export async function listCustomersForAdmin(): Promise<AdminCustomerListRow[]> {
   const byNorm = new Map<string, Agg>();
 
   for (const o of orders) {
-    // Keine Ghost-Kunden aus abgebrochenem Express / offener Zahlung.
     if (!orderContributesToAdminCustomer(o)) continue;
 
     const norm = normalizeAdminCustomerEmail(o.email);
@@ -145,6 +145,23 @@ export async function listCustomersForAdmin(): Promise<AdminCustomerListRow[]> {
 
   rows.sort((a, b) => b.lastOrderAt.getTime() - a.lastOrderAt.getTime());
   return rows;
+}
+
+const getAllAdminCustomerRows = cache(buildAllCustomerRows);
+
+export async function listCustomersForAdmin(): Promise<AdminCustomerListRow[]> {
+  return getAllAdminCustomerRows();
+}
+
+export async function getCustomersForAdminListPage(opts: {
+  skip: number;
+  take: number;
+}): Promise<{ rows: AdminCustomerListRow[]; total: number }> {
+  const all = await getAllAdminCustomerRows();
+  return {
+    rows: all.slice(opts.skip, opts.skip + opts.take),
+    total: all.length,
+  };
 }
 
 export type AdminCustomerAddressBlock = {

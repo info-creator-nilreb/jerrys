@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { listCustomersForAdmin } from "@/lib/admin/customer-queries";
+import { AdminListPagination } from "@/components/admin/admin-list-pagination";
+import { getCustomersForAdminListPage } from "@/lib/admin/customer-queries";
+import { resolveAdminListPagination } from "@/lib/admin/list-pagination-page";
 import { orderStatusLabel } from "@/lib/orders/order-status-label";
 
 export const dynamic = "force-dynamic";
@@ -14,8 +16,18 @@ const dateFmt = new Intl.DateTimeFormat("de-DE", {
   timeStyle: "short",
 });
 
-export default async function AdminCustomersPage() {
-  const customers = await listCustomersForAdmin();
+export default async function AdminCustomersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; size?: string }>;
+}) {
+  const sp = await searchParams;
+  const { total } = await getCustomersForAdminListPage({ skip: 0, take: 0 });
+  const pagination = resolveAdminListPagination("/admin/customers", sp, total);
+  const { rows: customers } = await getCustomersForAdminListPage({
+    skip: pagination.skip,
+    take: pagination.take,
+  });
 
   return (
     <div className="mx-auto max-w-6xl rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm sm:p-8">
@@ -27,7 +39,7 @@ export default async function AdminCustomersPage() {
         </p>
       </div>
 
-      {customers.length === 0 ? (
+      {total === 0 ? (
         <p className="mt-8 text-sm text-[#6b7280]">Noch keine Kunden mit Bestellungen vorhanden.</p>
       ) : (
         <>
@@ -113,6 +125,13 @@ export default async function AdminCustomersPage() {
               </tbody>
             </table>
           </div>
+
+          <AdminListPagination
+            basePath="/admin/customers"
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            total={total}
+          />
         </>
       )}
     </div>

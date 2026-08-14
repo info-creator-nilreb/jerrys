@@ -35,9 +35,15 @@ export async function getAdminDashboardOrdersSnapshot() {
   };
 }
 
-export async function listOrdersForAdmin() {
+export async function countOrdersForAdmin(): Promise<number> {
+  return getPrisma().order.count();
+}
+
+export async function listOrdersForAdmin(opts?: { skip?: number; take?: number }) {
   return getPrisma().order.findMany({
     orderBy: { createdAt: "desc" },
+    skip: opts?.skip,
+    take: opts?.take,
     select: {
       id: true,
       orderNumber: true,

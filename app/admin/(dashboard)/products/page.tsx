@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { listProductsForAdmin } from "@/lib/catalog/queries";
+import { AdminListPagination } from "@/components/admin/admin-list-pagination";
+import { countProductsForAdmin, listProductsForAdmin } from "@/lib/catalog/queries";
+import { resolveAdminListPagination } from "@/lib/admin/list-pagination-page";
 import {
   ProductsAdminTable,
   type AdminProductListRow,
@@ -11,8 +13,19 @@ export const metadata = {
   title: "Katalog",
 };
 
-export default async function AdminProductsPage() {
-  const products = await listProductsForAdmin();
+export default async function AdminProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; size?: string }>;
+}) {
+  const sp = await searchParams;
+  const total = await countProductsForAdmin();
+  const pagination = resolveAdminListPagination("/admin/products", sp, total);
+  const products = await listProductsForAdmin({
+    skip: pagination.skip,
+    take: pagination.take,
+  });
+
   const rows: AdminProductListRow[] = products.map((p) => ({
     id: p.id,
     title: p.title,
@@ -48,7 +61,7 @@ export default async function AdminProductsPage() {
         </div>
       </div>
 
-      {rows.length === 0 ? (
+      {total === 0 ? (
         <p className="mt-8 text-sm text-[#6b7280]">
           Noch keine Produkte.{" "}
           <Link href="/admin/products/new" className="font-medium text-primary hover:underline">
@@ -64,7 +77,15 @@ export default async function AdminProductsPage() {
           .
         </p>
       ) : (
-        <ProductsAdminTable products={rows} />
+        <>
+          <ProductsAdminTable products={rows} />
+          <AdminListPagination
+            basePath="/admin/products"
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            total={total}
+          />
+        </>
       )}
     </div>
   );

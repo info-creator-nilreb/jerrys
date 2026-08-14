@@ -178,9 +178,15 @@ const defaultVariantAdminSelect = {
   maxOrderQty: true,
 } as const;
 
-export async function listProductsForAdmin() {
+export async function countProductsForAdmin(): Promise<number> {
+  return getPrisma().product.count();
+}
+
+export async function listProductsForAdmin(opts?: { skip?: number; take?: number }) {
   return getPrisma().product.findMany({
     orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
+    skip: opts?.skip,
+    take: opts?.take,
     include: {
       variants: {
         where: { isDefault: true },
