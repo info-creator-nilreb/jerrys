@@ -78,6 +78,7 @@ export async function sendOrderConfirmationIfNeeded(
           shipping,
           total,
           paymentMethod,
+          shippingLabel: order.deliveryMethod === "pickup" ? "Abholung" : "Versand",
         }),
         items_text: orderItemsText(itemsForText),
       },

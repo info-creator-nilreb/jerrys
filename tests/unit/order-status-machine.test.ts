@@ -17,6 +17,14 @@ describe("order-status-machine", () => {
     expect(isAllowedOrderStatusTransition("processing", "completed")).toBe(false);
   });
 
+  it("erlaubt processing → abgeholt und abgeholt → completed", () => {
+    expect(isAllowedOrderStatusTransition("processing", "abgeholt")).toBe(true);
+    expect(isAllowedOrderStatusTransition("abgeholt", "completed")).toBe(true);
+    expect(isAllowedOrderStatusTransition("abgeholt", "retoure")).toBe(true);
+    expect(isAllowedOrderStatusTransition("abgeholt", "refunded")).toBe(true);
+    expect(isAllowedOrderStatusTransition("paid", "abgeholt")).toBe(false);
+  });
+
   it("erlaubt shipped → completed", () => {
     expect(isAllowedOrderStatusTransition("shipped", "completed")).toBe(true);
   });

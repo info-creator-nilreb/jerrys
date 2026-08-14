@@ -163,7 +163,10 @@ export async function buildInvoicePdfBuffer(order: Order & { items: OrderItem[] 
   page.drawText("Zwischensumme Waren", { x: margin + 300, y, size: 9, font, color: TEXT });
   page.drawText(formatPrice(order.subtotalGrossCents, order.currency), { x: margin + 440, y, size: 9, font, color: TEXT });
   y -= 12;
-  page.drawText("Versand", { x: margin + 300, y, size: 9, font, color: TEXT });
+  page.drawText(
+    order.deliveryMethod === "pickup" ? "Abholung" : "Versand",
+    { x: margin + 300, y, size: 9, font, color: TEXT },
+  );
   page.drawText(formatPrice(order.shippingCents, order.currency), { x: margin + 440, y, size: 9, font, color: TEXT });
   y -= 12;
 

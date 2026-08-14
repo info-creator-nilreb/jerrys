@@ -22,6 +22,8 @@ export function computeCheckoutOrderTotalsWithDiscount(input: {
   discountOffSubtotalCents: number;
   /** Versandkostenfrei-Promotion: Versand wird auf 0 gesetzt (nach üblicher Versandberechnung). */
   applyFreeShippingPromotion?: boolean;
+  /** Abholung: Versand immer 0, ohne Frei-Versand-Promotion als Ersparnis. */
+  deliveryMethod?: "shipping" | "pickup";
 }): CheckoutOrderTotalsWithDiscount {
   const discountRaw = Math.max(0, Math.round(input.discountOffSubtotalCents));
 
@@ -30,12 +32,15 @@ export function computeCheckoutOrderTotalsWithDiscount(input: {
     0,
   );
 
-  const shippingRaw = shippingGrossCentsForCountry({
-    subtotalGrossCents: catalogSubtotalGross,
-    shippingCountryCode: input.shippingCountryCode,
-    shippingRatesCentsByCountry: input.shippingRatesCentsByCountry,
-    freeShippingFromSubtotalGrossCents: input.freeShippingFromSubtotalGrossCents,
-  });
+  const pickup = input.deliveryMethod === "pickup";
+  const shippingRaw = pickup
+    ? 0
+    : shippingGrossCentsForCountry({
+        subtotalGrossCents: catalogSubtotalGross,
+        shippingCountryCode: input.shippingCountryCode,
+        shippingRatesCentsByCountry: input.shippingRatesCentsByCountry,
+        freeShippingFromSubtotalGrossCents: input.freeShippingFromSubtotalGrossCents,
+      });
 
   const applyFreeShipping = input.applyFreeShippingPromotion === true;
   const shippingFinal = applyFreeShipping ? 0 : shippingRaw;

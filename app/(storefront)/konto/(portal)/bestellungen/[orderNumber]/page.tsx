@@ -6,6 +6,7 @@ import { getCustomerSession } from "@/lib/auth/customer-session";
 import { getOrderForCustomer } from "@/features/customers";
 import { formatPrice } from "@/lib/catalog/format";
 import { paymentMethodLabel } from "@/lib/orders/payment-method-label";
+import { isPickupDeliveryMethod } from "@/lib/checkout/delivery-method";
 
 export const metadata = {
   title: "Bestelldetails",
@@ -67,6 +68,7 @@ export default async function CustomerOrderDetailPage({
         <CustomerOrderStatusBadge
           status={order.status}
           fulfillmentStatus={order.fulfillmentStatus}
+          deliveryMethod={order.deliveryMethod}
         />
       </header>
 
@@ -115,7 +117,9 @@ export default async function CustomerOrderDetailPage({
             </div>
           ) : null}
           <div className="flex justify-between gap-4">
-            <dt className="text-(--foreground-muted)">Versand</dt>
+            <dt className="text-(--foreground-muted)">
+              {isPickupDeliveryMethod(order.deliveryMethod) ? "Abholung" : "Versand"}
+            </dt>
             <dd className="tabular-nums text-(--foreground-heading)">
               {formatPrice(order.shippingCents, order.currency)}
             </dd>
@@ -133,9 +137,9 @@ export default async function CustomerOrderDetailPage({
       </section>
 
       <section aria-labelledby="ship-heading" className="space-y-2">
-        <h2 id="ship-heading" className="text-base font-semibold text-(--foreground-heading)">
-          Lieferadresse
-        </h2>
+          <h2 id="ship-heading" className="text-base font-semibold text-(--foreground-heading)">
+            {isPickupDeliveryMethod(order.deliveryMethod) ? "Adresse (Abholung)" : "Lieferadresse"}
+          </h2>
         <address className="not-italic text-sm leading-relaxed text-(--foreground-muted)">
           {[order.shippingFirstName, order.shippingLastName].filter(Boolean).join(" ")}
           <br />

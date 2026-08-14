@@ -13,6 +13,8 @@ export function orderStatusLabel(status: string): string {
       return "In Bearbeitung";
     case "shipped":
       return "Versendet";
+    case "abgeholt":
+      return "Abgeholt";
     case "retoure":
       return "Retoure";
     case "completed":

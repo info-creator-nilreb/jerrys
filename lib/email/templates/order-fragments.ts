@@ -21,12 +21,14 @@ export function orderTotalsHtml(input: {
   shipping: string;
   total: string;
   paymentMethod: string;
+  shippingLabel?: string;
 }): string {
   const sub = escapeHtmlForEmail(input.subtotal);
   const ship = escapeHtmlForEmail(input.shipping);
   const tot = escapeHtmlForEmail(input.total);
   const pm = escapeHtmlForEmail(input.paymentMethod);
-  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333"><tr><td style="padding:6px 0;border-top:2px solid ${divider}">Zwischensumme</td><td style="padding:6px 0;border-top:2px solid ${divider};text-align:right;font-weight:600;color:#1f2937">${sub}</td></tr><tr><td style="padding:6px 0;border-bottom:1px solid ${divider}">Versand</td><td style="padding:6px 0;border-bottom:1px solid ${divider};text-align:right;font-weight:600;color:#1f2937">${ship}</td></tr><tr><td style="padding:10px 0 6px;font-weight:700;font-size:15px;color:#1f2937">Gesamt</td><td style="padding:10px 0 6px;text-align:right;font-weight:700;font-size:16px;color:#1f2937">${tot}</td></tr><tr><td colspan="2" style="padding:4px 0 0;font-size:13px;color:${textMuted}">inkl. MwSt. · Zahlungsart: ${pm}</td></tr></table>`;
+  const shipLabel = escapeHtmlForEmail(input.shippingLabel ?? "Versand");
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333"><tr><td style="padding:6px 0;border-top:2px solid ${divider}">Zwischensumme</td><td style="padding:6px 0;border-top:2px solid ${divider};text-align:right;font-weight:600;color:#1f2937">${sub}</td></tr><tr><td style="padding:6px 0;border-bottom:1px solid ${divider}">${shipLabel}</td><td style="padding:6px 0;border-bottom:1px solid ${divider};text-align:right;font-weight:600;color:#1f2937">${ship}</td></tr><tr><td style="padding:10px 0 6px;font-weight:700;font-size:15px;color:#1f2937">Gesamt</td><td style="padding:10px 0 6px;text-align:right;font-weight:700;font-size:16px;color:#1f2937">${tot}</td></tr><tr><td colspan="2" style="padding:4px 0 0;font-size:13px;color:${textMuted}">inkl. MwSt. · Zahlungsart: ${pm}</td></tr></table>`;
 }
 
 export function orderItemsHtml(items: OrderLineItemForEmail[]): string {

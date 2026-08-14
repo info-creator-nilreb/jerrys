@@ -2,6 +2,7 @@ import { z } from "zod";
 import { nonEmptyString } from "@/lib/validation/form";
 import { addressLine1HouseNumberMessage } from "@/lib/checkout/address-line-validation";
 import { normalizeAddressText } from "@/lib/checkout/address-text";
+import { parseCheckoutDeliveryMethod } from "@/lib/checkout/delivery-method";
 import { postalCodeErrorMessage } from "@/lib/checkout/postal-code-validation";
 
 export const paymentMethodSchema = z.enum(["paypal"]);
@@ -47,6 +48,7 @@ const checkoutBase = z.object({
   billingCountry: z.preprocess(nullToUndef, z.string().optional()),
   phone: emptyToUndef,
   paymentMethod: paymentMethodSchema,
+  deliveryMethod: z.preprocess(parseCheckoutDeliveryMethod, z.enum(["shipping", "pickup"])),
   /** Eine Checkbox: AGB + Widerrufsbelehrung (siehe Checkout-UI). */
   rechtlicheKenntnis: z.preprocess(
     (v) => (v === "on" ? "on" : ""),
@@ -144,6 +146,7 @@ export const checkoutFormSchema = checkoutBase
       billingCountry: billing.billingCountry.trim().toUpperCase(),
       phone: val.phone,
       paymentMethod: val.paymentMethod,
+      deliveryMethod: val.deliveryMethod,
       idempotencyKey: val.idempotencyKey,
       saveShippingAddress: val.saveShippingAddress ?? false,
       saveBillingAddress: val.saveBillingAddress ?? false,

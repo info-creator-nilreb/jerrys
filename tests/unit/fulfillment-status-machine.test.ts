@@ -15,6 +15,7 @@ describe("fulfillment-status-machine", () => {
   it("leitet Fulfillment aus Bestellstatus ab", () => {
     expect(fulfillmentStatusAfterOrderTransition("processing")).toBe("preparing");
     expect(fulfillmentStatusAfterOrderTransition("shipped")).toBe("shipped");
+    expect(fulfillmentStatusAfterOrderTransition("abgeholt")).toBe("delivered");
     expect(fulfillmentStatusAfterOrderTransition("paid")).toBe(null);
   });
 });

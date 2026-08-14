@@ -15,6 +15,7 @@ import {
 } from "@/features/fulfillment";
 import { fulfillmentStatusLabel } from "@/features/orders";
 import { formatPrice } from "@/lib/catalog/format";
+import { isPickupDeliveryMethod, deliveryMethodLabel } from "@/lib/checkout/delivery-method";
 import { EMAIL_ORDER_SHIPPED } from "@/lib/email/email-types";
 import { isInvoiceAllocationAllowedForOrderStatus } from "@/lib/invoice/allocate-invoice-for-order";
 import { getOrderDetailForAdmin } from "@/lib/orders/admin-queries";
@@ -177,6 +178,11 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
           Technischer Status:{" "}
           <span className="font-medium text-[#1f2937]">{orderStatusLabel(order.status)}</span>
           {" · "}
+          Lieferart:{" "}
+          <span className="font-medium text-[#1f2937]">
+            {deliveryMethodLabel(order.deliveryMethod)}
+          </span>
+          {" · "}
           Fulfillment:{" "}
           <span className="font-medium text-[#1f2937]">
             {fulfillmentStatusLabel(order.fulfillmentStatus)}
@@ -197,6 +203,11 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
       </section>
 
       <section className="border-t border-[#e8eaed] pt-6">
+        {isPickupDeliveryMethod(order.deliveryMethod) ? (
+          <p className="mb-3 text-sm text-[#6b7280]">
+            Diese Bestellung ist als Abholung erfasst — Versandetiketten sind nicht erforderlich.
+          </p>
+        ) : null}
         <OrderInternetmarkePanel
           orderId={order.id}
           configured={internetmarkeConfigured}
@@ -293,7 +304,9 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
             <dd className="font-medium">{formatPrice(order.subtotalGrossCents, order.currency)}</dd>
           </div>
           <div className="flex justify-between gap-4">
-            <dt className="text-[#6b7280]">Versand</dt>
+            <dt className="text-[#6b7280]">
+              {isPickupDeliveryMethod(order.deliveryMethod) ? "Abholung" : "Versand"}
+            </dt>
             <dd className="font-medium">{formatPrice(order.shippingCents, order.currency)}</dd>
           </div>
           <div className="flex justify-between gap-4">
@@ -320,7 +333,9 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
 
       <section className="grid gap-8 border-t border-[#e8eaed] pt-6 sm:grid-cols-2">
         <div>
-          <h2 className="text-sm font-semibold text-[#374151]">Lieferadresse</h2>
+          <h2 className="text-sm font-semibold text-[#374151]">
+            {isPickupDeliveryMethod(order.deliveryMethod) ? "Adresse (Abholung)" : "Lieferadresse"}
+          </h2>
           <div className="mt-2 flex items-start gap-2">
             <address className="inline-block text-sm not-italic leading-relaxed text-[#6b7280]">
               {shipLines.map((line) => (
@@ -335,7 +350,11 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         <div>
           <h2 className="text-sm font-semibold text-[#374151]">Rechnungsadresse</h2>
           {billingMatchesShipping ? (
-            <p className="mt-2 text-sm text-[#6b7280]">Entspricht der Lieferadresse.</p>
+            <p className="mt-2 text-sm text-[#6b7280]">
+              {isPickupDeliveryMethod(order.deliveryMethod)
+                ? "Entspricht der Abholadresse."
+                : "Entspricht der Lieferadresse."}
+            </p>
           ) : (
             <div className="mt-2 flex items-start gap-2">
               <address className="inline-block text-sm not-italic leading-relaxed text-[#6b7280]">

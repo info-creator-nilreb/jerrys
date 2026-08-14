@@ -440,6 +440,8 @@ model Order {
   customerId          String?     @map("customer_id")
   customer            Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
   paymentMethod       String      @map("payment_method")
+  /// shipping = Versand; pickup = Abholung vor Ort (keine Versandkosten).
+  deliveryMethod      String      @default("shipping") @map("delivery_method")
   status              String      @default("bestaetigt") @map("status")
   fulfillmentStatus   FulfillmentStatus @default(unfulfilled) @map("fulfillment_status")
   shippingFirstName   String      @map("shipping_first_name")
