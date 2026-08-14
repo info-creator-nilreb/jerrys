@@ -178,3 +178,32 @@ export async function claimGuestOrdersForCustomer(
 
   return { ok: true, claimedCount };
 }
+
+/**
+ * Ordnet passende Gastbestellungen nach E-Mail-Verifikation oder Anmeldung automatisch zu.
+ * Fehler blockieren den Aufrufer nicht — Verifikation/Login bleiben erfolgreich.
+ */
+export async function autoClaimGuestOrdersAfterVerification(
+  customerId: string,
+): Promise<number> {
+  try {
+    const result = await claimGuestOrdersForCustomer(customerId);
+    if (result.ok) {
+      if (result.claimedCount > 0) {
+        log.info("guest_orders_auto_claimed", {
+          customerId,
+          claimedCount: result.claimedCount,
+        });
+      }
+      return result.claimedCount;
+    }
+    log.warn("guest_orders_auto_claim_skipped", {
+      customerId,
+      message: result.message,
+    });
+    return 0;
+  } catch (e) {
+    log.error("guest_orders_auto_claim_failed", { customerId, error: String(e) });
+    return 0;
+  }
+}

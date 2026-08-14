@@ -6,11 +6,12 @@ import {
   normalizeCustomerAuthTokenFromClient,
 } from "@/features/customers/domain/auth-token";
 import { customerAuthTokenSchema } from "@/features/customers/application/customer-auth-schemas";
+import { autoClaimGuestOrdersAfterVerification } from "@/features/customers/application/guest-order-claim";
 
 const log = createLogger("customers.verify-email");
 
 export type VerifyCustomerEmailResult =
-  | { ok: true; customerId: string; email: string }
+  | { ok: true; customerId: string; email: string; claimedGuestOrderCount: number }
   | { ok: false; message: string };
 
 export async function verifyCustomerEmail(input: unknown): Promise<VerifyCustomerEmailResult> {
@@ -63,5 +64,13 @@ export async function verifyCustomerEmail(input: unknown): Promise<VerifyCustome
   ]);
 
   log.info("customer_email_verified", { customerId: row.customerId });
-  return { ok: true, customerId: row.customerId, email: row.customer.email };
+
+  const claimedGuestOrderCount = await autoClaimGuestOrdersAfterVerification(row.customerId);
+
+  return {
+    ok: true,
+    customerId: row.customerId,
+    email: row.customer.email,
+    claimedGuestOrderCount,
+  };
 }

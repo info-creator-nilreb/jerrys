@@ -13,7 +13,7 @@ CLI: `npm run orders:import-shopify -- --file ./orders.csv` (Standard: Dry-Run).
 
 1. Dry-Run: Mapping + Validierung + Report (keine DB-Schreibvorgänge).
 2. `--apply` auf Staging/Produktion.
-3. Kunden: Konto anlegen, E-Mail verifizieren, unter `/konto/bestellungen/zuordnen` zuordnen.
+3. Kunden: Konto anlegen, E-Mail verifizieren — passende Bestellungen werden **automatisch zugeordnet** (zusätzlich bei jeder Anmeldung). Manuelle Zuordnung bleibt unter `/konto/bestellungen/zuordnen` für Nachziehen.
 
 ## Feld-Mapping (Auszug)
 
@@ -58,11 +58,11 @@ npm run orders:import-shopify -- --file ./shopify-orders.csv --apply --update
 ## Grenzen
 
 - CSV enthält keine vollständige Refund-Historie — Teilerstattungen werden vereinfacht.
-- Keine automatische Konto-Verknüpfung (bewusst: Verifikation erforderlich).
+- Keine automatische Konto-Verknüpfung ohne Verifikation — nach bestätigter E-Mail erfolgt Auto-Zuordnung (und erneuter Versuch bei Anmeldung).
 - Workshop-/POS-Bestellungen aus anderen Systemen: separat prüfen.
 
 ## Nächste Ausbaustufen
 
 1. Admin-UI (wie Produktimport).
-2. Auto-Zuordnung direkt nach E-Mail-Verifikation.
+2. ~~Auto-Zuordnung direkt nach E-Mail-Verifikation.~~ (umgesetzt)
 3. Shopify GraphQL Admin API statt CSV.

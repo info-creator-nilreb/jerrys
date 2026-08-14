@@ -163,3 +163,33 @@ describe("claimGuestOrdersForCustomer", () => {
     expect(orderUpdateMany).not.toHaveBeenCalled();
   });
 });
+
+describe("autoClaimGuestOrdersAfterVerification", () => {
+  it("gibt die Anzahl zugeordneter Bestellungen zurück", async () => {
+    verifiedCustomer();
+    orderFindMany.mockResolvedValue([{ id: "o1", orderNumber: "J-1" }]);
+    orderUpdateMany.mockResolvedValue({ count: 1 });
+
+    const { autoClaimGuestOrdersAfterVerification } = await import("@/features/customers");
+    expect(await autoClaimGuestOrdersAfterVerification("cust-a")).toBe(1);
+  });
+
+  it("gibt 0 zurück, wenn die Zuordnung abgelehnt wird", async () => {
+    customerFindUnique.mockResolvedValue({
+      id: "cust-a",
+      isActive: true,
+      emailVerifiedAt: null,
+    });
+
+    const { autoClaimGuestOrdersAfterVerification } = await import("@/features/customers");
+    expect(await autoClaimGuestOrdersAfterVerification("cust-a")).toBe(0);
+  });
+
+  it("wirft nicht bei Fehlern", async () => {
+    verifiedCustomer();
+    orderFindMany.mockRejectedValue(new Error("db down"));
+
+    const { autoClaimGuestOrdersAfterVerification } = await import("@/features/customers");
+    await expect(autoClaimGuestOrdersAfterVerification("cust-a")).resolves.toBe(0);
+  });
+});
