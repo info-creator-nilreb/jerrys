@@ -19,7 +19,7 @@ CLI: `npm run orders:import-shopify -- --file ./orders.csv` (Standard: Dry-Run).
 
 | Shopify | Ziel | Regel |
 | --- | --- | --- |
-| `Name` (`#1042`) | `orderNumber` | `SHOPIFY-1042` |
+| `Name` (`#1042`) | `orderNumber` | `#1042` (Shopify-Nummer unverändert) |
 | `Id` | `idempotencyKey` | `shopify-order:{Id}` — idempotenter Re-Import |
 | `Email` | `email` | lowercase; **Pflicht** für spätere Zuordnung |
 | `Financial Status` | `status` | paid+fulfilled → `completed`, refunded → `refunded`, … |

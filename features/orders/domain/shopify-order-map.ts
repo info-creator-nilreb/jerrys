@@ -68,10 +68,12 @@ export type MapShopifyOrderOptions = {
 export function shopifyOrderNumberFromName(name: string, shopifyId: string): string {
   const trimmed = name.trim();
   if (trimmed) {
+    if (trimmed.startsWith("#")) return trimmed;
     const digits = trimmed.replace(/^#/, "").trim();
-    if (digits) return `SHOPIFY-${digits}`;
+    if (digits) return `#${digits}`;
+    return trimmed;
   }
-  if (shopifyId.trim()) return `SHOPIFY-ID-${shopifyId.trim()}`;
+  if (shopifyId.trim()) return shopifyId.trim();
   return "";
 }
 

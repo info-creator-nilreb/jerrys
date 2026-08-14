@@ -59,8 +59,8 @@ describe("parseShopifyOrderCsv", () => {
 
 describe("shopifyOrderNumberFromName", () => {
   it("normalisiert Shopify-Namen", () => {
-    expect(shopifyOrderNumberFromName("#1042", "")).toBe("SHOPIFY-1042");
-    expect(shopifyOrderNumberFromName("", "999")).toBe("SHOPIFY-ID-999");
+    expect(shopifyOrderNumberFromName("#1042", "")).toBe("#1042");
+    expect(shopifyOrderNumberFromName("", "999")).toBe("999");
   });
 });
 
@@ -85,7 +85,7 @@ describe("mapShopifyOrderToCatalog", () => {
     const csv = fs.readFileSync(fixturePath, "utf8");
     const [first] = parseShopifyOrderCsv(csv);
     const mapped = mapShopifyOrderToCatalog(first!);
-    expect(mapped.orderNumber).toBe("SHOPIFY-1042");
+    expect(mapped.orderNumber).toBe("#1042");
     expect(mapped.email).toBe("customer@example.com");
     expect(mapped.status).toBe("completed");
     expect(mapped.lineItems).toHaveLength(1);
