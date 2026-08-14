@@ -31,6 +31,17 @@ describe("parseShopifyOrderCsv", () => {
     expect(orders[1]?.lineItems).toHaveLength(2);
     expect(orders[1]?.lineItems[1]?.name).toBe("Silver Bracelet");
   });
+
+  it("parst Semikolon-CSV (Excel/DE)", () => {
+    const csv = [
+      "Name;Email;Financial Status;Fulfillment Status;Created at;Currency;Subtotal;Shipping;Taxes;Total;Id;Lineitem quantity;Lineitem name;Lineitem price;Lineitem sku",
+      "#2001;buyer@example.com;paid;fulfilled;2024-06-15 10:30:00 +0200;EUR;25.00;4.90;5.00;34.90;9001;1;Ohrringe Luise;25.00;",
+    ].join("\n");
+    const orders = parseShopifyOrderCsv(csv);
+    expect(orders).toHaveLength(1);
+    expect(orders[0]?.email).toBe("buyer@example.com");
+    expect(orders[0]?.lineItems[0]?.name).toBe("Ohrringe Luise");
+  });
 });
 
 describe("shopifyOrderNumberFromName", () => {

@@ -1,6 +1,6 @@
 /** Freigegebene Typen/Konstanten für Admin-Shopify-Bestellimport (kein `"use server"`). */
 
-export const SHOPIFY_ORDER_IMPORT_MAX_BYTES = 5 * 1024 * 1024;
+export const SHOPIFY_ORDER_IMPORT_MAX_BYTES = 25 * 1024 * 1024;
 
 export type ShopifyOrderImportRow = {
   shopifyName: string;

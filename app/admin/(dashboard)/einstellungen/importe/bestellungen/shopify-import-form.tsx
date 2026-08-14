@@ -223,7 +223,7 @@ export function ShopifyOrderImportForm() {
     }
     if (next.size > SHOPIFY_ORDER_IMPORT_MAX_BYTES) {
       setState({
-        error: `Datei zu groß (max. ${Math.round(SHOPIFY_ORDER_IMPORT_MAX_BYTES / (1024 * 1024))} MB).`,
+        error: `Datei zu groß (max. ${Math.round(SHOPIFY_ORDER_IMPORT_MAX_BYTES / (1024 * 1024))} MB). Für sehr große Exporte: npm run orders:import-shopify -- --file ./orders.csv`,
       });
       return;
     }
