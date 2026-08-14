@@ -189,7 +189,19 @@ export const EMAIL_TEMPLATE_CATALOG: EmailTemplateCatalogEntry[] = [
       ...SHOP_VARS,
       { path: "customer.first_name", label: "Vorname", example: "Alex" },
       { path: "order.number", label: "Bestellnummer", example: "ORD-1001" },
+      { path: "order.cancelled_date", label: "Stornodatum", example: "12.08.2026" },
       { path: "order.status_url", label: "Bestell-URL", example: "https://example.com/checkout/erfolg?nr=ORD-1001" },
+      {
+        path: "order.items_html",
+        label: "Positionen-Tabelle",
+        html: true,
+        example: "<table>…</table>",
+      },
+      {
+        path: "order.items_text",
+        label: "Positionen (Text)",
+        example: "- Produkt × 1: 49,90 €",
+      },
     ],
   },
   {

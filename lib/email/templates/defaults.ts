@@ -5,6 +5,7 @@ import {
 import type { EmailTemplateKey } from "@/lib/email/templates/catalog";
 import { getEmailTemplateCatalogEntry } from "@/lib/email/templates/catalog";
 import { buildOrderConfirmationOrderlyHtml } from "@/lib/email/templates/order-confirmation-orderly-html";
+import { buildOrderCancelledOrderlyHtml } from "@/lib/email/templates/order-cancelled-orderly-html";
 
 export type EmailTemplateDefaultContent = {
   key: EmailTemplateKey;
@@ -32,13 +33,7 @@ function orderShippedHtml(): string {
 }
 
 function orderCancelledHtml(): string {
-  return `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"/><title>Storno {{order.number}}</title></head><body style="font-family:system-ui,sans-serif;line-height:1.5;color:#111">
-<p>Hallo {{customer.first_name}},</p>
-<p>deine Bestellung <strong>{{order.number}}</strong> wurde storniert.</p>
-<p>Bei Fragen nutze bitte die Kontaktdaten im Impressum.</p>
-<p style="margin-top:1.25rem"><a href="{{order.status_url}}">Bestellung ansehen</a></p>
-<p>Liebe Grüße<br/>{{shop.name}}</p>
-</body></html>`;
+  return buildOrderCancelledOrderlyHtml();
 }
 
 function orderRefundedHtml(): string {
@@ -164,14 +159,20 @@ const DEFAULTS: Record<EmailTemplateKey, Omit<EmailTemplateDefaultContent, "key"
     textBody: [
       "Hallo {{customer.first_name}},",
       "",
-      "deine Bestellung {{order.number}} wurde storniert.",
+      "hiermit bestätigen wir dir, dass deine Bestellung storniert wurde.",
+      "",
+      "Bestellnummer: {{order.number}}",
+      "Storniert am: {{order.cancelled_date}}",
+      "",
+      "Positionen:",
+      "{{order.items_text}}",
       "",
       "Bei Fragen erreichst du uns über die Kontaktdaten im Impressum.",
       "",
-      "Link zur Bestellübersicht: {{order.status_url}}",
+      "Bestellung ansehen: {{order.status_url}}",
       "",
-      "Liebe Grüße",
-      "{{shop.name}}",
+      "Viele Grüße",
+      "Dein {{shop.name}}-Team",
     ].join("\n"),
   },
   order_refunded: {
