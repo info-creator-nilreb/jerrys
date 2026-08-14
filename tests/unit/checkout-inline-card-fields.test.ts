@@ -1,7 +1,15 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it, vi } from "vitest";
 import { showCheckoutInlineCardFields } from "@/lib/checkout/inline-card-fields";
+
+vi.mock("next/image", () => ({
+  default: function MockImage(props: { alt?: string }) {
+    return createElement("img", { alt: props.alt ?? "" });
+  },
+}));
 
 describe("showCheckoutInlineCardFields", () => {
   it("zeigt Kartenfelder nur unter der ausgewählten Karten-Option", () => {
@@ -23,5 +31,25 @@ describe("Checkout-Kartenfelder-Reihenfolge", () => {
     expect(legal).toBeGreaterThan(cardFieldsProp);
     expect(submit).toBeGreaterThan(legal);
     expect(src.indexOf("hidePayButton")).toBeGreaterThan(cardFieldsProp);
+  });
+
+  it("rendert Kartenfelder unter der Karten-Option, vor dem Hinweis", async () => {
+    const { CheckoutPaymentMethods } = await import("@/components/storefront/checkout-payment-methods");
+    const html = renderToStaticMarkup(
+      createElement(CheckoutPaymentMethods, {
+        value: "card",
+        onChange: () => undefined,
+        cardInline: true,
+        cardFields: createElement("div", { id: "checkout-card-fields" }, "Kartenfelder"),
+      }),
+    );
+    const sepaIdx = html.indexOf("SEPA Lastschrift");
+    const cardLabelIdx = html.indexOf("Debit- oder Kreditkarte");
+    const cardIdx = html.indexOf('id="checkout-card-fields"');
+    const hintIdx = html.indexOf("Geben Sie Ihre Kartendaten ein");
+    expect(cardIdx).toBeGreaterThan(-1);
+    expect(cardLabelIdx).toBeGreaterThan(sepaIdx);
+    expect(cardIdx).toBeGreaterThan(cardLabelIdx);
+    expect(hintIdx).toBeGreaterThan(cardIdx);
   });
 });
