@@ -59,6 +59,7 @@ export async function requestCustomerPasswordReset(
     kind: "password_reset",
     to: customer.email,
     rawToken,
+    firstName: customer.firstName,
   });
 
   log.info("password_reset_issued", { customerId: customer.id });

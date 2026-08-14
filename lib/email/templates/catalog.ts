@@ -351,11 +351,24 @@ export const EMAIL_TEMPLATE_CATALOG: EmailTemplateCatalogEntry[] = [
     variables: [
       ...SHOP_VARS,
       ...CTA_VARS,
+      { path: "customer.first_name", label: "Vorname", example: "Alex" },
+      {
+        path: "customer.greeting_html",
+        label: "Begrüßung (HTML)",
+        html: true,
+        example: "<p>Hallo Alex,</p>",
+      },
       {
         path: "email.notice_html",
-        label: "Hinweis-Karte",
+        label: "Hinweis-Karte (Legacy)",
         html: true,
         example: "<p>Wenn du diese Anfrage nicht gestellt hast…</p>",
+      },
+      {
+        path: "email.after_button_note_html",
+        label: "Hinweis unter Button (HTML)",
+        html: true,
+        example: "<p>Solltest du diese E-Mail irrtümlich erhalten haben…</p>",
       },
     ],
   },

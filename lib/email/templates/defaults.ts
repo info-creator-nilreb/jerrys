@@ -5,6 +5,7 @@ import {
 import type { EmailTemplateKey } from "@/lib/email/templates/catalog";
 import { getEmailTemplateCatalogEntry } from "@/lib/email/templates/catalog";
 import { buildOrderConfirmationOrderlyHtml } from "@/lib/email/templates/order-confirmation-orderly-html";
+import { buildPasswordResetOrderlyHtml } from "@/lib/email/templates/password-reset-orderly-html";
 
 export type EmailTemplateDefaultContent = {
   key: EmailTemplateKey;
@@ -311,18 +312,15 @@ const DEFAULTS: Record<EmailTemplateKey, Omit<EmailTemplateDefaultContent, "key"
   },
   password_reset: {
     subject: "Passwort zurücksetzen — {{shop.name}}",
-    htmlBody: authHtml(
-      "Passwort zurücksetzen",
-      "Du hast das Zurücksetzen deines Passworts angefordert. Der Link ist eine Stunde gültig.",
-    ),
+    htmlBody: buildPasswordResetOrderlyHtml(),
     textBody: [
-      "Passwort zurücksetzen",
+      "Dein Passwort zurücksetzen",
       "",
-      "Du hast das Zurücksetzen deines Passworts angefordert. Der Link ist eine Stunde gültig.",
+      "du hast darum gebeten, dass das Passwort für dein Konto zurückgesetzt wird. Bitte bestätige deine Anfrage.",
       "",
       "{{email.cta_label}}: {{email.cta_url}}",
       "",
-      "Wenn du diese Anfrage nicht gestellt hast, ignoriere diese E-Mail.",
+      "Solltest du diese E-Mail irrtümlich erhalten haben, kannst du diese ignorieren.",
     ].join("\n"),
   },
 };

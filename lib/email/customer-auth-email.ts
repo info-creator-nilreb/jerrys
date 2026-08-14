@@ -1,6 +1,10 @@
 import { customerAuthEmailActionUrl } from "@/lib/email/customer-auth-email-link";
 import { sendTransactionalEmail } from "@/lib/email/provider";
 import { escapeHtmlForEmail } from "@/lib/email/template-utils";
+import {
+  authAfterButtonNoteHtml,
+  customerGreetingHtml,
+} from "@/lib/email/templates/auth-email-fragments";
 import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
 import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
 import { createLogger } from "@/lib/logging/logger";
@@ -26,7 +30,7 @@ const AUTH_META: Record<
     templateKey: "magic_link",
   },
   password_reset: {
-    cta: "Neues Passwort wählen",
+    cta: "Passwort zurücksetzen",
     pathPrefix: "/konto/passwort-zuruecksetzen",
     templateKey: "password_reset",
   },
@@ -43,6 +47,7 @@ export async function sendCustomerAuthEmail(params: {
   kind: CustomerAuthEmailKind;
   to: string;
   rawToken: string;
+  firstName?: string | null;
 }): Promise<CustomerAuthEmailSendResult> {
   const branding = await resolveTransactionalEmailBranding();
   const meta = AUTH_META[params.kind];
@@ -59,7 +64,16 @@ export async function sendCustomerAuthEmail(params: {
       cta: { href, label: meta.cta },
       heroVariant: "account",
     }),
-    {},
+    {
+      customer: {
+        first_name: params.firstName?.trim() ?? "",
+        greeting_html: customerGreetingHtml(params.firstName),
+      },
+      email: {
+        after_button_note_html:
+          params.kind === "password_reset" ? authAfterButtonNoteHtml() : "",
+      },
+    },
   );
 
   const rendered = await renderStoredEmailTemplate(meta.templateKey, vars);
