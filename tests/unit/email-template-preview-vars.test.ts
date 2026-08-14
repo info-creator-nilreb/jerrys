@@ -85,4 +85,33 @@ describe("buildEmailTemplatePreviewVars", () => {
     expect(workshop.details_html).toContain("jerry's Bar, Berlin");
     expect(workshop.details_html).not.toContain("…");
   });
+
+  it("nutzt für Wunschtermin angenommen volle Wunschzeit und CTA", () => {
+    const vars = buildEmailTemplatePreviewVars(
+      "workshop_date_request_approved",
+      defaultTransactionalEmailBranding(),
+    );
+    const workshop = vars.workshop as Record<string, string>;
+    const email = vars.email as Record<string, string>;
+
+    expect(email.cta_label).toBe("Termine ansehen");
+    expect(workshop.details_html).toContain("Wunschzeit:");
+    expect(workshop.details_html).toContain("Sa., 20.09.2026, 18:00");
+    expect(workshop.details_html).not.toContain("…");
+  });
+
+  it("nutzt für Wunschtermin abgelehnt volle Zeit und Admin-Hinweis", () => {
+    const vars = buildEmailTemplatePreviewVars(
+      "workshop_date_request_rejected",
+      defaultTransactionalEmailBranding(),
+    );
+    const workshop = vars.workshop as Record<string, string>;
+    const email = vars.email as Record<string, string>;
+
+    expect(email.cta_label).toBe("Termine ansehen");
+    expect(workshop.details_html).toContain("Angefragte Zeit:");
+    expect(workshop.details_html).toContain("Sa., 20.09.2026, 18:00");
+    expect(workshop.details_html).toContain("Leider keine Kapazität");
+    expect(workshop.details_html).not.toContain("…");
+  });
 });
