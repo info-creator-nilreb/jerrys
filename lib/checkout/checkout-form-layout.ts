@@ -7,3 +7,6 @@ export const CHECKOUT_FORM_COLUMN_CLASS = "w-full max-w-xl";
 /** Bestellübersicht rechts — abgesetzte Fläche wie Shopify Checkout. */
 export const CHECKOUT_SUMMARY_PANEL_CLASS =
   "bg-(--surface-subtle) lg:min-h-[calc(100dvh-5.5rem)]";
+
+/** Inhalt in der Summary-Spalte: schmaler als die graue Fläche (~Hälfte der Formularspalte). */
+export const CHECKOUT_SUMMARY_CONTENT_CLASS = "w-full max-w-sm lg:max-w-[18rem]";
