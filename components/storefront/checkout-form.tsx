@@ -32,7 +32,7 @@ import {
 import { PayPalCardFieldsCheckout } from "@/components/storefront/paypal-card-fields-checkout";
 import { SmartAddressFields } from "@/components/storefront/smart-address-fields";
 import { computeCheckoutOrderTotalsWithDiscount } from "@/lib/promotions/checkout-totals";
-import { checkoutContactLoginHref } from "@/lib/checkout/contact-login-href";
+import { openStorefrontLogin } from "@/lib/storefront/open-login-event";
 import type { OrderPriceLineInput } from "@/lib/tax/order-price-totals";
 import type {
   CheckoutAddressPrefill,
@@ -606,13 +606,13 @@ export function CheckoutForm({
           <div className="flex items-baseline justify-between gap-4">
             <h2 className="text-lg font-semibold text-[#1f2937]">Kontakt</h2>
             {showContactLogin ? (
-              <Link
-                href={checkoutContactLoginHref(workshopBookingId ? "/checkout/termine" : "/checkout")}
-                scroll={false}
+              <button
+                type="button"
+                onClick={() => openStorefrontLogin()}
                 className="text-sm font-medium text-primary underline-offset-2 hover:text-(--primary-hover) hover:underline"
               >
                 Anmelden
-              </Link>
+              </button>
             ) : null}
           </div>
           <div className="mt-4">

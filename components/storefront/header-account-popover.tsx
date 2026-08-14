@@ -23,6 +23,7 @@ import {
   useStorefrontHeaderUi,
 } from "@/components/storefront/storefront-header-ui";
 import { customerSignOutAction } from "@/app/(storefront)/konto/actions";
+import { OPEN_STOREFRONT_LOGIN_EVENT } from "@/lib/storefront/open-login-event";
 
 function useClientMounted(): boolean {
   return useSyncExternalStore(
@@ -103,6 +104,16 @@ export function HeaderAccountPopover({ isLoggedIn, email, initials }: Props) {
     if (wantsQueryOpen) setQueryDismissed(true);
     clearKontoQuery();
   }, [wantsQueryOpen, clearKontoQuery]);
+
+  useEffect(() => {
+    const onOpenLogin = () => {
+      if (isLoggedIn) return;
+      setQueryDismissed(false);
+      setUserOpen(true);
+    };
+    window.addEventListener(OPEN_STOREFRONT_LOGIN_EVENT, onOpenLogin);
+    return () => window.removeEventListener(OPEN_STOREFRONT_LOGIN_EVENT, onOpenLogin);
+  }, [isLoggedIn]);
 
   // Anmeldung im Popover: Kontext bleibt erhalten, das Panel wechselt in den Konto-Zustand.
   const onSignedIn = useCallback(() => {

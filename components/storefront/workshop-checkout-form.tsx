@@ -20,7 +20,7 @@ import {
   type CheckoutPayPalMethodId,
 } from "@/components/storefront/checkout-payment-methods";
 import { computeWorkshopCheckoutOrderTotals } from "@/lib/workshop/workshop-checkout-totals";
-import { checkoutContactLoginHref } from "@/lib/checkout/contact-login-href";
+import { openStorefrontLogin } from "@/lib/storefront/open-login-event";
 import type {
   CheckoutAddressPrefill,
   CustomerAddressListItem,
@@ -243,13 +243,13 @@ export function WorkshopCheckoutForm({
           <div className="flex items-baseline justify-between gap-4">
             <h2 className="text-lg font-semibold text-[#1f2937]">Kontakt</h2>
             {showContactLogin ? (
-              <Link
-                href={checkoutContactLoginHref("/checkout/termine")}
-                scroll={false}
+              <button
+                type="button"
+                onClick={() => openStorefrontLogin()}
                 className="text-sm font-medium text-primary underline-offset-2 hover:text-(--primary-hover) hover:underline"
               >
                 Anmelden
-              </Link>
+              </button>
             ) : null}
           </div>
           <div className="mt-4">
