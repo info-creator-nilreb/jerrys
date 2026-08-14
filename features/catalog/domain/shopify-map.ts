@@ -13,9 +13,9 @@ export type CatalogImportImage = {
 };
 
 export type CatalogImportVariant = {
-  /** Leere SKU wenn Shopify keine liefert — technische System-SKU erst beim Apply. */
+  /** Shopify-SKU oder Import-SKU aus Handle + Optionen. */
   sku: string;
-  /** true wenn Shopify-SKU fehlte (nicht aus Titel/Handle generieren). */
+  /** true wenn nach Mapping keine SKU vergeben werden konnte (Platzhalter-Variante). */
   skuMissing: boolean;
   title: string | null;
   isDefault: boolean;
@@ -236,9 +236,10 @@ export function mapShopifyProductToCatalog(
     let skuGenerated = false;
     let skuMissing = false;
     if (!sku) {
-      skuMissing = true;
+      sku = generateVariantSku(source.handle, v.optionValues, index, usedSkus);
+      skuGenerated = true;
       warnings.push(
-        `Variante #${index + 1}: keine Shopify-SKU — bleibt leer (keine Ableitung aus Name/Handle).`,
+        `Variante #${index + 1}: keine Shopify-SKU — Import-SKU aus Handle „${sku}“.`,
       );
     } else if (usedSkus.has(sku)) {
       const next = generateVariantSku(source.handle, v.optionValues, index, usedSkus);

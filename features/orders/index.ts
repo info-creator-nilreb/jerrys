@@ -15,6 +15,14 @@ export {
   type ShopifyParsedOrder,
 } from "@/features/orders/domain/shopify-order-csv";
 export {
+  parseShopifyLineItemName,
+  normalizeCatalogMatchText,
+  matchOrderLineToCatalog,
+  titleVariantMatchKey,
+  type CatalogMatchIndex,
+  type CatalogMatchEntry,
+} from "@/features/orders/domain/order-line-catalog-match";
+export {
   mapShopifyOrderToCatalog,
   mapShopifyOrdersToCatalog,
   mapShopifyOrderStatuses,

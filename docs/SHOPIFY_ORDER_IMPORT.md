@@ -6,7 +6,7 @@ CLI: `npm run orders:import-shopify -- --file ./orders.csv` (Standard: Dry-Run).
 
 ## Voraussetzungen
 
-1. **Produkte zuerst importieren** (`npm run catalog:import-shopify`) — Line Items brauchen ein `productId` (SKU-Match oder Legacy-Produkt).
+1. **Produkte zuerst importieren** (`npm run catalog:import-shopify`) — Line Items werden dem Katalog zugeordnet (siehe Matching unten).
 2. Shopify **Orders CSV** exportieren (Admin → Bestellungen → Export).
 
 ## Ablauf
@@ -26,8 +26,18 @@ CLI: `npm run orders:import-shopify -- --file ./orders.csv` (Standard: Dry-Run).
 | `Fulfillment Status` | `fulfillmentStatus` | fulfilled → `delivered`, … |
 | `Created at` | `createdAt` | Originaldatum |
 | Summen / Adressen | Order-Felder | Cent-Umrechnung; fehlende Adressen → Platzhalter + Warnung |
-| `Lineitem sku` | Produkt-Lookup | Match über `ProductVariant.sku`; sonst Legacy-Produkt |
+| `Lineitem sku` | Produkt-Lookup | Priorität 1: exakte `ProductVariant.sku` (Shopify-SKU oder Import-SKU aus Produktimport) |
+| `Lineitem name` | Produkt-Lookup | Priorität 2: „Produkttitel - Variante“ → Titel + Variantentitel; Priorität 3: nur Produkttitel → Default-Variante **nur wenn eindeutig** |
 | Positionstitel/Preis | `OrderItem` Snapshots | Immer gespeichert |
+
+### Katalog-Matching (Reihenfolge)
+
+1. **SKU** — Shopify-SKU oder beim Produktimport generierte Handle-SKU.
+2. **Titel + Variante** — `Lineitem name` wird am ersten ` - ` getrennt; case-insensitive Lookup.
+3. **Produkttitel (Default)** — nur wenn genau eine Default-Variante mit diesem Titel existiert.
+4. **Legacy** — mehrdeutiger Titel oder kein Treffer → Platzhalter-Produkt `shopify-import-legacy-item` (Snapshots bleiben vollständig).
+
+Dry-Run und Admin-Vorschau zeigen Warnungen bei Titel-Matching und Legacy-Fällen.
 
 Importierte Bestellungen:
 
@@ -37,7 +47,7 @@ Importierte Bestellungen:
 
 ## Legacy-Produkt
 
-Positionen ohne SKU-Match werden dem inaktiven Platzhalter-Produkt `shopify-import-legacy-item` zugeordnet. Titel und Preis bleiben in den Snapshots sichtbar.
+Positionen ohne eindeutiges Katalog-Matching (SKU, Titel+Variante oder eindeutiger Produkttitel) werden dem inaktiven Platzhalter-Produkt `shopify-import-legacy-item` zugeordnet. Titel und Preis bleiben in den Snapshots sichtbar.
 
 ## Admin-UI
 

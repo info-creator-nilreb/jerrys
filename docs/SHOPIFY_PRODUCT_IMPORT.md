@@ -42,7 +42,7 @@ Shop-eigene Felder ohne Shopify-Äquivalent (Default / manuell):
 
 | Shopify | Ziel | Regel |
 | --- | --- | --- |
-| `Variant SKU` | `sku` | Nur wenn gesetzt. **Leer → bleibt leer** (keine Ableitung aus Name/Handle). Beim Speichern: technische System-SKU `SKU-<productId>` nur für DB-Unique. |
+| `Variant SKU` | `sku` | Wenn gesetzt: unverändert. **Leer → Import-SKU aus Handle + Optionen** (z. B. `armband-candy-…-creme-gruen`); eindeutig und für Bestellimport nutzbar. Bei Kollision: Suffix. Warnung „Import-SKU aus Handle“. Nur wenn gar keine Variante möglich: technische `SKU-<productId>`. |
 | `Option1/2/3 Value` | `title` | Joined mit ` / `; bei nur `Default Title` → `null` + `isDefault`. |
 | `Variant Price` | `priceGrossCents` | Dezimal → Cent; **Annahme: Brutto** (konfigurierbar). |
 | — | `priceNetCents` | `netCentsFromGross(gross, taxRatePercent)`. |
@@ -91,7 +91,7 @@ Typische Lücken in Shopify-CSVs (wie `products_export.csv`):
 
 | Problem | Auswirkung | Umgang jetzt |
 | --- | --- | --- |
-| Leere `Variant SKU` | Früher Handle/Name als SKU | **SKU bleibt leer**; Artikelnummer `null`; beim Apply nur technische `SKU-<id>` für DB-Unique |
+| Leere `Variant SKU` | Bestellimport braucht Match | **Import-SKU aus Handle + Variantenoptionen** (ASCII-Slug); Artikelnummer `null` wenn keine echte Shopify-SKU |
 | Kein `Variant Inventory Qty` | Bestand unbekannt | Bestand 0 + Warnung |
 | Metafields (Material, Maße, Lieferzeit, Kategorie-Merkmale) | Extra-Spalten | → `materialText` / `dimensionsText` / Lieferzeit + **`attributes`** |
 | Google Product Category vs Type | Keine Shop-Kategorie | Warnung, kein Auto-Create |

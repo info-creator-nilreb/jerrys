@@ -7,6 +7,12 @@ import {
   type CatalogImportOrder,
   type MapShopifyOrderOptions,
 } from "@/features/orders/domain/shopify-order-map";
+import { buildCatalogMatchIndex } from "@/features/orders/application/build-catalog-match-index";
+import {
+  matchOrderLineToCatalog,
+  type CatalogMatchIndex,
+  type OrderLineMatchMethod,
+} from "@/features/orders/domain/order-line-catalog-match";
 
 const ORDER_EVENT_PLACED = "order.placed" as const;
 
@@ -75,35 +81,85 @@ type SkuLookup = {
   taxRatePercent: number;
 };
 
-async function buildSkuLookup(skus: string[]): Promise<Map<string, SkuLookup>> {
-  const unique = [...new Set(skus.filter(Boolean))];
-  const map = new Map<string, SkuLookup>();
-  if (!unique.length) return map;
+function applyMatchToLine(
+  line: CatalogImportOrder["lineItems"][number],
+  entry: SkuLookup,
+  method: OrderLineMatchMethod,
+): void {
+  line.productId = entry.productId;
+  line.productVariantId = entry.productVariantId;
+  line.taxRatePercent = entry.taxRatePercent;
+  line.skuMatched = true;
+  line.matchMethod = method;
+}
 
-  try {
-    const prisma = getPrisma();
-    const variants = await prisma.productVariant.findMany({
-      where: { sku: { in: unique } },
-      select: {
-        sku: true,
-        id: true,
-        productId: true,
-        taxRatePercent: true,
-      },
-    });
-    for (const v of variants) {
-      if (!v.sku) continue;
-      map.set(v.sku, {
-        productId: v.productId,
-        productVariantId: v.id,
-        taxRatePercent: v.taxRatePercent,
-      });
-    }
-  } catch {
-    /* DB optional für Dry-Run ohne Verbindung */
+function legacyLine(
+  order: CatalogImportOrder,
+  line: CatalogImportOrder["lineItems"][number],
+  legacyProductId: string,
+  message: string,
+): void {
+  if (legacyProductId) {
+    line.productId = legacyProductId;
   }
+  line.productVariantId = null;
+  line.skuMatched = false;
+  line.matchMethod = undefined;
+  order.warnings.push(message);
+}
 
-  return map;
+function resolveLineProducts(
+  order: CatalogImportOrder,
+  index: CatalogMatchIndex,
+  legacyProductId: string,
+): void {
+  for (const line of order.lineItems) {
+    const result = matchOrderLineToCatalog({
+      sku: line.sku,
+      lineTitle: line.title,
+      index,
+    });
+
+    if (result.matched) {
+      applyMatchToLine(line, result.entry, result.method);
+      if (result.method === "title_variant") {
+        order.warnings.push(
+          `Position „${line.title}“ per Titel+Variante zugeordnet (${result.entry.slug}).`,
+        );
+      } else if (result.method === "title_default") {
+        order.warnings.push(
+          `Position „${line.title}“ per Produkttitel (Default-Variante) zugeordnet (${result.entry.slug}).`,
+        );
+      }
+      continue;
+    }
+
+    if (result.reason === "ambiguous_title") {
+      legacyLine(
+        order,
+        line,
+        legacyProductId,
+        `Position „${line.title}“ — mehrdeutiger Produkttitel, kein eindeutiges Matching.`,
+      );
+      continue;
+    }
+
+    if (line.sku) {
+      legacyLine(
+        order,
+        line,
+        legacyProductId,
+        `SKU „${line.sku}“ nicht im Katalog — Legacy-Produkt.`,
+      );
+    } else {
+      legacyLine(
+        order,
+        line,
+        legacyProductId,
+        `Position „${line.title}“ — kein Katalog-Match (SKU/Titel/Variante).`,
+      );
+    }
+  }
 }
 
 async function ensureLegacyImportProductId(): Promise<string> {
@@ -136,31 +192,6 @@ async function ensureLegacyImportProductId(): Promise<string> {
     select: { id: true },
   });
   return created.id;
-}
-
-async function resolveLineProducts(
-  order: CatalogImportOrder,
-  skuLookup: Map<string, SkuLookup>,
-  legacyProductId: string,
-): Promise<string[]> {
-  const errors: string[] = [];
-  for (const line of order.lineItems) {
-    if (line.sku && skuLookup.has(line.sku)) {
-      const hit = skuLookup.get(line.sku)!;
-      line.productId = hit.productId;
-      line.productVariantId = hit.productVariantId;
-      line.taxRatePercent = hit.taxRatePercent;
-      line.skuMatched = true;
-    } else {
-      line.productId = legacyProductId;
-      line.productVariantId = null;
-      line.skuMatched = false;
-      if (line.sku) {
-        order.warnings.push(`SKU „${line.sku}“ nicht im Katalog — Legacy-Produkt.`);
-      }
-    }
-  }
-  return errors;
 }
 
 function resultFromMapped(
@@ -198,14 +229,14 @@ async function findExistingImportOrder(idempotencyKey: string): Promise<{ id: st
 async function applyOneOrder(
   mapped: CatalogImportOrder,
   legacyProductId: string,
-  skuLookup: Map<string, SkuLookup>,
+  catalogIndex: CatalogMatchIndex,
   updateExisting: boolean,
 ): Promise<ShopifyOrderImportOrderResult> {
   if (mapped.errors.length > 0) {
     return resultFromMapped(mapped, "invalid");
   }
 
-  await resolveLineProducts(mapped, skuLookup, legacyProductId);
+  resolveLineProducts(mapped, catalogIndex, legacyProductId);
 
   const prisma = getPrisma();
   const existing = await prisma.order.findUnique({
@@ -328,8 +359,7 @@ export async function importShopifyOrdersFromCsv(
   const checkDb = options.checkExistingInDb !== false;
   const dbChecked = checkDb && options.mode === "dry-run";
 
-  const allSkus = mapped.flatMap((o) => o.lineItems.map((l) => l.sku).filter(Boolean));
-  const skuLookup = await buildSkuLookup(allSkus);
+  const catalogIndex = await buildCatalogMatchIndex();
 
   const orders: ShopifyOrderImportOrderResult[] = [];
   let validCount = 0;
@@ -366,13 +396,7 @@ export async function importShopifyOrdersFromCsv(
         }
       }
 
-      for (const line of order.lineItems) {
-        if (line.sku && skuLookup.has(line.sku)) {
-          line.skuMatched = true;
-        } else if (line.sku) {
-          order.warnings.push(`SKU „${line.sku}“ nicht im Katalog — Legacy-Produkt.`);
-        }
-      }
+      resolveLineProducts(order, catalogIndex, "");
 
       if (status === "would_skip") skippedCount += 1;
       else if (status === "would_update") updatedCount += 1;
@@ -385,7 +409,7 @@ export async function importShopifyOrdersFromCsv(
     const result = await applyOneOrder(
       order,
       legacyProductId!,
-      skuLookup,
+      catalogIndex,
       options.updateExisting === true,
     );
     orders.push(result);

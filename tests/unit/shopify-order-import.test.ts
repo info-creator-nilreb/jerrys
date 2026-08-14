@@ -69,13 +69,13 @@ describe("mapShopifyOrderToCatalog", () => {
     expect(mapped.idempotencyKey).toBe("shopify-order:6123456789012");
   });
 
-  it("warnt bei fehlender SKU", () => {
+  it("merkt fehlende SKU für Titel-Matching vor", () => {
     const csv = fs.readFileSync(fixturePath, "utf8");
     const orders = parseShopifyOrderCsv(csv);
     const multi = orders[1]!;
     const mapped = mapShopifyOrderToCatalog(multi);
     expect(mapped.lineItems).toHaveLength(2);
-    expect(mapped.warnings.some((w) => w.includes("ohne SKU"))).toBe(true);
+    expect(mapped.warnings.some((w) => w.includes("Matching über Titel"))).toBe(true);
   });
 });
 

@@ -95,7 +95,7 @@ describe("mapShopifyProductToCatalog", () => {
     expect(tea.variants[1]!.listPriceGrossCents).toBe(2999);
   });
 
-  it("lässt fehlende Shopify-SKU leer (keine Ableitung aus Handle/Name)", () => {
+  it("vergibt Import-SKU aus Handle wenn Shopify-SKU fehlt", () => {
     const mapped = mapShopifyProductToCatalog({
       handle: "broken",
       title: "Broken",
@@ -131,18 +131,23 @@ describe("mapShopifyProductToCatalog", () => {
       images: [],
     });
     expect(mapped.errors).toEqual([]);
-    expect(mapped.variants[0]!.sku).toBe("");
-    expect(mapped.variants[0]!.skuMissing).toBe(true);
+    expect(mapped.variants[0]!.sku).toBe("broken");
+    expect(mapped.variants[0]!.skuMissing).toBe(false);
+    expect(mapped.variants[0]!.skuGenerated).toBe(true);
     expect(mapped.productNumber).toBeNull();
-    expect(mapped.warnings.some((w) => w.includes("bleibt leer"))).toBe(true);
+    expect(mapped.warnings.some((w) => w.includes("Import-SKU aus Handle"))).toBe(true);
   });
 
-  it("mappt realen Export ohne generierte Handle-SKUs und mit Merkmalen", () => {
+  it("mappt realen Export mit Handle-Import-SKUs und Merkmalen", () => {
     const csv = readFileSync(realExportPath, "utf8");
     const planned = planShopifyCsvImport(csv, { allowIncompleteAsDraft: true });
     expect(planned.every((p) => p.errors.length === 0)).toBe(true);
     expect(planned[0]!.variants).toHaveLength(2);
-    expect(planned[0]!.variants.every((v) => v.sku === "" && v.skuMissing)).toBe(true);
+    expect(planned[0]!.variants[0]!.sku).toBe("armband-candy-von-edel-weiss-kopie-creme-gruen");
+    expect(planned[0]!.variants[1]!.sku).toBe(
+      "armband-candy-von-edel-weiss-kopie-creme-gruen-blau",
+    );
+    expect(planned[0]!.variants.every((v) => v.skuGenerated)).toBe(true);
     expect(planned[0]!.productNumber).toBeNull();
     expect(planned[0]!.materialText).toMatch(/Resin/i);
     expect(planned[0]!.attributes.some((a) => a.key === "custom.material")).toBe(true);

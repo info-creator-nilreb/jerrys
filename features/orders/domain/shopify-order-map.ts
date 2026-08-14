@@ -1,4 +1,5 @@
 import type { FulfillmentStatus } from "@/app/generated/prisma/client";
+import type { OrderLineMatchMethod } from "@/features/orders/domain/order-line-catalog-match";
 import type { ShopifyParsedOrder, ShopifyParsedOrderLine } from "@/features/orders/domain/shopify-order-csv";
 
 export const SHOPIFY_LEGACY_PRODUCT_SLUG = "shopify-import-legacy-item";
@@ -11,10 +12,11 @@ export type CatalogImportOrderLine = {
   unitPriceGrossCents: number;
   lineTotalGrossCents: number;
   taxRatePercent: number;
-  /** Nach SKU-Lookup gesetzt (Apply). */
+  /** Nach Katalog-Lookup gesetzt (Dry-Run/Apply). */
   productId?: string;
   productVariantId?: string | null;
   skuMatched: boolean;
+  matchMethod?: OrderLineMatchMethod;
 };
 
 export type CatalogImportOrder = {
@@ -215,7 +217,9 @@ export function mapShopifyOrderToCatalog(
 
   for (const line of lineItems) {
     if (!line.sku) {
-      warnings.push(`Position „${line.title}“ ohne SKU — wird dem Legacy-Produkt zugeordnet.`);
+      warnings.push(
+        `Position „${line.title}“ ohne SKU — Matching über Titel/Variante beim Import.`,
+      );
     }
   }
 
