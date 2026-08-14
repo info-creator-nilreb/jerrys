@@ -160,6 +160,7 @@ export default async function WorkshopCheckoutPage({
           addressPrefill={addressPrefill}
           savedAddresses={savedAddresses}
           canSaveAddressToAccount={Boolean(verifiedCustomerId)}
+          showContactLogin={!session}
           payPalConfigured={isPayPalConfigured()}
           checkoutError={checkoutError}
         />

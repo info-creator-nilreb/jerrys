@@ -134,6 +134,7 @@ export default async function CheckoutPage({
           addressPrefill={addressPrefill}
           savedAddresses={savedAddresses}
           canSaveAddressToAccount={Boolean(verifiedCustomerId)}
+          showContactLogin={!session}
         />
       </div>
     </div>

@@ -20,6 +20,7 @@ import {
   type CheckoutPayPalMethodId,
 } from "@/components/storefront/checkout-payment-methods";
 import { computeWorkshopCheckoutOrderTotals } from "@/lib/workshop/workshop-checkout-totals";
+import { checkoutContactLoginHref } from "@/lib/checkout/contact-login-href";
 import type {
   CheckoutAddressPrefill,
   CustomerAddressListItem,
@@ -70,6 +71,7 @@ export function WorkshopCheckoutForm({
   addressPrefill,
   savedAddresses = [],
   canSaveAddressToAccount = false,
+  showContactLogin = true,
   payPalConfigured,
   checkoutError = null,
 }: {
@@ -82,6 +84,8 @@ export function WorkshopCheckoutForm({
   addressPrefill?: CheckoutAddressPrefill | null;
   savedAddresses?: CustomerAddressListItem[];
   canSaveAddressToAccount?: boolean;
+  /** false = Kunde ist bereits angemeldet; kein totes „Anmelden“-Chrome. */
+  showContactLogin?: boolean;
   payPalConfigured: boolean;
   checkoutError?: string | null;
 }) {
@@ -238,7 +242,15 @@ export function WorkshopCheckoutForm({
         <section id="checkout-section-contact" className="mt-10 scroll-mt-24">
           <div className="flex items-baseline justify-between gap-4">
             <h2 className="text-lg font-semibold text-[#1f2937]">Kontakt</h2>
-            <span className="text-sm text-[#9ca3af]">Anmelden</span>
+            {showContactLogin ? (
+              <Link
+                href={checkoutContactLoginHref("/checkout/termine")}
+                scroll={false}
+                className="text-sm font-medium text-primary underline-offset-2 hover:text-(--primary-hover) hover:underline"
+              >
+                Anmelden
+              </Link>
+            ) : null}
           </div>
           <div className="mt-4">
             <label htmlFor="email" className="sr-only">
@@ -250,21 +262,11 @@ export function WorkshopCheckoutForm({
               type="email"
               required
               autoComplete="email"
-              placeholder="E-Mail-Adresse oder Mobiltelefonnummer"
+              placeholder="E-Mail-Adresse"
               defaultValue={addressPrefill?.email ?? ""}
               className={inputClass}
             />
           </div>
-          <label className="mt-4 flex items-center gap-2 text-sm text-[#374151]">
-            <input
-              type="checkbox"
-              name="newsletter"
-              autoComplete="off"
-              className="size-4 checkbox-primary"
-              disabled
-            />
-            Neuigkeiten und Angebote via E-Mail erhalten
-          </label>
         </section>
 
         <section className="mt-12">
