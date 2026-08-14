@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { diagnoseShopifyOrderCsv } from "@/features/orders";
 import { importShopifyOrdersFromCsv } from "@/features/orders/server";
-import { diagnoseShopifyOrderCsv } from "@/features/orders/domain/shopify-order-csv";
 import { getAdminSession } from "@/lib/auth/admin-session";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 import {
