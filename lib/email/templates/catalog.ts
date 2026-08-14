@@ -169,9 +169,38 @@ export const EMAIL_TEMPLATE_CATALOG: EmailTemplateCatalogEntry[] = [
       },
       {
         path: "order.shipping_details_html",
-        label: "Versanddetails-HTML",
+        label: "Versanddetails-HTML (Legacy)",
         html: true,
         example: "<p>Versand: DHL · …</p>",
+      },
+      {
+        path: "order.invoice_note_html",
+        label: "Rechnungshinweis (HTML)",
+        html: true,
+        example: "<p>Rechnungsnummer RE-2026-0042 — die Rechnung findest du im PDF-Anhang.</p>",
+      },
+      {
+        path: "order.shipping_address_tracking_html",
+        label: "Versandadresse & Tracking (HTML)",
+        html: true,
+        example: "<table>…</table>",
+      },
+      {
+        path: "order.tracking_cta_html",
+        label: "Tracking-Button (HTML)",
+        html: true,
+        example: "<a>Sendungsverfolgung</a>",
+      },
+      {
+        path: "order.tracking_section_html",
+        label: "Tracking-Bereich (HTML)",
+        html: true,
+        example: "<p>Du kannst den Status …</p>",
+      },
+      {
+        path: "order.shipping_address_text",
+        label: "Versandadresse (Text)",
+        example: "Max Muster\nMusterstraße 1\n10115 Berlin",
       },
       {
         path: "order.items_text",

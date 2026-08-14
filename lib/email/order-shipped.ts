@@ -11,9 +11,15 @@ import {
 } from "@/lib/email/order-email-line-items";
 import { sendTransactionalEmail } from "@/lib/email/provider";
 import {
+  orderAddressText,
+  orderInvoiceShippedNoteHtml,
   orderItemsHtml,
   orderItemsText,
   orderNumberCardHtml,
+  orderShippingAddressAndTrackingHtml,
+  orderTrackingCtaHtml,
+  orderTrackingSectionHtml,
+  shippingAddressFromOrder,
   shippingDetailsHtml,
 } from "@/lib/email/templates/order-fragments";
 import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
@@ -91,6 +97,18 @@ export async function sendOrderShippedIfNeeded(
         invoice_note: pdfAttachment ? " (PDF angehängt)" : "",
         number_card_html: orderNumberCardHtml(order.orderNumber),
         items_html: orderItemsHtml(lineItems),
+        invoice_note_html: orderInvoiceShippedNoteHtml(
+          order.invoiceNumber,
+          Boolean(pdfAttachment),
+        ),
+        shipping_address_tracking_html: orderShippingAddressAndTrackingHtml(order, {
+          carrierLine,
+          trackUrl,
+          primaryColor: branding.primary,
+        }),
+        shipping_address_text: orderAddressText(shippingAddressFromOrder(order)),
+        tracking_cta_html: orderTrackingCtaHtml(trackUrl, branding),
+        tracking_section_html: orderTrackingSectionHtml(trackUrl, branding),
         shipping_details_html: shippingDetailsHtml({
           carrierLine,
           trackUrl,

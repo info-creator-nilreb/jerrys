@@ -5,6 +5,7 @@ import {
 import type { EmailTemplateKey } from "@/lib/email/templates/catalog";
 import { getEmailTemplateCatalogEntry } from "@/lib/email/templates/catalog";
 import { buildOrderConfirmationOrderlyHtml } from "@/lib/email/templates/order-confirmation-orderly-html";
+import { buildOrderShippedOrderlyHtml } from "@/lib/email/templates/order-shipped-orderly-html";
 
 export type EmailTemplateDefaultContent = {
   key: EmailTemplateKey;
@@ -22,13 +23,7 @@ function orderConfirmationHtml(): string {
 }
 
 function orderShippedHtml(): string {
-  return buildEditableTransactionalShell({
-    variant: "shipping",
-    documentTitle: "Versand {{order.number}}",
-    heading: "Deine Bestellung ist unterwegs!",
-    intro: "Gute Neuigkeiten: deine Bestellung wurde versendet und ist jetzt auf dem Weg zu dir.",
-    bodyHtml: `{{{order.number_card_html}}}{{{order.items_html}}}{{{order.shipping_details_html}}}<p style="margin:16px 0 0;padding-top:14px;border-top:1px solid ${divider};font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:${textMuted}">Rückfragen über die Kontaktdaten im Impressum.</p>`,
-  });
+  return buildOrderShippedOrderlyHtml();
 }
 
 function orderCancelledHtml(): string {
@@ -138,24 +133,27 @@ const DEFAULTS: Record<EmailTemplateKey, Omit<EmailTemplateDefaultContent, "key"
     textBody: [
       "Hallo {{customer.first_name}},",
       "",
-      "gute Neuigkeiten: deine Bestellung wurde versendet und ist auf dem Weg zu dir.",
+      "wir freuen uns, dir mitteilen zu können, dass deine Bestellung versandt wurde!",
       "",
       "Bestellnummer: {{order.number}}",
+      "",
+      "Versandadresse:",
+      "{{order.shipping_address_text}}",
       "",
       "Versand:",
       "{{order.carrier_line}}",
       "",
       "Sendung verfolgen: {{order.tracking_url}}",
       "",
-      "Rechnungsnummer: {{order.invoice_number}}",
+      "Rechnungsnummer: {{order.invoice_number}}{{order.invoice_note}}",
       "",
       "Positionen:",
       "{{order.items_text}}",
       "",
       "Zur Bestellung: {{email.cta_url}}",
       "",
-      "Liebe Grüße",
-      "{{shop.name}}",
+      "Viele Grüße",
+      "Dein {{shop.name}}-Team",
     ].join("\n"),
   },
   order_cancelled: {
