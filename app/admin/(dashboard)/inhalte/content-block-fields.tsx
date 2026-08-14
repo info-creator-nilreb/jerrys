@@ -201,6 +201,7 @@ export function ContentBlockFields({
                   />
                   {slide.url.trim() ? (
                     <HeroFocusPicker
+                      key={slide.url}
                       imageUrl={slide.url}
                       focusX={slide.focusX}
                       focusY={slide.focusY}

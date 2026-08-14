@@ -37,17 +37,13 @@ export function HeroFocusPicker({ imageUrl, focusX, focusY, onChange }: Props) {
   }, []);
 
   useEffect(() => {
-    setImageSize({ width: 0, height: 0 });
-  }, [imageUrl]);
-
-  useEffect(() => {
     measureFrame();
     const frame = frameRef.current;
     if (!frame || typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(() => measureFrame());
     observer.observe(frame);
     return () => observer.disconnect();
-  }, [measureFrame, imageUrl]);
+  }, [measureFrame]);
 
   const applyPoint = useCallback(
     (clientX: number, clientY: number) => {
