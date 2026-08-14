@@ -53,10 +53,12 @@ Positionen ohne eindeutiges Katalog-Matching (SKU, Titel+Variante oder eindeutig
 
 Unter **Einstellungen → Importe → Bestellungen** (`/admin/einstellungen/importe/bestellungen`):
 
-1. CSV hochladen oder per Drag-and-Drop ablegen (max. 25 MB — bei größeren Exporten CLI nutzen).
+1. CSV hochladen oder per Drag-and-Drop ablegen (max. 15 MB, max. 500 Bestellungen im Admin).
 2. Optionen: Steuersatz, bestehende Import-Bestellungen aktualisieren.
 3. **Vorschau prüfen** (Dry-Run inkl. DB-Check).
 4. Bestätigen → **Import starten** (schreibt nur bei 0 ungültigen Bestellungen).
+
+Größere Exporte (z. B. vollständiger Shopify-Verlauf mit tausenden Bestellungen): **CLI** nutzen — siehe unten.
 
 Dieselbe Application-Schicht wie die CLI (`importShopifyOrdersFromCsv`).
 
@@ -78,7 +80,7 @@ npm run orders:import-shopify -- --file ./shopify-orders.csv --apply --update
 
 ## Grenzen
 
-- CSV-Upload im Admin: max. **25 MB** (Bestell-Exporte mit vielen Positionen können groß werden). Darüber: CLI `npm run orders:import-shopify -- --file ./orders.csv`
+- CSV-Upload im Admin: max. **15 MB** und max. **500 Bestellungen** (Server-Action-Timeout und UI). Darüber: CLI `npm run orders:import-shopify -- --file ./orders.csv`
 - Semikolon- oder Komma-Trennung wird automatisch erkannt (Excel/DE).
 - CSV enthält keine vollständige Refund-Historie — Teilerstattungen werden vereinfacht.
 - Keine automatische Konto-Verknüpfung ohne Verifikation — nach bestätigter E-Mail erfolgt Auto-Zuordnung (und erneuter Versuch bei Anmeldung).

@@ -2,12 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { diagnoseShopifyOrderCsv } from "@/features/orders";
+import { diagnoseShopifyOrderCsv, parseShopifyOrderCsv } from "@/features/orders";
 import { importShopifyOrdersFromCsv } from "@/features/orders/server";
 import { getAdminSession } from "@/lib/auth/admin-session";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 import {
   SHOPIFY_ORDER_IMPORT_MAX_BYTES,
+  SHOPIFY_ORDER_IMPORT_ADMIN_MAX_ORDERS,
+  adminOrderImportLimitMessage,
+  trimOrdersForAdminPreview,
   type ShopifyOrderImportActionState,
   type ShopifyOrderImportAdminSummary,
 } from "@/app/admin/(dashboard)/einstellungen/importe/bestellungen/import-shared";
@@ -68,6 +71,7 @@ async function readCsvFromFormData(
 function toSummary(
   report: Awaited<ReturnType<typeof importShopifyOrdersFromCsv>>,
 ): ShopifyOrderImportAdminSummary {
+  const trimmed = trimOrdersForAdminPreview(report.orders);
   return {
     mode: report.mode,
     orderCount: report.orderCount,
@@ -77,8 +81,18 @@ function toSummary(
     updatedCount: report.updatedCount,
     skippedCount: report.skippedCount,
     dbChecked: report.dbChecked,
-    orders: report.orders,
+    orders: trimmed.orders,
+    ordersShown: trimmed.ordersShown,
+    ordersTruncated: trimmed.ordersTruncated,
   };
+}
+
+function assertAdminOrderCount(csvText: string): { error: string } | null {
+  const orderCount = parseShopifyOrderCsv(csvText).length;
+  if (orderCount > SHOPIFY_ORDER_IMPORT_ADMIN_MAX_ORDERS) {
+    return { error: adminOrderImportLimitMessage(orderCount) };
+  }
+  return null;
 }
 
 export async function previewShopifyOrderCsvImport(
@@ -94,6 +108,9 @@ export async function previewShopifyOrderCsvImport(
   if (taxRatePercent == null) return { error: "Steuersatz muss 7 oder 19 sein." };
 
   const updateExisting = parseUpdateExisting(formData);
+
+  const limitError = assertAdminOrderCount(csv.text);
+  if (limitError) return limitError;
 
   try {
     const report = await importShopifyOrdersFromCsv(csv.text, {
@@ -134,6 +151,9 @@ export async function applyShopifyOrderCsvImport(
   if (taxRatePercent == null) return { error: "Steuersatz muss 7 oder 19 sein." };
 
   const updateExisting = parseUpdateExisting(formData);
+
+  const limitError = assertAdminOrderCount(csv.text);
+  if (limitError) return limitError;
 
   try {
     const preview = await importShopifyOrdersFromCsv(csv.text, {

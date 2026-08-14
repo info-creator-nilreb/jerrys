@@ -213,17 +213,27 @@ function resultFromMapped(
   };
 }
 
-async function findExistingImportOrder(idempotencyKey: string): Promise<{ id: string } | null> {
-  try {
-    const prisma = getPrisma();
-    const existing = await prisma.order.findUnique({
-      where: { idempotencyKey },
-      select: { id: true },
+const EXISTING_ORDER_LOOKUP_CHUNK = 1000;
+
+async function findExistingImportOrderKeys(keys: string[]): Promise<Set<string>> {
+  const unique = [...new Set(keys.filter(Boolean))];
+  if (unique.length === 0) return new Set();
+
+  const existing = new Set<string>();
+  const prisma = getPrisma();
+
+  for (let i = 0; i < unique.length; i += EXISTING_ORDER_LOOKUP_CHUNK) {
+    const chunk = unique.slice(i, i + EXISTING_ORDER_LOOKUP_CHUNK);
+    const rows = await prisma.order.findMany({
+      where: { idempotencyKey: { in: chunk } },
+      select: { idempotencyKey: true },
     });
-    return existing;
-  } catch {
-    return null;
+    for (const row of rows) {
+      if (row.idempotencyKey) existing.add(row.idempotencyKey);
+    }
   }
+
+  return existing;
 }
 
 async function applyOneOrder(
@@ -373,6 +383,11 @@ export async function importShopifyOrdersFromCsv(
     legacyProductId = await ensureLegacyImportProductId();
   }
 
+  const existingKeys =
+    options.mode === "dry-run" && checkDb
+      ? await findExistingImportOrderKeys(mapped.map((order) => order.idempotencyKey))
+      : null;
+
   for (const order of mapped) {
     if (order.errors.length > 0) {
       invalidCount += 1;
@@ -386,9 +401,8 @@ export async function importShopifyOrdersFromCsv(
       let status: ShopifyOrderImportOrderResult["status"] = "would_create";
       let message: string | undefined;
 
-      if (checkDb) {
-        const existing = await findExistingImportOrder(order.idempotencyKey);
-        if (existing) {
+      if (checkDb && existingKeys) {
+        if (existingKeys.has(order.idempotencyKey)) {
           status = options.updateExisting ? "would_update" : "would_skip";
           message = options.updateExisting
             ? "Würde bestehende Import-Bestellung aktualisieren."
