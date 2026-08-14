@@ -402,8 +402,8 @@ export function ShopifyImportForm() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor={`${formId}-tax`} className="text-sm font-medium text-[#374151]">
+          <div className="space-y-1.5">
+            <label htmlFor={`${formId}-tax`} className="block text-sm font-medium text-[#374151]">
               Steuersatz
             </label>
             <select
@@ -415,7 +415,7 @@ export function ShopifyImportForm() {
                 setState(null);
                 setConfirmApply(false);
               }}
-              className="mt-1.5 w-full rounded-md border border-[#e3e4e8] bg-white px-3 py-2 text-sm text-[#1f2937] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full rounded-md border border-[#e3e4e8] bg-white px-3 py-2 text-sm text-[#1f2937] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
               <option value="19">19 % (Standard)</option>
               <option value="7">7 %</option>
@@ -424,8 +424,8 @@ export function ShopifyImportForm() {
               Shopify-Preise werden als Brutto interpretiert.
             </p>
           </div>
-          <div>
-            <label htmlFor={`${formId}-delivery`} className="text-sm font-medium text-[#374151]">
+          <div className="space-y-1.5">
+            <label htmlFor={`${formId}-delivery`} className="block text-sm font-medium text-[#374151]">
               Lieferzeit (Default)
             </label>
             <select
@@ -437,7 +437,7 @@ export function ShopifyImportForm() {
                 setState(null);
                 setConfirmApply(false);
               }}
-              className="mt-1.5 w-full rounded-md border border-[#e3e4e8] bg-white px-3 py-2 text-sm text-[#1f2937] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full rounded-md border border-[#e3e4e8] bg-white px-3 py-2 text-sm text-[#1f2937] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
               {DELIVERY_TIME_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
