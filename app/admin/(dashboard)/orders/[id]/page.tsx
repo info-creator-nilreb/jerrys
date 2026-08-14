@@ -9,11 +9,12 @@ import { OrderStatusPanel } from "@/app/admin/(dashboard)/orders/order-status-pa
 import { CopyTextButton } from "@/app/admin/(dashboard)/orders/copy-text-button";
 import { OrderDetailTabs } from "@/app/admin/(dashboard)/orders/order-detail-tabs";
 import { OrderInvoiceGenerateButton } from "@/app/admin/(dashboard)/orders/order-invoice-generate-button";
+import { OrderLifecycleControls } from "@/app/admin/(dashboard)/orders/order-lifecycle-controls";
 import {
   evaluateOrderShipmentEligibility,
   isInternetmarkeConfigured,
 } from "@/features/fulfillment";
-import { fulfillmentStatusLabel } from "@/features/orders";
+import { fulfillmentStatusLabel, orderAdminDeleteBlocker } from "@/features/orders";
 import { formatPrice } from "@/lib/catalog/format";
 import { isPickupDeliveryMethod, deliveryMethodLabel } from "@/lib/checkout/delivery-method";
 import { EMAIL_ORDER_SHIPPED } from "@/lib/email/email-types";
@@ -169,6 +170,13 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
     (s) => s.status === "labeled" && s.trackingNumber,
   );
   const internetmarkeConfigured = await isInternetmarkeConfigured();
+  const deleteBlocker = orderAdminDeleteBlocker({
+    id: order.id,
+    orderNumber: order.orderNumber,
+    idempotencyKey: order.idempotencyKey,
+    invoiceNumber: order.invoiceNumber,
+    payments: order.payments,
+  });
 
   const tabAllgemein = (
     <div className="space-y-8">
@@ -658,6 +666,13 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
           dokumente={tabDokumente}
         />
       </Suspense>
+
+      <OrderLifecycleControls
+        orderId={order.id}
+        orderNumber={order.orderNumber}
+        deletable={deleteBlocker == null}
+        deleteBlocker={deleteBlocker}
+      />
     </div>
   );
 }

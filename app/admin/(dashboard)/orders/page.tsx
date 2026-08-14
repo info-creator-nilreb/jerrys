@@ -1,5 +1,6 @@
 import { AdminListPagination } from "@/components/admin/admin-list-pagination";
 import { OrdersAdminList } from "@/app/admin/(dashboard)/orders/orders-admin-list";
+import { orderAdminDeleteBlocker } from "@/features/orders";
 import { resolveAdminListPagination } from "@/lib/admin/list-pagination-page";
 import { countOrdersForAdmin, listOrdersForAdmin } from "@/lib/orders/admin-queries";
 import { formatOrderCreatedAt } from "@/lib/orders/format-order-created-at";
@@ -44,6 +45,7 @@ export default async function AdminOrdersPage({
               totalGrossCents: o.totalGrossCents,
               currency: o.currency,
               triple: deriveTripleFromOrder(o),
+              deletable: orderAdminDeleteBlocker(o) == null,
             }))}
           />
           <AdminListPagination

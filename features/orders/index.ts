@@ -35,3 +35,9 @@ export {
   type MapShopifyOrderOptions,
 } from "@/features/orders/domain/shopify-order-map";
 export { planShopifyOrderCsvImport } from "@/features/orders/application/import-shopify-orders-csv";
+export {
+  deleteOrders,
+  orderAdminDeleteBlocker,
+  shopifyImportIdempotencyKey,
+  type OrderLifecycleResult,
+} from "@/features/orders/application/order-admin-lifecycle";
