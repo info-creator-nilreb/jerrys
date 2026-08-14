@@ -346,7 +346,8 @@ export const EMAIL_TEMPLATE_CATALOG: EmailTemplateCatalogEntry[] = [
         path: "email.after_button_note_html",
         label: "Hinweis unter Button (HTML)",
         html: true,
-        example: "<p>Wenn du diese Anfrage nicht gestellt hast…</p>",
+        example:
+          '<p style="margin:16px 0 0;font-size:13px;line-height:1.55;color:#cccccc;text-align:center">Wenn du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.</p>',
       },
     ],
   },
@@ -369,7 +370,8 @@ export const EMAIL_TEMPLATE_CATALOG: EmailTemplateCatalogEntry[] = [
         path: "email.after_button_note_html",
         label: "Hinweis unter Button (HTML)",
         html: true,
-        example: "<p>Wenn du diese Anfrage nicht gestellt hast…</p>",
+        example:
+          '<p style="margin:16px 0 0;font-size:13px;line-height:1.55;color:#cccccc;text-align:center">Wenn du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.</p>',
       },
     ],
   },
@@ -392,7 +394,8 @@ export const EMAIL_TEMPLATE_CATALOG: EmailTemplateCatalogEntry[] = [
         path: "email.after_button_note_html",
         label: "Hinweis unter Button (HTML)",
         html: true,
-        example: "<p>Solltest du diese E-Mail irrtümlich erhalten haben…</p>",
+        example:
+          '<p style="margin:16px 0 0;font-size:13px;line-height:1.55;color:#cccccc;text-align:center">Solltest du diese E-Mail irrtümlich erhalten haben, kannst du diese ignorieren.</p>',
       },
     ],
   },
