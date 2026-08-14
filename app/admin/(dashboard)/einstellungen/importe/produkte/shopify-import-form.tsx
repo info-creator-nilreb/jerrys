@@ -7,12 +7,12 @@ import { DELIVERY_TIME_OPTIONS } from "@/lib/catalog/delivery-options";
 import {
   applyShopifyCsvImport,
   previewShopifyCsvImport,
-} from "@/app/admin/(dashboard)/products/shopify-import/actions";
+} from "@/app/admin/(dashboard)/einstellungen/importe/produkte/actions";
 import {
   SHOPIFY_IMPORT_MAX_BYTES,
   type ShopifyImportActionState,
   type ShopifyImportAdminSummary,
-} from "@/app/admin/(dashboard)/products/shopify-import/import-shared";
+} from "@/app/admin/(dashboard)/einstellungen/importe/produkte/import-shared";
 
 function statusLabel(status: string): string {
   switch (status) {

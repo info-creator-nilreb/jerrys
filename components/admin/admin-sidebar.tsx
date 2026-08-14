@@ -48,7 +48,10 @@ function isInhaltePagesPath(pathname: string): boolean {
 }
 
 function isOrdersPath(pathname: string): boolean {
-  return pathname.startsWith("/admin/orders");
+  return (
+    pathname.startsWith("/admin/orders") &&
+    !pathname.startsWith("/admin/orders/shopify-import")
+  );
 }
 
 function isKatalogPath(pathname: string): boolean {
@@ -57,6 +60,15 @@ function isKatalogPath(pathname: string): boolean {
     pathname.startsWith("/admin/collections") ||
     pathname.startsWith("/admin/categories") ||
     pathname.startsWith("/admin/bestand")
+  );
+}
+
+function isEinstellungenShopPath(pathname: string): boolean {
+  return (
+    pathname === "/admin/einstellungen" ||
+    (pathname.startsWith("/admin/einstellungen/") &&
+      !pathname.startsWith("/admin/einstellungen/integrationen") &&
+      !pathname.startsWith("/admin/einstellungen/importe"))
   );
 }
 
@@ -71,20 +83,6 @@ const mainNav: NavItem[] = [
     label: "Bestellungen",
     icon: IconOrders,
     isActivePath: isOrdersPath,
-    children: [
-      {
-        href: "/admin/orders",
-        label: "Übersicht",
-        isActivePath: (pathname) =>
-          pathname.startsWith("/admin/orders") &&
-          !pathname.startsWith("/admin/orders/shopify-import"),
-      },
-      {
-        href: "/admin/orders/shopify-import",
-        label: "Shopify-Import",
-        isActivePath: (pathname) => pathname.startsWith("/admin/orders/shopify-import"),
-      },
-    ],
   },
   { href: "/admin/termine", label: "Termine", icon: IconWorkshops },
   {
@@ -100,13 +98,6 @@ const mainNav: NavItem[] = [
           pathname.startsWith("/admin/products") &&
           !pathname.startsWith("/admin/products/shopify-import") &&
           !pathname.startsWith("/admin/products/import"),
-      },
-      {
-        href: "/admin/products/shopify-import",
-        label: "Shopify-Import",
-        isActivePath: (pathname) =>
-          pathname.startsWith("/admin/products/shopify-import") ||
-          pathname.startsWith("/admin/products/import"),
       },
       {
         href: "/admin/collections",
@@ -160,15 +151,17 @@ const mainNav: NavItem[] = [
       {
         href: "/admin/einstellungen",
         label: "Shop",
-        isActivePath: (pathname) =>
-          pathname === "/admin/einstellungen" ||
-          (pathname.startsWith("/admin/einstellungen/") &&
-            !pathname.startsWith("/admin/einstellungen/integrationen")),
+        isActivePath: isEinstellungenShopPath,
       },
       {
         href: "/admin/einstellungen/integrationen",
         label: "Integrationen",
         isActivePath: (pathname) => pathname.startsWith("/admin/einstellungen/integrationen"),
+      },
+      {
+        href: "/admin/einstellungen/importe",
+        label: "Importe",
+        isActivePath: (pathname) => pathname.startsWith("/admin/einstellungen/importe"),
       },
     ],
   },

@@ -2,17 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { importShopifyOrdersFromCsv } from "@/features/orders/server";
 import { getAdminSession } from "@/lib/auth/admin-session";
-import { importShopifyProductsFromCsv } from "@/features/catalog/server";
-import { DELIVERY_TIME_OPTIONS, type DeliveryTimeKey } from "@/lib/catalog/delivery-options";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 import {
-  SHOPIFY_IMPORT_MAX_BYTES,
-  type ShopifyImportActionState,
-  type ShopifyImportAdminSummary,
-} from "@/app/admin/(dashboard)/products/shopify-import/import-shared";
+  SHOPIFY_ORDER_IMPORT_MAX_BYTES,
+  type ShopifyOrderImportActionState,
+  type ShopifyOrderImportAdminSummary,
+} from "@/app/admin/(dashboard)/einstellungen/importe/bestellungen/import-shared";
 
-const log = createLogger("admin.shopify-import");
+const log = createLogger("admin.shopify-order-import");
 
 async function requireAdminSession(): Promise<void> {
   const session = await getAdminSession();
@@ -28,21 +27,8 @@ function parseTaxRate(formData: FormData): 7 | 19 | null {
   return null;
 }
 
-function parseDeliveryKey(formData: FormData): DeliveryTimeKey | null {
-  const raw = String(formData.get("deliveryTimeKey") ?? "2-4-werktage").trim();
-  if (DELIVERY_TIME_OPTIONS.some((o) => o.value === raw)) {
-    return raw as DeliveryTimeKey;
-  }
-  return null;
-}
-
 function parseUpdateExisting(formData: FormData): boolean {
   const v = formData.get("updateExisting");
-  return v === "on" || v === "true" || v === "1";
-}
-
-function parseFlag(formData: FormData, name: string): boolean {
-  const v = formData.get(name);
   return v === "on" || v === "true" || v === "1";
 }
 
@@ -51,7 +37,7 @@ async function readCsvFromFormData(
 ): Promise<{ text: string } | { error: string }> {
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
-    return { error: "Bitte eine Shopify-Produkt-CSV auswählen." };
+    return { error: "Bitte eine Shopify-Bestell-CSV auswählen." };
   }
   const name = file.name.toLowerCase();
   if (
@@ -61,9 +47,9 @@ async function readCsvFromFormData(
   ) {
     return { error: "Nur CSV-Dateien werden unterstützt." };
   }
-  if (file.size > SHOPIFY_IMPORT_MAX_BYTES) {
+  if (file.size > SHOPIFY_ORDER_IMPORT_MAX_BYTES) {
     return {
-      error: `Datei zu groß (max. ${Math.round(SHOPIFY_IMPORT_MAX_BYTES / (1024 * 1024))} MB).`,
+      error: `Datei zu groß (max. ${Math.round(SHOPIFY_ORDER_IMPORT_MAX_BYTES / (1024 * 1024))} MB).`,
     };
   }
   try {
@@ -79,25 +65,25 @@ async function readCsvFromFormData(
 }
 
 function toSummary(
-  report: Awaited<ReturnType<typeof importShopifyProductsFromCsv>>,
-): ShopifyImportAdminSummary {
+  report: Awaited<ReturnType<typeof importShopifyOrdersFromCsv>>,
+): ShopifyOrderImportAdminSummary {
   return {
     mode: report.mode,
-    productCount: report.productCount,
+    orderCount: report.orderCount,
     validCount: report.validCount,
     invalidCount: report.invalidCount,
     createdCount: report.createdCount,
     updatedCount: report.updatedCount,
     skippedCount: report.skippedCount,
     dbChecked: report.dbChecked,
-    products: report.products,
+    orders: report.orders,
   };
 }
 
-export async function previewShopifyCsvImport(
-  _prev: ShopifyImportActionState,
+export async function previewShopifyOrderCsvImport(
+  _prev: ShopifyOrderImportActionState,
   formData: FormData,
-): Promise<ShopifyImportActionState> {
+): Promise<ShopifyOrderImportActionState> {
   await requireAdminSession();
 
   const csv = await readCsvFromFormData(formData);
@@ -106,22 +92,14 @@ export async function previewShopifyCsvImport(
   const taxRatePercent = parseTaxRate(formData);
   if (taxRatePercent == null) return { error: "Steuersatz muss 7 oder 19 sein." };
 
-  const deliveryTimeKey = parseDeliveryKey(formData);
-  if (deliveryTimeKey == null) return { error: "Ungültige Lieferzeit." };
-
   const updateExisting = parseUpdateExisting(formData);
-  const allowIncompleteAsDraft = parseFlag(formData, "allowIncompleteAsDraft");
-  const mirrorImages = parseFlag(formData, "mirrorImages");
 
   try {
-    const report = await importShopifyProductsFromCsv(csv.text, {
+    const report = await importShopifyOrdersFromCsv(csv.text, {
       mode: "dry-run",
       updateExisting,
-      taxRatePercent,
-      deliveryTimeKey,
+      defaultTaxRatePercent: taxRatePercent,
       checkExistingInDb: true,
-      allowIncompleteAsDraft,
-      mirrorImages,
     });
     return { ok: true, summary: toSummary(report) };
   } catch (e) {
@@ -130,10 +108,10 @@ export async function previewShopifyCsvImport(
   }
 }
 
-export async function applyShopifyCsvImport(
-  _prev: ShopifyImportActionState,
+export async function applyShopifyOrderCsvImport(
+  _prev: ShopifyOrderImportActionState,
   formData: FormData,
-): Promise<ShopifyImportActionState> {
+): Promise<ShopifyOrderImportActionState> {
   await requireAdminSession();
 
   const confirm = formData.get("confirmApply");
@@ -147,45 +125,33 @@ export async function applyShopifyCsvImport(
   const taxRatePercent = parseTaxRate(formData);
   if (taxRatePercent == null) return { error: "Steuersatz muss 7 oder 19 sein." };
 
-  const deliveryTimeKey = parseDeliveryKey(formData);
-  if (deliveryTimeKey == null) return { error: "Ungültige Lieferzeit." };
-
   const updateExisting = parseUpdateExisting(formData);
-  const allowIncompleteAsDraft = parseFlag(formData, "allowIncompleteAsDraft");
-  const mirrorImages = parseFlag(formData, "mirrorImages");
 
   try {
-    const preview = await importShopifyProductsFromCsv(csv.text, {
+    const preview = await importShopifyOrdersFromCsv(csv.text, {
       mode: "dry-run",
       updateExisting,
-      taxRatePercent,
-      deliveryTimeKey,
+      defaultTaxRatePercent: taxRatePercent,
       checkExistingInDb: true,
-      allowIncompleteAsDraft,
-      mirrorImages,
     });
     if (preview.invalidCount > 0) {
       return {
-        error: `${preview.invalidCount} Produkt(e) ungültig — Import abgebrochen.`,
+        error: `${preview.invalidCount} Bestellung(en) ungültig — Import abgebrochen.`,
         summary: toSummary(preview),
       };
     }
     if (preview.validCount === 0) {
-      return { error: "Keine gültigen Produkte in der CSV.", summary: toSummary(preview) };
+      return { error: "Keine gültigen Bestellungen in der CSV.", summary: toSummary(preview) };
     }
 
-    const report = await importShopifyProductsFromCsv(csv.text, {
+    const report = await importShopifyOrdersFromCsv(csv.text, {
       mode: "apply",
       updateExisting,
-      taxRatePercent,
-      deliveryTimeKey,
-      allowIncompleteAsDraft,
-      mirrorImages,
+      defaultTaxRatePercent: taxRatePercent,
     });
 
-    revalidatePath("/admin/products");
-    revalidatePath("/admin/bestand");
-    revalidatePath("/produkte");
+    revalidatePath("/admin/orders");
+    revalidatePath("/admin/customers");
 
     return { ok: true, summary: toSummary(report) };
   } catch (e) {

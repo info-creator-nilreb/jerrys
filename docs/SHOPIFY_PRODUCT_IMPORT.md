@@ -105,7 +105,7 @@ Auf Vercel kein Schreiben nach `public/` (read-only) — ohne Blob bleiben **Sho
 
 ## Admin-UI
 
-Unter **Katalog → Shopify-Import** (`/admin/products/shopify-import`):
+Unter **Einstellungen → Importe → Produkte** (`/admin/einstellungen/importe/produkte`):
 
 1. CSV hochladen oder per Drag-and-Drop ablegen (max. 5 MB).
 2. Optionen: Steuersatz, Lieferzeit, bestehende aktualisieren, **Entwurf**, **Bilder spiegeln**.

@@ -6,12 +6,12 @@ import { FileUp, LoaderCircle } from "lucide-react";
 import {
   applyShopifyOrderCsvImport,
   previewShopifyOrderCsvImport,
-} from "@/app/admin/(dashboard)/orders/shopify-import/actions";
+} from "@/app/admin/(dashboard)/einstellungen/importe/bestellungen/actions";
 import {
   SHOPIFY_ORDER_IMPORT_MAX_BYTES,
   type ShopifyOrderImportActionState,
   type ShopifyOrderImportAdminSummary,
-} from "@/app/admin/(dashboard)/orders/shopify-import/import-shared";
+} from "@/app/admin/(dashboard)/einstellungen/importe/bestellungen/import-shared";
 
 function statusLabel(status: string): string {
   switch (status) {

@@ -51,7 +51,7 @@ Positionen ohne eindeutiges Katalog-Matching (SKU, Titel+Variante oder eindeutig
 
 ## Admin-UI
 
-Unter **Bestellungen → Shopify-Import** (`/admin/orders/shopify-import`):
+Unter **Einstellungen → Importe → Bestellungen** (`/admin/einstellungen/importe/bestellungen`):
 
 1. CSV hochladen oder per Drag-and-Drop ablegen (max. 5 MB).
 2. Optionen: Steuersatz, bestehende Import-Bestellungen aktualisieren.
@@ -84,5 +84,5 @@ npm run orders:import-shopify -- --file ./shopify-orders.csv --apply --update
 
 ## Nächste Ausbaustufen
 
-1. ~~Admin-UI (wie Produktimport).~~ (umgesetzt unter `/admin/orders/shopify-import`)
+1. ~~Admin-UI (wie Produktimport).~~ (umgesetzt unter `/admin/einstellungen/importe/bestellungen`)
 2. Shopify GraphQL Admin API statt CSV.
