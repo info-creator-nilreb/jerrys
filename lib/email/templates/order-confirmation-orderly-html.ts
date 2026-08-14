@@ -114,37 +114,11 @@ export function buildOrderConfirmationOrderlyHtml(): string {
                 </tr>
               </table>
 
-              <!-- Payment info -->
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                <tr>
-                  <td class="section-pad" style="padding:11px 44px;font-family:${font};" align="left">
-                    <h3 style="margin:0 0 12px;font-size:16px;line-height:1.4;font-weight:400;color:${headingColor};border-bottom:1px solid ${dividerColor};padding-bottom:8px;">Zahlungsinformationen</h3>
-                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="font-size:15px;color:${bodyColor};">
-                      <tr>
-                        <td style="padding:5px 0;width:65%;" align="left">Zahlungsart</td>
-                        <td style="padding:5px 0;width:35%;" align="right">{{order.payment_method}}</td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-
               <!-- Addresses -->
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                 <tr>
-                  <td class="section-pad" style="padding:11px 44px;">
+                  <td class="section-pad" style="padding:24px 44px 11px;">
                     {{{order.addresses_html}}}
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Divider -->
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                <tr>
-                  <td class="section-pad" style="padding:22px 44px;">
-                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                      <tr><td style="border-top:1px solid ${dividerColor};font-size:0;line-height:0;">&nbsp;</td></tr>
-                    </table>
                   </td>
                 </tr>
               </table>

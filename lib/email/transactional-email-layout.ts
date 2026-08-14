@@ -219,20 +219,23 @@ export function buildOrderItemsTableHtml(
   items: OrderLineItemForEmail[],
   formatPrice: (cents: number, currency: string) => string,
 ): string {
+  const rowDivider = "#eeeeee";
   const rows = items
-    .map((i) => {
+    .map((i, index) => {
       const title = escapeHtmlForEmail(i.productTitleSnapshot);
       const qty = escapeHtmlForEmail(String(i.quantity));
       const price = escapeHtmlForEmail(formatPrice(i.lineTotalGrossCents, i.currency));
-      const { divider, text: tcol, textMuted: muted, cardBorderNeutral } = TRANSACTIONAL_EMAIL_DESIGN;
+      const { text: tcol, textMuted: muted, cardBorderNeutral } = TRANSACTIONAL_EMAIL_DESIGN;
       const placeholder = "#f3f4f6";
       const alt = escapeHtmlForEmail(i.coverImageAlt?.trim() || i.productTitleSnapshot);
       const thumb =
         i.coverImageAbsoluteUrl?.trim() ?
           `<img src="${escapeHtmlForEmail(i.coverImageAbsoluteUrl.trim())}" alt="${alt}" width="52" height="52" border="0" style="display:block;width:52px;height:52px;border-radius:6px;object-fit:cover;border:1px solid ${cardBorderNeutral};line-height:0" />`
         : `<div style="width:52px;height:52px;border-radius:6px;background:${placeholder};border:1px solid ${cardBorderNeutral};font-size:10px;color:#9ca3af;text-align:center;line-height:52px">IMG</div>`;
-      return `<tr><td style="padding:12px 0;border-bottom:1px solid ${divider};width:56px;vertical-align:middle;line-height:0">${thumb}</td><td style="padding:12px 0 12px 14px;border-bottom:1px solid ${divider};vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${tcol}"><strong style="color:#1f2937">${title}</strong><br/><span style="font-size:13px;color:${muted}">Menge: ${qty}</span></td><td style="padding:12px 0;border-bottom:1px solid ${divider};text-align:right;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:#1f2937;white-space:nowrap">${price}</td></tr>`;
+      const isLast = index === items.length - 1;
+      const rowBorder = isLast ? "" : `border-bottom:1px solid ${rowDivider};`;
+      return `<tr><td style="padding:12px 0;${rowBorder}width:56px;vertical-align:middle;line-height:0">${thumb}</td><td style="padding:12px 0 12px 14px;${rowBorder}vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${tcol}"><strong style="color:#1f2937">${title}</strong><br/><span style="font-size:13px;color:${muted}">Menge: ${qty}</span></td><td style="padding:12px 0;${rowBorder}text-align:right;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:#1f2937;white-space:nowrap">${price}</td></tr>`;
     })
     .join("");
-  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:8px 0 16px">${rows}</table>`;
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:8px 0 0">${rows}</table>`;
 }

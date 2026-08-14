@@ -105,8 +105,8 @@ export function orderlyOrderNumber(numberLabel = "Bestell-Nr. {{order.number}}",
 }
 
 export function orderlyItemsSection(title: string, itemsVar: string, extraHtml = ""): string {
-  const { font, headingColor, dividerColor } = ORDERLY_EMAIL_STYLE;
-  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td class="section-pad" style="padding:11px 44px;font-family:${font};color:#333333;"><h3 style="margin:0 0 12px;font-size:16px;line-height:1.4;font-weight:400;color:${headingColor};border-bottom:1px solid ${dividerColor};padding-bottom:8px;">${title}</h3>${itemsVar}${extraHtml}</td></tr></table>`;
+  const { font, headingColor } = ORDERLY_EMAIL_STYLE;
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td class="section-pad" style="padding:11px 44px;font-family:${font};color:#333333;"><h3 style="margin:0 0 12px;font-size:16px;line-height:1.4;font-weight:400;color:${headingColor};">${title}</h3>${itemsVar}${extraHtml}</td></tr></table>`;
 }
 
 export function orderlySection(html: string, padding = "11px 44px"): string {
