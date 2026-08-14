@@ -651,7 +651,7 @@ export function CheckoutExpressPayPalOnly({
   };
 
   const alignClass =
-    variant === "pdp" ? "text-left" : "text-left lg:text-right";
+    variant === "pdp" || variant === "checkout" ? "text-left" : "text-left lg:text-right";
 
   return (
     <div className={`w-full max-w-md space-y-3 ${alignClass}`} aria-busy={busy}>

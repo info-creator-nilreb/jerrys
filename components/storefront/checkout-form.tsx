@@ -35,6 +35,7 @@ import {
 } from "@/components/storefront/paypal-card-fields-checkout";
 import { SmartAddressFields } from "@/components/storefront/smart-address-fields";
 import { CheckoutDeliveryMethodToggle } from "@/components/storefront/checkout-delivery-method-toggle";
+import { CheckoutPageExpress } from "@/components/storefront/checkout-page-express";
 import { computeCheckoutOrderTotalsWithDiscount } from "@/lib/promotions/checkout-totals";
 import type { CheckoutDeliveryMethod } from "@/lib/checkout/delivery-method";
 import { openStorefrontLogin } from "@/lib/storefront/open-login-event";
@@ -582,6 +583,15 @@ export function CheckoutForm({
         ) : null}
         <input type="hidden" name="paymentMethod" value="paypal" />
         <h1 className="text-xl font-semibold text-[#1f2937] sm:text-2xl">{checkoutTitle}</h1>
+
+        {!workshopMpa ? (
+          <CheckoutPageExpress
+            payPalConfigured={payPalConfigured}
+            paypalClientId={payPalClientId}
+            currency={currency}
+            totalGrossCents={displayTotals.totalCents}
+          />
+        ) : null}
 
         {state && !state.ok ? (
           <div
