@@ -38,6 +38,12 @@ import { CheckoutDeliveryMethodToggle } from "@/components/storefront/checkout-d
 import { CheckoutPageExpress } from "@/components/storefront/checkout-page-express";
 import { computeCheckoutOrderTotalsWithDiscount } from "@/lib/promotions/checkout-totals";
 import type { CheckoutDeliveryMethod } from "@/lib/checkout/delivery-method";
+import {
+  clearCheckoutFormDraft,
+  loadCheckoutFormDraft,
+  saveCheckoutFormDraft,
+  type CheckoutFormDraft,
+} from "@/lib/checkout/checkout-form-draft";
 import { openStorefrontLogin } from "@/lib/storefront/open-login-event";
 import type { OrderPriceLineInput } from "@/lib/tax/order-price-totals";
 import type {
@@ -179,6 +185,7 @@ export function CheckoutForm({
   payPalConfigured,
   payPalClientId,
   prefillPaypal,
+  restoreFormDraft = false,
   addressPrefill,
   savedAddresses = [],
   canSaveAddressToAccount = false,
@@ -197,6 +204,8 @@ export function CheckoutForm({
   payPalConfigured: boolean;
   payPalClientId: string;
   prefillPaypal?: boolean;
+  /** Nach PayPal-Abbruch/-Fehler: zuletzt eingegebene Formulardaten aus sessionStorage wiederherstellen. */
+  restoreFormDraft?: boolean;
   addressPrefill?: CheckoutAddressPrefill | null;
   /** Adressbuch des angemeldeten, verifizierten Kunden (leer für Gäste). */
   savedAddresses?: CustomerAddressListItem[];
@@ -235,6 +244,8 @@ export function CheckoutForm({
   const cardFieldsSubmitRef = useRef<PayPalCardFieldsSubmitRef["current"]>(null);
   /** Nur bei „Debit- oder Kreditkarte“ werden die Hosted Card Fields gemountet. */
   const [payPalSurface, setPayPalSurface] = useState<CheckoutPayPalMethodId>("paypal");
+  const [email, setEmail] = useState(addressPrefill?.email ?? "");
+  const [phone, setPhone] = useState("");
   const [shippingCountry, setShippingCountry] = useState(prefillCountry);
   const [deliveryMethod, setDeliveryMethod] = useState<CheckoutDeliveryMethod>("shipping");
   const [billingCountry, setBillingCountry] = useState(
@@ -287,6 +298,34 @@ export function CheckoutForm({
   const [promoPreview, setPromoPreview] = useState<CheckoutPromotionPreview | { error: string } | null>(
     null,
   );
+  const draftRestoredRef = useRef(false);
+
+  useEffect(() => {
+    if (!restoreFormDraft || draftRestoredRef.current || workshopBookingId) return;
+    const draft = loadCheckoutFormDraft();
+    if (!draft) return;
+    draftRestoredRef.current = true;
+    clearCheckoutFormDraft();
+    setEmail(draft.email);
+    setPhone(draft.phone);
+    setDeliveryMethod(draft.deliveryMethod);
+    if (allowedShippingCountries.some((c) => c.code === draft.shippingCountry)) {
+      setShippingCountry(draft.shippingCountry);
+    }
+    setShippingPerson(draft.shippingPerson);
+    setShippingAddressValues(draft.shippingAddressValues);
+    setShippingAddressId(draft.shippingAddressId);
+    setBillingDifferent(draft.billingDifferent);
+    if (allowedShippingCountries.some((c) => c.code === draft.billingCountry)) {
+      setBillingCountry(draft.billingCountry);
+    }
+    setBillingPerson(draft.billingPerson);
+    setBillingAddressValues(draft.billingAddressValues);
+    setBillingAddressId(draft.billingAddressId);
+    setPayPalSurface(draft.payPalSurface);
+    setCommittedPromoCode(draft.committedPromoCode);
+    setDeclineAutomatic(draft.declineAutomatic);
+  }, [allowedShippingCountries, restoreFormDraft, workshopBookingId]);
 
   const lineInputs: OrderPriceLineInput[] = useMemo(
     () =>
@@ -537,10 +576,33 @@ export function CheckoutForm({
   const onFormSubmit = (e: FormEvent<HTMLFormElement>) => {
     if (workshopBookingId) return;
     e.preventDefault();
+    const form = e.currentTarget;
+    saveCheckoutFormDraft(buildCheckoutFormDraftFromState());
     startTransition(() => {
-      formAction(new FormData(e.currentTarget));
+      formAction(new FormData(form));
     });
   };
+
+  function buildCheckoutFormDraftFromState(): CheckoutFormDraft {
+    return {
+      v: 1,
+      email,
+      phone,
+      deliveryMethod,
+      shippingCountry,
+      shippingPerson,
+      shippingAddressValues,
+      shippingAddressId,
+      billingDifferent,
+      billingCountry,
+      billingPerson,
+      billingAddressValues,
+      billingAddressId,
+      payPalSurface,
+      committedPromoCode,
+      declineAutomatic,
+    };
+  }
 
   const workshopMpa = Boolean(workshopBookingId);
   const useCardPayButton =
@@ -653,9 +715,12 @@ export function CheckoutForm({
               autoComplete="email"
               placeholder="E-Mail-Adresse"
               className={inputClass}
-              defaultValue={addressPrefill?.email ?? undefined}
+              value={email}
               onBlur={onEmailBlur}
-              onChange={() => clearLive("email")}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                clearLive("email");
+              }}
               {...ariaFieldErr(fe?.email ?? (liveErrors.email || undefined), checkoutErrId.email)}
             />
             {(fe?.email || liveErrors.email) && (
@@ -853,6 +918,8 @@ export function CheckoutForm({
                 type="tel"
                 autoComplete="shipping tel"
                 className={inputClass}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 aria-describedby="checkout-phone-hint"
               />
             </div>

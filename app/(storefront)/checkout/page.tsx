@@ -107,8 +107,8 @@ export default async function CheckoutPage({
           className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
           role="status"
         >
-          PayPal-Zahlung abgebrochen. Dein Warenkorb ist noch vorhanden — du kannst eine andere Zahlungsart wählen
-          oder den Checkout erneut absenden.
+          PayPal-Zahlung abgebrochen. Dein Warenkorb und deine Eingaben sind noch vorhanden — du kannst eine
+          andere Zahlungsart wählen oder den Checkout erneut absenden.
         </div>
       ) : null}
       {paypalError ? (
@@ -131,6 +131,7 @@ export default async function CheckoutPage({
           payPalConfigured={isPayPalConfigured()}
           payPalClientId={process.env.PAYPAL_CLIENT_ID?.trim() ?? ""}
           prefillPaypal={prefillPaypal}
+          restoreFormDraft={paypalCancelled || Boolean(paypalError)}
           addressPrefill={addressPrefill}
           savedAddresses={savedAddresses}
           canSaveAddressToAccount={Boolean(verifiedCustomerId)}
