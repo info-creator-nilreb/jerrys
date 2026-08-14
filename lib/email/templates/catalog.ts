@@ -174,12 +174,6 @@ export const EMAIL_TEMPLATE_CATALOG: EmailTemplateCatalogEntry[] = [
         example: "<table>…</table>",
       },
       {
-        path: "order.tracking_section_html",
-        label: "Sendungsverfolgung (CTA)",
-        html: true,
-        example: "<p>Du kannst den Status…</p>",
-      },
-      {
         path: "order.shipping_address_text",
         label: "Versand-/Abholadresse (Text)",
         example: "Max Muster\nMusterstraße 1\n10115 Berlin",

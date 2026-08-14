@@ -7,6 +7,7 @@ import {
 import { getEmailTemplateByKey } from "@/lib/email/templates/load";
 import { EmailTemplateEditor } from "@/app/admin/(dashboard)/emails/email-template-editor";
 import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
+import { getShopSettings } from "@/lib/shop/shop-settings";
 import { renderEmailBodies } from "@/lib/email/templates/render";
 import { runWithEmailAssetBaseUrlAsync } from "@/lib/email/email-absolute-url";
 import { resolveRequestOrigin } from "@/lib/email/request-origin";
@@ -33,14 +34,15 @@ export default async function AdminEmailTemplateEditPage({ params }: PageProps) 
   const session = await getAdminSession();
   const requestOrigin = await resolveRequestOrigin();
 
-  const [template, branding] = await Promise.all([
+  const [template, branding, settings] = await Promise.all([
     getEmailTemplateByKey(key),
     resolveTransactionalEmailBranding(),
+    getShopSettings(),
   ]);
   const entry = getEmailTemplateCatalogEntry(key);
 
   const previewVars = await runWithEmailAssetBaseUrlAsync(requestOrigin, async () =>
-    buildEmailTemplatePreviewVars(key, branding),
+    buildEmailTemplatePreviewVars(key, branding, settings),
   );
   const initialPreview = renderEmailBodies(
     {

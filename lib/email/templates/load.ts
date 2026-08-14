@@ -78,7 +78,9 @@ export async function ensureEmailTemplatesSeeded(): Promise<void> {
       /[🛒🚚💵🔑📅🔒✉️📷]/.test(row.htmlBody) ||
       (row.htmlBody.includes("wrap") === false &&
         row.htmlBody.includes("{{{shop.logo_html}}}") &&
-        !row.htmlBody.includes("{{{email.hero_icon_html}}}")),
+        !row.htmlBody.includes("{{{email.hero_icon_html}}}")) ||
+      (row.key === "order_shipped" &&
+        row.htmlBody.includes("{{{order.tracking_section_html}}}")),
   );
   for (const row of stale) {
     if (!isEmailTemplateKey(row.key)) continue;

@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { runWithEmailAssetBaseUrl } from "@/lib/email/email-absolute-url";
+import { buildShopTemplateVars } from "@/lib/email/templates/shop-vars";
 import {
   defaultTransactionalEmailBranding,
   transactionalEmailBrandingFromSettings,
@@ -114,5 +116,26 @@ describe("resolveEmailLogoAbsoluteUrl", () => {
       settings({ logoLightUrl: "https://blob.example.com/logo-light.png" }),
     );
     expect(url).toBe("https://blob.example.com/logo-light.png");
+  });
+});
+
+describe("buildShopTemplateVars Logo", () => {
+  it("löst Fallback-Logo zur Render-Zeit mit Preview-Origin auf", () => {
+    const branding = {
+      ...defaultTransactionalEmailBranding(),
+      logoAbsoluteUrl: null,
+    };
+    const shopSettings: ShopSettingsDTO = {
+      id: "default",
+      ...JERRYS_SHOP_SETTINGS_DEFAULTS,
+      updatedAt: null,
+    };
+    const vars = runWithEmailAssetBaseUrl("https://preview.example.com", () =>
+      buildShopTemplateVars(branding, { settings: shopSettings }),
+    );
+    const shop = vars.shop as Record<string, string>;
+    expect(shop.logo_html).toContain(
+      'src="https://preview.example.com/branding/jerrys-wordmark.jpg"',
+    );
   });
 });

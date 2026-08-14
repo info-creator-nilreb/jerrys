@@ -81,6 +81,8 @@ describe("order address fragments", () => {
     expect(html).toContain("Versand &amp; Tracking");
     expect(html).toContain('href="https://nolp.dhl.de/nextt-online-public/setShipmentOverview?lang=de&amp;piececode=1234567890"');
     expect(html).toContain("Sendung verfolgen");
+    expect(html).toContain("Bitte beachte, dass es eine Weile dauern kann");
     expect(html).not.toContain("piececode=1234567890</a>");
+    expect(html).not.toContain("Sendungsverfolgung");
   });
 });

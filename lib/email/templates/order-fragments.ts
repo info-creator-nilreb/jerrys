@@ -5,11 +5,9 @@ import {
   buildOrderItemsTableHtml,
   grayInfoCard,
   tintedCard,
-  transactionalCtaButton,
   TRANSACTIONAL_EMAIL_DESIGN,
   type OrderLineItemForEmail,
 } from "@/lib/email/transactional-email-layout";
-import type { TransactionalEmailBranding } from "@/lib/shop/email-branding";
 import { escapeHtmlForEmail } from "@/lib/email/template-utils";
 
 const { textMuted } = TRANSACTIONAL_EMAIL_DESIGN;
@@ -164,7 +162,9 @@ function orderShippingTrackingColumnHtml(input: {
   }
   if (input.trackUrl?.trim()) {
     const url = escapeHtmlForEmail(input.trackUrl.trim());
-    body += `<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55"><a href="${url}" style="color:${escapeHtmlForEmail(input.primaryColor)};font-weight:600;text-decoration:none">Sendung verfolgen</a></p>`;
+    const mutedColor = "#cccccc";
+    body += `<p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55"><a href="${url}" style="color:${escapeHtmlForEmail(input.primaryColor)};font-weight:600;text-decoration:none">Sendung verfolgen</a></p>`;
+    body += `<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.55;color:${mutedColor}">Bitte beachte, dass es eine Weile dauern kann, bis die Sendungsdaten aktualisiert werden.</p>`;
   }
   if (!body) {
     body = `<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:${bodyColor}">—</p>`;
@@ -199,19 +199,6 @@ export function orderInvoiceShippedNoteHtml(
   if (!num) return "";
   const note = invoiceAttached ? " — die Rechnung findest du im PDF-Anhang dieser E-Mail." : ".";
   return `<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#777777;text-align:center">Rechnungsnummer ${escapeHtmlForEmail(num)}${note}</p>`;
-}
-
-/** Intro, CTA und Hinweis zur Sendungsverfolgung; leer wenn keine Tracking-URL. */
-export function orderTrackingSectionHtml(
-  trackUrl: string | null,
-  branding: TransactionalEmailBranding,
-): string {
-  const url = trackUrl?.trim();
-  if (!url) return "";
-  const mutedColor = "#cccccc";
-  const bodyColor = "#777777";
-  const cta = transactionalCtaButton(url, "Sendungsverfolgung", branding);
-  return `<p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:${bodyColor};text-align:center">Du kannst den Status deiner Lieferung verfolgen:</p>${cta}<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.55;color:${mutedColor};text-align:center">Bitte beachte, dass es eine Weile dauern kann, bis die Sendungsdaten aktualisiert werden.</p>`;
 }
 
 export function orderNumberCardHtml(orderNumber: string): string {
