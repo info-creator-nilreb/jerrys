@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { formatPrice } from "@/lib/catalog/format";
 import { PriceEUR } from "@/components/storefront/price-eur";
 import type { CheckoutDeliveryMethod } from "@/lib/checkout/delivery-method";
+import { CHECKOUT_SUMMARY_CONTENT_CLASS, CHECKOUT_SUMMARY_PANEL_CLASS } from "@/lib/checkout/checkout-form-layout";
 
 export type CheckoutSummaryLine = {
   id: string;
@@ -69,7 +70,10 @@ export function CheckoutSummaryAside({
       : null;
 
   return (
-    <aside className="order-1 w-full min-w-0 border-b border-(--surface-muted) bg-(--surface-soft) p-6 lg:order-2 lg:sticky lg:top-[5.5rem] lg:max-h-[calc(100dvh-5.75rem)] lg:overflow-y-auto lg:self-start lg:border-b-0 lg:border-l lg:px-8 lg:py-6">
+    <aside
+      className={`order-1 w-full min-w-0 border-b border-(--surface-muted) p-6 lg:order-2 lg:sticky lg:top-[5.5rem] lg:max-h-[calc(100dvh-5.75rem)] lg:overflow-y-auto lg:self-stretch lg:border-b-0 lg:border-l lg:px-8 lg:py-10 ${CHECKOUT_SUMMARY_PANEL_CLASS}`}
+    >
+      <div className={CHECKOUT_SUMMARY_CONTENT_CLASS}>
       <h2 className="text-sm font-semibold text-(--foreground-heading)">Bestellübersicht</h2>
       <ul className="mt-6 space-y-4">
         {lines.map((line) => {
@@ -83,7 +87,7 @@ export function CheckoutSummaryAside({
                   ) : null}
                 </div>
                 <span
-                  className="absolute -right-1 -top-1 z-10 flex size-5 items-center justify-center rounded-full bg-[#1f1f1f] text-[10px] font-bold text-white ring-2 ring-(--surface-soft)"
+                  className="absolute -right-1 -top-1 z-10 flex size-5 items-center justify-center rounded-full bg-[#1f1f1f] text-[10px] font-bold text-white ring-2 ring-(--surface-subtle)"
                   aria-label={`Menge: ${line.quantity}`}
                 >
                   {line.quantity}
@@ -184,6 +188,7 @@ export function CheckoutSummaryAside({
           Ohne ausgewiesene Umsatzsteuer (Lieferung außerhalb der EU).
         </p>
       )}
+      </div>
     </aside>
   );
 }

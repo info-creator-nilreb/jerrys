@@ -94,7 +94,8 @@ export default async function CheckoutPage({
     : [null, []];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-24 md:py-28">
+    <div className="pb-12 lg:pb-0">
+      <div className="mx-auto max-w-6xl px-4 pt-24 md:pt-28">
       <StorefrontBreadcrumbs
         items={[
           { href: "/", label: "Start" },
@@ -119,8 +120,8 @@ export default async function CheckoutPage({
           {paypalError}
         </div>
       ) : null}
-      <div className="mt-4">
-        <CheckoutForm
+      </div>
+      <CheckoutForm
           idempotencyKey={idempotencyKey}
           lines={summaryLines}
           shippingRatesByCountry={shopShip.shippingRatesCentsByCountry}
@@ -137,7 +138,6 @@ export default async function CheckoutPage({
           canSaveAddressToAccount={Boolean(verifiedCustomerId)}
           showContactLogin={!session}
         />
-      </div>
     </div>
   );
 }

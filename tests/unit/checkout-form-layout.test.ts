@@ -1,7 +1,11 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { CHECKOUT_FORM_COLUMN_CLASS } from "@/lib/checkout/checkout-form-layout";
+import {
+  CHECKOUT_FORM_COLUMN_CLASS,
+  CHECKOUT_SUMMARY_CONTENT_CLASS,
+  CHECKOUT_SUMMARY_PANEL_CLASS,
+} from "@/lib/checkout/checkout-form-layout";
 
 describe("checkout form column width", () => {
   it("nutzt eine gemeinsame schmale Formularspalte (Shopify-like)", () => {
@@ -17,5 +21,17 @@ describe("checkout form column width", () => {
       "utf8",
     );
     expect(payment).not.toMatch(/mt-4 max-w-lg/);
+
+    const summary = readFileSync(
+      path.resolve("components/storefront/checkout-summary-aside.tsx"),
+      "utf8",
+    );
+    expect(summary).toContain("CHECKOUT_SUMMARY_PANEL_CLASS");
+    expect(summary).toContain("CHECKOUT_SUMMARY_CONTENT_CLASS");
+    expect(CHECKOUT_SUMMARY_PANEL_CLASS).toContain("surface-subtle");
+    expect(CHECKOUT_SUMMARY_CONTENT_CLASS).toContain("max-w-sm");
+
+    expect(form).toContain("justify-center");
+    expect(form).toContain("text-center");
   });
 });
