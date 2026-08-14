@@ -1,6 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
+import { useState, type ReactNode } from "react";
 import { formatPrice } from "@/lib/catalog/format";
 import { PriceEUR } from "@/components/storefront/price-eur";
 import type { CheckoutDeliveryMethod } from "@/lib/checkout/delivery-method";
@@ -16,6 +19,8 @@ export type CheckoutSummaryLine = {
     images: { url: string; alt: string }[];
   };
 };
+
+const CHECKOUT_SUMMARY_PANEL_ID = "checkout-order-summary-panel";
 
 export function CheckoutSummaryAside({
   lines,
@@ -57,6 +62,7 @@ export function CheckoutSummaryAside({
   shippingCostHint?: ReactNode;
   deliveryMethod?: CheckoutDeliveryMethod;
 }) {
+  const [mobileExpanded, setMobileExpanded] = useState(false);
   const isPickup = deliveryMethod === "pickup";
   const hasDiscount = discountOffSubtotalCents > 0;
   const hasShippingPromotionSave = !isPickup && shippingSavedByPromotionCents > 0;
@@ -71,123 +77,148 @@ export function CheckoutSummaryAside({
 
   return (
     <aside
-      className={`order-1 w-full min-w-0 border-b border-(--surface-muted) p-6 lg:order-2 lg:sticky lg:top-[5.5rem] lg:max-h-[calc(100dvh-5.75rem)] lg:overflow-y-auto lg:self-stretch lg:border-b-0 lg:border-l lg:px-8 lg:py-10 ${CHECKOUT_SUMMARY_PANEL_CLASS}`}
+      className={`order-1 w-full min-w-0 border-b border-(--surface-muted) px-4 py-4 lg:order-2 lg:sticky lg:top-[5.5rem] lg:max-h-[calc(100dvh-5.75rem)] lg:overflow-y-auto lg:self-stretch lg:border-b-0 lg:border-l lg:px-8 lg:py-10 ${CHECKOUT_SUMMARY_PANEL_CLASS}`}
     >
-      <div className={CHECKOUT_SUMMARY_CONTENT_CLASS}>
-      <h2 className="text-sm font-semibold text-(--foreground-heading)">Bestellübersicht</h2>
-      <ul className="mt-6 space-y-4">
-        {lines.map((line) => {
-          const img = line.product.images[0];
-          return (
-            <li key={line.id} className="flex gap-3">
-              <div className="relative h-16 w-16 shrink-0">
-                <div className="relative h-full w-full overflow-hidden rounded-md border border-(--surface-muted) bg-white">
-                  {img ? (
-                    <Image src={img.url} alt={img.alt} fill className="object-cover" sizes="64px" />
-                  ) : null}
+      <button
+        type="button"
+        className="flex w-full items-center justify-between gap-4 lg:hidden"
+        aria-expanded={mobileExpanded}
+        aria-controls={CHECKOUT_SUMMARY_PANEL_ID}
+        onClick={() => setMobileExpanded((expanded) => !expanded)}
+      >
+        <span className="inline-flex items-center gap-2 text-sm font-medium text-primary">
+          <ChevronDown
+            className={`size-4 shrink-0 transition-transform duration-200 ${mobileExpanded ? "rotate-180" : ""}`}
+            aria-hidden
+            strokeWidth={2}
+          />
+          Bestellübersicht
+        </span>
+        <span className="text-base font-semibold text-(--foreground-heading)">
+          <PriceEUR cents={totalCents} />
+        </span>
+      </button>
+
+      <div
+        id={CHECKOUT_SUMMARY_PANEL_ID}
+        className={`${CHECKOUT_SUMMARY_CONTENT_CLASS} ${mobileExpanded ? "mt-4 block" : "hidden lg:block"}`}
+      >
+        <h2 className="hidden text-sm font-semibold text-(--foreground-heading) lg:block">
+          Bestellübersicht
+        </h2>
+        <ul className="mt-0 space-y-4 lg:mt-6">
+          {lines.map((line) => {
+            const img = line.product.images[0];
+            return (
+              <li key={line.id} className="flex gap-3">
+                <div className="relative h-16 w-16 shrink-0">
+                  <div className="relative h-full w-full overflow-hidden rounded-md border border-(--surface-muted) bg-white">
+                    {img ? (
+                      <Image src={img.url} alt={img.alt} fill className="object-cover" sizes="64px" />
+                    ) : null}
+                  </div>
+                  <span
+                    className="absolute -right-1 -top-1 z-10 flex size-5 items-center justify-center rounded-full bg-[#1f1f1f] text-[10px] font-bold text-white ring-2 ring-(--surface-subtle)"
+                    aria-label={`Menge: ${line.quantity}`}
+                  >
+                    {line.quantity}
+                  </span>
                 </div>
-                <span
-                  className="absolute -right-1 -top-1 z-10 flex size-5 items-center justify-center rounded-full bg-[#1f1f1f] text-[10px] font-bold text-white ring-2 ring-(--surface-subtle)"
-                  aria-label={`Menge: ${line.quantity}`}
-                >
-                  {line.quantity}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium leading-snug text-(--foreground-heading)">
+                    {line.product.title}
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <PriceEUR cents={line.quantity * line.product.priceGrossCents} />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+
+        {children}
+
+        <dl className="mt-8 space-y-3 text-sm">
+          <div className="flex justify-between gap-4">
+            <dt className="text-(--foreground-muted)">Zwischensumme</dt>
+            <dd>
+              <PriceEUR cents={catalogSubtotalBeforeDiscountCents} />
+            </dd>
+          </div>
+          {hasDiscount ? (
+            <div className="flex justify-between gap-4 text-emerald-800">
+              <dt className="min-w-0 flex-1">
+                <span className="block font-medium">Rabatt</span>
+                {discountLabel ? (
+                  <span className="block text-xs font-normal text-(--foreground-muted)">{discountLabel}</span>
+                ) : null}
+                {discountDetail ? (
+                  <span className="block text-xs text-(--foreground-muted)">{discountDetail}</span>
+                ) : null}
+              </dt>
+              <dd className="shrink-0">−{formatPrice(discountOffSubtotalCents, currency)}</dd>
+            </div>
+          ) : null}
+          <div className="flex justify-between gap-4">
+            <dt className="text-(--foreground-muted)">
+              <span className="block">{isPickup ? "Abholung" : "Versand"}</span>
+              {!isPickup && shippingCountryLabel ? (
+                <span className="mt-0.5 block text-xs font-normal">
+                  nach {shippingCountryLabel}
                 </span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium leading-snug text-(--foreground-heading)">
-                  {line.product.title}
-                </p>
-              </div>
-              <div className="shrink-0 text-right">
-                <PriceEUR cents={line.quantity * line.product.priceGrossCents} />
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-
-      {children}
-
-      <dl className="mt-8 space-y-3 text-sm">
-        <div className="flex justify-between gap-4">
-          <dt className="text-(--foreground-muted)">Zwischensumme</dt>
-          <dd>
-            <PriceEUR cents={catalogSubtotalBeforeDiscountCents} />
-          </dd>
-        </div>
-        {hasDiscount ? (
-          <div className="flex justify-between gap-4 text-emerald-800">
-            <dt className="min-w-0 flex-1">
-              <span className="block font-medium">Rabatt</span>
-              {discountLabel ? (
-                <span className="block text-xs font-normal text-(--foreground-muted)">{discountLabel}</span>
-              ) : null}
-              {discountDetail ? (
-                <span className="block text-xs text-(--foreground-muted)">{discountDetail}</span>
               ) : null}
             </dt>
-            <dd className="shrink-0">−{formatPrice(discountOffSubtotalCents, currency)}</dd>
+            <dd className="text-right text-(--foreground-muted)">
+              <div>{shippingCents === 0 ? "kostenlos" : formatPrice(shippingCents, currency)}</div>
+              {hasShippingPromotionSave ? (
+                <div className="mt-1 text-xs font-medium text-emerald-800">
+                  {shippingPromotionLabel ? `${shippingPromotionLabel}: ` : null}
+                  Versand gespart {formatPrice(shippingSavedByPromotionCents, currency)}
+                </div>
+              ) : null}
+            </dd>
           </div>
-        ) : null}
-        <div className="flex justify-between gap-4">
-          <dt className="text-(--foreground-muted)">
-            <span className="block">{isPickup ? "Abholung" : "Versand"}</span>
-            {!isPickup && shippingCountryLabel ? (
-              <span className="mt-0.5 block text-xs font-normal">
-                nach {shippingCountryLabel}
-              </span>
-            ) : null}
-          </dt>
-          <dd className="text-right text-(--foreground-muted)">
-            <div>{shippingCents === 0 ? "kostenlos" : formatPrice(shippingCents, currency)}</div>
-            {hasShippingPromotionSave ? (
-              <div className="mt-1 text-xs font-medium text-emerald-800">
-                {shippingPromotionLabel ? `${shippingPromotionLabel}: ` : null}
-                Versand gespart {formatPrice(shippingSavedByPromotionCents, currency)}
-              </div>
-            ) : null}
-          </dd>
-        </div>
-        {remainingToFreeShipping != null ? (
-          <p className="text-xs leading-relaxed text-(--foreground-muted)">
-            Noch {formatPrice(remainingToFreeShipping, currency)} bis zum versandkostenfreien Versand.
-          </p>
-        ) : null}
-        {shippingCostHint !== undefined ? (
-          shippingCostHint
-        ) : isPickup ? (
-          <p className="text-xs leading-relaxed text-(--foreground-muted)">
-            Abholung vor Ort, keine Versandkosten.
+          {remainingToFreeShipping != null ? (
+            <p className="text-xs leading-relaxed text-(--foreground-muted)">
+              Noch {formatPrice(remainingToFreeShipping, currency)} bis zum versandkostenfreien Versand.
+            </p>
+          ) : null}
+          {shippingCostHint !== undefined ? (
+            shippingCostHint
+          ) : isPickup ? (
+            <p className="text-xs leading-relaxed text-(--foreground-muted)">
+              Abholung vor Ort, keine Versandkosten.
+            </p>
+          ) : (
+            <p className="text-xs leading-relaxed text-(--foreground-muted)">
+              Versandkosten werden vor der Zahlung anhand der Lieferadresse berechnet.{" "}
+              <Link
+                href="/versand"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-primary underline-offset-2 hover:underline"
+              >
+                Mehr zu Zahlung &amp; Versand
+              </Link>
+            </p>
+          )}
+          <div className="flex justify-between gap-4 border-t border-(--surface-muted) pt-3 text-base font-semibold">
+            <dt className="text-(--foreground-heading)">Gesamt</dt>
+            <dd className="text-(--foreground-heading)">
+              <PriceEUR cents={totalCents} />
+            </dd>
+          </div>
+        </dl>
+        {vatApplies ? (
+          <p className="mt-2 text-sm text-(--foreground-muted)">
+            inkl. {formatPrice(taxAmountCents, currency)} MwSt.
           </p>
         ) : (
-          <p className="text-xs leading-relaxed text-(--foreground-muted)">
-            Versandkosten werden vor der Zahlung anhand der Lieferadresse berechnet.{" "}
-            <Link
-              href="/versand"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-primary underline-offset-2 hover:underline"
-            >
-              Mehr zu Zahlung &amp; Versand
-            </Link>
+          <p className="mt-2 text-sm text-(--foreground-muted)">
+            Ohne ausgewiesene Umsatzsteuer (Lieferung außerhalb der EU).
           </p>
         )}
-        <div className="flex justify-between gap-4 border-t border-(--surface-muted) pt-3 text-base font-semibold">
-          <dt className="text-(--foreground-heading)">Gesamt</dt>
-          <dd className="text-(--foreground-heading)">
-            <PriceEUR cents={totalCents} />
-          </dd>
-        </div>
-      </dl>
-      {vatApplies ? (
-        <p className="mt-2 text-sm text-(--foreground-muted)">
-          inkl. {formatPrice(taxAmountCents, currency)} MwSt.
-        </p>
-      ) : (
-        <p className="mt-2 text-sm text-(--foreground-muted)">
-          Ohne ausgewiesene Umsatzsteuer (Lieferung außerhalb der EU).
-        </p>
-      )}
       </div>
     </aside>
   );
