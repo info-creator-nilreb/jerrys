@@ -20,7 +20,7 @@ export function CheckoutPageExpress({
   if (!payPalConfigured || !paypalClientId.trim()) return null;
 
   return (
-    <div className="mt-6 max-w-lg space-y-2.5">
+    <div className="mt-6 w-full space-y-2.5">
       <p className="text-center text-[0.65rem] font-medium uppercase tracking-[0.14em] text-(--foreground-muted)">
         Express Checkout
       </p>

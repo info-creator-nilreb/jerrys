@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  isPayPalApplePayConfigEligible,
+  paypalExpressSdkSrc,
+} from "@/lib/payments/paypal-express-sdk";
 
 type PayPalButtonsInstance = {
   isEligible?: () => boolean;
@@ -33,7 +37,7 @@ type PayPalApplePaySession = {
 };
 
 type PayPalExpressSdk = {
-  FUNDING?: { PAYPAL?: string };
+  FUNDING?: { PAYPAL?: string; APPLEPAY?: string };
   Buttons?: (options: Record<string, unknown>) => PayPalButtonsInstance;
   Applepay?: () => PayPalApplePaySession;
 };
@@ -109,24 +113,21 @@ function merchantSessionForApple(raw: unknown): unknown {
   return raw;
 }
 
-function paypalExpressSdkSrc(clientId: string, currency: string): string {
-  const p = new URLSearchParams({
-    "client-id": clientId,
-    components: "buttons,applepay",
-    intent: "capture",
-    currency: currency.trim().toUpperCase(),
-    locale: "de_DE",
-    "disable-funding": "card,paylater,venmo,sepa,bancontact,blik,eps,giropay,ideal,mybank,p24,sofort",
-  });
-  return `https://www.paypal.com/sdk/js?${p.toString()}`;
-}
-
 function currentPayPal(): PayPalExpressSdk | undefined {
   return (window as unknown as { paypal?: PayPalExpressSdk }).paypal;
 }
 
 function currentApplePaySession(): ApplePaySessionConstructor | undefined {
   return (window as unknown as { ApplePaySession?: ApplePaySessionConstructor }).ApplePaySession;
+}
+
+function applePaySessionCanMakePayments(): boolean {
+  try {
+    const ApplePaySession = currentApplePaySession();
+    return Boolean(ApplePaySession && ApplePaySession.canMakePayments());
+  } catch {
+    return false;
+  }
 }
 
 export type PdpExpressLine = {
@@ -164,8 +165,11 @@ export function CheckoutExpressPayPalOnly({
   const router = useRouter();
   const paypalContainerRef = useRef<HTMLDivElement>(null);
   const paypalButtonsRef = useRef<PayPalButtonsInstance | null>(null);
+  const applePayPaypalContainerRef = useRef<HTMLDivElement>(null);
+  const applePayPaypalButtonsRef = useRef<PayPalButtonsInstance | null>(null);
   const applePaySessionRef = useRef<PayPalApplePaySession | null>(null);
   const applePayConfigRef = useRef<PayPalApplePayConfig | null>(null);
+  const applePaySetupErrorRef = useRef<string | null>(null);
   const idempotencyKeyRef = useRef<string | null>(null);
   const lastExpressPaypalOrderIdRef = useRef<string | null>(null);
   const liveTotalCentsRef = useRef(totalGrossCents);
@@ -173,7 +177,7 @@ export function CheckoutExpressPayPalOnly({
   pdpExpressRef.current = pdpExpress;
   const [sdkError, setSdkError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [applePayConfig, setApplePayConfig] = useState<PayPalApplePayConfig | null>(null);
+  const [applePayDeviceReady, setApplePayDeviceReady] = useState(false);
   const [liveTotalCents, setLiveTotalCents] = useState(totalGrossCents);
 
   useEffect(() => {
@@ -184,10 +188,6 @@ export function CheckoutExpressPayPalOnly({
   useEffect(() => {
     liveTotalCentsRef.current = liveTotalCents;
   }, [liveTotalCents]);
-
-  useEffect(() => {
-    applePayConfigRef.current = applePayConfig;
-  }, [applePayConfig]);
 
   const ensureIdempotencyKey = useCallback((): string | undefined => {
     if (!idempotencyKeyRef.current) {
@@ -350,17 +350,71 @@ export function CheckoutExpressPayPalOnly({
   // (sonst reißt liveTotalCents den Apple-Pay-Flow mitten im Sheet ab).
   useEffect(() => {
     setSdkError(null);
-    setApplePayConfig(null);
+    setApplePayDeviceReady(false);
     applePayConfigRef.current = null;
     applePaySessionRef.current = null;
+    applePaySetupErrorRef.current = null;
     paypalButtonsRef.current?.close?.();
     paypalButtonsRef.current = null;
+    applePayPaypalButtonsRef.current?.close?.();
+    applePayPaypalButtonsRef.current = null;
     if (paypalContainerRef.current) paypalContainerRef.current.innerHTML = "";
+    if (applePayPaypalContainerRef.current) applePayPaypalContainerRef.current.innerHTML = "";
 
     if (!enabled || !payPalConfigured || !paypalClientId.trim()) return;
 
-    const scriptId = `paypal-js-express-checkout-${currency.trim().toUpperCase()}`;
+    const scriptId = `paypal-js-express-checkout-${currency.trim().toUpperCase()}-applepay`;
     let cancelled = false;
+
+    const expressButtonOptions = (paypal: PayPalExpressSdk, fundingSource: string | undefined) => ({
+      fundingSource,
+      style:
+        fundingSource && fundingSource === paypal.FUNDING?.APPLEPAY
+          ? { layout: "vertical", color: "black", shape: "rect", height: 44 }
+          : { layout: "vertical", color: "gold", shape: "rect", label: "paypal", height: 44 },
+      createOrder: () => createExpressOrderRef.current(),
+      onShippingAddressChange: async (data: {
+        orderID?: string;
+        shippingAddress?: { countryCode?: string };
+        errors?: { ADDRESS_ERROR?: string };
+      }) => {
+        const country = data.shippingAddress?.countryCode?.trim().toUpperCase() ?? "";
+        const orderId = data.orderID ?? lastExpressPaypalOrderIdRef.current ?? "";
+        if (!country || !orderId) {
+          throw new Error(data.errors?.ADDRESS_ERROR ?? "Lieferadresse ungültig.");
+        }
+        try {
+          await updateExpressShippingRef.current(orderId, country);
+          selectedShippingCountryRef.current = country;
+        } catch (e) {
+          throw new Error(
+            e instanceof Error
+              ? e.message
+              : (data.errors?.ADDRESS_ERROR ?? "Lieferung an diese Adresse nicht möglich."),
+          );
+        }
+      },
+      onApprove: async (data: { orderID?: string }) => {
+        const orderId = data.orderID;
+        if (!orderId) throw new Error("PayPal Order-ID fehlt.");
+        setBusy(true);
+        try {
+          await approveExpressOrderRef.current(orderId);
+        } finally {
+          setBusy(false);
+        }
+      },
+      onCancel: async (data: { orderID?: string }) => {
+        await cancelExpressOrderRef.current(data.orderID);
+        setBusy(false);
+        setSdkError("PayPal Express wurde abgebrochen. Es wurde nichts abgebucht.");
+      },
+      onError: (err: unknown) => {
+        console.error(err);
+        setSdkError(err instanceof Error ? err.message : "PayPal Express ist fehlgeschlagen.");
+        setBusy(false);
+      },
+    });
 
     const mount = async () => {
       const paypal = currentPayPal();
@@ -371,53 +425,11 @@ export function CheckoutExpressPayPalOnly({
         return;
       }
 
+      const deviceReady = applePaySessionCanMakePayments();
+      if (!cancelled && deviceReady) setApplePayDeviceReady(true);
+
       host.innerHTML = "";
-      const buttons = paypal.Buttons({
-        fundingSource: paypal.FUNDING?.PAYPAL,
-        style: { layout: "vertical", color: "gold", shape: "rect", label: "paypal", height: 44 },
-        createOrder: () => createExpressOrderRef.current(),
-        onShippingAddressChange: async (data: {
-          orderID?: string;
-          shippingAddress?: { countryCode?: string };
-          errors?: { ADDRESS_ERROR?: string };
-        }) => {
-          const country = data.shippingAddress?.countryCode?.trim().toUpperCase() ?? "";
-          const orderId = data.orderID ?? lastExpressPaypalOrderIdRef.current ?? "";
-          if (!country || !orderId) {
-            throw new Error(data.errors?.ADDRESS_ERROR ?? "Lieferadresse ungültig.");
-          }
-          try {
-            await updateExpressShippingRef.current(orderId, country);
-            selectedShippingCountryRef.current = country;
-          } catch (e) {
-            throw new Error(
-              e instanceof Error
-                ? e.message
-                : (data.errors?.ADDRESS_ERROR ?? "Lieferung an diese Adresse nicht möglich."),
-            );
-          }
-        },
-        onApprove: async (data: { orderID?: string }) => {
-          const orderId = data.orderID;
-          if (!orderId) throw new Error("PayPal Order-ID fehlt.");
-          setBusy(true);
-          try {
-            await approveExpressOrderRef.current(orderId);
-          } finally {
-            setBusy(false);
-          }
-        },
-        onCancel: async (data: { orderID?: string }) => {
-          await cancelExpressOrderRef.current(data.orderID);
-          setBusy(false);
-          setSdkError("PayPal Express wurde abgebrochen. Es wurde nichts abgebucht.");
-        },
-        onError: (err: unknown) => {
-          console.error(err);
-          setSdkError(err instanceof Error ? err.message : "PayPal Express ist fehlgeschlagen.");
-          setBusy(false);
-        },
-      });
+      const buttons = paypal.Buttons(expressButtonOptions(paypal, paypal.FUNDING?.PAYPAL));
 
       if (buttons.isEligible?.() === false) {
         setSdkError("PayPal Express ist für diese Umgebung nicht verfügbar.");
@@ -426,22 +438,48 @@ export function CheckoutExpressPayPalOnly({
         await buttons.render(host);
       }
 
-      const ApplePaySession = currentApplePaySession();
-      if (typeof paypal.Applepay === "function" && ApplePaySession?.canMakePayments()) {
+      if (cancelled) return;
+
+      if (typeof paypal.Applepay === "function" && deviceReady) {
         try {
           const applepay = paypal.Applepay();
           const config = await applepay.config();
-          if (!cancelled && config.isEligible) {
+          if (!cancelled && isPayPalApplePayConfigEligible(config)) {
             applePaySessionRef.current = applepay;
             applePayConfigRef.current = config;
-            setApplePayConfig(config);
+          } else if (!cancelled) {
+            applePaySetupErrorRef.current =
+              "Apple Pay ist für diese Shop-Domain bei PayPal noch nicht freigeschaltet.";
           }
-        } catch {
+        } catch (e) {
+          console.error(e);
           if (!cancelled) {
             applePaySessionRef.current = null;
             applePayConfigRef.current = null;
-            setApplePayConfig(null);
+            applePaySetupErrorRef.current = formatExpressSdkError(
+              e,
+              "Apple Pay konnte nicht vorbereitet werden. Domain ggf. nicht für Apple Pay registriert.",
+            );
           }
+        }
+      }
+
+      if (cancelled || deviceReady) return;
+
+      const applePayHost = applePayPaypalContainerRef.current;
+      const applePayFunding = paypal.FUNDING?.APPLEPAY;
+      if (!applePayHost || !applePayFunding) return;
+
+      applePayHost.innerHTML = "";
+      const applePayButtons = paypal.Buttons(expressButtonOptions(paypal, applePayFunding));
+      if (applePayButtons.isEligible?.() !== false) {
+        applePayPaypalButtonsRef.current = applePayButtons;
+        try {
+          await applePayButtons.render(applePayHost);
+        } catch (e) {
+          console.error(e);
+          applePayPaypalButtonsRef.current = null;
+          applePayHost.innerHTML = "";
         }
       }
     };
@@ -465,7 +503,10 @@ export function CheckoutExpressPayPalOnly({
       cancelled = true;
       paypalButtonsRef.current?.close?.();
       paypalButtonsRef.current = null;
+      applePayPaypalButtonsRef.current?.close?.();
+      applePayPaypalButtonsRef.current = null;
       if (paypalContainerRef.current) paypalContainerRef.current.innerHTML = "";
+      if (applePayPaypalContainerRef.current) applePayPaypalContainerRef.current.innerHTML = "";
     };
   }, [
     currency,
@@ -494,7 +535,17 @@ export function CheckoutExpressPayPalOnly({
     const ApplePaySession = currentApplePaySession();
     const applepay = applePaySessionRef.current;
     const config = applePayConfigRef.current;
-    if (!ApplePaySession || !applepay || !config) return;
+    if (!ApplePaySession) {
+      setSdkError("Apple Pay ist nur in Safari auf Apple-Geräten verfügbar.");
+      return;
+    }
+    if (!applepay || !config) {
+      setSdkError(
+        applePaySetupErrorRef.current ??
+          "Apple Pay wird noch vorbereitet. Bitte in einem Moment erneut versuchen.",
+      );
+      return;
+    }
 
     const amount = moneyStringFromGrossCents(liveTotalCentsRef.current);
     if (liveTotalCentsRef.current <= 0) {
@@ -652,10 +703,11 @@ export function CheckoutExpressPayPalOnly({
 
   const alignClass =
     variant === "pdp" || variant === "checkout" ? "text-left" : "text-left lg:text-right";
+  const widthClass = variant === "checkout" ? "w-full" : "w-full max-w-md";
 
   return (
-    <div className={`w-full max-w-md space-y-3 ${alignClass}`} aria-busy={busy}>
-      {applePayConfig ? (
+    <div className={`${widthClass} space-y-3 ${alignClass}`} aria-busy={busy}>
+      {applePayDeviceReady ? (
         <button
           type="button"
           disabled={busy}
@@ -666,13 +718,18 @@ export function CheckoutExpressPayPalOnly({
           Apple Pay
         </button>
       ) : null}
+      <div ref={applePayPaypalContainerRef} className="w-full empty:hidden" />
       <div ref={paypalContainerRef} className="min-h-[2.75rem] w-full" />
       {sdkError ? (
         <p className="text-xs leading-snug text-red-600" role="alert">
           {sdkError}
         </p>
       ) : null}
-      <p className="text-xs leading-snug text-[#6b7280]">
+      <p
+        className={`text-xs leading-snug text-[#6b7280] ${
+          variant === "checkout" ? "w-full max-w-none text-left" : ""
+        }`}
+      >
         Mit der Express-Zahlung akzeptierst du unsere{" "}
         <Link href="/agb" target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">
           AGB

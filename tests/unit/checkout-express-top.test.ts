@@ -13,4 +13,29 @@ describe("Checkout Express oben", () => {
     expect(contact).toBeGreaterThan(express);
     expect(src).toContain("workshopMpa");
   });
+
+  it("spannt Express-Hinweis und Buttons über die volle Checkout-Spalte", () => {
+    const page = readFileSync(path.resolve("components/storefront/checkout-page-express.tsx"), "utf8");
+    expect(page).toContain('className="mt-6 w-full space-y-2.5"');
+    expect(page).not.toContain("max-w-lg");
+    expect(page).not.toContain("max-w-md");
+
+    const buttons = readFileSync(
+      path.resolve("components/storefront/checkout-express-paypal.tsx"),
+      "utf8",
+    );
+    expect(buttons).toContain('variant === "checkout" ? "w-full" : "w-full max-w-md"');
+    expect(buttons).toContain("w-full max-w-none text-left");
+  });
+
+  it("zeigt Apple Pay am Gerät, nicht nur nach PayPal-isEligible", () => {
+    const buttons = readFileSync(
+      path.resolve("components/storefront/checkout-express-paypal.tsx"),
+      "utf8",
+    );
+    expect(buttons).toContain("applePayDeviceReady");
+    expect(buttons).toContain("applePaySessionCanMakePayments");
+    expect(buttons).toContain("FUNDING?.APPLEPAY");
+    expect(buttons).toContain("isPayPalApplePayConfigEligible");
+  });
 });
