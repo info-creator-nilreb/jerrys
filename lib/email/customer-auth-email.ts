@@ -1,6 +1,10 @@
 import { customerAuthEmailActionUrl } from "@/lib/email/customer-auth-email-link";
 import { sendTransactionalEmail } from "@/lib/email/provider";
 import { escapeHtmlForEmail } from "@/lib/email/template-utils";
+import {
+  authAfterButtonNoteHtml,
+  customerGreetingHtml,
+} from "@/lib/email/templates/auth-email-fragments";
 import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
 import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
 import { createLogger } from "@/lib/logging/logger";
@@ -10,6 +14,13 @@ import type { EmailTemplateKey } from "@/lib/email/templates/catalog";
 const log = createLogger("email.customer-auth");
 
 export type CustomerAuthEmailKind = "email_verify" | "magic_link" | "password_reset";
+
+const AUTH_AFTER_BUTTON_NOTE: Record<CustomerAuthEmailKind, string> = {
+  email_verify: "Wenn du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.",
+  magic_link: "Wenn du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.",
+  password_reset:
+    "Solltest du diese E-Mail irrtümlich erhalten haben, kannst du diese ignorieren.",
+};
 
 const AUTH_META: Record<
   CustomerAuthEmailKind,
@@ -26,7 +37,7 @@ const AUTH_META: Record<
     templateKey: "magic_link",
   },
   password_reset: {
-    cta: "Neues Passwort wählen",
+    cta: "Passwort zurücksetzen",
     pathPrefix: "/konto/passwort-zuruecksetzen",
     templateKey: "password_reset",
   },
@@ -43,6 +54,7 @@ export async function sendCustomerAuthEmail(params: {
   kind: CustomerAuthEmailKind;
   to: string;
   rawToken: string;
+  firstName?: string | null;
 }): Promise<CustomerAuthEmailSendResult> {
   const branding = await resolveTransactionalEmailBranding();
   const meta = AUTH_META[params.kind];
@@ -59,7 +71,15 @@ export async function sendCustomerAuthEmail(params: {
       cta: { href, label: meta.cta },
       heroVariant: "account",
     }),
-    {},
+    {
+      customer: {
+        first_name: params.firstName?.trim() ?? "",
+        greeting_html: customerGreetingHtml(params.firstName),
+      },
+      email: {
+        after_button_note_html: authAfterButtonNoteHtml(AUTH_AFTER_BUTTON_NOTE[params.kind]),
+      },
+    },
   );
 
   const rendered = await renderStoredEmailTemplate(meta.templateKey, vars);

@@ -11,10 +11,13 @@ import {
 } from "@/lib/email/order-email-line-items";
 import { sendTransactionalEmail } from "@/lib/email/provider";
 import {
+  orderAddressText,
+  orderInvoiceShippedNoteHtml,
   orderItemsHtml,
   orderItemsText,
-  orderNumberCardHtml,
-  shippingDetailsHtml,
+  orderShippingAddressAndTrackingHtml,
+  orderTrackingSectionHtml,
+  shippingAddressFromOrder,
 } from "@/lib/email/templates/order-fragments";
 import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
 import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
@@ -75,6 +78,12 @@ export async function sendOrderShippedIfNeeded(
       : null;
 
   const lineItems = orderItemsToEmailLineItems(order.items);
+  const itemsForText = order.items.map((i) => ({
+    productTitleSnapshot: i.productTitleSnapshot,
+    quantity: i.quantity,
+    lineTotalGrossCents: i.lineTotalGrossCents,
+    currency: i.currency,
+  }));
 
   const vars = mergeTemplateVars(
     buildShopTemplateVars(branding, {
@@ -89,23 +98,19 @@ export async function sendOrderShippedIfNeeded(
         tracking_url: trackUrl ?? "",
         invoice_number: order.invoiceNumber ?? "",
         invoice_note: pdfAttachment ? " (PDF angehängt)" : "",
-        number_card_html: orderNumberCardHtml(order.orderNumber),
+        invoice_note_html: orderInvoiceShippedNoteHtml(
+          order.invoiceNumber,
+          Boolean(pdfAttachment),
+        ),
         items_html: orderItemsHtml(lineItems),
-        shipping_details_html: shippingDetailsHtml({
+        shipping_address_tracking_html: orderShippingAddressAndTrackingHtml(order, {
           carrierLine,
           trackUrl,
-          invoiceNumber: order.invoiceNumber,
-          invoiceAttached: Boolean(pdfAttachment),
           primaryColor: branding.primary,
         }),
-        items_text: orderItemsText(
-          order.items.map((i) => ({
-            productTitleSnapshot: i.productTitleSnapshot,
-            quantity: i.quantity,
-            lineTotalGrossCents: i.lineTotalGrossCents,
-            currency: i.currency,
-          })),
-        ),
+        tracking_section_html: orderTrackingSectionHtml(trackUrl, branding),
+        shipping_address_text: orderAddressText(shippingAddressFromOrder(order)),
+        items_text: orderItemsText(itemsForText),
       },
     },
   );

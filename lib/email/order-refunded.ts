@@ -13,9 +13,8 @@ import {
 import { sendTransactionalEmail } from "@/lib/email/provider";
 import {
   orderItemsHtml,
-  orderNumberCardHtml,
-  refundAmountCardHtml,
-  refundMetaHtml,
+  orderItemsText,
+  orderRefundAmountRowHtml,
 } from "@/lib/email/templates/order-fragments";
 import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
 import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
@@ -52,9 +51,16 @@ export async function sendOrderRefundedIfNeeded(
   const totalStr = formatPrice(order.totalGrossCents, order.currency);
   const payLabel = transactionalPaymentLabel(order.paymentMethod);
 
+  const lineItems = orderItemsToEmailLineItems(order.items);
+  const itemsForText = order.items.map((i) => ({
+    productTitleSnapshot: i.productTitleSnapshot,
+    quantity: i.quantity,
+    lineTotalGrossCents: i.lineTotalGrossCents,
+    currency: i.currency,
+  }));
   const itemsHtml =
     order.items.length > 0
-      ? orderItemsHtml(orderItemsToEmailLineItems(order.items))
+      ? orderItemsHtml(lineItems)
       : `<p style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333">Positionen siehe Bestellübersicht.</p>`;
 
   const vars = mergeTemplateVars(
@@ -69,10 +75,9 @@ export async function sendOrderRefundedIfNeeded(
         total: totalStr,
         refund_date: refundDate,
         payment_method: payLabel,
-        number_card_html: orderNumberCardHtml(order.orderNumber),
-        refund_card_html: refundAmountCardHtml(totalStr),
         items_html: itemsHtml,
-        refund_meta_html: refundMetaHtml(refundDate, payLabel),
+        refund_amount_row_html: orderRefundAmountRowHtml(totalStr),
+        items_text: orderItemsText(itemsForText),
       },
     },
   );

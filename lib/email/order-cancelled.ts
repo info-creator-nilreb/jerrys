@@ -5,10 +5,16 @@ import {
   isOrderEmailAlreadySentSuccessfully,
   upsertOrderEmailDeliveryLog,
 } from "@/lib/email/order-email-log";
+import {
+  orderItemsIncludeForTransactionalEmail,
+  orderItemsToEmailLineItems,
+} from "@/lib/email/order-email-line-items";
 import { sendTransactionalEmail } from "@/lib/email/provider";
+import { orderItemsHtml, orderItemsText } from "@/lib/email/templates/order-fragments";
 import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
 import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
 import { publicSiteBaseUrl } from "@/lib/email/template-utils";
+import { formatGermanDateMedium } from "@/lib/email/transactional-email-layout";
 import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
 
 /**
@@ -25,13 +31,18 @@ export async function sendOrderCancelledIfNeeded(
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    select: {
-      orderNumber: true,
-      email: true,
-      shippingFirstName: true,
-    },
+    include: { items: orderItemsIncludeForTransactionalEmail },
   });
   if (!order) return;
+
+  const lineItems = orderItemsToEmailLineItems(order.items);
+  const itemsForText = order.items.map((i) => ({
+    productTitleSnapshot: i.productTitleSnapshot,
+    quantity: i.quantity,
+    lineTotalGrossCents: i.lineTotalGrossCents,
+    currency: i.currency,
+  }));
+  const cancelledDate = formatGermanDateMedium(new Date());
 
   const branding = await resolveTransactionalEmailBranding();
   const base = publicSiteBaseUrl();
@@ -43,6 +54,9 @@ export async function sendOrderCancelledIfNeeded(
     order: {
       number: order.orderNumber,
       status_url: successUrl,
+      cancelled_date: cancelledDate,
+      items_html: orderItemsHtml(lineItems),
+      items_text: orderItemsText(itemsForText),
     },
   });
 

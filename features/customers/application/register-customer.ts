@@ -73,6 +73,7 @@ export async function registerCustomer(input: unknown): Promise<RegisterCustomer
       const sent = await issueAndSendToken({
         customerId: existing.id,
         email: existing.email,
+        firstName: existing.firstName,
         purpose: "email_verify",
       });
       if (!sent.ok) {
@@ -105,6 +106,7 @@ export async function registerCustomer(input: unknown): Promise<RegisterCustomer
   const sent = await issueAndSendToken({
     customerId: customer.id,
     email: customer.email,
+    firstName: customer.firstName,
     purpose: "email_verify",
   });
   if (!sent.ok) {
@@ -122,6 +124,7 @@ export async function registerCustomer(input: unknown): Promise<RegisterCustomer
 async function issueAndSendToken(params: {
   customerId: string;
   email: string;
+  firstName?: string | null;
   purpose: "email_verify";
 }): Promise<
   | { ok: true }
@@ -145,5 +148,6 @@ async function issueAndSendToken(params: {
     kind: params.purpose,
     to: params.email,
     rawToken,
+    firstName: params.firstName,
   });
 }
