@@ -9,6 +9,7 @@ import {
 } from "@/app/admin/(dashboard)/einstellungen/importe/bestellungen/actions";
 import {
   SHOPIFY_ORDER_IMPORT_MAX_BYTES,
+  SHOPIFY_ORDER_IMPORT_ADMIN_MAX_ORDERS,
   type ShopifyOrderImportActionState,
   type ShopifyOrderImportAdminSummary,
 } from "@/app/admin/(dashboard)/einstellungen/importe/bestellungen/import-shared";
@@ -92,7 +93,15 @@ function ResultTable({ summary }: { summary: ShopifyOrderImportAdminSummary }) {
   const showLinks = summary.mode === "apply";
 
   return (
-    <div className="mt-6 overflow-x-auto rounded-lg border border-[#e8eaed]">
+    <>
+      {summary.ordersTruncated ? (
+        <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Tabelle zeigt {summary.ordersShown?.toLocaleString("de-DE")} von{" "}
+          {summary.orderCount.toLocaleString("de-DE")} Bestellungen (nur Ausschnitt). Summen oben
+          gelten für die gesamte CSV.
+        </p>
+      ) : null}
+      <div className="mt-6 overflow-x-auto rounded-lg border border-[#e8eaed]">
       <table className="min-w-full text-left text-sm">
         <thead className="border-b border-[#e8eaed] bg-[#f7f8fa] text-[#374151]">
           <tr>
@@ -166,6 +175,7 @@ function ResultTable({ summary }: { summary: ShopifyOrderImportAdminSummary }) {
         </tbody>
       </table>
     </div>
+    </>
   );
 }
 
@@ -323,7 +333,9 @@ export function ShopifyOrderImportForm() {
             </p>
             <p className="mt-1 text-center text-xs text-[#9ca3af]">
               Shopify Admin → Bestellungen → Export · max.{" "}
-              {Math.round(SHOPIFY_ORDER_IMPORT_MAX_BYTES / (1024 * 1024))} MB · .csv
+              {Math.round(SHOPIFY_ORDER_IMPORT_MAX_BYTES / (1024 * 1024))} MB · bis{" "}
+              {SHOPIFY_ORDER_IMPORT_ADMIN_MAX_ORDERS.toLocaleString("de-DE")} Bestellungen im Admin
+              · .csv
             </p>
             <button
               type="button"
@@ -397,7 +409,9 @@ export function ShopifyOrderImportForm() {
         <div className="rounded-md border border-[#e8eaed] bg-[#f9fafb] px-4 py-3 text-sm text-[#6b7280]">
           Importierte Bestellungen werden als <strong className="font-medium text-[#374151]">Gastbestellungen</strong>{" "}
           angelegt. Kunden mit derselben E-Mail sehen sie nach Registrierung und Verifikation
-          automatisch im Konto.
+          automatisch im Konto. Exporte mit mehr als{" "}
+          {SHOPIFY_ORDER_IMPORT_ADMIN_MAX_ORDERS.toLocaleString("de-DE")} Bestellungen bitte über die
+          CLI importieren (<code className="text-xs">npm run orders:import-shopify</code>).
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -423,7 +437,7 @@ export function ShopifyOrderImportForm() {
 
       {state?.error ? (
         <p
-          className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm whitespace-pre-wrap text-red-700"
           role="alert"
         >
           {state.error}
