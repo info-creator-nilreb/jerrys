@@ -34,7 +34,8 @@
     "db:migrate:status": "prisma migrate status",
     "db:seed": "prisma db seed",
     "content:migrate-storefront": "tsx scripts/migrate-storefront-content.ts",
-    "catalog:import-shopify": "tsx scripts/import-shopify-products.ts"
+    "catalog:import-shopify": "tsx scripts/import-shopify-products.ts",
+    "orders:import-shopify": "tsx scripts/import-shopify-orders.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

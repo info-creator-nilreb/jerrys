@@ -149,3 +149,5 @@ Ohne Qty setzt der Import Bestand auf **0** (mit Warnung). Mengen kommen nur mit
 2. Medien-Pipeline nach Blob (ADR 0008).
 3. Shopify GraphQL statt CSV (gleiche Mapper-Schicht) inkl. Inventar.
 4. Redirect-Tabelle alter Storefront-URLs.
+
+Siehe auch: [Shopify-Bestellimport](./SHOPIFY_ORDER_IMPORT.md) für historische Bestellungen (Gastbestell-Zuordnung).
