@@ -71,4 +71,18 @@ describe("buildEmailTemplatePreviewVars", () => {
     expect(workshop.details_html).toContain("2 Plätze");
     expect(workshop.details_html).not.toContain("…");
   });
+
+  it("nutzt für Termin-Storno echte Details-Karte und CTA", () => {
+    const vars = buildEmailTemplatePreviewVars(
+      "workshop_booking_cancelled",
+      defaultTransactionalEmailBranding(),
+    );
+    const workshop = vars.workshop as Record<string, string>;
+    const email = vars.email as Record<string, string>;
+
+    expect(email.cta_label).toBe("Termine im Konto");
+    expect(workshop.details_html).toContain("Gin Tasting");
+    expect(workshop.details_html).toContain("jerry's Bar, Berlin");
+    expect(workshop.details_html).not.toContain("…");
+  });
 });
