@@ -1,4 +1,6 @@
 import { formatPrice } from "@/lib/catalog/format";
+import { labelForShippingCountryCode } from "@/lib/catalog/shipping-countries-catalog";
+import { isPickupDeliveryMethod } from "@/lib/checkout/delivery-method";
 import {
   buildOrderItemsTableHtml,
   grayInfoCard,
@@ -9,6 +11,143 @@ import {
 import { escapeHtmlForEmail } from "@/lib/email/template-utils";
 
 const { textMuted, divider } = TRANSACTIONAL_EMAIL_DESIGN;
+
+export type OrderAddressSnapshot = {
+  firstName: string;
+  lastName: string;
+  company: string | null;
+  line1: string;
+  line2: string | null;
+  zip: string;
+  city: string;
+  country: string;
+};
+
+/** Order-Snapshot-Felder für Liefer- und Rechnungsadresse in Transaktions-Mails. */
+export type OrderAddressSource = {
+  shippingFirstName: string;
+  shippingLastName: string;
+  shippingCompany: string | null;
+  shippingLine1: string;
+  shippingLine2: string | null;
+  shippingZip: string;
+  shippingCity: string;
+  shippingCountry: string;
+  billingFirstName: string;
+  billingLastName: string;
+  billingCompany: string | null;
+  billingLine1: string;
+  billingLine2: string | null;
+  billingZip: string;
+  billingCity: string;
+  billingCountry: string;
+  deliveryMethod: string;
+  email: string;
+};
+
+export function shippingAddressFromOrder(order: OrderAddressSource): OrderAddressSnapshot {
+  return {
+    firstName: order.shippingFirstName,
+    lastName: order.shippingLastName,
+    company: order.shippingCompany,
+    line1: order.shippingLine1,
+    line2: order.shippingLine2,
+    zip: order.shippingZip,
+    city: order.shippingCity,
+    country: order.shippingCountry,
+  };
+}
+
+export function billingAddressFromOrder(order: OrderAddressSource): OrderAddressSnapshot {
+  return {
+    firstName: order.billingFirstName,
+    lastName: order.billingLastName,
+    company: order.billingCompany,
+    line1: order.billingLine1,
+    line2: order.billingLine2,
+    zip: order.billingZip,
+    city: order.billingCity,
+    country: order.billingCountry,
+  };
+}
+
+function shippingAddressTitle(deliveryMethod: string): string {
+  return isPickupDeliveryMethod(deliveryMethod) ? "Abholung" : "Versandadresse";
+}
+
+/** Mehrzeilige Adresse für Plaintext-Mails. */
+export function orderAddressText(addr: OrderAddressSnapshot): string {
+  const lines: string[] = [`${addr.firstName} ${addr.lastName}`.trim()];
+  if (addr.company?.trim()) lines.push(addr.company.trim());
+  lines.push(addr.line1.trim());
+  if (addr.line2?.trim()) lines.push(addr.line2.trim());
+  lines.push(`${addr.zip.trim()} ${addr.city.trim()}`.trim());
+  lines.push(labelForShippingCountryCode(addr.country));
+  return lines.filter(Boolean).join("\n");
+}
+
+function orderAddressHtmlLines(addr: OrderAddressSnapshot): string {
+  const lines: string[] = [
+    `${escapeHtmlForEmail(addr.firstName)} ${escapeHtmlForEmail(addr.lastName)}`.trim(),
+  ];
+  if (addr.company?.trim()) lines.push(escapeHtmlForEmail(addr.company.trim()));
+  lines.push(escapeHtmlForEmail(addr.line1.trim()));
+  if (addr.line2?.trim()) lines.push(escapeHtmlForEmail(addr.line2.trim()));
+  lines.push(
+    `${escapeHtmlForEmail(addr.zip.trim())} ${escapeHtmlForEmail(addr.city.trim())}`.trim(),
+  );
+  lines.push(escapeHtmlForEmail(labelForShippingCountryCode(addr.country)));
+  return lines.join("<br/>");
+}
+
+function orderAddressColumnHtml(input: {
+  title: string;
+  addr: OrderAddressSnapshot;
+  email?: string;
+  align: "left" | "right";
+}): string {
+  const padSide = input.align === "left" ? "padding-right:11px" : "padding-left:11px";
+  const emailLine =
+    input.email?.trim() ?
+      `<br/><a href="mailto:${escapeHtmlForEmail(input.email.trim())}" style="color:${textMuted};text-decoration:none;word-wrap:break-word">${escapeHtmlForEmail(input.email.trim())}</a>`
+    : "";
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="min-width:100%"><tr><th style="mso-line-height-rule:exactly;${padSide}" align="${input.align}" bgcolor="#ffffff" valign="top"><h3 style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.4;font-weight:400;color:#666666">${escapeHtmlForEmail(input.title)}</h3><p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#777777">${orderAddressHtmlLines(input.addr)}${emailLine}</p></th></tr></table>`;
+}
+
+/** Einzelblock Versand/Abholadresse. */
+export function orderShippingAddressHtml(order: OrderAddressSource): string {
+  return orderAddressColumnHtml({
+    title: shippingAddressTitle(order.deliveryMethod),
+    addr: shippingAddressFromOrder(order),
+    align: "left",
+  });
+}
+
+/** Einzelblock Rechnungsadresse inkl. Bestell-E-Mail. */
+export function orderBillingAddressHtml(order: OrderAddressSource): string {
+  return orderAddressColumnHtml({
+    title: "Rechnungsadresse",
+    addr: billingAddressFromOrder(order),
+    email: order.email,
+    align: "left",
+  });
+}
+
+/** Zwei-Spalten-Layout (Versand/Abholung links, Rechnung rechts) — tabellenbasiert für E-Mail-Clients. */
+export function orderAddressesTwoColumnHtml(order: OrderAddressSource): string {
+  const left = orderAddressColumnHtml({
+    title: shippingAddressTitle(order.deliveryMethod),
+    addr: shippingAddressFromOrder(order),
+    align: "left",
+  });
+  const right = orderAddressColumnHtml({
+    title: "Rechnungsadresse",
+    addr: billingAddressFromOrder(order),
+    email: order.email,
+    align: "right",
+  });
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:20px 0 0;font-family:Arial,Helvetica,sans-serif"><tr><th width="50%" style="mso-line-height-rule:exactly;vertical-align:top" align="left" bgcolor="#ffffff" valign="top">${left}</th><th width="50%" style="mso-line-height-rule:exactly;vertical-align:top" align="right" bgcolor="#ffffff" valign="top">${right}</th></tr></table>`;
+}
 
 export function orderNumberCardHtml(orderNumber: string): string {
   return grayInfoCard(

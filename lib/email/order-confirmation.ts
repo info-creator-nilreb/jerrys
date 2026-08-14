@@ -12,9 +12,15 @@ import {
   orderItemsToEmailLineItems,
 } from "@/lib/email/order-email-line-items";
 import {
+  orderAddressesTwoColumnHtml,
+  orderBillingAddressHtml,
   orderItemsHtml,
   orderItemsText,
   orderNumberCardHtml,
+  orderShippingAddressHtml,
+  orderAddressText,
+  billingAddressFromOrder,
+  shippingAddressFromOrder,
   orderTotalsHtml,
 } from "@/lib/email/templates/order-fragments";
 import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
@@ -57,6 +63,8 @@ export async function sendOrderConfirmationIfNeeded(
   const shipping = formatPrice(order.shippingCents, order.currency);
   const total = formatPrice(order.totalGrossCents, order.currency);
   const paymentMethod = transactionalPaymentLabel(order.paymentMethod);
+  const shippingAddr = shippingAddressFromOrder(order);
+  const billingAddr = billingAddressFromOrder(order);
 
   const vars = mergeTemplateVars(
     buildShopTemplateVars(branding, {
@@ -81,6 +89,11 @@ export async function sendOrderConfirmationIfNeeded(
           shippingLabel: order.deliveryMethod === "pickup" ? "Abholung" : "Versand",
         }),
         items_text: orderItemsText(itemsForText),
+        shipping_address_html: orderShippingAddressHtml(order),
+        billing_address_html: orderBillingAddressHtml(order),
+        addresses_html: orderAddressesTwoColumnHtml(order),
+        shipping_address_text: orderAddressText(shippingAddr),
+        billing_address_text: orderAddressText(billingAddr),
       },
     },
   );
