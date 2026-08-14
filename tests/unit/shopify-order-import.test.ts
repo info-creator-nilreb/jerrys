@@ -42,6 +42,19 @@ describe("parseShopifyOrderCsv", () => {
     expect(orders[0]?.email).toBe("buyer@example.com");
     expect(orders[0]?.lineItems[0]?.name).toBe("Ohrringe Luise");
   });
+
+  it("gruppiert Folgezeilen mit wiederholtem Name aber ohne Id", () => {
+    const csv = [
+      "Name,Email,Id,Lineitem quantity,Lineitem name,Lineitem price",
+      "#1043,customer@example.com,6123456789013,1,Tea Set,30.00",
+      "#1043,,,1,Silver Bracelet,35.00",
+      "#1044,guest@example.com,6123456789014,1,Workshop Ticket,20.00",
+    ].join("\n");
+    const orders = parseShopifyOrderCsv(csv);
+    expect(orders).toHaveLength(2);
+    expect(orders[0]?.lineItems).toHaveLength(2);
+    expect(orders[0]?.lineItems[1]?.name).toBe("Silver Bracelet");
+  });
 });
 
 describe("shopifyOrderNumberFromName", () => {
