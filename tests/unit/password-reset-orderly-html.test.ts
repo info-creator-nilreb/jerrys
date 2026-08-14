@@ -3,7 +3,7 @@ import {
   authAfterButtonNoteHtml,
   customerGreetingHtml,
 } from "@/lib/email/templates/auth-email-fragments";
-import { buildPasswordResetOrderlyHtml } from "@/lib/email/templates/password-reset-orderly-html";
+import { buildPasswordResetOrderlyHtml } from "@/lib/email/templates/auth-email-orderly-html";
 import { getEmailTemplateDefault } from "@/lib/email/templates/defaults";
 
 describe("password reset orderly html", () => {

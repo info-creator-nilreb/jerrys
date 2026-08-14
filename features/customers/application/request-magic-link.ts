@@ -64,6 +64,7 @@ export async function requestCustomerMagicLink(input: unknown): Promise<RequestM
     kind: "magic_link",
     to: customer.email,
     rawToken,
+    firstName: customer.firstName,
   });
 
   log.info("magic_link_issued", { customerId: customer.id });

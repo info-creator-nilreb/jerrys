@@ -15,6 +15,13 @@ const log = createLogger("email.customer-auth");
 
 export type CustomerAuthEmailKind = "email_verify" | "magic_link" | "password_reset";
 
+const AUTH_AFTER_BUTTON_NOTE: Record<CustomerAuthEmailKind, string> = {
+  email_verify: "Wenn du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.",
+  magic_link: "Wenn du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.",
+  password_reset:
+    "Solltest du diese E-Mail irrtümlich erhalten haben, kannst du diese ignorieren.",
+};
+
 const AUTH_META: Record<
   CustomerAuthEmailKind,
   { cta: string; pathPrefix: string; templateKey: EmailTemplateKey }
@@ -70,8 +77,7 @@ export async function sendCustomerAuthEmail(params: {
         greeting_html: customerGreetingHtml(params.firstName),
       },
       email: {
-        after_button_note_html:
-          params.kind === "password_reset" ? authAfterButtonNoteHtml() : "",
+        after_button_note_html: authAfterButtonNoteHtml(AUTH_AFTER_BUTTON_NOTE[params.kind]),
       },
     },
   );

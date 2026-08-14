@@ -5,9 +5,11 @@ import {
   buildOrderItemsTableHtml,
   grayInfoCard,
   tintedCard,
+  transactionalCtaButton,
   TRANSACTIONAL_EMAIL_DESIGN,
   type OrderLineItemForEmail,
 } from "@/lib/email/transactional-email-layout";
+import type { TransactionalEmailBranding } from "@/lib/shop/email-branding";
 import { escapeHtmlForEmail } from "@/lib/email/template-utils";
 
 const { textMuted, divider } = TRANSACTIONAL_EMAIL_DESIGN;
@@ -149,6 +151,68 @@ export function orderAddressesTwoColumnHtml(order: OrderAddressSource): string {
   return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:20px 0 0;font-family:Arial,Helvetica,sans-serif"><tr><th width="50%" style="mso-line-height-rule:exactly;vertical-align:top" align="left" bgcolor="#ffffff" valign="top">${left}</th><th width="50%" style="mso-line-height-rule:exactly;vertical-align:top" align="right" bgcolor="#ffffff" valign="top">${right}</th></tr></table>`;
 }
 
+function orderShippingTrackingColumnHtml(input: {
+  carrierLine: string | null;
+  trackUrl: string | null;
+  primaryColor: string;
+}): string {
+  const headingColor = "#666666";
+  const bodyColor = "#777777";
+  let body = "";
+  if (input.carrierLine?.trim()) {
+    body += `<p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:${bodyColor}">${escapeHtmlForEmail(input.carrierLine.trim())}</p>`;
+  }
+  if (input.trackUrl?.trim()) {
+    body += `<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55"><a href="${escapeHtmlForEmail(input.trackUrl.trim())}" style="color:${escapeHtmlForEmail(input.primaryColor)};font-weight:600;text-decoration:none">${escapeHtmlForEmail(input.trackUrl.trim())}</a></p>`;
+  }
+  if (!body) {
+    body = `<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:${bodyColor}">—</p>`;
+  }
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="min-width:100%"><tr><th style="mso-line-height-rule:exactly;padding-left:11px" align="right" bgcolor="#ffffff" valign="top"><h3 style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.4;font-weight:400;color:${headingColor}">Versand &amp; Tracking</h3>${body}</th></tr></table>`;
+}
+
+/** Versandadresse links, Versand/Tracking rechts (Versandbestätigung). */
+export function orderShippingAddressAndTrackingHtml(
+  order: OrderAddressSource,
+  input: {
+    carrierLine: string | null;
+    trackUrl: string | null;
+    primaryColor: string;
+  },
+): string {
+  const left = orderAddressColumnHtml({
+    title: shippingAddressTitle(order.deliveryMethod),
+    addr: shippingAddressFromOrder(order),
+    align: "left",
+  });
+  const right = orderShippingTrackingColumnHtml(input);
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif"><tr><th width="50%" style="mso-line-height-rule:exactly;vertical-align:top" align="left" bgcolor="#ffffff" valign="top">${left}</th><th width="50%" style="mso-line-height-rule:exactly;vertical-align:top" align="right" bgcolor="#ffffff" valign="top">${right}</th></tr></table>`;
+}
+
+/** Rechnungshinweis für Versandmail (PDF-Anhang statt Download-Link). */
+export function orderInvoiceShippedNoteHtml(
+  invoiceNumber: string | null,
+  invoiceAttached: boolean,
+): string {
+  const num = invoiceNumber?.trim();
+  if (!num) return "";
+  const note = invoiceAttached ? " — die Rechnung findest du im PDF-Anhang dieser E-Mail." : ".";
+  return `<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#777777;text-align:center">Rechnungsnummer ${escapeHtmlForEmail(num)}${note}</p>`;
+}
+
+/** Intro, CTA und Hinweis zur Sendungsverfolgung; leer wenn keine Tracking-URL. */
+export function orderTrackingSectionHtml(
+  trackUrl: string | null,
+  branding: TransactionalEmailBranding,
+): string {
+  const url = trackUrl?.trim();
+  if (!url) return "";
+  const mutedColor = "#cccccc";
+  const bodyColor = "#777777";
+  const cta = transactionalCtaButton(url, "Sendungsverfolgung", branding);
+  return `<p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:${bodyColor};text-align:center">Du kannst den Status deiner Lieferung verfolgen:</p>${cta}<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.55;color:${mutedColor};text-align:center">Bitte beachte, dass es eine Weile dauern kann, bis die Sendungsdaten aktualisiert werden.</p>`;
+}
+
 export function orderNumberCardHtml(orderNumber: string): string {
   return grayInfoCard(
     `<strong style="font-size:13px;letter-spacing:0.02em;color:${textMuted}">Bestellnummer</strong><br/><span style="font-size:17px;font-weight:700;color:#1f2937">#${escapeHtmlForEmail(orderNumber)}</span>`,
@@ -200,6 +264,13 @@ export function refundAmountCardHtml(amountLabel: string): string {
     "#ffffff",
     `<strong style="font-size:13px;color:${textMuted}">Erstattungsbetrag</strong><br/><span style="font-size:20px;font-weight:700;color:#1f2937">${refundAmt}</span>`,
   );
+}
+
+/** Rückerstattungsbetrag-Zeile im Orderly-Layout (links Label, rechts Betrag). */
+export function orderRefundAmountRowHtml(amountLabel: string): string {
+  const amount = escapeHtmlForEmail(amountLabel);
+  const headingColor = "#666666";
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif"><tr><th style="mso-line-height-rule:exactly;width:65%;padding:5px 0;font-size:15px;line-height:1.55;font-weight:400;color:${headingColor}" align="left" bgcolor="#ffffff" valign="top">Rückerstattungsbetrag</th><th style="mso-line-height-rule:exactly;width:35%;padding:5px 0;font-size:15px;line-height:1.55;font-weight:400;color:${headingColor};white-space:nowrap" align="right" bgcolor="#ffffff" valign="middle">${amount}</th></tr></table>`;
 }
 
 export function refundMetaHtml(refundDate: string, paymentLabel: string): string {

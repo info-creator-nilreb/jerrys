@@ -1,11 +1,22 @@
-import {
-  TRANSACTIONAL_EMAIL_DESIGN,
-  buildEditableTransactionalShell,
-} from "@/lib/email/transactional-email-layout";
 import type { EmailTemplateKey } from "@/lib/email/templates/catalog";
 import { getEmailTemplateCatalogEntry } from "@/lib/email/templates/catalog";
+import {
+  buildEmailVerifyOrderlyHtml,
+  buildMagicLinkOrderlyHtml,
+  buildPasswordResetOrderlyHtml,
+} from "@/lib/email/templates/auth-email-orderly-html";
 import { buildOrderConfirmationOrderlyHtml } from "@/lib/email/templates/order-confirmation-orderly-html";
-import { buildPasswordResetOrderlyHtml } from "@/lib/email/templates/password-reset-orderly-html";
+import {
+  buildOrderCancelledOrderlyHtml,
+  buildOrderRefundedOrderlyHtml,
+  buildOrderShippedOrderlyHtml,
+} from "@/lib/email/templates/order-transactional-orderly-html";
+import {
+  buildWorkshopBookingCancelledOrderlyHtml,
+  buildWorkshopBookingConfirmationOrderlyHtml,
+  buildWorkshopDateRequestApprovedOrderlyHtml,
+  buildWorkshopDateRequestRejectedOrderlyHtml,
+} from "@/lib/email/templates/workshop-email-orderly-html";
 
 export type EmailTemplateDefaultContent = {
   key: EmailTemplateKey;
@@ -16,97 +27,10 @@ export type EmailTemplateDefaultContent = {
   textBody: string;
 };
 
-const { textMuted, divider } = TRANSACTIONAL_EMAIL_DESIGN;
-
-function orderConfirmationHtml(): string {
-  return buildOrderConfirmationOrderlyHtml();
-}
-
-function orderShippedHtml(): string {
-  return buildEditableTransactionalShell({
-    variant: "shipping",
-    documentTitle: "Versand {{order.number}}",
-    heading: "Deine Bestellung ist unterwegs!",
-    intro: "Gute Neuigkeiten: deine Bestellung wurde versendet und ist jetzt auf dem Weg zu dir.",
-    bodyHtml: `{{{order.number_card_html}}}{{{order.items_html}}}{{{order.shipping_details_html}}}<p style="margin:16px 0 0;padding-top:14px;border-top:1px solid ${divider};font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:${textMuted}">Rückfragen über die Kontaktdaten im Impressum.</p>`,
-  });
-}
-
-function orderCancelledHtml(): string {
-  return `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"/><title>Storno {{order.number}}</title></head><body style="font-family:system-ui,sans-serif;line-height:1.5;color:#111">
-<p>Hallo {{customer.first_name}},</p>
-<p>deine Bestellung <strong>{{order.number}}</strong> wurde storniert.</p>
-<p>Bei Fragen nutze bitte die Kontaktdaten im Impressum.</p>
-<p style="margin-top:1.25rem"><a href="{{order.status_url}}">Bestellung ansehen</a></p>
-<p>Liebe Grüße<br/>{{shop.name}}</p>
-</body></html>`;
-}
-
-function orderRefundedHtml(): string {
-  return buildEditableTransactionalShell({
-    variant: "refund",
-    documentTitle: "Erstattung {{order.number}}",
-    heading: "Deine Erstattung wurde veranlasst",
-    intro:
-      "Wir haben deine Rückerstattung bearbeitet. Der Betrag wird in Kürze auf deinem Konto gutgeschrieben (je nach Zahlungsart kann es einige Werktage dauern).",
-    bodyHtml: `{{{order.number_card_html}}}{{{order.refund_card_html}}}{{{order.items_html}}}{{{order.refund_meta_html}}}`,
-  });
-}
-
-function workshopConfirmHtml(): string {
-  return buildEditableTransactionalShell({
-    variant: "workshop",
-    documentTitle: "Terminbestätigung: {{workshop.title}}",
-    heading: "Dein Termin ist bestätigt",
-    intro: "Wir freuen uns auf dich — speichere den Termin am besten direkt in deinem Kalender.",
-    bodyHtml: `{{{workshop.details_html}}}`,
-  });
-}
-
-function workshopCancelHtml(): string {
-  return buildEditableTransactionalShell({
-    variant: "workshop",
-    documentTitle: "Termin storniert: {{workshop.title}}",
-    heading: "Termin storniert",
-    intro: "Deine Buchung ist nicht mehr aktiv. Wir hoffen, dich bald bei einem anderen Termin zu sehen.",
-    bodyHtml: `{{{workshop.details_html}}}`,
-  });
-}
-
-function dateRequestApprovedHtml(): string {
-  return buildEditableTransactionalShell({
-    variant: "workshop",
-    documentTitle: "Wunschtermin angenommen",
-    heading: "Wunschtermin angenommen",
-    intro: "Danke für deine Anfrage — wir melden uns, sobald der Termin buchbar ist.",
-    bodyHtml: `{{{workshop.details_html}}}`,
-  });
-}
-
-function dateRequestRejectedHtml(): string {
-  return buildEditableTransactionalShell({
-    variant: "workshop",
-    documentTitle: "Zu deiner Terminanfrage",
-    heading: "Terminanfrage nicht möglich",
-    intro: "Schau gern in unserem Terminkalender nach Alternativen oder stelle eine neue Anfrage.",
-    bodyHtml: `{{{workshop.details_html}}}`,
-  });
-}
-
-function authHtml(heading: string, intro: string): string {
-  return buildEditableTransactionalShell({
-    variant: "account",
-    documentTitle: heading,
-    heading,
-    intro,
-    bodyHtml: `{{{email.notice_html}}}`,
-  });
-}
-
 const DEFAULTS: Record<EmailTemplateKey, Omit<EmailTemplateDefaultContent, "key" | "name" | "description">> = {
   order_confirmation: {
     subject: "Bestellbestätigung {{order.number}}",
-    htmlBody: orderConfirmationHtml(),
+    htmlBody: buildOrderConfirmationOrderlyHtml(),
     textBody: [
       "Hallo {{customer.first_name}},",
       "",
@@ -135,70 +59,82 @@ const DEFAULTS: Record<EmailTemplateKey, Omit<EmailTemplateDefaultContent, "key"
   },
   order_shipped: {
     subject: "Deine Bestellung {{order.number}} wurde versendet",
-    htmlBody: orderShippedHtml(),
+    htmlBody: buildOrderShippedOrderlyHtml(),
     textBody: [
       "Hallo {{customer.first_name}},",
       "",
-      "gute Neuigkeiten: deine Bestellung wurde versendet und ist auf dem Weg zu dir.",
+      "wir freuen uns, dir mitteilen zu können, dass deine Bestellung versandt wurde!",
       "",
       "Bestellnummer: {{order.number}}",
+      "",
+      "Versandadresse:",
+      "{{order.shipping_address_text}}",
       "",
       "Versand:",
       "{{order.carrier_line}}",
       "",
       "Sendung verfolgen: {{order.tracking_url}}",
       "",
-      "Rechnungsnummer: {{order.invoice_number}}",
+      "Rechnungsnummer: {{order.invoice_number}}{{order.invoice_note}}",
       "",
       "Positionen:",
       "{{order.items_text}}",
       "",
       "Zur Bestellung: {{email.cta_url}}",
       "",
-      "Liebe Grüße",
-      "{{shop.name}}",
+      "Viele Grüße",
+      "Dein {{shop.name}}-Team",
     ].join("\n"),
   },
   order_cancelled: {
     subject: "Storno zu Bestellung {{order.number}}",
-    htmlBody: orderCancelledHtml(),
+    htmlBody: buildOrderCancelledOrderlyHtml(),
     textBody: [
       "Hallo {{customer.first_name}},",
       "",
-      "deine Bestellung {{order.number}} wurde storniert.",
+      "hiermit bestätigen wir dir, dass deine Bestellung storniert wurde.",
+      "",
+      "Bestellnummer: {{order.number}}",
+      "Storniert am: {{order.cancelled_date}}",
+      "",
+      "Positionen:",
+      "{{order.items_text}}",
       "",
       "Bei Fragen erreichst du uns über die Kontaktdaten im Impressum.",
       "",
-      "Link zur Bestellübersicht: {{order.status_url}}",
+      "Bestellung ansehen: {{order.status_url}}",
       "",
-      "Liebe Grüße",
-      "{{shop.name}}",
+      "Viele Grüße",
+      "Dein {{shop.name}}-Team",
     ].join("\n"),
   },
   order_refunded: {
     subject: "Erstattung zu Bestellung {{order.number}}",
-    htmlBody: orderRefundedHtml(),
+    htmlBody: buildOrderRefundedOrderlyHtml(),
     textBody: [
       "Hallo {{customer.first_name}},",
       "",
-      "wir haben deine Rückerstattung bearbeitet. Der Betrag wird in Kürze auf deinem Konto gutgeschrieben (je nach Zahlungsart einige Werktage).",
+      "wir haben dir deine Bestellung erstattet. Bitte beachte, dass es einige Tage dauern kann, bis die Erstattung auf deinen Bank- oder Kreditkartenauszügen erscheint.",
       "",
       "Bestellnummer: {{order.number}}",
       "Erstattungsbetrag: {{order.total}}",
       "Erstattet am: {{order.refund_date}}",
       "Zahlungsmethode: {{order.payment_method}}",
       "",
+      "Positionen:",
+      "{{order.items_text}}",
+      "",
       "Bei Rückfragen erreichst du uns über die Kontaktdaten im Impressum.",
       "",
       "Shop: {{email.cta_url}}",
       "",
-      "Liebe Grüße",
-      "{{shop.name}}",
+      "Viele Grüße",
+      "Dein {{shop.name}}-Team",
     ].join("\n"),
   },
   workshop_booking_confirmation: {
     subject: "Terminbestätigung: {{workshop.title}}",
-    htmlBody: workshopConfirmHtml(),
+    htmlBody: buildWorkshopBookingConfirmationOrderlyHtml(),
     textBody: [
       "Hallo {{customer.first_name}},",
       "",
@@ -214,13 +150,13 @@ const DEFAULTS: Record<EmailTemplateKey, Omit<EmailTemplateDefaultContent, "key"
       "",
       "Termin im Konto: {{email.cta_url}}",
       "",
-      "Liebe Grüße",
-      "{{shop.name}}",
+      "Viele Grüße",
+      "Dein {{shop.name}}-Team",
     ].join("\n"),
   },
   workshop_booking_cancelled: {
     subject: "Termin storniert: {{workshop.title}}",
-    htmlBody: workshopCancelHtml(),
+    htmlBody: buildWorkshopBookingCancelledOrderlyHtml(),
     textBody: [
       "Hallo {{customer.first_name}},",
       "",
@@ -234,13 +170,13 @@ const DEFAULTS: Record<EmailTemplateKey, Omit<EmailTemplateDefaultContent, "key"
       "",
       "Weitere Termine: {{email.cta_url}}",
       "",
-      "Liebe Grüße",
-      "{{shop.name}}",
+      "Viele Grüße",
+      "Dein {{shop.name}}-Team",
     ].join("\n"),
   },
   workshop_date_request_approved: {
     subject: "Dein Wunschtermin wurde angenommen",
-    htmlBody: dateRequestApprovedHtml(),
+    htmlBody: buildWorkshopDateRequestApprovedOrderlyHtml(),
     textBody: [
       "Hallo {{customer.first_name}},",
       "",
@@ -253,13 +189,13 @@ const DEFAULTS: Record<EmailTemplateKey, Omit<EmailTemplateDefaultContent, "key"
       "",
       "{{email.cta_url}}",
       "",
-      "Liebe Grüße",
-      "{{shop.name}}",
+      "Viele Grüße",
+      "Dein {{shop.name}}-Team",
     ].join("\n"),
   },
   workshop_date_request_rejected: {
     subject: "Zu deiner Terminanfrage",
-    htmlBody: dateRequestRejectedHtml(),
+    htmlBody: buildWorkshopDateRequestRejectedOrderlyHtml(),
     textBody: [
       "Hallo {{customer.first_name}},",
       "",
@@ -274,16 +210,13 @@ const DEFAULTS: Record<EmailTemplateKey, Omit<EmailTemplateDefaultContent, "key"
       "",
       "{{email.cta_url}}",
       "",
-      "Liebe Grüße",
-      "{{shop.name}}",
+      "Viele Grüße",
+      "Dein {{shop.name}}-Team",
     ].join("\n"),
   },
   email_verify: {
     subject: "Bitte E-Mail bestätigen — {{shop.name}}",
-    htmlBody: authHtml(
-      "E-Mail bestätigen",
-      "Bitte bestätige deine E-Mail-Adresse, um dein Kundenkonto zu aktivieren.",
-    ),
+    htmlBody: buildEmailVerifyOrderlyHtml(),
     textBody: [
       "E-Mail bestätigen",
       "",
@@ -291,23 +224,20 @@ const DEFAULTS: Record<EmailTemplateKey, Omit<EmailTemplateDefaultContent, "key"
       "",
       "{{email.cta_label}}: {{email.cta_url}}",
       "",
-      "Wenn du diese Anfrage nicht gestellt hast, ignoriere diese E-Mail.",
+      "Wenn du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.",
     ].join("\n"),
   },
   magic_link: {
     subject: "Dein Anmelde-Link — {{shop.name}}",
-    htmlBody: authHtml(
-      "Magic Link",
-      "Mit diesem Link meldest du dich sicher bei {{shop.name}} an. Der Link ist eine Stunde gültig.",
-    ),
+    htmlBody: buildMagicLinkOrderlyHtml(),
     textBody: [
-      "Magic Link",
+      "Anmelden",
       "",
       "Mit diesem Link meldest du dich sicher bei {{shop.name}} an. Der Link ist eine Stunde gültig.",
       "",
       "{{email.cta_label}}: {{email.cta_url}}",
       "",
-      "Wenn du diese Anfrage nicht gestellt hast, ignoriere diese E-Mail.",
+      "Wenn du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.",
     ].join("\n"),
   },
   password_reset: {
