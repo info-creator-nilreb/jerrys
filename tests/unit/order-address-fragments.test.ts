@@ -4,7 +4,11 @@ import {
   orderAddressText,
   orderAddressesTwoColumnHtml,
   orderBillingAddressHtml,
+  orderInvoiceShippedNoteHtml,
+  orderShippingAddressAndTrackingHtml,
   orderShippingAddressHtml,
+  orderTrackingCtaHtml,
+  orderTrackingSectionHtml,
   shippingAddressFromOrder,
   type OrderAddressSource,
 } from "@/lib/email/templates/order-fragments";
@@ -67,5 +71,50 @@ describe("order address fragments", () => {
     expect(html).toContain("Musterstraße 12");
     expect(html).toContain("Rechnungsweg 3");
     expect(html).toContain('href="mailto:kunde@example.com"');
+  });
+
+  it("baut Versandadresse mit Tracking-Spalte für Versandmail", () => {
+    const html = orderShippingAddressAndTrackingHtml(sampleOrder, {
+      carrierLine: "DHL · 1234567890",
+      trackUrl: "https://nolp.dhl.de/track?id=123",
+      primaryColor: "#22c55e",
+    });
+    expect(html).toContain("Versandadresse");
+    expect(html).toContain("Musterstraße 12");
+    expect(html).toContain("Versand &amp; Tracking");
+    expect(html).toContain("DHL · 1234567890");
+    expect(html).toContain("https://nolp.dhl.de/track?id=123");
+  });
+
+  it("rendert Rechnungshinweis für Versandmail", () => {
+    const withPdf = orderInvoiceShippedNoteHtml("RE-2026-0042", true);
+    expect(withPdf).toContain("RE-2026-0042");
+    expect(withPdf).toContain("PDF-Anhang");
+
+    expect(orderInvoiceShippedNoteHtml(null, false)).toBe("");
+  });
+
+  it("rendert Tracking-CTA und -Sektion nur bei URL", () => {
+    const branding = {
+      primary: "#22c55e",
+      primaryStrong: "#16a34a",
+      shopName: "jerry's",
+      logoAbsoluteUrl: null,
+      instagramUrl: null,
+      footerIdentityLine: "jerry's · Berlin",
+      emailFromName: "jerry's",
+    };
+
+    expect(orderTrackingCtaHtml(null, branding)).toBe("");
+    expect(orderTrackingSectionHtml(null, branding)).toBe("");
+
+    const cta = orderTrackingCtaHtml("https://track.example/1", branding);
+    expect(cta).toContain("Sendungsverfolgung");
+    expect(cta).toContain("https://track.example/1");
+
+    const section = orderTrackingSectionHtml("https://track.example/1", branding);
+    expect(section).toContain("Du kannst den Status deiner Lieferung verfolgen");
+    expect(section).toContain("Sendungsverfolgung");
+    expect(section).toContain("Sendungsdaten aktualisiert");
   });
 });
