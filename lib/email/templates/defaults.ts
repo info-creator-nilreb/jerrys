@@ -5,6 +5,7 @@ import {
 import type { EmailTemplateKey } from "@/lib/email/templates/catalog";
 import { getEmailTemplateCatalogEntry } from "@/lib/email/templates/catalog";
 import { buildOrderConfirmationOrderlyHtml } from "@/lib/email/templates/order-confirmation-orderly-html";
+import { buildOrderRefundedOrderlyHtml } from "@/lib/email/templates/order-refunded-orderly-html";
 
 export type EmailTemplateDefaultContent = {
   key: EmailTemplateKey;
@@ -42,14 +43,7 @@ function orderCancelledHtml(): string {
 }
 
 function orderRefundedHtml(): string {
-  return buildEditableTransactionalShell({
-    variant: "refund",
-    documentTitle: "Erstattung {{order.number}}",
-    heading: "Deine Erstattung wurde veranlasst",
-    intro:
-      "Wir haben deine Rückerstattung bearbeitet. Der Betrag wird in Kürze auf deinem Konto gutgeschrieben (je nach Zahlungsart kann es einige Werktage dauern).",
-    bodyHtml: `{{{order.number_card_html}}}{{{order.refund_card_html}}}{{{order.items_html}}}{{{order.refund_meta_html}}}`,
-  });
+  return buildOrderRefundedOrderlyHtml();
 }
 
 function workshopConfirmHtml(): string {
@@ -180,19 +174,22 @@ const DEFAULTS: Record<EmailTemplateKey, Omit<EmailTemplateDefaultContent, "key"
     textBody: [
       "Hallo {{customer.first_name}},",
       "",
-      "wir haben deine Rückerstattung bearbeitet. Der Betrag wird in Kürze auf deinem Konto gutgeschrieben (je nach Zahlungsart einige Werktage).",
+      "wir haben dir deine Bestellung erstattet. Bitte beachte, dass es einige Tage dauern kann, bis die Erstattung auf deinen Bank- oder Kreditkartenauszügen erscheint.",
       "",
       "Bestellnummer: {{order.number}}",
       "Erstattungsbetrag: {{order.total}}",
       "Erstattet am: {{order.refund_date}}",
       "Zahlungsmethode: {{order.payment_method}}",
       "",
+      "Positionen:",
+      "{{order.items_text}}",
+      "",
       "Bei Rückfragen erreichst du uns über die Kontaktdaten im Impressum.",
       "",
       "Shop: {{email.cta_url}}",
       "",
-      "Liebe Grüße",
-      "{{shop.name}}",
+      "Viele Grüße",
+      "Dein {{shop.name}}-Team",
     ].join("\n"),
   },
   workshop_booking_confirmation: {
