@@ -1,5 +1,9 @@
 import type { Prisma } from "@/app/generated/prisma/client";
 import { getPrisma } from "@/lib/db/prisma";
+import {
+  DEFAULT_HERO_FOCUS_X,
+  DEFAULT_HERO_FOCUS_Y,
+} from "@/lib/content/blocks/hero";
 import { CONTENT_PAGE_HOME_SLUG } from "@/lib/content/reserved-slugs";
 import { loadLegalHtmlRaw, type LegalSlug } from "@/lib/legal/load-legal-html";
 import { sanitizeLegalDocumentHtml } from "@/lib/legal/sanitize-legal-html";
@@ -67,7 +71,14 @@ function homepageBlocks(): Array<{
         headline: "Katzenhöhle mit Stil",
         imageUrl: "/media/hero-mood.jpg",
         imageAlt: "",
-        images: [{ url: "/media/hero-mood.jpg", alt: "" }],
+        images: [
+          {
+            url: "/media/hero-mood.jpg",
+            alt: "",
+            focusX: DEFAULT_HERO_FOCUS_X,
+            focusY: DEFAULT_HERO_FOCUS_Y,
+          },
+        ],
         slideDurationSec: 6,
         motionEffect: "fade",
         ctaLabel: "Produkte entdecken",

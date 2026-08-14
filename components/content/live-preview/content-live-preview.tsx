@@ -7,8 +7,7 @@ import { UspIcon } from "@/components/storefront/usp-icons";
 import {
   HERO_MOTION_EFFECTS,
   HERO_SLIDE_DURATIONS_SEC,
-  resolveHeroSlides,
-  type HeroBlockData,
+  readHeroSlidesFromUnknown,
   type HeroMotionEffect,
   type HeroSlideDurationSec,
 } from "@/lib/content/blocks/hero";
@@ -67,20 +66,7 @@ function PreviewBlock({
   }
 
   if (type === "hero") {
-    const images = Array.isArray(data.images)
-      ? data.images
-          .filter((x): x is Record<string, unknown> => !!x && typeof x === "object")
-          .map((x) => ({
-            url: typeof x.url === "string" ? x.url : "",
-            alt: typeof x.alt === "string" ? x.alt : null,
-          }))
-          .filter((s) => s.url.trim() !== "")
-      : [];
-    const slides = resolveHeroSlides({
-      imageUrl: str(data, "imageUrl") || "/media/hero-mood.jpg",
-      imageAlt: str(data, "imageAlt") || null,
-      images,
-    } as Pick<HeroBlockData, "imageUrl" | "imageAlt" | "images">);
+    const slides = readHeroSlidesFromUnknown(data);
     const durationRaw = num(data, "slideDurationSec", 6);
     const slideDurationSec = (
       (HERO_SLIDE_DURATIONS_SEC as readonly number[]).includes(durationRaw)

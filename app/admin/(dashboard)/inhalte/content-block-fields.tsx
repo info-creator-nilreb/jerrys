@@ -5,11 +5,15 @@ import Link from "next/link";
 import { CmsBlockAiTextAssistant } from "@/app/admin/(dashboard)/inhalte/cms-block-ai-text-assistant";
 import { AdminRichTextEditor } from "@/components/admin/admin-rich-text-editor";
 import { CmsMediaField } from "@/components/admin/cms-media-field";
+import { HeroFocusPicker } from "@/components/admin/hero-focus-picker";
 import type { ContentBlockType } from "@/lib/content/block-types";
 import {
+  DEFAULT_HERO_FOCUS_X,
+  DEFAULT_HERO_FOCUS_Y,
   HERO_MOTION_EFFECT_LABELS,
   HERO_MOTION_EFFECTS,
   HERO_SLIDE_DURATIONS_SEC,
+  readHeroSlidesFromUnknown,
   type HeroMotionEffect,
   type HeroSlide,
 } from "@/lib/content/blocks/hero";
@@ -66,24 +70,20 @@ export function ContentBlockFields({
   const set = (key: string, value: unknown) => onChange({ ...data, [key]: value });
 
   if (type === "hero") {
-    const slides: HeroSlide[] = (() => {
-      if (Array.isArray(data.images) && data.images.length > 0) {
-        return data.images
-          .filter((x): x is Record<string, unknown> => !!x && typeof x === "object")
-          .map((x) => ({
-            url: typeof x.url === "string" ? x.url : "",
-            alt: typeof x.alt === "string" ? x.alt : null,
-          }))
-          .filter((s) => s.url.trim() !== "");
-      }
-      const legacy = str(data, "imageUrl");
-      return legacy
-        ? [{ url: legacy, alt: str(data, "imageAlt") || null }]
-        : [{ url: "/media/hero-mood.jpg", alt: null }];
-    })();
+    const slides: HeroSlide[] = readHeroSlidesFromUnknown(data);
 
     const setSlides = (next: HeroSlide[]) => {
-      const normalized = next.length > 0 ? next : [{ url: "/media/hero-mood.jpg", alt: null }];
+      const normalized =
+        next.length > 0
+          ? next
+          : [
+              {
+                url: "/media/hero-mood.jpg",
+                alt: null,
+                focusX: DEFAULT_HERO_FOCUS_X,
+                focusY: DEFAULT_HERO_FOCUS_Y,
+              },
+            ];
       onChange({
         ...data,
         images: normalized,
@@ -199,6 +199,19 @@ export function ContentBlockFields({
                     required
                     hint="Upload, Medienbibliothek oder URL"
                   />
+                  {slide.url.trim() ? (
+                    <HeroFocusPicker
+                      imageUrl={slide.url}
+                      focusX={slide.focusX}
+                      focusY={slide.focusY}
+                      onChange={(focusX, focusY) => {
+                        const next = slides.map((s, i) =>
+                          i === index ? { ...s, focusX, focusY } : s,
+                        );
+                        setSlides(next);
+                      }}
+                    />
+                  ) : null}
                   <label className="mt-2 block text-sm text-[#5c5f66]">
                     Alt-Text (optional)
                     <input
@@ -223,7 +236,15 @@ export function ContentBlockFields({
                 type="button"
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
                 onClick={() =>
-                  setSlides([...slides, { url: "/media/hero-mood.jpg", alt: null }])
+                  setSlides([
+                    ...slides,
+                    {
+                      url: "/media/hero-mood.jpg",
+                      alt: null,
+                      focusX: DEFAULT_HERO_FOCUS_X,
+                      focusY: DEFAULT_HERO_FOCUS_Y,
+                    },
+                  ])
                 }
               >
                 <Plus className="size-4" aria-hidden strokeWidth={1.75} />

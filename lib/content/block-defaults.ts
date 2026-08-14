@@ -1,4 +1,8 @@
 import type { ContentBlockType } from "@/lib/content/block-types";
+import {
+  DEFAULT_HERO_FOCUS_X,
+  DEFAULT_HERO_FOCUS_Y,
+} from "@/lib/content/blocks/hero";
 
 /** Sinnvolle Defaults beim Hinzufügen eines Blocks im Admin. */
 export function defaultDataForContentBlockType(
@@ -11,7 +15,14 @@ export function defaultDataForContentBlockType(
         headline: "Neue Überschrift",
         imageUrl: "/media/hero-mood.jpg",
         imageAlt: "",
-        images: [{ url: "/media/hero-mood.jpg", alt: "" }],
+        images: [
+          {
+            url: "/media/hero-mood.jpg",
+            alt: "",
+            focusX: DEFAULT_HERO_FOCUS_X,
+            focusY: DEFAULT_HERO_FOCUS_Y,
+          },
+        ],
         slideDurationSec: 6,
         motionEffect: "fade",
         ctaLabel: "",

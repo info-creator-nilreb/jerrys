@@ -2,7 +2,11 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
-import type { HeroMotionEffect, HeroSlide } from "@/lib/content/blocks/hero";
+import {
+  heroObjectPosition,
+  type HeroMotionEffect,
+  type HeroSlide,
+} from "@/lib/content/blocks/hero";
 import { usePrefersReducedMotion } from "@/components/storefront/use-prefers-reduced-motion";
 
 type Props = {
@@ -56,9 +60,6 @@ function HeroBackgroundCarouselInner({
   if (n === 0) return null;
 
   const fadeMs = motionEffect === "none" || reducedMotion ? 0 : compact ? 450 : 900;
-  const objectPos = compact
-    ? "object-cover object-[40%_center]"
-    : "object-cover object-[40%_center] md:object-[35%_32%]";
   const rootStyle = {
     ["--hero-slide-duration"]: `${Math.max(3, slideDurationSec)}s`,
   } as CSSProperties;
@@ -93,7 +94,8 @@ function HeroBackgroundCarouselInner({
               fill
               priority={!compact && i === 0}
               quality={compact ? 75 : 90}
-              className={`${objectPos} ${compact ? "opacity-90" : ""}`}
+              className={`object-cover ${compact ? "opacity-90" : ""}`}
+              style={{ objectPosition: heroObjectPosition(slide) }}
               sizes={compact ? "400px" : "100vw"}
               unoptimized={slide.url.startsWith("https://")}
             />
