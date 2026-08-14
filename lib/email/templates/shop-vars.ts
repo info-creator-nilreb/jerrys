@@ -8,8 +8,26 @@ import {
   transactionalLogoBlock,
   type TransactionalHeroVariant,
 } from "@/lib/email/transactional-email-layout";
-import type { TransactionalEmailBranding } from "@/lib/shop/email-branding";
+import { absoluteUrlForEmail } from "@/lib/email/email-absolute-url";
+import {
+  resolveEmailLogoAbsoluteUrl,
+  type TransactionalEmailBranding,
+} from "@/lib/shop/email-branding";
+import type { ShopSettingsDTO } from "@/lib/shop/shop-settings-defaults";
 import type { TemplateVars } from "@/lib/email/templates/render";
+
+function resolveLogoAbsoluteUrlForRender(
+  branding: TransactionalEmailBranding,
+  settings?: ShopSettingsDTO | null,
+): string | null {
+  if (settings) {
+    const fromSettings = resolveEmailLogoAbsoluteUrl(settings);
+    if (fromSettings) return fromSettings;
+  }
+  const cached = branding.logoAbsoluteUrl?.trim();
+  if (cached) return cached;
+  return absoluteUrlForEmail("/branding/jerrys-wordmark.jpg");
+}
 
 /** Gemeinsame Shop-/CTA-/Hero-Fragmente für Template-Rendering. */
 export function buildShopTemplateVars(
@@ -17,16 +35,19 @@ export function buildShopTemplateVars(
   options?: {
     cta?: { href: string; label: string };
     heroVariant?: TransactionalHeroVariant;
+    /** Shop-Einstellungen: Logo-URL zur Render-Zeit auflösen (Preview-Deploys). */
+    settings?: ShopSettingsDTO | null;
   },
 ): TemplateVars {
   const cta = options?.cta;
   const heroVariant = options?.heroVariant ?? "order";
+  const logoAbsoluteUrl = resolveLogoAbsoluteUrlForRender(branding, options?.settings);
   return {
     shop: {
       name: branding.shopName,
       primary: branding.primary,
       primary_strong: branding.primaryStrong,
-      logo_html: transactionalLogoBlock(branding),
+      logo_html: transactionalLogoBlock({ ...branding, logoAbsoluteUrl }),
       footer_html: transactionalEmailFooterBlock(branding),
     },
     email: {

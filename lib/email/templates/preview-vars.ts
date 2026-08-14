@@ -11,6 +11,7 @@ import { buildPreviewWorkshopFragments } from "@/lib/email/templates/preview-wor
 import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
 import type { TransactionalHeroVariant } from "@/lib/email/email-icon-assets";
 import type { TransactionalEmailBranding } from "@/lib/shop/email-branding";
+import type { ShopSettingsDTO } from "@/lib/shop/shop-settings-defaults";
 import type { TemplateVars } from "@/lib/email/templates/render";
 
 const AUTH_PREVIEW_CTA_LABEL: Partial<Record<EmailTemplateKey, string>> = {
@@ -77,6 +78,7 @@ export function heroVariantForTemplate(key: EmailTemplateKey): TransactionalHero
 export function buildEmailTemplatePreviewVars(
   key: EmailTemplateKey,
   branding: TransactionalEmailBranding,
+  settings?: ShopSettingsDTO | null,
 ): TemplateVars {
   const sample = sampleVarsForTemplate(key);
   const ctaHref = String(
@@ -93,6 +95,7 @@ export function buildEmailTemplatePreviewVars(
     buildShopTemplateVars(branding, {
       cta: { href: ctaHref, label: ctaLabel },
       heroVariant: heroVariantForTemplate(key),
+      settings,
     }),
   );
 

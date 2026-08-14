@@ -16,14 +16,16 @@ import {
   orderItemsHtml,
   orderItemsText,
   orderShippingAddressAndTrackingHtml,
-  orderTrackingSectionHtml,
   shippingAddressFromOrder,
 } from "@/lib/email/templates/order-fragments";
 import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
 import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
 import { publicSiteBaseUrl } from "@/lib/email/template-utils";
 import { buildInvoicePdfBuffer } from "@/lib/invoice/build-invoice-pdf";
-import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
+import {
+  transactionalEmailBrandingFromSettings,
+} from "@/lib/shop/email-branding";
+import { getShopSettings } from "@/lib/shop/shop-settings";
 import { buildCarrierTrackingUrl, shippingCarrierLabel } from "@/lib/shipping/carrier-tracking";
 
 /**
@@ -63,7 +65,8 @@ export async function sendOrderShippedIfNeeded(
     }
   }
 
-  const branding = await resolveTransactionalEmailBranding();
+  const settings = await getShopSettings();
+  const branding = transactionalEmailBrandingFromSettings(settings);
   const base = publicSiteBaseUrl();
   const successPath = `/checkout/erfolg?nr=${encodeURIComponent(order.orderNumber)}`;
   const successUrl = base ? `${base}${successPath}` : successPath;
@@ -89,6 +92,7 @@ export async function sendOrderShippedIfNeeded(
     buildShopTemplateVars(branding, {
       cta: { href: successUrl, label: "Zur Bestellung" },
       heroVariant: "shipping",
+      settings,
     }),
     {
       customer: { first_name: order.shippingFirstName },
@@ -108,7 +112,6 @@ export async function sendOrderShippedIfNeeded(
           trackUrl,
           primaryColor: branding.primary,
         }),
-        tracking_section_html: orderTrackingSectionHtml(trackUrl, branding),
         shipping_address_text: orderAddressText(shippingAddressFromOrder(order)),
         items_text: orderItemsText(itemsForText),
       },

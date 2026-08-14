@@ -16,6 +16,7 @@ import { resolveRequestOrigin } from "@/lib/email/request-origin";
 import { buildEmailTemplatePreviewVars } from "@/lib/email/templates/preview-vars";
 import { buildPreviewWorkshopIcsAttachment } from "@/lib/email/templates/preview-workshop-ics";
 import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
+import { getShopSettings } from "@/lib/shop/shop-settings";
 
 export type EmailTemplateFormState = {
   error?: string;
@@ -141,9 +142,12 @@ export async function sendEmailTemplateTestAction(
   }
 
   const requestOrigin = await resolveRequestOrigin();
-  const branding = await resolveTransactionalEmailBranding();
+  const [branding, settings] = await Promise.all([
+    resolveTransactionalEmailBranding(),
+    getShopSettings(),
+  ]);
   const vars = await runWithEmailAssetBaseUrlAsync(requestOrigin, async () =>
-    buildEmailTemplatePreviewVars(keyRaw, branding),
+    buildEmailTemplatePreviewVars(keyRaw, branding, settings),
   );
   const rendered = renderEmailBodies(
     {

@@ -33,10 +33,11 @@ describe("buildEmailTemplatePreviewVars", () => {
     expect(order.invoice_note_html).toContain("Rechnungsnummer RE-2026-0042");
     expect(order.invoice_note_html).toContain("PDF-Anhang");
     expect(order.invoice_note_html).toContain("color:#777777");
-    expect(order.tracking_section_html).toContain(
-      "Du kannst den Status deiner Lieferung verfolgen:",
+    expect(order.shipping_address_tracking_html).toContain("Sendung verfolgen");
+    expect(order.shipping_address_tracking_html).toContain(
+      "Bitte beachte, dass es eine Weile dauern kann, bis die Sendungsdaten aktualisiert werden.",
     );
-    expect(order.tracking_section_html).not.toContain("…");
+    expect(order.shipping_address_tracking_html).not.toContain("Sendungsverfolgung");
     expect(order.items_html).toContain("Gin Tasting Set");
     expect(order.items_html).not.toBe("<table>…</table>");
     expect(order.shipping_address_tracking_html).toContain("Versandadresse");

@@ -10,7 +10,6 @@ import {
   orderShippingAddressAndTrackingHtml,
   orderShippingAddressHtml,
   orderTotalsHtml,
-  orderTrackingSectionHtml,
   shippingAddressFromOrder,
   type OrderAddressSource,
 } from "@/lib/email/templates/order-fragments";
@@ -105,7 +104,6 @@ export function buildPreviewOrderFragments(branding: TransactionalEmailBranding)
       trackUrl: PREVIEW_TRACKING_URL,
       primaryColor: branding.primary,
     }),
-    tracking_section_html: orderTrackingSectionHtml(PREVIEW_TRACKING_URL, branding),
     refund_amount_row_html: orderRefundAmountRowHtml(total),
   };
 }

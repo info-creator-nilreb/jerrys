@@ -34,7 +34,7 @@ describe("orderly email templates", () => {
     expect(html).toContain("Deine Bestellung wurde versandt");
     expect(html).toContain("{{{order.invoice_note_html}}}");
     expect(html).toContain("{{{order.shipping_address_tracking_html}}}");
-    expect(html).toContain("{{{order.tracking_section_html}}}");
+    expect(html).not.toContain("{{{order.tracking_section_html}}}");
     expect(html).toContain("{{{order.items_html}}}");
   });
 

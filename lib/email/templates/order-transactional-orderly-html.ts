@@ -25,8 +25,6 @@ export function buildOrderShippedOrderlyHtml(): string {
       orderlyOrderNumber(),
       orderlyItemsSection("Versandte Artikel", "{{{order.items_html}}}"),
       orderlySection("{{{order.shipping_address_tracking_html}}}", "11px 44px"),
-      orderlyDivider(),
-      orderlySection("{{{order.tracking_section_html}}}", "11px 44px"),
       orderlyClosing(),
     ].join(""),
   });
