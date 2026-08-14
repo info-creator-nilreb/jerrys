@@ -7,6 +7,7 @@ import {
   customerGreetingHtml,
 } from "@/lib/email/templates/auth-email-fragments";
 import { buildPreviewOrderFragments } from "@/lib/email/templates/preview-order-fragments";
+import { buildPreviewWorkshopFragments } from "@/lib/email/templates/preview-workshop-fragments";
 import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
 import type { TransactionalHeroVariant } from "@/lib/email/email-icon-assets";
 import type { TransactionalEmailBranding } from "@/lib/shop/email-branding";
@@ -36,6 +37,20 @@ const ORDER_TEMPLATE_KEYS = new Set<EmailTemplateKey>([
   "order_shipped",
   "order_cancelled",
   "order_refunded",
+]);
+
+const WORKSHOP_PREVIEW_CTA_LABEL: Partial<Record<EmailTemplateKey, string>> = {
+  workshop_booking_confirmation: "Termin im Konto ansehen",
+  workshop_booking_cancelled: "Termine im Konto",
+  workshop_date_request_approved: "Termine ansehen",
+  workshop_date_request_rejected: "Termine ansehen",
+};
+
+const WORKSHOP_TEMPLATE_KEYS = new Set<EmailTemplateKey>([
+  "workshop_booking_confirmation",
+  "workshop_booking_cancelled",
+  "workshop_date_request_approved",
+  "workshop_date_request_rejected",
 ]);
 
 export function heroVariantForTemplate(key: EmailTemplateKey): TransactionalHeroVariant {
@@ -70,6 +85,7 @@ export function buildEmailTemplatePreviewVars(
   const ctaLabel =
     AUTH_PREVIEW_CTA_LABEL[key] ??
     ORDER_PREVIEW_CTA_LABEL[key] ??
+    WORKSHOP_PREVIEW_CTA_LABEL[key] ??
     String((sample.email as { cta_label?: string } | undefined)?.cta_label ?? "Weiter");
 
   const vars = mergeTemplateVars(
@@ -97,6 +113,14 @@ export function buildEmailTemplatePreviewVars(
     return mergeTemplateVars(vars, {
       customer: { first_name: "Alex" },
       order: buildPreviewOrderFragments(branding),
+    });
+  }
+
+  const workshopFragments = buildPreviewWorkshopFragments(key);
+  if (workshopFragments) {
+    return mergeTemplateVars(vars, {
+      customer: { first_name: "Alex" },
+      workshop: workshopFragments,
     });
   }
 
