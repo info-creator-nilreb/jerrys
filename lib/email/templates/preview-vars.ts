@@ -6,6 +6,7 @@ import {
   authAfterButtonNoteHtml,
   customerGreetingHtml,
 } from "@/lib/email/templates/auth-email-fragments";
+import { buildPreviewOrderFragments } from "@/lib/email/templates/preview-order-fragments";
 import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
 import type { TransactionalHeroVariant } from "@/lib/email/email-icon-assets";
 import type { TransactionalEmailBranding } from "@/lib/shop/email-branding";
@@ -23,6 +24,19 @@ const AUTH_PREVIEW_NOTE_TEXT: Partial<Record<EmailTemplateKey, string>> = {
   password_reset:
     "Solltest du diese E-Mail irrtümlich erhalten haben, kannst du diese ignorieren.",
 };
+
+const ORDER_PREVIEW_CTA_LABEL: Partial<Record<EmailTemplateKey, string>> = {
+  order_confirmation: "Bestellung ansehen",
+  order_shipped: "Zur Bestellung",
+  order_refunded: "Zurück zum Shop",
+};
+
+const ORDER_TEMPLATE_KEYS = new Set<EmailTemplateKey>([
+  "order_confirmation",
+  "order_shipped",
+  "order_cancelled",
+  "order_refunded",
+]);
 
 export function heroVariantForTemplate(key: EmailTemplateKey): TransactionalHeroVariant {
   switch (key) {
@@ -55,6 +69,7 @@ export function buildEmailTemplatePreviewVars(
   );
   const ctaLabel =
     AUTH_PREVIEW_CTA_LABEL[key] ??
+    ORDER_PREVIEW_CTA_LABEL[key] ??
     String((sample.email as { cta_label?: string } | undefined)?.cta_label ?? "Weiter");
 
   const vars = mergeTemplateVars(
@@ -75,6 +90,13 @@ export function buildEmailTemplatePreviewVars(
       email: {
         after_button_note_html: authAfterButtonNoteHtml(authNote),
       },
+    });
+  }
+
+  if (ORDER_TEMPLATE_KEYS.has(key)) {
+    return mergeTemplateVars(vars, {
+      customer: { first_name: "Alex" },
+      order: buildPreviewOrderFragments(branding),
     });
   }
 
