@@ -14,6 +14,7 @@ import { renderEmailBodies } from "@/lib/email/templates/render";
 import { runWithEmailAssetBaseUrlAsync } from "@/lib/email/email-absolute-url";
 import { resolveRequestOrigin } from "@/lib/email/request-origin";
 import { buildEmailTemplatePreviewVars } from "@/lib/email/templates/preview-vars";
+import { buildPreviewWorkshopIcsAttachment } from "@/lib/email/templates/preview-workshop-ics";
 import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
 
 export type EmailTemplateFormState = {
@@ -158,6 +159,10 @@ export async function sendEmailTemplateTestAction(
     subject: `[Test] ${rendered.subject}`,
     text: rendered.text,
     html: rendered.html,
+    attachments:
+      keyRaw === "workshop_booking_confirmation"
+        ? [buildPreviewWorkshopIcsAttachment()]
+        : undefined,
   });
 
   if (result.status === "sent") {
