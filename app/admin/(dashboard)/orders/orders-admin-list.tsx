@@ -201,6 +201,9 @@ export function OrdersAdminList({ orders }: { orders: OrdersAdminListItem[] }) {
               <th scope="col" className="px-4 py-3 font-medium">
                 Summe
               </th>
+              <th scope="col" className="px-4 py-3 text-right font-medium">
+                Öffnen
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#e8eaed]">
