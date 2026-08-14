@@ -37,6 +37,7 @@ import { SmartAddressFields } from "@/components/storefront/smart-address-fields
 import { CheckoutDeliveryMethodToggle } from "@/components/storefront/checkout-delivery-method-toggle";
 import { computeCheckoutOrderTotalsWithDiscount } from "@/lib/promotions/checkout-totals";
 import type { CheckoutDeliveryMethod } from "@/lib/checkout/delivery-method";
+import { openStorefrontLogin } from "@/lib/storefront/open-login-event";
 import type { OrderPriceLineInput } from "@/lib/tax/order-price-totals";
 import type {
   CheckoutAddressPrefill,
@@ -180,6 +181,7 @@ export function CheckoutForm({
   addressPrefill,
   savedAddresses = [],
   canSaveAddressToAccount = false,
+  showContactLogin = true,
   workshopBookingId,
   hidePromotionPanel = false,
   checkoutTitle = "Checkout",
@@ -198,6 +200,8 @@ export function CheckoutForm({
   /** Adressbuch des angemeldeten, verifizierten Kunden (leer für Gäste). */
   savedAddresses?: CustomerAddressListItem[];
   canSaveAddressToAccount?: boolean;
+  /** false = Kunde ist bereits angemeldet; kein totes „Anmelden“-Chrome. */
+  showContactLogin?: boolean;
   /** Gesetzt bei /checkout/termine — bindet Workshop-Server-Action direkt (kein Prop an useActionState). */
   workshopBookingId?: string;
   hidePromotionPanel?: boolean;
@@ -617,7 +621,15 @@ export function CheckoutForm({
         <section id="checkout-section-contact" className="mt-10 scroll-mt-24">
           <div className="flex items-baseline justify-between gap-4">
             <h2 className="text-lg font-semibold text-[#1f2937]">Kontakt</h2>
-            <span className="text-sm text-[#9ca3af]">Anmelden</span>
+            {showContactLogin ? (
+              <button
+                type="button"
+                onClick={() => openStorefrontLogin()}
+                className="text-sm font-medium text-primary underline-offset-2 hover:text-(--primary-hover) hover:underline"
+              >
+                Anmelden
+              </button>
+            ) : null}
           </div>
           <div className="mt-4">
             <label htmlFor="email" className="sr-only">
@@ -629,7 +641,7 @@ export function CheckoutForm({
               type="email"
               required
               autoComplete="email"
-              placeholder="E-Mail-Adresse oder Mobiltelefonnummer"
+              placeholder="E-Mail-Adresse"
               className={inputClass}
               defaultValue={addressPrefill?.email ?? undefined}
               onBlur={onEmailBlur}
@@ -642,16 +654,6 @@ export function CheckoutForm({
               </p>
             )}
           </div>
-          <label className="mt-4 flex items-center gap-2 text-sm text-[#374151]">
-            <input
-              type="checkbox"
-              name="newsletter"
-              autoComplete="off"
-              className="size-4 checkbox-primary"
-              disabled
-            />
-            Neuigkeiten und Angebote via E-Mail erhalten
-          </label>
         </section>
 
         <section className="mt-12">
