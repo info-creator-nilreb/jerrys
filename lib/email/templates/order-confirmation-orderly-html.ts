@@ -164,7 +164,7 @@ export function buildOrderConfirmationOrderlyHtml(): string {
                 <tr>
                   <td class="section-pad" style="padding:11px 44px 44px;font-family:${font};font-size:15px;line-height:1.55;color:${bodyColor};" align="center">
                     <p style="margin:0;">Du hast Fragen zu deiner Bestellung? Dann nutze bitte die Kontaktdaten im Impressum.</p>
-                    <p style="margin:16px 0 0;color:${headingColor};">Liebe Grüße<br/>{{shop.name}}</p>
+                    <p style="margin:16px 0 0;color:${headingColor};">Viele Grüße<br/>Dein {{shop.name}}-Team</p>
                   </td>
                 </tr>
               </table>
