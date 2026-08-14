@@ -14,7 +14,7 @@ import { sendOrderShippedIfNeeded } from "@/lib/email/order-shipped";
 import { allocateNextInvoiceNumber } from "@/lib/invoice/allocate-invoice-number";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 import { createOrderEvent, ORDER_EVENT_STATUS_CHANGED } from "@/lib/orders/order-events";
-import { isAllowedOrderStatusTransition } from "@/lib/orders/order-status-machine";
+import { isAllowedOrderStatusTransition, orderStatusDecrementsWarehouse } from "@/lib/orders/order-status-machine";
 import {
   decrementWarehouseForShippedOrder,
   restoreStockOnOrderCancelled,
@@ -42,6 +42,7 @@ export type TransitionResult =
 /**
  * Atomarer Statuswechsel inkl. Historie (Aufrufer muss Admin-Rechte geprüft haben).
  * Wechsel auf `shipped` erfordert Versanddaten (Carrier + Sendungsnummer) und stellt ggf. die Rechnung aus.
+ * Wechsel auf `abgeholt` verringert den Lagerbestand und stellt die Rechnung aus — ohne Tracking.
  */
 export async function applyOrderStatusTransition(
   prisma: PrismaClient,
@@ -68,10 +69,12 @@ export async function applyOrderStatusTransition(
       return { ok: false, error: "invalid_transition" } as const;
     }
 
-    if (toStatus === "shipped") {
-      const tr = options?.shipment?.trackingNumber?.trim() ?? "";
-      if (!options?.shipment?.carrier || !tr) {
-        return { ok: false, error: "shipment_required" } as const;
+    if (orderStatusDecrementsWarehouse(toStatus)) {
+      if (toStatus === "shipped") {
+        const tr = options?.shipment?.trackingNumber?.trim() ?? "";
+        if (!options?.shipment?.carrier || !tr) {
+          return { ok: false, error: "shipment_required" } as const;
+        }
       }
 
       const stockLines = order.items.flatMap((item) =>
@@ -90,7 +93,10 @@ export async function applyOrderStatusTransition(
       if (!w.ok) return { ok: false, error: "insufficient_warehouse" } as const;
     }
 
-    if (toStatus === "retoure" && (from === "shipped" || from === "completed")) {
+    if (
+      toStatus === "retoure" &&
+      (from === "shipped" || from === "abgeholt" || from === "completed")
+    ) {
       const stockLines = order.items.flatMap((item) =>
         item.productVariantId
           ? [
@@ -102,7 +108,8 @@ export async function applyOrderStatusTransition(
             ]
           : [],
       );
-      const r = await restoreStockOnOrderCancelled(tx, "shipped", stockLines, orderId);
+      const restoreFrom = from === "abgeholt" ? "abgeholt" : "shipped";
+      const r = await restoreStockOnOrderCancelled(tx, restoreFrom, stockLines, orderId);
       if (!r.ok) return { ok: false, error: "insufficient_warehouse" } as const;
       zettleReturnPush = true;
     }
@@ -128,7 +135,7 @@ export async function applyOrderStatusTransition(
       const r = await restoreStockOnOrderCancelled(tx, from, stockLines, orderId);
       if (!r.ok) return { ok: false, error: "insufficient_warehouse" } as const;
       // Nur wenn Verkauf bereits gezahlt war (Sale-Push) — nicht bei pending_payment.
-      if (from === "paid" || from === "processing" || from === "shipped") {
+      if (from === "paid" || from === "processing" || from === "shipped" || from === "abgeholt") {
         zettleReturnPush = true;
       }
     }
@@ -138,7 +145,7 @@ export async function applyOrderStatusTransition(
 
     const nextFulfillment = fulfillmentStatusAfterOrderTransition(toStatus);
 
-    if (toStatus === "shipped" && !order.invoiceNumber) {
+    if (orderStatusDecrementsWarehouse(toStatus) && !order.invoiceNumber) {
       const inv = await allocateNextInvoiceNumber(tx);
       invoiceNumber = inv.invoiceNumber;
       invoiceIssuedAt = inv.issuedAt;
@@ -153,11 +160,9 @@ export async function applyOrderStatusTransition(
           ? {
               shippingCarrier: options.shipment.carrier,
               trackingNumber: options.shipment.trackingNumber.trim(),
-              ...(invoiceNumber && invoiceIssuedAt
-                ? { invoiceNumber, invoiceIssuedAt }
-                : {}),
             }
           : {}),
+        ...(invoiceNumber && invoiceIssuedAt ? { invoiceNumber, invoiceIssuedAt } : {}),
       },
     });
 

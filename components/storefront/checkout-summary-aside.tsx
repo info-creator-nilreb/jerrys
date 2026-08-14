@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { formatPrice } from "@/lib/catalog/format";
 import { PriceEUR } from "@/components/storefront/price-eur";
+import type { CheckoutDeliveryMethod } from "@/lib/checkout/delivery-method";
 
 export type CheckoutSummaryLine = {
   id: string;
@@ -32,6 +33,7 @@ export function CheckoutSummaryAside({
   freeShippingFromSubtotalGrossCents,
   children,
   shippingCostHint,
+  deliveryMethod = "shipping",
 }: {
   lines: CheckoutSummaryLine[];
   shippingCents: number;
@@ -52,11 +54,14 @@ export function CheckoutSummaryAside({
   children?: ReactNode;
   /** Optionaler Hinweis unter der Versandzeile (überschreibt den Standardtext). */
   shippingCostHint?: ReactNode;
+  deliveryMethod?: CheckoutDeliveryMethod;
 }) {
+  const isPickup = deliveryMethod === "pickup";
   const hasDiscount = discountOffSubtotalCents > 0;
-  const hasShippingPromotionSave = shippingSavedByPromotionCents > 0;
+  const hasShippingPromotionSave = !isPickup && shippingSavedByPromotionCents > 0;
   const freeShippingThreshold = freeShippingFromSubtotalGrossCents ?? null;
   const remainingToFreeShipping =
+    !isPickup &&
     freeShippingThreshold != null &&
     shippingCents > 0 &&
     catalogSubtotalBeforeDiscountCents < freeShippingThreshold
@@ -122,8 +127,8 @@ export function CheckoutSummaryAside({
         ) : null}
         <div className="flex justify-between gap-4">
           <dt className="text-(--foreground-muted)">
-            <span className="block">Versand</span>
-            {shippingCountryLabel ? (
+            <span className="block">{isPickup ? "Abholung" : "Versand"}</span>
+            {!isPickup && shippingCountryLabel ? (
               <span className="mt-0.5 block text-xs font-normal">
                 nach {shippingCountryLabel}
               </span>
@@ -146,6 +151,10 @@ export function CheckoutSummaryAside({
         ) : null}
         {shippingCostHint !== undefined ? (
           shippingCostHint
+        ) : isPickup ? (
+          <p className="text-xs leading-relaxed text-(--foreground-muted)">
+            Abholung vor Ort, keine Versandkosten.
+          </p>
         ) : (
           <p className="text-xs leading-relaxed text-(--foreground-muted)">
             Versandkosten werden vor der Zahlung anhand der Lieferadresse berechnet.{" "}

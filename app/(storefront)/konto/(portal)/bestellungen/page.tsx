@@ -104,6 +104,7 @@ export default async function CustomerOrdersPage({
                     <CustomerOrderStatusBadge
                       status={order.status}
                       fulfillmentStatus={order.fulfillmentStatus}
+                      deliveryMethod={order.deliveryMethod}
                     />
                   </div>
                   <p className="text-base font-semibold tabular-nums text-(--foreground-heading)">

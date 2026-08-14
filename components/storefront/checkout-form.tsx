@@ -31,7 +31,9 @@ import {
 } from "@/components/storefront/checkout-payment-methods";
 import { PayPalCardFieldsCheckout } from "@/components/storefront/paypal-card-fields-checkout";
 import { SmartAddressFields } from "@/components/storefront/smart-address-fields";
+import { CheckoutDeliveryMethodToggle } from "@/components/storefront/checkout-delivery-method-toggle";
 import { computeCheckoutOrderTotalsWithDiscount } from "@/lib/promotions/checkout-totals";
+import type { CheckoutDeliveryMethod } from "@/lib/checkout/delivery-method";
 import type { OrderPriceLineInput } from "@/lib/tax/order-price-totals";
 import type {
   CheckoutAddressPrefill,
@@ -127,6 +129,7 @@ const CHECKOUT_FIELD_META: Record<string, { label: string; scrollId: string | nu
   billingCity: { label: "Stadt (Rechnung)", scrollId: "billingCity" },
   phone: { label: "Telefon", scrollId: "phone" },
   paymentMethod: { label: "Zahlungsart", scrollId: null },
+  deliveryMethod: { label: "Lieferart", scrollId: null },
   rechtlicheKenntnis: { label: "AGB / Widerruf", scrollId: "rechtlicheKenntnis" },
   idempotencyKey: { label: "Sitzung", scrollId: null },
   checkoutPromotionCode: { label: "Rabattcode", scrollId: "checkout-section-rabatt" },
@@ -223,6 +226,7 @@ export function CheckoutForm({
   /** Nur bei „Debit- oder Kreditkarte“ werden die Hosted Card Fields gemountet. */
   const [payPalSurface, setPayPalSurface] = useState<CheckoutPayPalMethodId>("paypal");
   const [shippingCountry, setShippingCountry] = useState(prefillCountry);
+  const [deliveryMethod, setDeliveryMethod] = useState<CheckoutDeliveryMethod>("shipping");
   const [billingCountry, setBillingCountry] = useState(
     addressPrefill?.billingCountry ?? prefillCountry,
   );
@@ -292,8 +296,9 @@ export function CheckoutForm({
         shippingRatesCentsByCountry: shippingRatesByCountry,
         freeShippingFromSubtotalGrossCents,
         discountOffSubtotalCents: 0,
+        deliveryMethod,
       }),
-    [lineInputs, shippingCountry, shippingRatesByCountry, freeShippingFromSubtotalGrossCents],
+    [lineInputs, shippingCountry, shippingRatesByCountry, freeShippingFromSubtotalGrossCents, deliveryMethod],
   );
 
   useEffect(() => {
@@ -305,6 +310,7 @@ export function CheckoutForm({
       shippingCountry,
       promotionCode: committedPromoCode || undefined,
       declineAutomatic,
+      deliveryMethod,
     }).then((r) => {
       if (cancelled) return;
       setPromoPreview(r);
@@ -312,7 +318,7 @@ export function CheckoutForm({
     return () => {
       cancelled = true;
     };
-  }, [shippingCountry, committedPromoCode, declineAutomatic, hidePromotionPanel]);
+  }, [shippingCountry, committedPromoCode, declineAutomatic, hidePromotionPanel, deliveryMethod]);
 
   const displayTotals =
     promoPreview && !("error" in promoPreview) ? promoPreview.totals : baseTotalsFallback;
@@ -640,12 +646,7 @@ export function CheckoutForm({
 
         <section className="mt-12">
           <h2 className="text-lg font-semibold text-[#1f2937]">Lieferung</h2>
-          <div className="mt-4 grid grid-cols-2 gap-2 rounded-lg border border-[#e5e7eb] p-1">
-            <span className="rounded-md bg-[#f3f4f6] px-4 py-3 text-center text-sm font-medium text-[#1f2937]">
-              Versand
-            </span>
-            <span className="rounded-md px-4 py-3 text-center text-sm text-[#9ca3af]">Abholung</span>
-          </div>
+          <CheckoutDeliveryMethodToggle value={deliveryMethod} onChange={setDeliveryMethod} />
 
           <div className="mt-8 space-y-4">
             {savedShippingAddresses.length > 0 ? (
@@ -1132,8 +1133,9 @@ export function CheckoutForm({
         discountDetail={discountDetail}
         shippingSavedByPromotionCents={displayTotals.shippingSavedByPromotionCents}
         shippingPromotionLabel={shippingPromotionLabel}
-        shippingCountryLabel={shippingCountryLabel}
+        shippingCountryLabel={deliveryMethod === "pickup" ? null : shippingCountryLabel}
         freeShippingFromSubtotalGrossCents={freeShippingFromSubtotalGrossCents}
+        deliveryMethod={deliveryMethod}
       >
         <div id="checkout-section-rabatt">
           {!hidePromotionPanel ? (

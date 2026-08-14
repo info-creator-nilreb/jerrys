@@ -75,7 +75,7 @@ export async function restoreStockOnOrderCancelled(
     }
     return { ok: true };
   }
-  if (fromStatus === "shipped") {
+  if (fromStatus === "shipped" || fromStatus === "abgeholt") {
     for (const line of items) {
       await tx.productVariant.update({
         where: { id: line.productVariantId },

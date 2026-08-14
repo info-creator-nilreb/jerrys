@@ -2,7 +2,7 @@ import { allowedNextOrderStatuses } from "@/lib/orders/order-status-machine";
 
 /** Achsen-Keys für die Admin-Oberfläche (nicht identisch mit DB-Status). */
 export type AdminPaymentKey = "offen" | "bezahlt" | "erstattet";
-export type AdminShippingKey = "offen" | "versandt" | "retoure";
+export type AdminShippingKey = "offen" | "versandt" | "abgeholt" | "retoure";
 export type AdminOrderKey = "offen" | "in_bearbeitung" | "abgebrochen" | "abgeschlossen";
 
 export type AdminTriple = {
@@ -19,13 +19,19 @@ export type OrderForTriple = {
   statusHistory?: { toStatus: string | null; fromStatus: string | null }[];
 };
 
-function hadShippedOrReturnInHistory(
+function shippingKeyFromHistory(
   history: { toStatus: string | null }[] | undefined,
-): boolean {
-  if (!history?.length) return false;
-  return history.some((h) =>
-    ["shipped", "completed", "retoure"].includes(h.toStatus ?? ""),
-  );
+): AdminShippingKey | null {
+  if (!history?.length) return null;
+  let sawCompleted = false;
+  for (let i = history.length - 1; i >= 0; i--) {
+    const t = history[i]?.toStatus;
+    if (t === "retoure") return "retoure";
+    if (t === "abgeholt") return "abgeholt";
+    if (t === "shipped") return "versandt";
+    if (t === "completed") sawCompleted = true;
+  }
+  return sawCompleted ? "versandt" : null;
 }
 
 /**
@@ -39,6 +45,7 @@ export function deriveTripleFromOrder(order: OrderForTriple): AdminTriple {
   const hadRefundedPsp = payments.some(
     (p) => p.status === "refunded" || p.status === "partially_refunded",
   );
+  const historyShipping = shippingKeyFromHistory(history);
 
   switch (status) {
     case "draft":
@@ -59,15 +66,23 @@ export function deriveTripleFromOrder(order: OrderForTriple): AdminTriple {
       return { payment: "bezahlt", shipping: "offen", order: "in_bearbeitung" };
     case "shipped":
       return { payment: "bezahlt", shipping: "versandt", order: "in_bearbeitung" };
+    case "abgeholt":
+      return { payment: "bezahlt", shipping: "abgeholt", order: "in_bearbeitung" };
     case "retoure":
       return { payment: "bezahlt", shipping: "retoure", order: "in_bearbeitung" };
     case "completed":
-      return { payment: "bezahlt", shipping: "versandt", order: "abgeschlossen" };
+      return {
+        payment: "bezahlt",
+        shipping: historyShipping ?? "versandt",
+        order: "abgeschlossen",
+      };
     case "cancelled": {
       const hadCapture =
         hadSucceededPsp ||
         history.some((h) =>
-          ["bestaetigt", "paid", "processing", "shipped", "completed"].includes(h.toStatus ?? ""),
+          ["bestaetigt", "paid", "processing", "shipped", "abgeholt", "completed"].includes(
+            h.toStatus ?? "",
+          ),
         );
       return {
         payment: hadCapture ? "bezahlt" : "offen",
@@ -78,7 +93,7 @@ export function deriveTripleFromOrder(order: OrderForTriple): AdminTriple {
     case "refunded":
       return {
         payment: "erstattet",
-        shipping: hadShippedOrReturnInHistory(history) ? "versandt" : "offen",
+        shipping: historyShipping ?? "offen",
         order: "abgeschlossen",
       };
     default:
@@ -118,6 +133,8 @@ export function adminTripleOptionLabel(dim: AdminTripleDimension, key: string): 
         return "Offen";
       case "versandt":
         return "Versandt";
+      case "abgeholt":
+        return "Abgeholt";
       case "retoure":
         return "Retoure";
       default:
@@ -139,7 +156,7 @@ export function adminTripleOptionLabel(dim: AdminTripleDimension, key: string): 
 }
 
 const PAYMENT_OPTIONS: AdminPaymentKey[] = ["offen", "bezahlt", "erstattet"];
-const SHIPPING_OPTIONS: AdminShippingKey[] = ["offen", "versandt", "retoure"];
+const SHIPPING_OPTIONS: AdminShippingKey[] = ["offen", "versandt", "abgeholt", "retoure"];
 const ORDER_OPTIONS: AdminOrderKey[] = [
   "offen",
   "in_bearbeitung",
@@ -199,6 +216,7 @@ export function adminTripleSelectSurfaceClass(
   if (dim === "shipping") {
     switch (key as AdminShippingKey) {
       case "versandt":
+      case "abgeholt":
         return "bg-primary/10 text-primary";
       case "retoure":
         return "bg-amber-50 text-amber-800";

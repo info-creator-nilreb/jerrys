@@ -97,6 +97,7 @@ export function checkoutRawFromFormData(formData: FormData): Record<string, unkn
     billingCountry: fd(formData, "billingCountry"),
     phone: fd(formData, "phone"),
     paymentMethod: fd(formData, "paymentMethod"),
+    deliveryMethod: fd(formData, "deliveryMethod"),
     rechtlicheKenntnis: fd(formData, "rechtlicheKenntnis"),
     idempotencyKey: fd(formData, "idempotencyKey"),
     checkoutPromotionCode: fd(formData, "checkoutPromotionCode"),
@@ -367,6 +368,7 @@ async function createPendingPayPalOrderFromParsedRaw(
     freeShippingFromSubtotalGrossCents: shopShip.freeShippingFromSubtotalGrossCents,
     discountOffSubtotalCents: discountOff,
     applyFreeShippingPromotion: applyFreeShipping,
+    deliveryMethod: d.deliveryMethod,
   });
 
   const subtotal = totals.subtotalCents;
@@ -406,6 +408,7 @@ async function createPendingPayPalOrderFromParsedRaw(
           phone: d.phone,
           customerId,
           paymentMethod: d.paymentMethod,
+          deliveryMethod: d.deliveryMethod,
           status: orderStatus,
           currency: orderCurrency,
           shippingFirstName: d.shippingFirstName,

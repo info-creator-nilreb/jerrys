@@ -204,6 +204,7 @@ export async function createWorkshopOrderFromFormData(
           phone: d.phone,
           customerId,
           paymentMethod: d.paymentMethod,
+          deliveryMethod: d.deliveryMethod,
           status: orderStatus,
           currency: hold.currency,
           shippingFirstName: d.shippingFirstName,

@@ -5,6 +5,7 @@ export type CustomerOrderListItem = {
   orderNumber: string;
   status: string;
   fulfillmentStatus: string;
+  deliveryMethod: string;
   createdAt: Date;
   totalGrossCents: number;
   currency: string;
@@ -25,6 +26,7 @@ export type CustomerOrderDetail = {
   discountOffSubtotalCents: number;
   taxAmountCents: number;
   totalGrossCents: number;
+  deliveryMethod: string;
   shippingCarrier: string | null;
   trackingNumber: string | null;
   shippingFirstName: string;
@@ -59,6 +61,7 @@ export async function listOrdersForCustomer(
       orderNumber: true,
       status: true,
       fulfillmentStatus: true,
+      deliveryMethod: true,
       createdAt: true,
       totalGrossCents: true,
       currency: true,
@@ -71,6 +74,7 @@ export async function listOrdersForCustomer(
     orderNumber: o.orderNumber,
     status: o.status,
     fulfillmentStatus: o.fulfillmentStatus,
+    deliveryMethod: o.deliveryMethod,
     createdAt: o.createdAt,
     totalGrossCents: o.totalGrossCents,
     currency: o.currency,
@@ -108,6 +112,7 @@ export async function getOrderForCustomer(params: {
       discountOffSubtotalCents: true,
       taxAmountCents: true,
       totalGrossCents: true,
+      deliveryMethod: true,
       shippingCarrier: true,
       trackingNumber: true,
       shippingFirstName: true,

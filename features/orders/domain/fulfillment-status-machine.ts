@@ -33,6 +33,8 @@ export function fulfillmentStatusAfterOrderTransition(
       return "preparing";
     case "shipped":
       return "shipped";
+    case "abgeholt":
+      return "delivered";
     case "completed":
       return "delivered";
     case "retoure":

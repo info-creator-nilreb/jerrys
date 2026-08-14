@@ -30,6 +30,7 @@ describe("customer order queries (AuthZ)", () => {
         orderNumber: "J-1",
         status: "paid",
         fulfillmentStatus: "unfulfilled",
+        deliveryMethod: "shipping",
         createdAt: new Date("2026-08-01T00:00:00.000Z"),
         totalGrossCents: 1990,
         currency: "EUR",

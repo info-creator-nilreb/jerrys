@@ -6,6 +6,7 @@ export const ORDER_STATUSES = [
   "bestaetigt",
   "processing",
   "shipped",
+  "abgeholt",
   "retoure",
   "completed",
   "cancelled",
@@ -25,8 +26,9 @@ const EDGES: Partial<Record<string, string[]>> = {
   pending_payment: ["cancelled", "paid"],
   paid: ["processing", "cancelled", "refunded"],
   draft: ["cancelled", "pending_payment"],
-  processing: ["shipped", "cancelled", "refunded"],
+  processing: ["shipped", "abgeholt", "cancelled", "refunded"],
   shipped: ["completed", "cancelled", "retoure", "refunded"],
+  abgeholt: ["completed", "cancelled", "retoure", "refunded"],
   /** `processing` = Vorbereitung erneuter Versand (Reship nach Retoure). */
   retoure: ["refunded", "completed", "cancelled", "processing"],
 
@@ -46,4 +48,9 @@ export function allowedNextOrderStatuses(current: string): string[] {
 export function isAllowedOrderStatusTransition(from: string, to: string): boolean {
   if (from === to) return false;
   return allowedNextOrderStatuses(from).includes(to);
+}
+
+/** Versand oder Abholung: Lager wird beim Verlassen des Bestands verringert. */
+export function orderStatusDecrementsWarehouse(status: string): boolean {
+  return status === "shipped" || status === "abgeholt";
 }

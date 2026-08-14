@@ -34,6 +34,7 @@ export async function previewCheckoutPromotion(input: {
   shippingCountry: string;
   promotionCode?: string | null;
   declineAutomatic?: boolean;
+  deliveryMethod?: "shipping" | "pickup";
 }): Promise<CheckoutPromotionPreview | { error: string }> {
   const cartId = await getCartIdFromCookie();
   if (!cartId) {
@@ -109,6 +110,7 @@ export async function previewCheckoutPromotion(input: {
     freeShippingFromSubtotalGrossCents: shopShip.freeShippingFromSubtotalGrossCents,
     discountOffSubtotalCents: discountOff,
     applyFreeShippingPromotion: applyFreeShipping,
+    deliveryMethod: input.deliveryMethod,
   });
 
   return {

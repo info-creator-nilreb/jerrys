@@ -20,6 +20,8 @@ import {
   type CheckoutPayPalMethodId,
 } from "@/components/storefront/checkout-payment-methods";
 import { computeWorkshopCheckoutOrderTotals } from "@/lib/workshop/workshop-checkout-totals";
+import { CheckoutDeliveryMethodToggle } from "@/components/storefront/checkout-delivery-method-toggle";
+import type { CheckoutDeliveryMethod } from "@/lib/checkout/delivery-method";
 import type {
   CheckoutAddressPrefill,
   CustomerAddressListItem,
@@ -96,6 +98,7 @@ export function WorkshopCheckoutForm({
   );
   const [payPalSurface, setPayPalSurface] = useState<CheckoutPayPalMethodId>("paypal");
   const [shippingCountry, setShippingCountry] = useState(prefillCountry);
+  const [deliveryMethod, setDeliveryMethod] = useState<CheckoutDeliveryMethod>("pickup");
   const [billingCountry, setBillingCountry] = useState(
     addressPrefill?.billingCountry ?? prefillCountry,
   );
@@ -269,12 +272,7 @@ export function WorkshopCheckoutForm({
 
         <section className="mt-12">
           <h2 className="text-lg font-semibold text-[#1f2937]">Lieferung</h2>
-          <div className="mt-4 grid grid-cols-2 gap-2 rounded-lg border border-[#e5e7eb] p-1">
-            <span className="rounded-md bg-[#f3f4f6] px-4 py-3 text-center text-sm font-medium text-[#1f2937]">
-              Versand
-            </span>
-            <span className="rounded-md px-4 py-3 text-center text-sm text-[#9ca3af]">Abholung</span>
-          </div>
+          <CheckoutDeliveryMethodToggle value={deliveryMethod} onChange={setDeliveryMethod} />
 
           <div className="mt-8 space-y-4">
             {savedShippingAddresses.length > 0 ? (
@@ -723,8 +721,9 @@ export function WorkshopCheckoutForm({
         catalogSubtotalBeforeDiscountCents={catalogSubtotalBeforeDiscountCents}
         discountOffSubtotalCents={0}
         shippingSavedByPromotionCents={0}
-        shippingCountryLabel={shippingCountryLabel}
+        shippingCountryLabel={deliveryMethod === "pickup" ? null : shippingCountryLabel}
         freeShippingFromSubtotalGrossCents={null}
+        deliveryMethod={deliveryMethod}
         shippingCostHint={
           <p className="text-xs leading-relaxed text-(--foreground-muted)">
             Termine sind versandkostenfrei — die Adresse dient der Rechnung und Erreichbarkeit.
