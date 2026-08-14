@@ -38,6 +38,7 @@ import { CheckoutDeliveryMethodToggle } from "@/components/storefront/checkout-d
 import { CheckoutPageExpress } from "@/components/storefront/checkout-page-express";
 import { computeCheckoutOrderTotalsWithDiscount } from "@/lib/promotions/checkout-totals";
 import type { CheckoutDeliveryMethod } from "@/lib/checkout/delivery-method";
+import { CHECKOUT_FORM_COLUMN_CLASS } from "@/lib/checkout/checkout-form-layout";
 import {
   clearCheckoutFormDraft,
   loadCheckoutFormDraft,
@@ -471,7 +472,7 @@ export function CheckoutForm({
     allowedShippingCountries.find((c) => c.code === shippingCountry)?.label ?? shippingCountry;
 
   const legalConsentBlock = (
-    <div id="checkout-section-rechtliches" className="mt-8 max-w-md scroll-mt-24">
+    <div id="checkout-section-rechtliches" className="mt-8 scroll-mt-24">
       <label
         htmlFor="rechtlicheKenntnis"
         className="flex min-h-11 cursor-pointer items-start gap-3 text-left text-sm leading-snug text-[#6b7280]"
@@ -639,6 +640,7 @@ export function CheckoutForm({
       className="grid grid-cols-1 gap-0 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] lg:items-start"
     >
       <div className="order-2 min-w-0 border-b border-(--surface-muted) bg-white px-4 py-10 sm:px-8 lg:order-1 lg:border-b-0 lg:pr-12 lg:pl-0">
+        <div className={CHECKOUT_FORM_COLUMN_CLASS}>
         <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
         {workshopBookingId ? (
           <input type="hidden" name="workshopBookingId" value={workshopBookingId} />
@@ -658,7 +660,7 @@ export function CheckoutForm({
         {state && !state.ok ? (
           <div
             id="checkout-validation-summary"
-            className="mt-4 max-w-lg rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
+            className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
             role="alert"
           >
             <p className="font-medium">{state.error}</p>
@@ -1151,7 +1153,7 @@ export function CheckoutForm({
                 }
               : undefined
           }
-          className="mt-8 w-full rounded-md bg-primary py-3.5 text-sm font-semibold uppercase tracking-wide text-white shadow-sm transition-colors hover:bg-(--primary-hover) disabled:opacity-50 lg:max-w-md"
+          className="mt-8 w-full rounded-md bg-primary py-3.5 text-sm font-semibold uppercase tracking-wide text-white shadow-sm transition-colors hover:bg-(--primary-hover) disabled:opacity-50"
         >
           {workshopMpa
             ? displayTotals.totalCents === 0
@@ -1217,6 +1219,7 @@ export function CheckoutForm({
             Impressum
           </Link>
         </nav>
+        </div>
       </div>
 
       <CheckoutSummaryAside
