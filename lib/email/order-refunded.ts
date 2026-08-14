@@ -13,7 +13,9 @@ import {
 import { sendTransactionalEmail } from "@/lib/email/provider";
 import {
   orderItemsHtml,
+  orderItemsText,
   orderNumberCardHtml,
+  orderRefundAmountRowHtml,
   refundAmountCardHtml,
   refundMetaHtml,
 } from "@/lib/email/templates/order-fragments";
@@ -71,7 +73,16 @@ export async function sendOrderRefundedIfNeeded(
         payment_method: payLabel,
         number_card_html: orderNumberCardHtml(order.orderNumber),
         refund_card_html: refundAmountCardHtml(totalStr),
+        refund_amount_row_html: orderRefundAmountRowHtml(totalStr),
         items_html: itemsHtml,
+        items_text: orderItemsText(
+          order.items.map((i) => ({
+            productTitleSnapshot: i.productTitleSnapshot,
+            quantity: i.quantity,
+            lineTotalGrossCents: i.lineTotalGrossCents,
+            currency: i.currency,
+          })),
+        ),
         refund_meta_html: refundMetaHtml(refundDate, payLabel),
       },
     },

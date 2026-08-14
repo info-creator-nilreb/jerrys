@@ -202,6 +202,13 @@ export function refundAmountCardHtml(amountLabel: string): string {
   );
 }
 
+/** Rückerstattungsbetrag-Zeile im Orderly-Layout (links Label, rechts Betrag). */
+export function orderRefundAmountRowHtml(amountLabel: string): string {
+  const amount = escapeHtmlForEmail(amountLabel);
+  const headingColor = "#666666";
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif"><tr><th style="mso-line-height-rule:exactly;width:65%;padding:5px 0;font-size:15px;line-height:1.55;font-weight:400;color:${headingColor}" align="left" bgcolor="#ffffff" valign="top">Rückerstattungsbetrag</th><th style="mso-line-height-rule:exactly;width:35%;padding:5px 0;font-size:15px;line-height:1.55;font-weight:400;color:${headingColor};white-space:nowrap" align="right" bgcolor="#ffffff" valign="middle">${amount}</th></tr></table>`;
+}
+
 export function refundMetaHtml(refundDate: string, paymentLabel: string): string {
   return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;line-height:1.6"><tr><td><strong style="color:#1f2937">Erstattet am</strong> ${escapeHtmlForEmail(refundDate)}</td></tr><tr><td style="padding-top:6px"><strong style="color:#1f2937">Zahlungsmethode</strong> ${escapeHtmlForEmail(paymentLabel)}</td></tr></table>`;
 }

@@ -213,9 +213,15 @@ export const EMAIL_TEMPLATE_CATALOG: EmailTemplateCatalogEntry[] = [
       },
       {
         path: "order.refund_card_html",
-        label: "Erstattungsbetrag-Karte",
+        label: "Erstattungsbetrag-Karte (Legacy)",
         html: true,
         example: "<strong>Erstattungsbetrag</strong><br/>54,80 €",
+      },
+      {
+        path: "order.refund_amount_row_html",
+        label: "Rückerstattungsbetrag-Zeile (HTML)",
+        html: true,
+        example: "<table>…</table>",
       },
       {
         path: "order.items_html",
@@ -225,9 +231,14 @@ export const EMAIL_TEMPLATE_CATALOG: EmailTemplateCatalogEntry[] = [
       },
       {
         path: "order.refund_meta_html",
-        label: "Meta-Tabelle",
+        label: "Meta-Tabelle (Legacy)",
         html: true,
         example: "<table>…</table>",
+      },
+      {
+        path: "order.items_text",
+        label: "Positionen (Text)",
+        example: "- Produkt × 1: 49,90 €",
       },
     ],
   },
