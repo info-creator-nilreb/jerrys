@@ -307,25 +307,27 @@ export function CheckoutForm({
     if (!draft) return;
     draftRestoredRef.current = true;
     clearCheckoutFormDraft();
-    setEmail(draft.email);
-    setPhone(draft.phone);
-    setDeliveryMethod(draft.deliveryMethod);
-    if (allowedShippingCountries.some((c) => c.code === draft.shippingCountry)) {
-      setShippingCountry(draft.shippingCountry);
-    }
-    setShippingPerson(draft.shippingPerson);
-    setShippingAddressValues(draft.shippingAddressValues);
-    setShippingAddressId(draft.shippingAddressId);
-    setBillingDifferent(draft.billingDifferent);
-    if (allowedShippingCountries.some((c) => c.code === draft.billingCountry)) {
-      setBillingCountry(draft.billingCountry);
-    }
-    setBillingPerson(draft.billingPerson);
-    setBillingAddressValues(draft.billingAddressValues);
-    setBillingAddressId(draft.billingAddressId);
-    setPayPalSurface(draft.payPalSurface);
-    setCommittedPromoCode(draft.committedPromoCode);
-    setDeclineAutomatic(draft.declineAutomatic);
+    startTransition(() => {
+      setEmail(draft.email);
+      setPhone(draft.phone);
+      setDeliveryMethod(draft.deliveryMethod);
+      if (allowedShippingCountries.some((c) => c.code === draft.shippingCountry)) {
+        setShippingCountry(draft.shippingCountry);
+      }
+      setShippingPerson(draft.shippingPerson);
+      setShippingAddressValues(draft.shippingAddressValues);
+      setShippingAddressId(draft.shippingAddressId);
+      setBillingDifferent(draft.billingDifferent);
+      if (allowedShippingCountries.some((c) => c.code === draft.billingCountry)) {
+        setBillingCountry(draft.billingCountry);
+      }
+      setBillingPerson(draft.billingPerson);
+      setBillingAddressValues(draft.billingAddressValues);
+      setBillingAddressId(draft.billingAddressId);
+      setPayPalSurface(draft.payPalSurface);
+      setCommittedPromoCode(draft.committedPromoCode);
+      setDeclineAutomatic(draft.declineAutomatic);
+    });
   }, [allowedShippingCountries, restoreFormDraft, workshopBookingId]);
 
   const lineInputs: OrderPriceLineInput[] = useMemo(

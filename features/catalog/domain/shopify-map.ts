@@ -234,7 +234,7 @@ export function mapShopifyProductToCatalog(
   source.variants.forEach((v, index) => {
     let sku = v.sku.trim();
     let skuGenerated = false;
-    let skuMissing = false;
+    const skuMissing = false;
     if (!sku) {
       sku = generateVariantSku(source.handle, v.optionValues, index, usedSkus);
       skuGenerated = true;

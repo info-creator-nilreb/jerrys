@@ -190,7 +190,10 @@ export function ContentPageForm({
 
   const [savedSnapshot, setSavedSnapshot] = useState(editorSnapshot);
   const editorSnapshotRef = useRef(editorSnapshot);
-  editorSnapshotRef.current = editorSnapshot;
+
+  useEffect(() => {
+    editorSnapshotRef.current = editorSnapshot;
+  }, [editorSnapshot]);
 
   /** Nur nach erfolgreichem Speichern Baseline aktualisieren — nicht bei jeder Editierung, solange `ok` noch true ist. */
   useEffect(() => {

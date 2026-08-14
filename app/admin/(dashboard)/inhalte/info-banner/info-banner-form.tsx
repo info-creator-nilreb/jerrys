@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState, startTransition } from "react";
 import {
   saveInfoBannerAction,
   type InfoBannerFormState,
@@ -50,16 +50,18 @@ export function InfoBannerForm({ defaults }: Props) {
   // sonst kann ein kurzlebig stale Cache den Haken wieder entfernen.
   useEffect(() => {
     if (!state?.ok || !state.saved) return;
-    setActive(state.saved.active);
-    setMessages(state.saved.messages.length > 0 ? [...state.saved.messages] : [""]);
-    setDurationSec(state.saved.durationSec);
-    setHref(state.saved.href ?? "");
-    setBgMode(state.saved.bgColor ? "custom" : "primary");
-    if (state.saved.bgColor) {
-      setCustomBg(state.saved.bgColor);
-    } else {
-      setCustomBg(defaults.primaryColor);
-    }
+    startTransition(() => {
+      setActive(state.saved.active);
+      setMessages(state.saved.messages.length > 0 ? [...state.saved.messages] : [""]);
+      setDurationSec(state.saved.durationSec);
+      setHref(state.saved.href ?? "");
+      setBgMode(state.saved.bgColor ? "custom" : "primary");
+      if (state.saved.bgColor) {
+        setCustomBg(state.saved.bgColor);
+      } else {
+        setCustomBg(defaults.primaryColor);
+      }
+    });
   }, [state, defaults.primaryColor]);
 
   const fe = state?.fieldErrors ?? {};

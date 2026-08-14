@@ -26,7 +26,12 @@ function motionClassName(
   return "";
 }
 
-export function HeroBackgroundCarousel({
+export function HeroBackgroundCarousel(props: Props) {
+  const slideKey = useMemo(() => props.slides.map((s) => s.url).join("|"), [props.slides]);
+  return <HeroBackgroundCarouselInner key={slideKey} {...props} />;
+}
+
+function HeroBackgroundCarouselInner({
   slides,
   slideDurationSec,
   motionEffect,
@@ -41,18 +46,12 @@ export function HeroBackgroundCarousel({
     setIndex((i) => (i + 1) % n);
   }, [n]);
 
-  const slideKey = useMemo(() => slides.map((s) => s.url).join("|"), [slides]);
-
   useEffect(() => {
     if (!canAutoplay) return;
     const ms = Math.max(3, slideDurationSec) * 1000;
     const id = window.setInterval(goNext, ms);
     return () => window.clearInterval(id);
   }, [canAutoplay, goNext, slideDurationSec, index]);
-
-  useEffect(() => {
-    setIndex(0);
-  }, [slideKey]);
 
   if (n === 0) return null;
 

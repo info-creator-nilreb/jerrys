@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useCallback, useEffect, useId, useState } from "react";
+import { useActionState, useCallback, useEffect, useId, useState, startTransition } from "react";
 import {
   changeCustomerPasswordAction,
   type CustomerAuthActionState,
@@ -37,7 +37,7 @@ export function CustomerChangePasswordForm({
   useResetPasswordFieldsOnServerError(state, resetPasswordFields);
 
   useEffect(() => {
-    if (state?.ok) resetPasswordFields();
+    if (state?.ok) startTransition(() => resetPasswordFields());
   }, [state, resetPasswordFields]);
 
   return (
