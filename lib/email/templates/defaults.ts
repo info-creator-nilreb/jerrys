@@ -4,6 +4,7 @@ import {
 } from "@/lib/email/transactional-email-layout";
 import type { EmailTemplateKey } from "@/lib/email/templates/catalog";
 import { getEmailTemplateCatalogEntry } from "@/lib/email/templates/catalog";
+import { buildOrderConfirmationOrderlyHtml } from "@/lib/email/templates/order-confirmation-orderly-html";
 
 export type EmailTemplateDefaultContent = {
   key: EmailTemplateKey;
@@ -17,13 +18,7 @@ export type EmailTemplateDefaultContent = {
 const { textMuted, divider } = TRANSACTIONAL_EMAIL_DESIGN;
 
 function orderConfirmationHtml(): string {
-  return buildEditableTransactionalShell({
-    variant: "order",
-    documentTitle: "{{order.number}}",
-    heading: "Vielen Dank für deine Bestellung!",
-    intro: "Wir haben deine Bestellung erhalten und bereiten sie mit Sorgfalt vor.",
-    bodyHtml: `{{{order.number_card_html}}}{{{order.items_html}}}{{{order.totals_html}}}<p style="margin:20px 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.4;font-weight:400;color:#666666">Zahlungsinformationen</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#777777"><tr><td style="padding:4px 0;width:65%">Zahlungsart</td><td style="padding:4px 0;width:35%;text-align:right">{{order.payment_method}}</td></tr></table>{{{order.addresses_html}}}`,
-  });
+  return buildOrderConfirmationOrderlyHtml();
 }
 
 function orderShippedHtml(): string {
