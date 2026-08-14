@@ -637,9 +637,9 @@ export function CheckoutForm({
       action={workshopMpa ? "/api/workshop/complete-checkout" : undefined}
       method={workshopMpa ? "post" : undefined}
       onSubmit={workshopMpa ? undefined : onFormSubmit}
-      className="grid grid-cols-1 gap-0 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] lg:items-start"
+      className="grid grid-cols-1 lg:grid-cols-2 lg:items-stretch"
     >
-      <div className="order-2 min-w-0 border-b border-(--surface-muted) bg-white px-4 py-10 sm:px-8 lg:order-1 lg:border-b-0 lg:pr-12 lg:pl-0">
+      <div className="order-2 min-w-0 border-b border-(--surface-muted) bg-white px-4 py-10 sm:px-8 lg:order-1 lg:flex lg:justify-end lg:border-b-0 lg:py-12 lg:pr-10 xl:pr-16">
         <div className={CHECKOUT_FORM_COLUMN_CLASS}>
         <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
         {workshopBookingId ? (
@@ -1168,7 +1168,7 @@ export function CheckoutForm({
 
         <nav
           aria-label="Rechtliche Informationen"
-          className="mt-10 flex flex-wrap gap-x-4 gap-y-2 text-sm text-[#6b7280] underline-offset-2"
+          className="mt-10 flex flex-wrap justify-center gap-x-4 gap-y-2 text-center text-sm text-[#6b7280] underline-offset-2"
         >
           <Link
             href="/widerruf"
