@@ -110,7 +110,7 @@ export function CheckoutPaymentMethods({
     );
 
   return (
-    <div className="mt-4 max-w-lg">
+    <div className="mt-4 w-full">
       <fieldset className="overflow-hidden rounded-lg border border-[#e5e7eb] bg-white p-0">
         <legend className="sr-only">Mögliche Zahlungswege über PayPal</legend>
         {CHECKOUT_PAYPAL_METHOD_ROWS.map((row, i) => {
