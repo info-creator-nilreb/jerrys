@@ -277,6 +277,20 @@ function appendLineItem(order: ShopifyParsedOrder, row: Record<string, string>):
 }
 
 /**
+ * Shopify-Export: erste Zeile pro Bestellung hat `Id`; Folgezeilen oft leeres `Id`,
+ * manchmal wiederholtes `Name`. Gruppierung über `Id`, sonst gleicher `Name` = Fortsetzung.
+ */
+function isNewOrderRow(row: Record<string, string>, current: ShopifyParsedOrder | null): boolean {
+  const id = cell(row, "Id");
+  const name = cell(row, "Name");
+
+  if (id) return true;
+  if (!name) return false;
+  if (current && name === current.shopifyName) return false;
+  return true;
+}
+
+/**
  * Parst Shopify-Orders-CSV (eine Zeile pro Position; Order-Header oft nur in der ersten Zeile).
  */
 export function parseShopifyOrderCsv(csvText: string): ShopifyParsedOrder[] {
@@ -286,10 +300,7 @@ export function parseShopifyOrderCsv(csvText: string): ShopifyParsedOrder[] {
   let current: ShopifyParsedOrder | null = null;
 
   for (const row of csvRows) {
-    const name = cell(row, "Name");
-    const id = cell(row, "Id");
-
-    if (name || id) {
+    if (isNewOrderRow(row, current)) {
       current = newOrderFromRow(row);
       mergeOrderHeader(current, row);
       appendLineItem(current, row);
