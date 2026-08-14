@@ -10,8 +10,10 @@ export {
   isTerminalPaymentStatus,
 } from "@/features/orders/domain/payment-status-machine";
 export {
+  diagnoseShopifyOrderCsv,
   parseShopifyOrderCsv,
   parseShopifyMoneyToCents,
+  type ShopifyOrderCsvDiagnostics,
   type ShopifyParsedOrder,
 } from "@/features/orders/domain/shopify-order-csv";
 export {

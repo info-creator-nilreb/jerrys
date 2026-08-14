@@ -1,4 +1,4 @@
-import { csvRowsToObjects, parseCsv } from "@/features/catalog";
+import { csvRowsToObjects, detectCsvDelimiter, parseCsvAuto, stripUtf8Bom } from "@/features/catalog";
 
 export type ShopifyParsedOrderLine = {
   quantity: number;
@@ -46,8 +46,63 @@ export type ShopifyParsedOrder = {
 function cell(row: Record<string, string>, ...keys: string[]): string {
   for (const key of keys) {
     if (key in row && row[key] != null) return String(row[key]).trim();
+    const lower = key.toLowerCase();
+    for (const [k, v] of Object.entries(row)) {
+      if (k.trim().toLowerCase() === lower) return String(v).trim();
+    }
   }
   return "";
+}
+
+export type ShopifyOrderCsvDiagnostics = {
+  delimiter: "," | ";" | "\t";
+  dataRowCount: number;
+  headers: string[];
+  hasNameColumn: boolean;
+  hasIdColumn: boolean;
+  hasLineitemColumn: boolean;
+  hint: string;
+};
+
+/** Hilft bei leerer Vorschau (falsches Format, Trennzeichen, Spalten). */
+export function diagnoseShopifyOrderCsv(csvText: string): ShopifyOrderCsvDiagnostics {
+  const normalized = stripUtf8Bom(csvText);
+  const firstLine = normalized.split(/\r?\n/, 1)[0] ?? "";
+  const delimiter = detectCsvDelimiter(firstLine);
+  const rows = parseCsvAuto(normalized);
+  const objects = csvRowsToObjects(rows);
+  const headers = rows[0]?.map((h) => h.trim().replace(/^\uFEFF/, "")).filter(Boolean) ?? [];
+
+  const headerLower = new Set(headers.map((h) => h.toLowerCase()));
+  const hasNameColumn = headerLower.has("name");
+  const hasIdColumn = headerLower.has("id");
+  const hasLineitemColumn =
+    headerLower.has("lineitem name") ||
+    headerLower.has("lineitem quantity") ||
+    headerLower.has("lineitem price");
+
+  let hint = "";
+  if (objects.length === 0) {
+    hint = "Die CSV enthält keine Datenzeilen (nur Kopfzeile oder leer).";
+  } else if (!hasNameColumn && !hasIdColumn) {
+    hint = `Keine Spalten „Name“ oder „Id“ gefunden (Trennzeichen: „${delimiter}“). Kopfzeile prüfen — Shopify-Orders-Export aus dem Admin verwenden.`;
+  } else if (delimiter === ";") {
+    hint = "Semikolon-Trennung erkannt — Parser angepasst. Wenn weiterhin 0 Bestellungen: Export erneut als „CSV für Excel“ aus Shopify laden.";
+  } else if (!hasLineitemColumn) {
+    hint = "Keine Lineitem-Spalten gefunden — evtl. falscher Export-Typ (kein Bestell-CSV).";
+  } else {
+    hint = "Format wirkt plausibel — prüfe, ob „Name“/„Id“ in Datenzeilen befüllt sind.";
+  }
+
+  return {
+    delimiter,
+    dataRowCount: objects.length,
+    headers: headers.slice(0, 12),
+    hasNameColumn,
+    hasIdColumn,
+    hasLineitemColumn,
+    hint,
+  };
 }
 
 /** Shopify-Währungsstring → Cent (z. B. „65,35“ oder „65.35“). */
@@ -225,11 +280,12 @@ function appendLineItem(order: ShopifyParsedOrder, row: Record<string, string>):
  * Parst Shopify-Orders-CSV (eine Zeile pro Position; Order-Header oft nur in der ersten Zeile).
  */
 export function parseShopifyOrderCsv(csvText: string): ShopifyParsedOrder[] {
-  const rows = csvRowsToObjects(parseCsv(csvText));
+  const rows = parseCsvAuto(csvText);
+  const csvRows = csvRowsToObjects(rows);
   const orders: ShopifyParsedOrder[] = [];
   let current: ShopifyParsedOrder | null = null;
 
-  for (const row of rows) {
+  for (const row of csvRows) {
     const name = cell(row, "Name");
     const id = cell(row, "Id");
 

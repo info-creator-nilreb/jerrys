@@ -3,7 +3,14 @@
  * Server-only (Prisma, Embeddings, Import): `@/features/catalog/server`.
  */
 
-export { parseCsv, csvRowsToObjects } from "@/features/catalog/domain/parse-csv";
+export {
+  parseCsv,
+  parseCsvAuto,
+  csvRowsToObjects,
+  detectCsvDelimiter,
+  stripUtf8Bom,
+  type CsvDelimiter,
+} from "@/features/catalog/domain/parse-csv";
 export { defaultVariantSku } from "@/features/catalog/domain/default-variant-sku";
 export { categorySlugSchema } from "@/lib/catalog/category-schemas";
 export { parseShopifyProductCsv } from "@/features/catalog/domain/shopify-csv";

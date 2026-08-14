@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { diagnoseShopifyOrderCsv } from "@/features/orders";
 import { importShopifyOrdersFromCsv } from "@/features/orders/server";
 import { getAdminSession } from "@/lib/auth/admin-session";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
@@ -49,7 +50,7 @@ async function readCsvFromFormData(
   }
   if (file.size > SHOPIFY_ORDER_IMPORT_MAX_BYTES) {
     return {
-      error: `Datei zu groß (max. ${Math.round(SHOPIFY_ORDER_IMPORT_MAX_BYTES / (1024 * 1024))} MB).`,
+      error: `Datei zu groß (max. ${Math.round(SHOPIFY_ORDER_IMPORT_MAX_BYTES / (1024 * 1024))} MB). Nutze die CLI: npm run orders:import-shopify -- --file ./orders.csv`,
     };
   }
   try {
@@ -101,6 +102,13 @@ export async function previewShopifyOrderCsvImport(
       defaultTaxRatePercent: taxRatePercent,
       checkExistingInDb: true,
     });
+    if (report.orderCount === 0) {
+      const diag = diagnoseShopifyOrderCsv(csv.text);
+      return {
+        error: `Keine Bestellungen in der CSV erkannt. ${diag.hint}`,
+        summary: toSummary(report),
+      };
+    }
     return { ok: true, summary: toSummary(report) };
   } catch (e) {
     log.error("preview_failed", errorMeta(e));
