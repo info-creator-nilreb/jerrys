@@ -41,4 +41,19 @@ describe("buildEmailTemplatePreviewVars", () => {
     expect(order.items_html).not.toBe("<table>…</table>");
     expect(order.shipping_address_tracking_html).toContain("Versandadresse");
   });
+
+  it("nutzt für Erstattungsmail echtes Rückerstattungsbetrag-Fragment", () => {
+    const vars = buildEmailTemplatePreviewVars(
+      "order_refunded",
+      defaultTransactionalEmailBranding(),
+    );
+    const order = vars.order as Record<string, string>;
+    const email = vars.email as Record<string, string>;
+
+    expect(email.cta_label).toBe("Zurück zum Shop");
+    expect(order.refund_amount_row_html).toContain("Rückerstattungsbetrag");
+    expect(order.refund_amount_row_html).toContain("54,80");
+    expect(order.refund_amount_row_html).not.toContain("…");
+    expect(order.items_html).toContain("Gin Tasting Set");
+  });
 });
