@@ -115,7 +115,7 @@ export function transactionalCtaButton(
   const safeLabel = escapeHtmlForEmail(label);
   const primary = branding.primary;
   const primaryStrong = branding.primaryStrong;
-  return `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:28px 0 8px"><tr><td align="center" bgcolor="${primary}" style="border-radius:8px;border:2px solid ${primaryStrong}"><a href="${safeHref}" style="display:inline-block;padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:6px">${safeLabel}</a></td></tr></table>`;
+  return `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:28px 0 8px"><tr><td align="center"><a href="${safeHref}" style="display:inline-block;padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;background-color:${primary};border:2px solid ${primaryStrong};border-radius:8px;line-height:1.2">${safeLabel}</a></td></tr></table>`;
 }
 
 function footerLegalLink(href: string, label: string): string {
