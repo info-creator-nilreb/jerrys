@@ -6,9 +6,15 @@ import {
   upsertOrderEmailDeliveryLog,
 } from "@/lib/email/order-email-log";
 import { sendTransactionalEmail } from "@/lib/email/provider";
+import {
+  orderItemsIncludeForTransactionalEmail,
+  orderItemsToEmailLineItems,
+} from "@/lib/email/order-email-line-items";
+import { orderItemsHtml, orderItemsText } from "@/lib/email/templates/order-fragments";
 import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
 import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
 import { publicSiteBaseUrl } from "@/lib/email/template-utils";
+import { formatGermanDateMedium } from "@/lib/i18n/format-german-date";
 import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
 
 /**
@@ -25,11 +31,7 @@ export async function sendOrderCancelledIfNeeded(
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    select: {
-      orderNumber: true,
-      email: true,
-      shippingFirstName: true,
-    },
+    include: { items: orderItemsIncludeForTransactionalEmail },
   });
   if (!order) return;
 
@@ -38,11 +40,24 @@ export async function sendOrderCancelledIfNeeded(
   const successPath = `/checkout/erfolg?nr=${encodeURIComponent(order.orderNumber)}`;
   const successUrl = base ? `${base}${successPath}` : successPath;
 
+  const lineItems = orderItemsToEmailLineItems(order.items);
+  const cancelledDate = formatGermanDateMedium(order.cancelledAt ?? new Date());
+
   const vars = mergeTemplateVars(buildShopTemplateVars(branding, { heroVariant: "order" }), {
     customer: { first_name: order.shippingFirstName },
     order: {
       number: order.orderNumber,
       status_url: successUrl,
+      cancelled_date: cancelledDate,
+      items_html: orderItemsHtml(lineItems),
+      items_text: orderItemsText(
+        order.items.map((i) => ({
+          productTitleSnapshot: i.productTitleSnapshot,
+          quantity: i.quantity,
+          lineTotalGrossCents: i.lineTotalGrossCents,
+          currency: i.currency,
+        })),
+      ),
     },
   });
 
