@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CustomerLifecycleControls } from "@/app/admin/(dashboard)/customers/customer-lifecycle-controls";
 import type {
   AdminCustomerAccountState,
   AdminCustomerAddressBlock,
@@ -216,6 +217,14 @@ export default async function AdminCustomerDetailPage({
           </div>
         )}
       </div>
+
+      <CustomerLifecycleControls
+        customerKey={detail.customerKey}
+        displayName={detail.displayName}
+        orderCount={detail.orders.length}
+        deletable={detail.deletable}
+        deleteBlocker={detail.deleteBlocker}
+      />
     </div>
   );
 }

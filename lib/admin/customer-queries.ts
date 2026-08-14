@@ -1,5 +1,9 @@
 import { createHash } from "node:crypto";
 import { cache } from "react";
+import {
+  customerAdminDeleteBlocker,
+  type CustomerOrderDeleteSnapshot,
+} from "@/lib/admin/customer-admin-delete-rules";
 import { orderContributesToAdminCustomer } from "@/lib/checkout/paypal-express-placeholder";
 import { getPrisma } from "@/lib/db/prisma";
 
@@ -30,6 +34,9 @@ type OrderRowForCustomers = {
   createdAt: Date;
   totalGrossCents: number;
   currency: string;
+  idempotencyKey: string | null;
+  invoiceNumber: string | null;
+  payments: { status: string }[];
   shippingFirstName: string;
   shippingLastName: string;
   shippingCompany: string | null;
@@ -56,6 +63,9 @@ const orderSelectForCustomers = {
   createdAt: true,
   totalGrossCents: true,
   currency: true,
+  idempotencyKey: true,
+  invoiceNumber: true,
+  payments: { select: { status: true } },
   shippingFirstName: true,
   shippingLastName: true,
   shippingCompany: true,
@@ -82,6 +92,7 @@ export type AdminCustomerListRow = {
   latestOrderStatus: string;
   orderCount: number;
   lastOrderAt: Date;
+  deletable: boolean;
 };
 
 function shippingSnapshot(o: OrderRowForCustomers): string {
@@ -95,6 +106,64 @@ function shippingSnapshot(o: OrderRowForCustomers): string {
     o.shippingCity,
     o.shippingCountry,
   ].join("|");
+}
+
+function toOrderDeleteSnapshot(o: OrderRowForCustomers): CustomerOrderDeleteSnapshot {
+  return {
+    id: o.id,
+    orderNumber: o.orderNumber,
+    idempotencyKey: o.idempotencyKey,
+    invoiceNumber: o.invoiceNumber,
+    payments: o.payments,
+  };
+}
+
+async function accountStatesForEmails(
+  normalizedEmails: string[],
+): Promise<Map<string, AdminCustomerAccountState>> {
+  const prisma = getPrisma();
+  const customers = await prisma.customer.findMany({
+    where: { email: { in: normalizedEmails } },
+    select: {
+      email: true,
+      emailVerifiedAt: true,
+      isActive: true,
+      anonymizedAt: true,
+      createdAt: true,
+      lastLoginAt: true,
+      _count: { select: { orders: true } },
+    },
+  });
+
+  const byEmail = new Map(customers.map((c) => [c.email, c]));
+  const result = new Map<string, AdminCustomerAccountState>();
+
+  for (const norm of normalizedEmails) {
+    const customer = byEmail.get(norm);
+    if (!customer) {
+      result.set(norm, {
+        exists: false,
+        verified: false,
+        active: false,
+        anonymized: false,
+        createdAt: null,
+        lastLoginAt: null,
+        linkedOrderCount: 0,
+      });
+      continue;
+    }
+    result.set(norm, {
+      exists: true,
+      verified: Boolean(customer.emailVerifiedAt),
+      active: customer.isActive,
+      anonymized: Boolean(customer.anonymizedAt),
+      createdAt: customer.createdAt,
+      lastLoginAt: customer.lastLoginAt,
+      linkedOrderCount: customer._count.orders,
+    });
+  }
+
+  return result;
 }
 
 async function buildAllCustomerRows(): Promise<AdminCustomerListRow[]> {
@@ -128,10 +197,14 @@ async function buildAllCustomerRows(): Promise<AdminCustomerListRow[]> {
     agg.orders.push(o);
   }
 
+  const accountStates = await accountStatesForEmails([...byNorm.keys()]);
+
   const rows: AdminCustomerListRow[] = [];
   for (const [norm, agg] of byNorm) {
     const latest = agg.orders[0]!;
     const key = customerKeyFromNormalizedEmail(norm);
+    const account = accountStates.get(norm)!;
+    const deleteOrders = agg.orders.map(toOrderDeleteSnapshot);
     rows.push({
       customerKey: key,
       customerNumber: adminCustomerNumberLabel(key),
@@ -140,6 +213,7 @@ async function buildAllCustomerRows(): Promise<AdminCustomerListRow[]> {
       latestOrderStatus: latest.status,
       orderCount: agg.orders.length,
       lastOrderAt: latest.createdAt,
+      deletable: customerAdminDeleteBlocker(account, deleteOrders) == null,
     });
   }
 
@@ -194,6 +268,8 @@ export type AdminCustomerDetail = {
   displayName: string;
   email: string;
   account: AdminCustomerAccountState;
+  deletable: boolean;
+  deleteBlocker: string | null;
   shipping: AdminCustomerAddressBlock;
   billing: AdminCustomerAddressBlock;
   billingDiffersFromShipping: boolean;
@@ -245,46 +321,13 @@ function addressBlocksEqual(a: AdminCustomerAddressBlock, b: AdminCustomerAddres
 }
 
 async function accountStateForEmail(normalizedEmail: string): Promise<AdminCustomerAccountState> {
-  const prisma = getPrisma();
-  const customer = await prisma.customer.findUnique({
-    where: { email: normalizedEmail },
-    select: {
-      id: true,
-      emailVerifiedAt: true,
-      isActive: true,
-      anonymizedAt: true,
-      createdAt: true,
-      lastLoginAt: true,
-      _count: { select: { orders: true } },
-    },
-  });
-
-  if (!customer) {
-    return {
-      exists: false,
-      verified: false,
-      active: false,
-      anonymized: false,
-      createdAt: null,
-      lastLoginAt: null,
-      linkedOrderCount: 0,
-    };
-  }
-
-  return {
-    exists: true,
-    verified: Boolean(customer.emailVerifiedAt),
-    active: customer.isActive,
-    anonymized: Boolean(customer.anonymizedAt),
-    createdAt: customer.createdAt,
-    lastLoginAt: customer.lastLoginAt,
-    linkedOrderCount: customer._count.orders,
-  };
+  const states = await accountStatesForEmails([normalizedEmail]);
+  return states.get(normalizedEmail)!;
 }
 
-export async function getCustomerDetailForAdmin(
+export async function resolveNormalizedEmailFromCustomerKey(
   customerKey: string,
-): Promise<AdminCustomerDetail | null> {
+): Promise<string | null> {
   const wanted = customerKey.trim().toLowerCase();
   if (!/^[0-9a-f]{12}$/.test(wanted)) return null;
 
@@ -297,13 +340,48 @@ export async function getCustomerDetailForAdmin(
     norms.add(normalizeAdminCustomerEmail(email));
   }
 
-  let matchedNorm: string | null = null;
   for (const norm of norms) {
     if (customerKeyFromNormalizedEmail(norm) === wanted) {
-      matchedNorm = norm;
-      break;
+      return norm;
     }
   }
+  return null;
+}
+
+export async function getCustomerDeleteContextForAdmin(customerKey: string): Promise<{
+  customerKey: string;
+  normalizedEmail: string;
+  account: AdminCustomerAccountState;
+  orders: CustomerOrderDeleteSnapshot[];
+} | null> {
+  const wanted = customerKey.trim().toLowerCase();
+  const matchedNorm = await resolveNormalizedEmailFromCustomerKey(wanted);
+  if (!matchedNorm) return null;
+
+  const allOrders = (await getPrisma().order.findMany({
+    where: { email: { equals: matchedNorm, mode: "insensitive" } },
+    orderBy: { createdAt: "desc" },
+    select: orderSelectForCustomers,
+  })) as OrderRowForCustomers[];
+
+  const orders = allOrders.filter((o) => orderContributesToAdminCustomer(o));
+  if (orders.length === 0) return null;
+
+  const account = await accountStateForEmail(matchedNorm);
+
+  return {
+    customerKey: wanted,
+    normalizedEmail: matchedNorm,
+    account,
+    orders: orders.map(toOrderDeleteSnapshot),
+  };
+}
+
+export async function getCustomerDetailForAdmin(
+  customerKey: string,
+): Promise<AdminCustomerDetail | null> {
+  const wanted = customerKey.trim().toLowerCase();
+  const matchedNorm = await resolveNormalizedEmailFromCustomerKey(wanted);
   if (!matchedNorm) return null;
 
   const allOrders = (await getPrisma().order.findMany({
@@ -324,6 +402,8 @@ export async function getCustomerDetailForAdmin(
   const addressVariesAcrossOrders = orders.some((o) => shippingSnapshot(o) !== firstShip);
 
   const account = await accountStateForEmail(matchedNorm);
+  const deleteOrders = orders.map(toOrderDeleteSnapshot);
+  const deleteBlocker = customerAdminDeleteBlocker(account, deleteOrders);
 
   let displayName = [latest.shippingFirstName, latest.shippingLastName].filter(Boolean).join(" ").trim();
   if (!displayName) displayName = latest.email;
@@ -334,6 +414,8 @@ export async function getCustomerDetailForAdmin(
     displayName,
     email: latest.email,
     account,
+    deletable: deleteBlocker == null,
+    deleteBlocker,
     shipping,
     billing,
     billingDiffersFromShipping,
