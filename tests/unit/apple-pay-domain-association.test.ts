@@ -20,20 +20,15 @@ describe("applePayDomainAssociationBody", () => {
     expect(applePayDomainAssociationBody()).toBe("override-body");
   });
 
-  it("liefert unterschiedliche Dateien für sandbox und live", async () => {
+  it("liefert Merchant-Datei wenn kein Env-Override gesetzt ist", async () => {
     delete process.env.APPLE_PAY_DOMAIN_ASSOCIATION;
-    process.env.PAYPAL_ENV = "sandbox";
-    vi.resetModules();
-    const sandboxMod = await import("@/lib/payments/apple-pay-domain-association");
-    const sandbox = sandboxMod.applePayDomainAssociationBody();
-
     process.env.PAYPAL_ENV = "live";
-    vi.resetModules();
-    const liveMod = await import("@/lib/payments/apple-pay-domain-association");
-    const live = liveMod.applePayDomainAssociationBody();
-
-    expect(sandbox.length).toBeGreaterThan(100);
-    expect(live.length).toBeGreaterThan(100);
-    expect(sandbox).not.toBe(live);
+    const { applePayDomainAssociationBody } = await import(
+      "@/lib/payments/apple-pay-domain-association"
+    );
+    const body = applePayDomainAssociationBody();
+    expect(body.length).toBeGreaterThan(100);
+    // Vom Händler hinterlegte Registrierungsdatei (PayPal-Download)
+    expect(body.slice(0, 20)).toBe("7B227073704964223A22");
   });
 });

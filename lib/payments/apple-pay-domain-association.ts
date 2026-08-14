@@ -1,24 +1,33 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { paypalApiEnv } from "@/lib/payments/paypal-config";
 
+const PAYMENTS_DIR = join(process.cwd(), "lib/payments");
+
 /**
  * PayPal-Domain-Association für Apple Pay on the Web.
- * Offizielle Dateien:
- * - live: https://www.paypalobjects.com/devdoc/apple-pay/well-known/apple-developer-merchantid-domain-association
- * - sandbox: https://www.paypalobjects.com/devdoc/apple-pay/sandbox/apple-developer-merchantid-domain-association
  *
- * Override: `APPLE_PAY_DOMAIN_ASSOCIATION` (Rohinhalt der Datei), falls PayPal
- * eine merchant-spezifische Variante ausliefert.
+ * Priorität:
+ * 1. Env `APPLE_PAY_DOMAIN_ASSOCIATION` (Rohinhalt)
+ * 2. Merchant-Datei aus der PayPal-Domain-Registrierung
+ *    (`apple-pay-domain-association-merchant.txt`)
+ * 3. Offizielle PayPal-Datei je `PAYPAL_ENV` (sandbox/live)
+ *
+ * @see https://developer.paypal.com/docs/checkout/apm/apple-pay/
  */
 export function applePayDomainAssociationBody(): string {
   const fromEnv = process.env.APPLE_PAY_DOMAIN_ASSOCIATION?.trim();
   if (fromEnv) return fromEnv;
+
+  const merchantPath = join(PAYMENTS_DIR, "apple-pay-domain-association-merchant.txt");
+  if (existsSync(merchantPath)) {
+    return readFileSync(merchantPath, "utf8");
+  }
 
   const file =
     paypalApiEnv() === "live"
       ? "apple-pay-domain-association-live.txt"
       : "apple-pay-domain-association-sandbox.txt";
 
-  return readFileSync(join(process.cwd(), "lib/payments", file), "utf8");
+  return readFileSync(join(PAYMENTS_DIR, file), "utf8");
 }
