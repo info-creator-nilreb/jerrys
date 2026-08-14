@@ -46,6 +46,8 @@ export async function listOrdersForAdmin() {
       totalGrossCents: true,
       currency: true,
       createdAt: true,
+      idempotencyKey: true,
+      invoiceNumber: true,
       _count: { select: { items: true } },
       payments: { select: { status: true } },
     },
