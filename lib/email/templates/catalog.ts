@@ -107,6 +107,34 @@ export const EMAIL_TEMPLATE_CATALOG: EmailTemplateCatalogEntry[] = [
         example: "<table>…</table>",
       },
       {
+        path: "order.addresses_html",
+        label: "Versand- & Rechnungsadresse (2 Spalten)",
+        html: true,
+        example: "<table>…</table>",
+      },
+      {
+        path: "order.shipping_address_html",
+        label: "Versand-/Abholadresse",
+        html: true,
+        example: "<p>Max Muster<br/>Musterstraße 1…</p>",
+      },
+      {
+        path: "order.billing_address_html",
+        label: "Rechnungsadresse",
+        html: true,
+        example: "<p>Max Muster<br/>Musterstraße 1…</p>",
+      },
+      {
+        path: "order.shipping_address_text",
+        label: "Versand-/Abholadresse (Text)",
+        example: "Max Muster\nMusterstraße 1\n10115 Berlin",
+      },
+      {
+        path: "order.billing_address_text",
+        label: "Rechnungsadresse (Text)",
+        example: "Max Muster\nMusterstraße 1\n10115 Berlin",
+      },
+      {
         path: "order.items_text",
         label: "Positionen (Text)",
         example: "- Produkt × 1: 49,90 €",

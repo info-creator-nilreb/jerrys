@@ -22,7 +22,7 @@ function orderConfirmationHtml(): string {
     documentTitle: "{{order.number}}",
     heading: "Vielen Dank für deine Bestellung!",
     intro: "Wir haben deine Bestellung erhalten und bereiten sie mit Sorgfalt vor.",
-    bodyHtml: `{{{order.number_card_html}}}{{{order.items_html}}}{{{order.totals_html}}}`,
+    bodyHtml: `{{{order.number_card_html}}}{{{order.items_html}}}{{{order.totals_html}}}<p style="margin:20px 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.4;font-weight:400;color:#666666">Zahlungsinformationen</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#777777"><tr><td style="padding:4px 0;width:65%">Zahlungsart</td><td style="padding:4px 0;width:35%;text-align:right">{{order.payment_method}}</td></tr></table>{{{order.addresses_html}}}`,
   });
 }
 
@@ -124,6 +124,12 @@ const DEFAULTS: Record<EmailTemplateKey, Omit<EmailTemplateDefaultContent, "key"
       "",
       "Positionen:",
       "{{order.items_text}}",
+      "",
+      "Versandadresse:",
+      "{{order.shipping_address_text}}",
+      "",
+      "Rechnungsadresse:",
+      "{{order.billing_address_text}}",
       "",
       "Bestellung ansehen: {{email.cta_url}}",
       "",
