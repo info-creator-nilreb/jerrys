@@ -37,7 +37,8 @@ export default async function ClaimGuestOrdersPage() {
           {session.email ? (
             <span className="font-medium text-(--foreground-heading)">{session.email}</span>
           ) : null}
-          . Nach der Zuordnung erscheinen sie dauerhaft in deinem Konto.
+          . Normalerweise ordnen wir sie nach der E-Mail-Bestätigung automatisch zu; hier kannst du
+          es bei Bedarf manuell nachholen.
         </p>
       </header>
 

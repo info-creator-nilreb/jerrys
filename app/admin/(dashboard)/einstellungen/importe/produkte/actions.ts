@@ -10,7 +10,7 @@ import {
   SHOPIFY_IMPORT_MAX_BYTES,
   type ShopifyImportActionState,
   type ShopifyImportAdminSummary,
-} from "@/app/admin/(dashboard)/products/shopify-import/import-shared";
+} from "@/app/admin/(dashboard)/einstellungen/importe/produkte/import-shared";
 
 const log = createLogger("admin.shopify-import");
 

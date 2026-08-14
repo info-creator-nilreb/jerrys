@@ -76,6 +76,7 @@ export {
   listClaimableGuestOrders,
   countClaimableGuestOrders,
   claimGuestOrdersForCustomer,
+  autoClaimGuestOrdersAfterVerification,
   type ClaimableGuestOrder,
   type ClaimGuestOrdersResult,
 } from "@/features/customers/application/guest-order-claim";

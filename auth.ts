@@ -13,6 +13,7 @@ import { getPrisma } from "@/lib/db/prisma";
 import { createLogger } from "@/lib/logging/logger";
 import {
   authenticateCustomerPassword,
+  autoClaimGuestOrdersAfterVerification,
   consumeCustomerMagicLink,
   markCustomerLoggedIn,
   resolveAuthSubjectKind,
@@ -150,6 +151,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
         try {
           if (kind === "customer") {
             await markCustomerLoggedIn(id);
+            await autoClaimGuestOrdersAfterVerification(id);
             return;
           }
           await getPrisma().adminUser.update({

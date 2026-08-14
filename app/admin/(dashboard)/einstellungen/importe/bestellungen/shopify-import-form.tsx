@@ -2,17 +2,16 @@
 
 import { useCallback, useId, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { ExternalLink, FileUp, LoaderCircle } from "lucide-react";
-import { DELIVERY_TIME_OPTIONS } from "@/lib/catalog/delivery-options";
+import { FileUp, LoaderCircle } from "lucide-react";
 import {
-  applyShopifyCsvImport,
-  previewShopifyCsvImport,
-} from "@/app/admin/(dashboard)/products/shopify-import/actions";
+  applyShopifyOrderCsvImport,
+  previewShopifyOrderCsvImport,
+} from "@/app/admin/(dashboard)/einstellungen/importe/bestellungen/actions";
 import {
-  SHOPIFY_IMPORT_MAX_BYTES,
-  type ShopifyImportActionState,
-  type ShopifyImportAdminSummary,
-} from "@/app/admin/(dashboard)/products/shopify-import/import-shared";
+  SHOPIFY_ORDER_IMPORT_MAX_BYTES,
+  type ShopifyOrderImportActionState,
+  type ShopifyOrderImportAdminSummary,
+} from "@/app/admin/(dashboard)/einstellungen/importe/bestellungen/import-shared";
 
 function statusLabel(status: string): string {
   switch (status) {
@@ -32,8 +31,6 @@ function statusLabel(status: string): string {
       return "Ungültig";
     case "error":
       return "Fehler";
-    case "ok":
-      return "OK";
     default:
       return status;
   }
@@ -53,25 +50,25 @@ function statusClass(status: string): string {
   return "text-[#374151]";
 }
 
-function SummaryCards({ summary }: { summary: ShopifyImportAdminSummary }) {
+function SummaryCards({ summary }: { summary: ShopifyOrderImportAdminSummary }) {
   const items =
     summary.mode === "apply"
       ? [
-          { label: "Produkte", value: summary.productCount },
+          { label: "Bestellungen", value: summary.orderCount },
           { label: "Angelegt", value: summary.createdCount },
           { label: "Aktualisiert", value: summary.updatedCount },
           { label: "Übersprungen", value: summary.skippedCount },
           { label: "Ungültig", value: summary.invalidCount },
         ]
       : [
-          { label: "Produkte", value: summary.productCount },
+          { label: "Bestellungen", value: summary.orderCount },
           { label: "Gültig", value: summary.validCount },
           { label: "Ungültig", value: summary.invalidCount },
           { label: "Würde überspringen", value: summary.skippedCount },
         ];
 
   return (
-    <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+    <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
       {items.map((item) => (
         <div
           key={item.label}
@@ -87,9 +84,9 @@ function SummaryCards({ summary }: { summary: ShopifyImportAdminSummary }) {
   );
 }
 
-function ResultTable({ summary }: { summary: ShopifyImportAdminSummary }) {
-  if (summary.products.length === 0) {
-    return <p className="mt-6 text-sm text-[#6b7280]">Keine Produkte in der CSV erkannt.</p>;
+function ResultTable({ summary }: { summary: ShopifyOrderImportAdminSummary }) {
+  if (summary.orders.length === 0) {
+    return <p className="mt-6 text-sm text-[#6b7280]">Keine Bestellungen in der CSV erkannt.</p>;
   }
 
   const showLinks = summary.mode === "apply";
@@ -99,18 +96,16 @@ function ResultTable({ summary }: { summary: ShopifyImportAdminSummary }) {
       <table className="min-w-full text-left text-sm">
         <thead className="border-b border-[#e8eaed] bg-[#f7f8fa] text-[#374151]">
           <tr>
-            <th className="px-3 py-2.5 font-medium">Handle / Slug</th>
+            <th className="px-3 py-2.5 font-medium">Shopify / Nr.</th>
+            <th className="px-3 py-2.5 font-medium">E-Mail</th>
             <th className="px-3 py-2.5 font-medium">Status</th>
-            <th className="px-3 py-2.5 font-medium">Varianten</th>
-            <th className="px-3 py-2.5 font-medium">Bilder</th>
+            <th className="px-3 py-2.5 font-medium">Positionen</th>
             <th className="px-3 py-2.5 font-medium">Hinweise</th>
-            {showLinks ? (
-              <th className="px-3 py-2.5 font-medium text-right">Links</th>
-            ) : null}
+            {showLinks ? <th className="px-3 py-2.5 font-medium text-right">Admin</th> : null}
           </tr>
         </thead>
         <tbody className="divide-y divide-[#e8eaed]">
-          {summary.products.map((row) => {
+          {summary.orders.map((row) => {
             const notes = [
               ...(row.message ? [row.message] : []),
               ...row.errors,
@@ -121,21 +116,24 @@ function ResultTable({ summary }: { summary: ShopifyImportAdminSummary }) {
                 ? ` (+${row.warnings.length - 3} weitere Warnungen)`
                 : "";
             const canLink =
-              Boolean(row.productId) &&
+              Boolean(row.orderId) &&
               (row.status === "created" || row.status === "updated");
             return (
-              <tr key={`${row.handle}-${row.status}-${row.slug}`} className="bg-white align-top">
+              <tr
+                key={`${row.orderNumber}-${row.status}`}
+                className="bg-white align-top"
+              >
                 <td className="px-3 py-2.5">
-                  <div className="font-medium text-[#1f2937]">{row.slug}</div>
-                  {row.handle !== row.slug ? (
-                    <div className="text-xs text-[#6b7280]">{row.handle}</div>
+                  <div className="font-medium text-[#1f2937]">{row.orderNumber}</div>
+                  {row.shopifyName ? (
+                    <div className="text-xs text-[#6b7280]">{row.shopifyName}</div>
                   ) : null}
                 </td>
+                <td className="px-3 py-2.5 text-[#374151]">{row.email || "—"}</td>
                 <td className={`px-3 py-2.5 font-medium ${statusClass(row.status)}`}>
                   {statusLabel(row.status)}
                 </td>
-                <td className="px-3 py-2.5 tabular-nums text-[#374151]">{row.variantCount}</td>
-                <td className="px-3 py-2.5 tabular-nums text-[#374151]">{row.imageCount}</td>
+                <td className="px-3 py-2.5 tabular-nums text-[#374151]">{row.lineCount}</td>
                 <td className="px-3 py-2.5 text-[#6b7280]">
                   {notes.length === 0 ? (
                     <span className="text-[#9ca3af]">—</span>
@@ -151,32 +149,12 @@ function ResultTable({ summary }: { summary: ShopifyImportAdminSummary }) {
                 {showLinks ? (
                   <td className="px-3 py-2.5 text-right">
                     {canLink ? (
-                      <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
-                        {row.isActive ? (
-                          <a
-                            href={`/produkte/${row.slug}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
-                          >
-                            Vorschau
-                            <ExternalLink className="size-3.5" aria-hidden />
-                          </a>
-                        ) : (
-                          <span
-                            className="text-[#9ca3af]"
-                            title="Produkt ist inaktiv — nach Aktivierung im Shop erreichbar"
-                          >
-                            Keine Vorschau
-                          </span>
-                        )}
-                        <Link
-                          href={`/admin/products/${row.productId}/edit`}
-                          className="font-medium text-primary hover:underline"
-                        >
-                          Bearbeiten
-                        </Link>
-                      </div>
+                      <Link
+                        href={`/admin/orders/${row.orderId}`}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        Öffnen
+                      </Link>
                     ) : (
                       <span className="text-[#9ca3af]">—</span>
                     )}
@@ -194,19 +172,13 @@ function ResultTable({ summary }: { summary: ShopifyImportAdminSummary }) {
 function buildImportFormData(opts: {
   file: File;
   taxRatePercent: string;
-  deliveryTimeKey: string;
   updateExisting: boolean;
-  allowIncompleteAsDraft: boolean;
-  mirrorImages: boolean;
   confirmApply?: boolean;
 }): FormData {
   const fd = new FormData();
   fd.set("file", opts.file);
   fd.set("taxRatePercent", opts.taxRatePercent);
-  fd.set("deliveryTimeKey", opts.deliveryTimeKey);
   if (opts.updateExisting) fd.set("updateExisting", "true");
-  if (opts.allowIncompleteAsDraft) fd.set("allowIncompleteAsDraft", "true");
-  if (opts.mirrorImages) fd.set("mirrorImages", "true");
   if (opts.confirmApply) fd.set("confirmApply", "true");
   return fd;
 }
@@ -223,18 +195,15 @@ function pickCsvFile(list: FileList | File[] | null): File | null {
   return okType ? file : null;
 }
 
-export function ShopifyImportForm() {
+export function ShopifyOrderImportForm() {
   const formId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [taxRatePercent, setTaxRatePercent] = useState("19");
-  const [deliveryTimeKey, setDeliveryTimeKey] = useState("2-4-werktage");
   const [updateExisting, setUpdateExisting] = useState(false);
-  const [allowIncompleteAsDraft, setAllowIncompleteAsDraft] = useState(true);
-  const [mirrorImages, setMirrorImages] = useState(true);
   const [confirmApply, setConfirmApply] = useState(false);
-  const [state, setState] = useState<ShopifyImportActionState>(null);
+  const [state, setState] = useState<ShopifyOrderImportActionState>(null);
   const [pending, startTransition] = useTransition();
   const [phase, setPhase] = useState<"idle" | "preview" | "apply">("idle");
 
@@ -252,9 +221,9 @@ export function ShopifyImportForm() {
       if (invalidMessage) setState({ error: invalidMessage });
       return;
     }
-    if (next.size > SHOPIFY_IMPORT_MAX_BYTES) {
+    if (next.size > SHOPIFY_ORDER_IMPORT_MAX_BYTES) {
       setState({
-        error: `Datei zu groß (max. ${Math.round(SHOPIFY_IMPORT_MAX_BYTES / (1024 * 1024))} MB).`,
+        error: `Datei zu groß (max. ${Math.round(SHOPIFY_ORDER_IMPORT_MAX_BYTES / (1024 * 1024))} MB).`,
       });
       return;
     }
@@ -265,21 +234,14 @@ export function ShopifyImportForm() {
 
   function runPreview() {
     if (!file) {
-      setState({ error: "Bitte eine Shopify-Produkt-CSV auswählen." });
+      setState({ error: "Bitte eine Shopify-Bestell-CSV auswählen." });
       return;
     }
     setConfirmApply(false);
     setPhase("preview");
-    const fd = buildImportFormData({
-      file,
-      taxRatePercent,
-      deliveryTimeKey,
-      updateExisting,
-      allowIncompleteAsDraft,
-      mirrorImages,
-    });
+    const fd = buildImportFormData({ file, taxRatePercent, updateExisting });
     startTransition(async () => {
-      const next = await previewShopifyCsvImport(null, fd);
+      const next = await previewShopifyOrderCsvImport(null, fd);
       setState(next);
       setPhase("idle");
     });
@@ -291,14 +253,11 @@ export function ShopifyImportForm() {
     const fd = buildImportFormData({
       file,
       taxRatePercent,
-      deliveryTimeKey,
       updateExisting,
-      allowIncompleteAsDraft,
-      mirrorImages,
       confirmApply: true,
     });
     startTransition(async () => {
-      const next = await applyShopifyCsvImport(null, fd);
+      const next = await applyShopifyOrderCsvImport(null, fd);
       setState(next);
       setPhase("idle");
     });
@@ -309,7 +268,7 @@ export function ShopifyImportForm() {
       <div className="space-y-6">
         <div>
           <label htmlFor={`${formId}-file`} className="text-sm font-medium text-[#374151]">
-            Shopify-Produkt-CSV
+            Shopify-Bestell-CSV
           </label>
           <div
             role="button"
@@ -345,10 +304,7 @@ export function ShopifyImportForm() {
               setDragOver(false);
               if (pending) return;
               const picked = pickCsvFile(e.dataTransfer.files);
-              assignFile(
-                picked,
-                picked ? undefined : "Bitte eine CSV-Datei ablegen (.csv).",
-              );
+              assignFile(picked, picked ? undefined : "Bitte eine CSV-Datei ablegen (.csv).");
             }}
             className={`mt-2 flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-10 transition-colors ${
               pending
@@ -366,8 +322,8 @@ export function ShopifyImportForm() {
               CSV hierher ziehen oder Datei auswählen
             </p>
             <p className="mt-1 text-center text-xs text-[#9ca3af]">
-              Shopify Admin → Products → Export · max.{" "}
-              {Math.round(SHOPIFY_IMPORT_MAX_BYTES / (1024 * 1024))} MB · .csv
+              Shopify Admin → Bestellungen → Export · max.{" "}
+              {Math.round(SHOPIFY_ORDER_IMPORT_MAX_BYTES / (1024 * 1024))} MB · .csv
             </p>
             <button
               type="button"
@@ -388,10 +344,7 @@ export function ShopifyImportForm() {
               className="sr-only"
               onChange={(e) => {
                 const picked = pickCsvFile(e.target.files);
-                assignFile(
-                  picked,
-                  picked ? undefined : "Bitte eine CSV-Datei wählen (.csv).",
-                );
+                assignFile(picked, picked ? undefined : "Bitte eine CSV-Datei wählen (.csv).");
                 e.target.value = "";
               }}
             />
@@ -401,51 +354,24 @@ export function ShopifyImportForm() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor={`${formId}-tax`} className="text-sm font-medium text-[#374151]">
-              Steuersatz
-            </label>
-            <select
-              id={`${formId}-tax`}
-              value={taxRatePercent}
-              disabled={pending}
-              onChange={(e) => {
-                setTaxRatePercent(e.target.value);
-                setState(null);
-                setConfirmApply(false);
-              }}
-              className="mt-1.5 w-full rounded-md border border-[#e3e4e8] bg-white px-3 py-2 text-sm text-[#1f2937] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-            >
-              <option value="19">19 % (Standard)</option>
-              <option value="7">7 %</option>
-            </select>
-            <p className="mt-1 text-xs text-[#6b7280]">
-              Shopify-Preise werden als Brutto interpretiert.
-            </p>
-          </div>
-          <div>
-            <label htmlFor={`${formId}-delivery`} className="text-sm font-medium text-[#374151]">
-              Lieferzeit (Default)
-            </label>
-            <select
-              id={`${formId}-delivery`}
-              value={deliveryTimeKey}
-              disabled={pending}
-              onChange={(e) => {
-                setDeliveryTimeKey(e.target.value);
-                setState(null);
-                setConfirmApply(false);
-              }}
-              className="mt-1.5 w-full rounded-md border border-[#e3e4e8] bg-white px-3 py-2 text-sm text-[#1f2937] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-            >
-              {DELIVERY_TIME_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div>
+          <label htmlFor={`${formId}-tax`} className="text-sm font-medium text-[#374151]">
+            Steuersatz (Positionen ohne SKU-Match)
+          </label>
+          <select
+            id={`${formId}-tax`}
+            value={taxRatePercent}
+            disabled={pending}
+            onChange={(e) => {
+              setTaxRatePercent(e.target.value);
+              setState(null);
+              setConfirmApply(false);
+            }}
+            className="mt-1.5 w-full max-w-xs rounded-md border border-[#e3e4e8] bg-white px-3 py-2 text-sm text-[#1f2937] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="19">19 % (Standard)</option>
+            <option value="7">7 %</option>
+          </select>
         </div>
 
         <label className="flex items-start gap-3 text-sm text-[#374151]">
@@ -461,55 +387,18 @@ export function ShopifyImportForm() {
             className="mt-0.5 size-4 rounded border-[#d1d5db] text-primary focus:ring-primary"
           />
           <span>
-            <span className="font-medium">Bestehende Produkte aktualisieren</span>
+            <span className="font-medium">Bereits importierte Bestellungen aktualisieren</span>
             <span className="mt-0.5 block text-[#6b7280]">
-              Treffer über Slug (Handle). Ohne Haken werden vorhandene Slugs übersprungen.
+              Treffer über Shopify-Id (idempotencyKey). Ohne Haken werden Duplikate übersprungen.
             </span>
           </span>
         </label>
 
-        <label className="flex items-start gap-3 text-sm text-[#374151]">
-          <input
-            type="checkbox"
-            checked={allowIncompleteAsDraft}
-            disabled={pending}
-            onChange={(e) => {
-              setAllowIncompleteAsDraft(e.target.checked);
-              setState(null);
-              setConfirmApply(false);
-            }}
-            className="mt-0.5 size-4 rounded border-[#d1d5db] text-primary focus:ring-primary"
-          />
-          <span>
-            <span className="font-medium">Unvollständige als Entwurf (inaktiv)</span>
-            <span className="mt-0.5 block text-[#6b7280]">
-              Fehlende Shopify-SKUs werden generiert; fehlende Preise/Bestände → Entwurf statt
-              Abbruch.
-            </span>
-          </span>
-        </label>
-
-        <label className="flex items-start gap-3 text-sm text-[#374151]">
-          <input
-            type="checkbox"
-            checked={mirrorImages}
-            disabled={pending}
-            onChange={(e) => {
-              setMirrorImages(e.target.checked);
-              setState(null);
-              setConfirmApply(false);
-            }}
-            className="mt-0.5 size-4 rounded border-[#d1d5db] text-primary focus:ring-primary"
-          />
-          <span>
-            <span className="font-medium">Bilder herunterladen und ablegen</span>
-            <span className="mt-0.5 block text-[#6b7280]">
-              Auf Vercel nur mit Blob (<code className="text-xs">BLOB_READ_WRITE_TOKEN</code>).
-              Sonst bleiben Shopify-CDN-URLs erhalten (Storefront kann sie anzeigen). HEIC wird
-              übersprungen.
-            </span>
-          </span>
-        </label>
+        <div className="rounded-md border border-[#e8eaed] bg-[#f9fafb] px-4 py-3 text-sm text-[#6b7280]">
+          Importierte Bestellungen werden als <strong className="font-medium text-[#374151]">Gastbestellungen</strong>{" "}
+          angelegt. Kunden mit derselben E-Mail sehen sie nach Registrierung und Verifikation
+          automatisch im Konto.
+        </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <button
@@ -524,7 +413,7 @@ export function ShopifyImportForm() {
             Vorschau prüfen
           </button>
           <Link
-            href="/admin/products"
+            href="/admin/orders"
             className="rounded-md px-3 py-2 text-sm font-medium text-[#6b7280] hover:text-[#374151]"
           >
             Abbrechen
@@ -548,7 +437,7 @@ export function ShopifyImportForm() {
           </h2>
           <p className="mt-1 text-sm text-[#6b7280]">
             {summary.mode === "apply"
-              ? "Schreibvorgänge sind abgeschlossen. Bilder zeigen ggf. noch auf Shopify-URLs."
+              ? "Historische Bestellungen wurden importiert. Kein Bestandsabzug, keine E-Mails."
               : "Noch nichts geschrieben. Prüfe Status und Hinweise, bevor du importierst."}
           </p>
           <SummaryCards summary={summary} />
@@ -585,8 +474,8 @@ export function ShopifyImportForm() {
           {applyDone ? (
             <p className="mt-6 text-sm text-primary">
               Fertig.{" "}
-              <Link href="/admin/products" className="font-medium underline">
-                Zum Katalog
+              <Link href="/admin/orders" className="font-medium underline">
+                Zu den Bestellungen
               </Link>
             </p>
           ) : null}

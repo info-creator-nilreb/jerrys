@@ -47,6 +47,13 @@ function isInhaltePagesPath(pathname: string): boolean {
   return pathname.startsWith("/admin/inhalte/");
 }
 
+function isOrdersPath(pathname: string): boolean {
+  return (
+    pathname.startsWith("/admin/orders") &&
+    !pathname.startsWith("/admin/orders/shopify-import")
+  );
+}
+
 function isKatalogPath(pathname: string): boolean {
   return (
     pathname.startsWith("/admin/products") ||
@@ -56,13 +63,27 @@ function isKatalogPath(pathname: string): boolean {
   );
 }
 
+function isEinstellungenShopPath(pathname: string): boolean {
+  return (
+    pathname === "/admin/einstellungen" ||
+    (pathname.startsWith("/admin/einstellungen/") &&
+      !pathname.startsWith("/admin/einstellungen/integrationen") &&
+      !pathname.startsWith("/admin/einstellungen/importe"))
+  );
+}
+
 /**
  * Shopify-ähnliche Admin-IA: operative Bereiche (Bestellungen, Termine, Katalog, Kunden)
  * oben; Inhalte/Marketing und Shop-spezifika darunter; Einstellungen am Ende.
  */
 const mainNav: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: IconDashboard },
-  { href: "/admin/orders", label: "Bestellungen", icon: IconOrders },
+  {
+    href: "/admin/orders",
+    label: "Bestellungen",
+    icon: IconOrders,
+    isActivePath: isOrdersPath,
+  },
   { href: "/admin/termine", label: "Termine", icon: IconWorkshops },
   {
     href: "/admin/products",
@@ -77,13 +98,6 @@ const mainNav: NavItem[] = [
           pathname.startsWith("/admin/products") &&
           !pathname.startsWith("/admin/products/shopify-import") &&
           !pathname.startsWith("/admin/products/import"),
-      },
-      {
-        href: "/admin/products/shopify-import",
-        label: "Shopify-Import",
-        isActivePath: (pathname) =>
-          pathname.startsWith("/admin/products/shopify-import") ||
-          pathname.startsWith("/admin/products/import"),
       },
       {
         href: "/admin/collections",
@@ -137,15 +151,17 @@ const mainNav: NavItem[] = [
       {
         href: "/admin/einstellungen",
         label: "Shop",
-        isActivePath: (pathname) =>
-          pathname === "/admin/einstellungen" ||
-          (pathname.startsWith("/admin/einstellungen/") &&
-            !pathname.startsWith("/admin/einstellungen/integrationen")),
+        isActivePath: isEinstellungenShopPath,
       },
       {
         href: "/admin/einstellungen/integrationen",
         label: "Integrationen",
         isActivePath: (pathname) => pathname.startsWith("/admin/einstellungen/integrationen"),
+      },
+      {
+        href: "/admin/einstellungen/importe",
+        label: "Importe",
+        isActivePath: (pathname) => pathname.startsWith("/admin/einstellungen/importe"),
       },
     ],
   },

@@ -1,4 +1,4 @@
-import { WORKSHOP_BOOKING_EVENT_CONFIRMED } from "@/features/workshops/application/workshop-booking-events";
+import { WORKSHOP_BOOKING_EVENT_CONFIRMED } from "@/features/workshops";
 import { getPrisma } from "@/lib/db/prisma";
 import { isMissingSchemaError } from "@/lib/db/prisma-error";
 

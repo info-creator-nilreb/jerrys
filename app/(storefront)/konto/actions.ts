@@ -163,9 +163,16 @@ export async function verifyEmailAction(
     token: formData.get("token"),
   });
   if (!result.ok) return { ok: false, message: result.message };
+  const claimed = result.claimedGuestOrderCount;
+  const claimHint =
+    claimed === 1
+      ? " 1 frühere Bestellung wurde deinem Konto zugeordnet."
+      : claimed > 1
+        ? ` ${claimed} frühere Bestellungen wurden deinem Konto zugeordnet.`
+        : "";
   return {
     ok: true,
-    message: "E-Mail bestätigt. Du kannst dich jetzt anmelden.",
+    message: `E-Mail bestätigt.${claimHint} Du kannst dich jetzt anmelden.`,
   };
 }
 

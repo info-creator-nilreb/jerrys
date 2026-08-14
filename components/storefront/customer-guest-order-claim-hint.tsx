@@ -19,8 +19,8 @@ export function CustomerGuestOrderClaimHint({ orderCount }: { orderCount: number
               : `${orderCount} frühere Bestellungen gefunden`}
           </p>
           <p className="mt-1 text-(--foreground-muted)">
-            Ohne Konto aufgegeben, mit deiner bestätigten E-Mail-Adresse. Du kannst sie deinem Konto
-            zuordnen.
+            Ohne Konto aufgegeben, mit deiner bestätigten E-Mail-Adresse. Nach der Bestätigung
+            ordnen wir sie in der Regel automatisch zu — hier kannst du es manuell nachholen.
           </p>
         </div>
       </div>

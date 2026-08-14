@@ -44,11 +44,7 @@ export function StorefrontHeaderUiProvider({ children }: { children: ReactNode }
   const [overlays, setOverlays] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    if (!isHome) {
-      setScrolled(false);
-      setHovered(false);
-      return;
-    }
+    if (!isHome) return;
     const onScroll = () => {
       setScrolled(window.scrollY > SCROLL_SOLID_PX);
     };
@@ -70,8 +66,10 @@ export function StorefrontHeaderUiProvider({ children }: { children: ReactNode }
   }, []);
 
   const overlayOpen = Object.keys(overlays).length > 0;
+  const headerHovered = isHome ? hovered : false;
+  const headerScrolled = isHome ? scrolled : false;
   const tone: StorefrontHeaderTone =
-    isHome && !hovered && !scrolled && !overlayOpen ? "transparent" : "solid";
+    isHome && !headerHovered && !headerScrolled && !overlayOpen ? "transparent" : "solid";
 
   const value = useMemo<HeaderUiValue>(
     () => ({
