@@ -5,6 +5,7 @@
 export const EMAIL_TEMPLATE_KEYS = [
   "order_confirmation",
   "order_shipped",
+  "order_picked_up",
   "order_cancelled",
   "order_refunded",
   "workshop_booking_confirmation",
@@ -176,6 +177,48 @@ export const EMAIL_TEMPLATE_CATALOG: EmailTemplateCatalogEntry[] = [
       {
         path: "order.shipping_address_text",
         label: "Versand-/Abholadresse (Text)",
+        example: "Max Muster\nMusterstraße 1\n10115 Berlin",
+      },
+      {
+        path: "order.items_text",
+        label: "Positionen (Text)",
+        example: "- Produkt × 1: 49,90 €",
+      },
+    ],
+  },
+  {
+    key: "order_picked_up",
+    name: "Abholbestätigung",
+    description: "Nach Statuswechsel auf „abgeholt“ (optional mit Rechnungs-PDF).",
+    group: "bestellungen",
+    variables: [
+      ...SHOP_VARS,
+      ...CTA_VARS,
+      { path: "customer.first_name", label: "Vorname", example: "Alex" },
+      { path: "order.number", label: "Bestellnummer", example: "ORD-1001" },
+      { path: "order.invoice_number", label: "Rechnungsnummer", example: "RE-2026-0042" },
+      { path: "order.invoice_note", label: "Rechnungshinweis", example: " (PDF angehängt)" },
+      {
+        path: "order.invoice_note_html",
+        label: "Rechnungshinweis (HTML)",
+        html: true,
+        example: "<p>Rechnungsnummer RE-2026-0042 — PDF angehängt</p>",
+      },
+      {
+        path: "order.items_html",
+        label: "Positionen-Tabelle",
+        html: true,
+        example: "<table>…</table>",
+      },
+      {
+        path: "order.shipping_address_html",
+        label: "Abholadresse",
+        html: true,
+        example: "<p>Max Muster<br/>Musterstraße 1…</p>",
+      },
+      {
+        path: "order.shipping_address_text",
+        label: "Abholadresse (Text)",
         example: "Max Muster\nMusterstraße 1\n10115 Berlin",
       },
       {

@@ -9,6 +9,7 @@ import {
 } from "@/features/inventory";
 import { fulfillmentStatusAfterOrderTransition } from "@/features/orders";
 import { sendOrderCancelledIfNeeded } from "@/lib/email/order-cancelled";
+import { sendOrderPickedUpIfNeeded } from "@/lib/email/order-picked-up";
 import { sendOrderRefundedIfNeeded } from "@/lib/email/order-refunded";
 import { sendOrderShippedIfNeeded } from "@/lib/email/order-shipped";
 import { allocateNextInvoiceNumber } from "@/lib/invoice/allocate-invoice-number";
@@ -198,6 +199,8 @@ export async function applyOrderStatusTransition(
     try {
       if (toStatus === "shipped") {
         await sendOrderShippedIfNeeded(orderId);
+      } else if (toStatus === "abgeholt") {
+        await sendOrderPickedUpIfNeeded(orderId);
       } else if (toStatus === "cancelled") {
         await sendOrderCancelledIfNeeded(orderId);
       } else if (toStatus === "refunded") {

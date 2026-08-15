@@ -6,6 +6,7 @@ import {
 } from "@/lib/email/templates/auth-email-orderly-html";
 import {
   buildOrderCancelledOrderlyHtml,
+  buildOrderPickedUpOrderlyHtml,
   buildOrderRefundedOrderlyHtml,
   buildOrderShippedOrderlyHtml,
 } from "@/lib/email/templates/order-transactional-orderly-html";
@@ -36,6 +37,16 @@ describe("orderly email templates", () => {
     expect(html).toContain("{{{order.shipping_address_tracking_html}}}");
     expect(html).not.toContain("{{{order.tracking_section_html}}}");
     expect(html).toContain("{{{order.items_html}}}");
+  });
+
+  it("order_picked_up enthält Orderly-Platzhalter", () => {
+    const html = buildOrderPickedUpOrderlyHtml();
+    expectOrderlyShell(html);
+    expect(html).toContain("Deine Bestellung wurde abgeholt");
+    expect(html).toContain("Abgeholte Artikel");
+    expect(html).toContain("{{{order.invoice_note_html}}}");
+    expect(html).toContain("{{{order.items_html}}}");
+    expect(html).toContain("{{{order.shipping_address_html}}}");
   });
 
   it("order_cancelled enthält Orderly-Platzhalter", () => {

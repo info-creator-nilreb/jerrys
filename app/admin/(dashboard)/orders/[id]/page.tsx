@@ -17,7 +17,7 @@ import {
 import { fulfillmentStatusLabel, orderAdminDeleteBlocker } from "@/features/orders";
 import { formatPrice } from "@/lib/catalog/format";
 import { isPickupDeliveryMethod, deliveryMethodLabel } from "@/lib/checkout/delivery-method";
-import { EMAIL_ORDER_SHIPPED } from "@/lib/email/email-types";
+import { EMAIL_ORDER_PICKED_UP, EMAIL_ORDER_SHIPPED } from "@/lib/email/email-types";
 import { isInvoiceAllocationAllowedForOrderStatus } from "@/lib/invoice/allocate-invoice-for-order";
 import { getOrderDetailForAdmin } from "@/lib/orders/admin-queries";
 import { emailSendStatusLabel, emailTypeLabel } from "@/lib/orders/email-status-label";
@@ -142,6 +142,10 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
   const shippingEmailSent = order.emailLogs.some(
     (l) => l.emailType === EMAIL_ORDER_SHIPPED && l.status === "sent",
   );
+  const pickedUpEmailSent = order.emailLogs.some(
+    (l) => l.emailType === EMAIL_ORDER_PICKED_UP && l.status === "sent",
+  );
+  const fulfillmentEmailSent = shippingEmailSent || pickedUpEmailSent;
   const canGenerateInvoice =
     !order.invoiceNumber && isInvoiceAllocationAllowedForOrderStatus(order.status);
   const emailLogsChronological = [...order.emailLogs].sort(
@@ -616,24 +620,25 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
             <p className="text-sm text-[#6b7280]">
               Noch keine Rechnungsnummer vergeben. Du kannst die Rechnung jetzt erzeugen und als PDF speichern.
             </p>
-            {!shippingEmailSent ? (
+            {!fulfillmentEmailSent ? (
               <p className="text-sm text-[#374151]">
-                <span className="font-medium text-[#1f2937]">Hinweis:</span> Wurde noch keine Versandbenachrichtigung
-                gesendet, verwendet die automatische E-Mail beim Versandmelden dieselbe PDF-Datei als Anhang (sobald
-                Rechnungsnummer und PDF vorliegen).
+                <span className="font-medium text-[#1f2937]">Hinweis:</span> Wurde noch keine Versand- oder
+                Abholbestätigung gesendet, verwendet die automatische E-Mail beim Versandmelden bzw. Abholen dieselbe
+                PDF-Datei als Anhang (sobald Rechnungsnummer und PDF vorliegen).
               </p>
             ) : (
               <p className="text-sm text-[#374151]">
-                <span className="font-medium text-[#1f2937]">Hinweis:</span> Die Versandbenachrichtigung wurde bereits
-                gesendet. Die Rechnung kannst du hier erzeugen und herunterladen; sie wird nicht erneut per E-Mail
-                verschickt.
+                <span className="font-medium text-[#1f2937]">Hinweis:</span> Die Versand- oder Abholbestätigung wurde
+                bereits gesendet. Die Rechnung kannst du hier erzeugen und herunterladen; sie wird nicht erneut per
+                E-Mail verschickt.
               </p>
             )}
             <OrderInvoiceGenerateButton orderId={order.id} />
           </div>
         ) : (
           <p className="mt-2 text-sm text-[#6b7280]">
-            Für diese Bestellung kann keine Rechnung erzeugt werden, oder sie wird beim Versandmelden vergeben.
+            Für diese Bestellung kann keine Rechnung erzeugt werden, oder sie wird beim Versandmelden bzw. Abholen
+            vergeben.
           </p>
         )}
       </section>
