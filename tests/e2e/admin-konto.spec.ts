@@ -36,7 +36,10 @@ test("Admin-Konto ist über Avatar/Adresse erreichbar", async ({ page }) => {
   await expect(page.getByRole("button", { name: "MFA einrichten" })).toBeVisible();
 
   const kontoLink = page.getByTestId("admin-konto-link");
-  if (await kontoLink.isVisible()) {
-    await expect(kontoLink).toHaveAttribute("href", "/admin/konto");
-  }
+  await expect(kontoLink).toBeVisible();
+  await expect(kontoLink).toHaveAttribute("href", "/admin/konto");
+  await page.goto("/admin");
+  await kontoLink.click();
+  await expect(page).toHaveURL(/\/admin\/konto$/);
+  await expect(page.getByRole("heading", { name: "Konto" })).toBeVisible();
 });

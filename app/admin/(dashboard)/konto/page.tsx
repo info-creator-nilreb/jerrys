@@ -4,6 +4,7 @@ import { getAdminSession } from "@/lib/auth/admin-session";
 import { getPrisma } from "@/lib/db/prisma";
 import { AdminChangePasswordForm } from "@/app/admin/(dashboard)/konto/admin-change-password-form";
 import { AdminMfaCard } from "@/app/admin/(dashboard)/konto/admin-mfa-card";
+import { AdminSignOutButton } from "@/app/admin/(dashboard)/konto/admin-sign-out-button";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +68,10 @@ export default async function AdminKontoPage() {
           <AdminMfaCard mfaEnabled={mfaEnabled} />
         </div>
       </section>
+
+      <div>
+        <AdminSignOutButton />
+      </div>
     </div>
   );
 }

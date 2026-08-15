@@ -210,12 +210,20 @@ export function AdminSidebar({
     : mainNav.filter((item) => item.href !== "/admin/termine");
 
   useEffect(() => {
-    function close(ev: MouseEvent) {
+    if (!userMenuOpen) return;
+    function onKey(ev: KeyboardEvent) {
+      if (ev.key === "Escape") setUserMenuOpen(false);
+    }
+    function onPointerDown(ev: PointerEvent) {
       if (!userMenuRef.current?.contains(ev.target as Node)) setUserMenuOpen(false);
     }
-    document.addEventListener("click", close);
-    return () => document.removeEventListener("click", close);
-  }, []);
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [userMenuOpen]);
 
   const initials = userInitials(userName || userEmail, userEmail);
   const displayName =
@@ -240,6 +248,7 @@ export function AdminSidebar({
   }
 
   const showLabels = !collapsed || mobileOpen;
+  const kontoActive = pathname === "/admin/konto" || pathname.startsWith("/admin/konto/");
 
   return (
     <aside
@@ -365,35 +374,31 @@ export function AdminSidebar({
         <div
           className={`flex min-h-11 w-full items-center gap-1 rounded-lg ${showLabels ? "" : "justify-center"}`}
         >
-          {showLabels ? (
-            <Link
-              href="/admin/konto"
-              data-testid="admin-konto-link"
-              onClick={() => onNavigate?.()}
-              className="flex min-h-11 min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/5"
-            >
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white ring-2 ring-white/20">
-                {initials}
-              </span>
+          <Link
+            href="/admin/konto"
+            data-testid="admin-konto-link"
+            title="Konto"
+            aria-label="Konto"
+            onClick={() => {
+              setUserMenuOpen(false);
+              onNavigate?.();
+            }}
+            className={`flex min-h-11 cursor-pointer items-center gap-2.5 rounded-lg text-left transition-colors hover:bg-white/5 ${
+              showLabels ? "min-w-0 flex-1 px-2 py-2" : "size-11 justify-center px-0"
+            } ${kontoActive ? "bg-primary/15" : ""}`}
+          >
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white ring-2 ring-white/20">
+              {initials}
+            </span>
+            {showLabels ? (
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-white">{displayName}</p>
-                <p className="truncate text-xs font-medium text-primary">{userEmail || "Administrator"}</p>
+                <p className="truncate text-xs font-medium text-primary">
+                  {userEmail || "Administrator"}
+                </p>
               </div>
-            </Link>
-          ) : (
-            <button
-              type="button"
-              data-testid="admin-account-menu"
-              onClick={() => setUserMenuOpen((o) => !o)}
-              className="flex size-11 items-center justify-center rounded-lg transition-colors hover:bg-white/5"
-              aria-expanded={userMenuOpen}
-              aria-label="Kontomenü"
-            >
-              <span className="flex size-9 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white ring-2 ring-white/20">
-                {initials}
-              </span>
-            </button>
-          )}
+            ) : null}
+          </Link>
           {showLabels ? (
             <button
               type="button"
