@@ -6,6 +6,15 @@ import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env", override: true });
 loadEnv({ path: ".env.local", override: true });
 import { defineConfig } from "prisma/config";
+import { normalizeDatabaseUrl } from "./lib/db/normalize-database-url";
+
+function resolvePrismaDatasourceUrl(): string | undefined {
+  return (
+    normalizeDatabaseUrl(process.env["PRISMA_MIGRATE_DATABASE_URL"]) ??
+    normalizeDatabaseUrl(process.env["DIRECT_DATABASE_URL"]) ??
+    normalizeDatabaseUrl(process.env["DATABASE_URL"])
+  );
+}
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -17,9 +26,6 @@ export default defineConfig({
     // Supabase Session Pooler: `migrate deploy` kann mit P1002 (Advisory Lock) hängen.
     // Optional DIRECT_DATABASE_URL = direkter Host db.*.supabase.co:5432 (gleiche DB), oder einmalig:
     // PRISMA_MIGRATE_DATABASE_URL="postgresql://…" npx prisma migrate deploy
-    url:
-      process.env["PRISMA_MIGRATE_DATABASE_URL"] ??
-      process.env["DIRECT_DATABASE_URL"] ??
-      process.env["DATABASE_URL"],
+    url: resolvePrismaDatasourceUrl(),
   },
 });
