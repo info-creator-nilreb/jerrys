@@ -27,7 +27,7 @@ export async function OrderShippingMapSnippet({ line1, line2, zip, city, country
           width={960}
           height={600}
           loading="lazy"
-          referrerPolicy="no-referrer"
+          referrerPolicy="strict-origin-when-cross-origin"
           className="absolute inset-0 h-full w-full border-0 grayscale contrast-[1.03]"
         />
         {/* Markengrün: eigener Pin, Kartenmitte = Zielpunkt (bbox symmetrisch um Koordinate) */}
@@ -45,6 +45,17 @@ export async function OrderShippingMapSnippet({ line1, line2, zip, city, country
           />
         </svg>
       </div>
+      <p className="mt-2 text-center text-xs text-(--foreground-muted)">
+        Kartenmaterial ©{" "}
+        <a
+          href="https://www.openstreetmap.org/copyright"
+          className="text-primary underline-offset-2 hover:underline"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          OpenStreetMap-Mitwirkende
+        </a>
+      </p>
     </div>
   );
 }
