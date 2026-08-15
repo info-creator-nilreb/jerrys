@@ -69,6 +69,9 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | `POST /api/webhooks/zettle` | Öffentlich (Zettle Pusher); HMAC `X-iZettle-Signature` | `PurchaseCreated` → idempotente POS-Bestandsbuchung; Inbox `zettle_pusher` |
 | Tabelle `order_payments` | — | PSP-Versuche pro Bestellung (Prisma-Modell `OrderPayment`) |
 | Seiten unter `/admin/*` (außer Login) | Middleware + Layout `auth()` | Admin-UI |
+| Seite `/admin/konto` ([ADR-0011](./adr/0011-admin-self-service-security.md)) | Admin-Session (`getAdminAuthState` ready) | Eigenes Passwort ändern, TOTP-MFA enroll/disable |
+| Server Actions `app/admin/(dashboard)/konto/actions.ts` | `getAdminSession()` in Action; Rate-Limit | Passwort, MFA-Setup/Confirm/Disable/Recovery; Outbox `admin_user.*` |
+| Seite `/admin/login/mfa` | JWT mit `mfaPending` nach gültigem Passwort, noch keine volle Admin-Session | TOTP oder Recovery-Code; Provider `admin-mfa` |
 
 **Hinweise**
 

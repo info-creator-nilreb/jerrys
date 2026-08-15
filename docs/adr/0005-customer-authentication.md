@@ -62,7 +62,7 @@ Negative / accepted trade-offs:
 
 ## Revisit when
 
-- MFA or passkeys become a release requirement.
+- MFA or passkeys become a release requirement. Admin TOTP self-service is proposed in [ADR-0011](./0011-admin-self-service-security.md); customer MFA remains out of scope.
 - Measured abuse or deliverability issues justify a hosted IdP.
 - Admin and customer sessions must coexist in one browser without sign-out.
 - A compliance review requires an external IdP with a specific certification.

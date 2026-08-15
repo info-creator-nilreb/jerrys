@@ -18,4 +18,4 @@ export {
   type CustomerPasswordCriterionState,
   type PasswordValidationResult,
 } from "@/features/customers/domain/password";
-export { normalizeCustomerAuthTokenFromClient } from "@/features/customers/domain/auth-token";
+export { normalizeCustomerAuthTokenFromClient } from "@/features/customers/domain/auth-token-client";

@@ -12,7 +12,7 @@ export const authConfig = {
     authorized({ auth, request: { nextUrl } }) {
       const path = nextUrl.pathname;
       if (!path.startsWith("/admin")) return true;
-      if (path === "/admin/login") return true;
+      if (path === "/admin/login" || path.startsWith("/admin/login/")) return true;
       return !!auth?.user;
     },
   },

@@ -45,3 +45,4 @@ ADRs record material decisions that constrain future implementation.
 - [ADR-0008: Object storage (Vercel Blob)](./0008-object-storage.md)
 - [ADR-0009: Fulfillment shipments and shipping-label port](./0009-fulfillment-shipments.md)
 - [ADR-0010: AI content assistance port (OpenAI first)](./0010-ai-content-assistance-port.md)
+- [ADR-0011: Admin self-service password change and TOTP MFA](./0011-admin-self-service-security.md) — Accepted
