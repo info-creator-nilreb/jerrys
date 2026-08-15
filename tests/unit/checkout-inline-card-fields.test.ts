@@ -44,6 +44,9 @@ describe("Checkout-Kartenfelder-Reihenfolge", () => {
     expect(src).not.toContain("clearCheckoutFormDraft");
     expect(src).toContain("CheckoutRegularWallets");
     expect(src).toContain("pageshow");
+    expect(src).toContain("pagehide");
+    expect(src).toContain("mergeCheckoutFormDraft");
+    expect(src).toContain("draftHydratedRef");
     expect(src).toContain("isCheckoutWalletMethod");
     expect(src).toContain("isCheckoutPayPalMethodVisible");
     expect(src).toContain("sepaAvailable");

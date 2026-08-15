@@ -49,6 +49,7 @@ import { isCheckoutWalletMethod } from "@/lib/checkout/checkout-payment-hints";
 import {
   checkoutFormDraftFromForm,
   loadCheckoutFormDraft,
+  mergeCheckoutFormDraft,
   saveCheckoutFormDraft,
   type CheckoutFormDraft,
 } from "@/lib/checkout/checkout-form-draft";
@@ -331,6 +332,7 @@ export function CheckoutForm({
     null,
   );
   const draftRestoredRef = useRef(false);
+  const draftHydratedRef = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   const applyCheckoutFormDraft = (draft: CheckoutFormDraft) => {
@@ -358,13 +360,16 @@ export function CheckoutForm({
   };
 
   useEffect(() => {
-    if (!restoreFormDraft || draftRestoredRef.current || workshopBookingId) return;
+    if (!restoreFormDraft || workshopBookingId) {
+      draftHydratedRef.current = true;
+      return;
+    }
     const draft = loadCheckoutFormDraft();
-    if (!draft) return;
-    draftRestoredRef.current = true;
-    startTransition(() => {
+    if (draft) {
+      draftRestoredRef.current = true;
       applyCheckoutFormDraft(draft);
-    });
+    }
+    draftHydratedRef.current = true;
     // Nur beim ersten Mount wiederherstellen — Draft bleibt bis erfolgreicher Bestellung.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount restore
   }, [restoreFormDraft, workshopBookingId]);
@@ -376,6 +381,7 @@ export function CheckoutForm({
       const draft = loadCheckoutFormDraft();
       if (!draft) return;
       draftRestoredRef.current = true;
+      draftHydratedRef.current = true;
       applyCheckoutFormDraft(draft);
     };
     window.addEventListener("pageshow", onPageShow);
@@ -652,23 +658,31 @@ export function CheckoutForm({
   }, [state]);
 
   const persistCheckoutFormDraft = () => {
+    if (workshopBookingId || !draftHydratedRef.current) return;
+    const fromState = buildCheckoutFormDraftFromState();
     const form = formRef.current;
     if (!form) {
-      saveCheckoutFormDraft(buildCheckoutFormDraftFromState());
+      saveCheckoutFormDraft(fromState);
       return;
     }
     saveCheckoutFormDraft(
-      checkoutFormDraftFromForm(form, {
-        deliveryMethod,
-        shippingAddressId,
-        billingDifferent,
-        billingAddressId,
-        payPalSurface,
-        committedPromoCode,
-        declineAutomatic,
-      }),
+      mergeCheckoutFormDraft(
+        checkoutFormDraftFromForm(form, {
+          deliveryMethod,
+          shippingAddressId,
+          billingDifferent,
+          billingAddressId,
+          payPalSurface,
+          committedPromoCode,
+          declineAutomatic,
+        }),
+        fromState,
+      ),
     );
   };
+
+  const persistDraftRef = useRef(persistCheckoutFormDraft);
+  persistDraftRef.current = persistCheckoutFormDraft;
 
   useEffect(() => {
     if (workshopBookingId) return;
@@ -677,7 +691,7 @@ export function CheckoutForm({
     let timer: number | null = null;
     const schedule = () => {
       if (timer) window.clearTimeout(timer);
-      timer = window.setTimeout(() => persistCheckoutFormDraft(), 400);
+      timer = window.setTimeout(() => persistDraftRef.current(), 400);
     };
     form.addEventListener("input", schedule);
     form.addEventListener("change", schedule);
@@ -699,6 +713,22 @@ export function CheckoutForm({
     committedPromoCode,
     declineAutomatic,
   ]);
+
+  useEffect(() => {
+    if (workshopBookingId) return;
+    const persist = () => persistDraftRef.current();
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") persist();
+    };
+    window.addEventListener("pagehide", persist);
+    window.addEventListener("beforeunload", persist);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pagehide", persist);
+      window.removeEventListener("beforeunload", persist);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [workshopBookingId]);
   const onFormSubmit = (e: FormEvent<HTMLFormElement>) => {
     if (workshopBookingId) return;
     e.preventDefault();
@@ -1031,6 +1061,7 @@ export function CheckoutForm({
                 line2: "Wohnung, Zimmer, usw. (optional)",
               }}
               defaultValues={shippingAddressValues}
+              onValuesChange={setShippingAddressValues}
               serverErrors={{
                 zip: fe?.shippingZip,
                 city: fe?.shippingCity,
@@ -1231,6 +1262,7 @@ export function CheckoutForm({
                   line2: "Adresszusatz (optional)",
                 }}
                 defaultValues={billingAddressValues}
+                onValuesChange={setBillingAddressValues}
                 serverErrors={{
                   zip: fe?.billingZip,
                   city: fe?.billingCity,
@@ -1328,6 +1360,7 @@ export function CheckoutForm({
           onClick={
             useCardPayButton
               ? () => {
+                  persistCheckoutFormDraft();
                   void cardFieldsSubmitRef.current?.();
                 }
               : undefined
