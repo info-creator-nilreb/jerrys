@@ -1,5 +1,8 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  GOOGLE_PAY_JS_SRC,
   isPayPalApplePayConfigEligible,
   paypalCheckoutWalletSdkSrc,
   paypalExpressSdkSrc,
@@ -11,8 +14,8 @@ describe("paypalExpressSdkSrc", () => {
     const url = new URL(src);
     expect(url.origin + url.pathname).toBe("https://www.paypal.com/sdk/js");
     expect(url.searchParams.get("client-id")).toBe("test-client");
-    expect(url.searchParams.get("components")).toBe("buttons,applepay");
-    expect(url.searchParams.get("enable-funding")).toBe("applepay");
+    expect(url.searchParams.get("components")).toBe("buttons,applepay,googlepay");
+    expect(url.searchParams.get("enable-funding")).toBe("applepay,googlepay");
     expect(url.searchParams.get("currency")).toBe("EUR");
     expect(url.searchParams.get("intent")).toBe("capture");
   });
@@ -34,5 +37,16 @@ describe("isPayPalApplePayConfigEligible", () => {
     expect(isPayPalApplePayConfigEligible({ isEligible: false })).toBe(false);
     expect(isPayPalApplePayConfigEligible(null)).toBe(false);
     expect(isPayPalApplePayConfigEligible(undefined)).toBe(false);
+  });
+});
+
+describe("Checkout-Wallets SDK-Laden", () => {
+  it("lädt Google Pay und ein zweites PayPal-SDK nur optional, ohne Fehlerbanner", () => {
+    expect(GOOGLE_PAY_JS_SRC).toBe("https://pay.google.com/gp/p/js/pay.js");
+    const src = readFileSync(path.resolve("components/storefront/checkout-regular-wallets.tsx"), "utf8");
+    expect(src).toContain("tryLoadScript");
+    expect(src).toContain("waitForPayPalSdk");
+    expect(src).toContain("GOOGLE_PAY_JS_SRC");
+    expect(src).not.toContain("Zahlungs-SDK konnte nicht geladen werden");
   });
 });

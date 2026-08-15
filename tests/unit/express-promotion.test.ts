@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseExpressPromotionInput } from "@/lib/checkout/express-promotion";
+import { parseExpressDeliveryMethod, parseExpressPromotionInput } from "@/lib/checkout/express-promotion";
 
 describe("parseExpressPromotionInput", () => {
   it("liest Code und Ablehnung aus Checkout-Feldern", () => {
@@ -25,5 +25,17 @@ describe("parseExpressPromotionInput", () => {
       promotionCode: "",
       declineAutomatic: false,
     });
+  });
+});
+
+describe("parseExpressDeliveryMethod", () => {
+  it("übernimmt Abholung aus dem Express-Request", () => {
+    expect(parseExpressDeliveryMethod({ deliveryMethod: "pickup" })).toBe("pickup");
+    expect(parseExpressDeliveryMethod({ checkoutDeliveryMethod: "pickup" })).toBe("pickup");
+  });
+
+  it("fällt ohne Angabe auf Versand zurück", () => {
+    expect(parseExpressDeliveryMethod({})).toBe("shipping");
+    expect(parseExpressDeliveryMethod({ deliveryMethod: "on" })).toBe("shipping");
   });
 });

@@ -20,11 +20,12 @@ export type ExpressShippingQuote =
 export async function quoteExpressShippingForCart(
   shippingCountryRaw: unknown,
   promotion?: ExpressPromotionInput | null,
+  deliveryMethod?: unknown,
 ): Promise<ExpressShippingQuote> {
   const result = await resolveCartPromotionTotals({
     shippingCountry: shippingCountryRaw,
     promotion: promotion ?? { promotionCode: "", declineAutomatic: false },
-    deliveryMethod: "shipping",
+    deliveryMethod,
   });
   if (!result.ok) {
     return { ok: false, code: result.code, message: result.message };

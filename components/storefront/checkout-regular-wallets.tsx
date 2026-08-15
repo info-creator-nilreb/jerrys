@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  GOOGLE_PAY_JS_SRC,
   isPayPalApplePayConfigEligible,
   paypalCheckoutWalletSdkSrc,
 } from "@/lib/payments/paypal-express-sdk";
@@ -182,6 +183,25 @@ function loadScript(id: string, src: string): Promise<void> {
   });
 }
 
+async function tryLoadScript(id: string, src: string): Promise<boolean> {
+  try {
+    await loadScript(id, src);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function waitForPayPalSdk(timeoutMs = 2500): Promise<PayPalWalletSdk | undefined> {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const paypal = currentPayPal();
+    if (paypal) return paypal;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  return currentPayPal();
+}
+
 export type CheckoutWalletReady = {
   applePay: boolean;
   googlePay: boolean;
@@ -245,18 +265,15 @@ export function CheckoutRegularWallets({
     let cancelled = false;
 
     const setup = async () => {
-      try {
-        await loadScript(WALLET_SDK_SCRIPT_ID, paypalCheckoutWalletSdkSrc(paypalClientId.trim(), currency));
-        await loadScript(GOOGLE_PAY_SCRIPT_ID, "https://pay.google.com/gp/p/js/pay.js");
-      } catch (e) {
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : "Zahlungs-SDK konnte nicht geladen werden.");
-        }
-        return;
+      let paypal = await waitForPayPalSdk();
+      if (!paypal) {
+        await tryLoadScript(WALLET_SDK_SCRIPT_ID, paypalCheckoutWalletSdkSrc(paypalClientId.trim(), currency));
+        paypal = currentPayPal();
       }
+      await tryLoadScript(GOOGLE_PAY_SCRIPT_ID, GOOGLE_PAY_JS_SRC);
       if (cancelled) return;
 
-      const paypal = currentPayPal();
+      paypal = currentPayPal();
       const ApplePaySession = currentApplePaySession();
       const next: CheckoutWalletReady = { applePay: false, googlePay: false };
 

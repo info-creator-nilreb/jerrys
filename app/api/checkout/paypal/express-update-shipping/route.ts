@@ -28,6 +28,8 @@ export async function POST(req: NextRequest) {
     shippingCountry?: unknown;
     checkoutPromotionCode?: unknown;
     checkoutDeclineAutomatic?: unknown;
+    deliveryMethod?: unknown;
+    checkoutDeliveryMethod?: unknown;
   } = {};
   try {
     body = (await req.json()) as typeof body;
@@ -46,6 +48,7 @@ export async function POST(req: NextRequest) {
     shippingCountry: body.shippingCountry,
     promotionCode: body.checkoutPromotionCode,
     declineAutomatic: body.checkoutDeclineAutomatic,
+    deliveryMethod: body.deliveryMethod ?? body.checkoutDeliveryMethod,
   });
 
   if (!result.ok) {

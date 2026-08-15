@@ -12,6 +12,7 @@ describe("Checkout Express oben", () => {
     expect(express).toBeGreaterThan(title);
     expect(contact).toBeGreaterThan(express);
     expect(src).toContain("workshopMpa");
+    expect(src).toContain("deliveryMethod={deliveryMethod}");
   });
 
   it("spannt Express-Hinweis und Buttons über die volle Checkout-Spalte", () => {
@@ -39,5 +40,6 @@ describe("Checkout Express oben", () => {
     expect(buttons).toContain("isPayPalApplePayConfigEligible");
     expect(buttons).toContain("expressPromotionPayload");
     expect(buttons).toContain("checkoutPromotionCode");
+    expect(buttons).toContain("deliveryMethod: deliveryMethodRef.current");
   });
 });
