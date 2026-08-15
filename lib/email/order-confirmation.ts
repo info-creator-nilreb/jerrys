@@ -1,9 +1,12 @@
 import { formatPrice } from "@/lib/catalog/format";
 import { getPrisma } from "@/lib/db/prisma";
 import { EMAIL_ORDER_CONFIRMATION } from "@/lib/email/email-types";
+import { emailAbsoluteHref } from "@/lib/email/email-absolute-url";
 import {
+  claimOrderEmailSend,
   findOrderEmailLog,
-  isOrderEmailAlreadySentSuccessfully,
+  releaseOrderEmailClaim,
+  shouldSkipOrderEmailSend,
   upsertOrderEmailDeliveryLog,
 } from "@/lib/email/order-email-log";
 import { sendTransactionalEmail } from "@/lib/email/provider";
@@ -25,7 +28,6 @@ import {
 } from "@/lib/email/templates/order-fragments";
 import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
 import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
-import { publicSiteBaseUrl } from "@/lib/email/template-utils";
 import { transactionalPaymentLabel } from "@/lib/email/transactional-email-layout";
 import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
 
@@ -38,8 +40,10 @@ export async function sendOrderConfirmationIfNeeded(
 ): Promise<void> {
   const prisma = getPrisma();
 
-  const existing = await findOrderEmailLog(prisma, orderId, EMAIL_ORDER_CONFIRMATION);
-  if (!options?.force && isOrderEmailAlreadySentSuccessfully(existing)) return;
+  if (!options?.force) {
+    const existing = await findOrderEmailLog(prisma, orderId, EMAIL_ORDER_CONFIRMATION);
+    if (shouldSkipOrderEmailSend(existing)) return;
+  }
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
@@ -48,6 +52,15 @@ export async function sendOrderConfirmationIfNeeded(
   if (!order || !order.items.length) return;
   if (order.status === "pending_payment") return;
 
+  if (!options?.force) {
+    const claim = await claimOrderEmailSend(prisma, {
+      orderId,
+      emailType: EMAIL_ORDER_CONFIRMATION,
+      toEmail: order.email,
+    });
+    if (claim === "already_claimed") return;
+  }
+
   const tableLines = orderItemsToEmailLineItems(order.items);
   const itemsForText = order.items.map((line, idx) => ({
     ...tableLines[idx]!,
@@ -55,9 +68,9 @@ export async function sendOrderConfirmationIfNeeded(
   }));
 
   const branding = await resolveTransactionalEmailBranding();
-  const base = publicSiteBaseUrl();
-  const successPath = `/checkout/erfolg?nr=${encodeURIComponent(order.orderNumber)}`;
-  const successUrl = base ? `${base}${successPath}` : successPath;
+  const successUrl = emailAbsoluteHref(
+    `/checkout/erfolg?nr=${encodeURIComponent(order.orderNumber)}`,
+  );
 
   const subtotal = formatPrice(order.subtotalGrossCents, order.currency);
   const shipping = formatPrice(order.shippingCents, order.currency);
@@ -99,7 +112,13 @@ export async function sendOrderConfirmationIfNeeded(
   );
 
   const rendered = await renderStoredEmailTemplate("order_confirmation", vars);
-  if (!rendered.enabled && !options?.force) return;
+  if (!rendered.enabled && !options?.force) {
+    await releaseOrderEmailClaim(prisma, {
+      orderId,
+      emailType: EMAIL_ORDER_CONFIRMATION,
+    });
+    return;
+  }
 
   let result: Awaited<ReturnType<typeof sendTransactionalEmail>>;
   try {

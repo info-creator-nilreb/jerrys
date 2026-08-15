@@ -3,7 +3,13 @@ import type { Prisma } from "@/app/generated/prisma/client";
 
 export type WebhookInboxBeginResult =
   | { ok: true; entryId: string; duplicate: false }
-  | { ok: true; entryId: string; duplicate: true; alreadyProcessed: boolean }
+  | {
+      ok: true;
+      entryId: string;
+      duplicate: true;
+      alreadyProcessed: boolean;
+      status: string;
+    }
   | { ok: false; error: "race" };
 
 /**
@@ -57,6 +63,7 @@ export async function beginWebhookInboxProcessing(
     entryId: existing.id,
     duplicate: true,
     alreadyProcessed: existing.status === "processed",
+    status: existing.status,
   };
 }
 

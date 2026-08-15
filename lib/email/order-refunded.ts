@@ -18,7 +18,7 @@ import {
 } from "@/lib/email/templates/order-fragments";
 import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
 import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
-import { publicSiteBaseUrl } from "@/lib/email/template-utils";
+import { emailAbsoluteHref } from "@/lib/email/email-absolute-url";
 import {
   formatGermanDateMedium,
   transactionalPaymentLabel,
@@ -44,8 +44,7 @@ export async function sendOrderRefundedIfNeeded(
   if (!order) return;
 
   const branding = await resolveTransactionalEmailBranding();
-  const base = publicSiteBaseUrl();
-  const shopUrl = base ? `${base}/` : "/";
+  const shopUrl = emailAbsoluteHref("/");
 
   const refundDate = formatGermanDateMedium(new Date());
   const totalStr = formatPrice(order.totalGrossCents, order.currency);
