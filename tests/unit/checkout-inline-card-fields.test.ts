@@ -4,6 +4,9 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { showCheckoutInlineCardFields } from "@/lib/checkout/inline-card-fields";
+import {
+  visibleCheckoutPaymentMethodRows,
+} from "@/components/storefront/checkout-payment-methods";
 
 vi.mock("next/image", () => ({
   default: function MockImage(props: { alt?: string }) {
@@ -42,6 +45,8 @@ describe("Checkout-Kartenfelder-Reihenfolge", () => {
     expect(src).toContain("CheckoutRegularWallets");
     expect(src).toContain("pageshow");
     expect(src).toContain("isCheckoutWalletMethod");
+    expect(src).toContain("isCheckoutPayPalMethodVisible");
+    expect(src).toContain("sepaAvailable");
   });
 
   it("rendert Kartenfelder unter der Karten-Option, vor dem Hinweis", async () => {
@@ -52,6 +57,7 @@ describe("Checkout-Kartenfelder-Reihenfolge", () => {
         onChange: () => undefined,
         cardInline: true,
         cardFields: createElement("div", { id: "checkout-card-fields" }, "Kartenfelder"),
+        sepaAvailable: true,
       }),
     );
     const sepaIdx = html.indexOf("SEPA Lastschrift");
@@ -82,5 +88,41 @@ describe("Checkout-Kartenfelder-Reihenfolge", () => {
     expect(html).toContain("Apple Pay");
     expect(html).toContain("keine Weiterleitung zur PayPal-Website");
     expect(html).not.toContain("Dort wählen Sie die für Sie verfügbare Option");
+    expect(html).not.toContain("Google Pay");
+  });
+
+  it("listet Apple Pay und Google Pay nicht, solange sie nicht bereit sind", async () => {
+    const { CheckoutPaymentMethods } = await import("@/components/storefront/checkout-payment-methods");
+    const html = renderToStaticMarkup(
+      createElement(CheckoutPaymentMethods, {
+        value: "paypal",
+        onChange: () => undefined,
+        nativeWallets: true,
+      }),
+    );
+    expect(html).toContain("PayPal");
+    expect(html).not.toContain("Apple Pay");
+    expect(html).not.toContain("Google Pay");
+    expect(html).not.toContain("SEPA Lastschrift");
+  });
+});
+
+describe("visibleCheckoutPaymentMethodRows", () => {
+  it("zeigt Wallets nur bei Bereitschaft und SEPA nur wenn der Shop sie anbietet", () => {
+    const hidden = visibleCheckoutPaymentMethodRows({
+      nativeWallets: true,
+      applePayReady: false,
+      googlePayReady: false,
+      sepaAvailable: false,
+    }).map((r) => r.id);
+    expect(hidden).toEqual(["paypal", "card"]);
+
+    const shown = visibleCheckoutPaymentMethodRows({
+      nativeWallets: true,
+      applePayReady: true,
+      googlePayReady: true,
+      sepaAvailable: true,
+    }).map((r) => r.id);
+    expect(shown).toEqual(["paypal", "apple_pay", "google_pay", "sepa", "card"]);
   });
 });

@@ -75,6 +75,7 @@ export function WorkshopCheckoutForm({
   canSaveAddressToAccount = false,
   showContactLogin = true,
   payPalConfigured,
+  sepaAvailable = false,
   checkoutError = null,
 }: {
   idempotencyKey: string;
@@ -89,6 +90,7 @@ export function WorkshopCheckoutForm({
   /** false = Kunde ist bereits angemeldet; kein totes „Anmelden“-Chrome. */
   showContactLogin?: boolean;
   payPalConfigured: boolean;
+  sepaAvailable?: boolean;
   checkoutError?: string | null;
 }) {
   const prefillCountry =
@@ -598,6 +600,7 @@ export function WorkshopCheckoutForm({
               onChange={setPayPalSurface}
               submitLabel={submitLabel}
               cardInline={false}
+              sepaAvailable={sepaAvailable}
             />
           ) : (
             <p className="mt-2 text-sm text-[#6b7280]">Online-Zahlung ist derzeit nicht verfügbar.</p>

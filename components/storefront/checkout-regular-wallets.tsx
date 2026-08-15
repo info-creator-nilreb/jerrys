@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   GOOGLE_PAY_JS_SRC,
   isPayPalApplePayConfigEligible,
+  paypalCheckoutApplePaySdkSrc,
   paypalCheckoutWalletSdkSrc,
 } from "@/lib/payments/paypal-express-sdk";
 
@@ -178,7 +179,10 @@ function loadScript(id: string, src: string): Promise<void> {
       script.dataset.loaded = "1";
       resolve();
     };
-    script.onerror = () => reject(new Error("Skript konnte nicht geladen werden."));
+    script.onerror = () => {
+      script.remove();
+      reject(new Error("Skript konnte nicht geladen werden."));
+    };
     document.body.appendChild(script);
   });
 }
@@ -192,14 +196,20 @@ async function tryLoadScript(id: string, src: string): Promise<boolean> {
   }
 }
 
-async function waitForPayPalSdk(timeoutMs = 2500): Promise<PayPalWalletSdk | undefined> {
+async function waitForPayPalWalletSdk(timeoutMs = 2500): Promise<PayPalWalletSdk | undefined> {
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
     const paypal = currentPayPal();
-    if (paypal) return paypal;
+    if (typeof paypal?.Applepay === "function" || typeof paypal?.Googlepay === "function") {
+      return paypal;
+    }
     await new Promise((r) => setTimeout(r, 50));
   }
-  return currentPayPal();
+  const paypal = currentPayPal();
+  if (typeof paypal?.Applepay === "function" || typeof paypal?.Googlepay === "function") {
+    return paypal;
+  }
+  return undefined;
 }
 
 export type CheckoutWalletReady = {
@@ -265,9 +275,18 @@ export function CheckoutRegularWallets({
     let cancelled = false;
 
     const setup = async () => {
-      let paypal = await waitForPayPalSdk();
+      let paypal = await waitForPayPalWalletSdk();
       if (!paypal) {
-        await tryLoadScript(WALLET_SDK_SCRIPT_ID, paypalCheckoutWalletSdkSrc(paypalClientId.trim(), currency));
+        const loadedCombined = await tryLoadScript(
+          WALLET_SDK_SCRIPT_ID,
+          paypalCheckoutWalletSdkSrc(paypalClientId.trim(), currency),
+        );
+        if (!loadedCombined) {
+          await tryLoadScript(
+            WALLET_SDK_SCRIPT_ID,
+            paypalCheckoutApplePaySdkSrc(paypalClientId.trim(), currency),
+          );
+        }
         paypal = currentPayPal();
       }
       await tryLoadScript(GOOGLE_PAY_SCRIPT_ID, GOOGLE_PAY_JS_SRC);

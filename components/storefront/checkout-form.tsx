@@ -27,6 +27,7 @@ import type { CheckoutSummaryLine } from "@/components/storefront/checkout-summa
 import { CheckoutSummaryAside } from "@/components/storefront/checkout-summary-aside";
 import {
   CheckoutPaymentMethods,
+  isCheckoutPayPalMethodVisible,
   type CheckoutPayPalMethodId,
 } from "@/components/storefront/checkout-payment-methods";
 import {
@@ -205,6 +206,7 @@ export function CheckoutForm({
   checkoutTitle = "Checkout",
   paypalUserIdToken = null,
   paypalVaultedCards = [],
+  sepaAvailable = false,
 }: {
   idempotencyKey: string;
   lines: CheckoutSummaryLine[];
@@ -232,6 +234,8 @@ export function CheckoutForm({
   checkoutTitle?: string;
   paypalUserIdToken?: string | null;
   paypalVaultedCards?: PayPalVaultedCard[];
+  /** SEPA-Lastschrift nur listen, wenn PayPal APM beim Händler aktiv ist. */
+  sepaAvailable?: boolean;
 }) {
   const [cartState, cartFormAction, cartPending] = useActionState(submitCheckout, initial);
   const [workshopState, workshopFormAction, workshopPending] = useActionState(
@@ -501,6 +505,22 @@ export function CheckoutForm({
       setCardPayBusy(false);
     }
   };
+
+  useEffect(() => {
+    const visible = isCheckoutPayPalMethodVisible(payPalSurface, {
+      nativeWallets: !workshopBookingId,
+      applePayReady: walletReady.applePay,
+      googlePayReady: walletReady.googlePay,
+      sepaAvailable,
+    });
+    if (!visible) setPayPalSurface("paypal");
+  }, [
+    payPalSurface,
+    sepaAvailable,
+    walletReady.applePay,
+    walletReady.googlePay,
+    workshopBookingId,
+  ]);
 
   useEffect(() => {
     if (!prefillPaypal) return;
@@ -1258,6 +1278,7 @@ export function CheckoutForm({
               nativeWallets={!workshopMpa}
               applePayReady={walletReady.applePay}
               googlePayReady={walletReady.googlePay}
+              sepaAvailable={sepaAvailable}
               cardFields={
                 payPalConfigured && !workshopMpa ? (
                   <PayPalCardFieldsCheckout
