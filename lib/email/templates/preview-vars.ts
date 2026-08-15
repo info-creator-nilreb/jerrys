@@ -30,12 +30,14 @@ const AUTH_PREVIEW_NOTE_TEXT: Partial<Record<EmailTemplateKey, string>> = {
 const ORDER_PREVIEW_CTA_LABEL: Partial<Record<EmailTemplateKey, string>> = {
   order_confirmation: "Bestellung ansehen",
   order_shipped: "Zur Bestellung",
+  order_picked_up: "Zur Bestellung",
   order_refunded: "Zurück zum Shop",
 };
 
 const ORDER_TEMPLATE_KEYS = new Set<EmailTemplateKey>([
   "order_confirmation",
   "order_shipped",
+  "order_picked_up",
   "order_cancelled",
   "order_refunded",
 ]);

@@ -4,6 +4,8 @@ export function emailTypeLabel(type: string): string {
       return "Bestellbestätigung";
     case "order_shipped":
       return "Versandbenachrichtigung";
+    case "order_picked_up":
+      return "Abholbestätigung";
     case "order_cancelled":
       return "Storno-Benachrichtigung";
     case "order_refunded":

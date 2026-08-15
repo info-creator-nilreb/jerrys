@@ -43,6 +43,22 @@ describe("buildEmailTemplatePreviewVars", () => {
     expect(order.shipping_address_tracking_html).toContain("Versandadresse");
   });
 
+  it("nutzt für Abholmail echte Fragmente für Rechnung und Artikel", () => {
+    const vars = buildEmailTemplatePreviewVars(
+      "order_picked_up",
+      defaultTransactionalEmailBranding(),
+    );
+    const order = vars.order as Record<string, string>;
+    const email = vars.email as Record<string, string>;
+
+    expect(email.cta_label).toBe("Zur Bestellung");
+    expect(order.invoice_note_html).toContain("Rechnungsnummer RE-2026-0042");
+    expect(order.invoice_note_html).toContain("PDF-Anhang");
+    expect(order.items_html).toContain("Gin Tasting Set");
+    expect(order.items_html).not.toBe("<table>…</table>");
+    expect(order.shipping_address_html).toContain("Musterstraße 1");
+  });
+
   it("nutzt für Erstattungsmail echtes Rückerstattungsbetrag-Fragment", () => {
     const vars = buildEmailTemplatePreviewVars(
       "order_refunded",

@@ -30,6 +30,25 @@ export function buildOrderShippedOrderlyHtml(): string {
   });
 }
 
+export function buildOrderPickedUpOrderlyHtml(): string {
+  return buildOrderlyEmailHtml({
+    documentTitle: "Abholung {{order.number}}",
+    previewText: "Deine Bestellung {{order.number}} wurde abgeholt.",
+    bodyHtml: [
+      orderlyHeading("Deine Bestellung wurde abgeholt"),
+      orderlyIntro(
+        `<p style="margin:0 0 11px;">Hallo {{customer.first_name}},</p><p style="margin:0;">deine Bestellung wurde abgeholt. Vielen Dank für deinen Einkauf bei {{shop.name}}.</p>`,
+      ),
+      orderlySection("{{{order.invoice_note_html}}}", "11px 44px"),
+      orderlyDivider(),
+      orderlyOrderNumber(),
+      orderlyItemsSection("Abgeholte Artikel", "{{{order.items_html}}}"),
+      orderlySection("{{{order.shipping_address_html}}}", "11px 44px"),
+      orderlyClosing(),
+    ].join(""),
+  });
+}
+
 export function buildOrderCancelledOrderlyHtml(): string {
   return buildOrderlyEmailHtml({
     documentTitle: "Storno {{order.number}}",

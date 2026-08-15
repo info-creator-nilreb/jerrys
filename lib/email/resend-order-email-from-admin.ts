@@ -2,17 +2,20 @@ import { getPrisma } from "@/lib/db/prisma";
 import {
   EMAIL_ORDER_CANCELLED,
   EMAIL_ORDER_CONFIRMATION,
+  EMAIL_ORDER_PICKED_UP,
   EMAIL_ORDER_REFUNDED,
   EMAIL_ORDER_SHIPPED,
 } from "@/lib/email/email-types";
 import { sendOrderCancelledIfNeeded } from "@/lib/email/order-cancelled";
 import { sendOrderConfirmationIfNeeded } from "@/lib/email/order-confirmation";
+import { sendOrderPickedUpIfNeeded } from "@/lib/email/order-picked-up";
 import { sendOrderRefundedIfNeeded } from "@/lib/email/order-refunded";
 import { sendOrderShippedIfNeeded } from "@/lib/email/order-shipped";
 
 const ADMIN_RESEND_TYPES = new Set<string>([
   EMAIL_ORDER_CONFIRMATION,
   EMAIL_ORDER_SHIPPED,
+  EMAIL_ORDER_PICKED_UP,
   EMAIL_ORDER_REFUNDED,
   EMAIL_ORDER_CANCELLED,
 ]);
@@ -56,12 +59,19 @@ export async function resendOrderEmailFromAdmin(
     return { ok: false, error: "Keine Positionen – Versand-Mail nicht versandbar." };
   }
 
+  if (type === EMAIL_ORDER_PICKED_UP && order.items.length === 0) {
+    return { ok: false, error: "Keine Positionen – Abhol-Mail nicht versandbar." };
+  }
+
   switch (type) {
     case EMAIL_ORDER_CONFIRMATION:
       await sendOrderConfirmationIfNeeded(id, { force: true });
       break;
     case EMAIL_ORDER_SHIPPED:
       await sendOrderShippedIfNeeded(id, { force: true });
+      break;
+    case EMAIL_ORDER_PICKED_UP:
+      await sendOrderPickedUpIfNeeded(id, { force: true });
       break;
     case EMAIL_ORDER_REFUNDED:
       await sendOrderRefundedIfNeeded(id, { force: true });

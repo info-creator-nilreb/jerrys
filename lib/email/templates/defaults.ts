@@ -8,6 +8,7 @@ import {
 import { buildOrderConfirmationOrderlyHtml } from "@/lib/email/templates/order-confirmation-orderly-html";
 import {
   buildOrderCancelledOrderlyHtml,
+  buildOrderPickedUpOrderlyHtml,
   buildOrderRefundedOrderlyHtml,
   buildOrderShippedOrderlyHtml,
 } from "@/lib/email/templates/order-transactional-orderly-html";
@@ -74,6 +75,30 @@ const DEFAULTS: Record<EmailTemplateKey, Omit<EmailTemplateDefaultContent, "key"
       "{{order.carrier_line}}",
       "",
       "Sendung verfolgen: {{order.tracking_url}}",
+      "",
+      "Rechnungsnummer: {{order.invoice_number}}{{order.invoice_note}}",
+      "",
+      "Positionen:",
+      "{{order.items_text}}",
+      "",
+      "Zur Bestellung: {{email.cta_url}}",
+      "",
+      "Viele Grüße",
+      "Dein {{shop.name}}-Team",
+    ].join("\n"),
+  },
+  order_picked_up: {
+    subject: "Deine Bestellung {{order.number}} wurde abgeholt",
+    htmlBody: buildOrderPickedUpOrderlyHtml(),
+    textBody: [
+      "Hallo {{customer.first_name}},",
+      "",
+      "deine Bestellung wurde abgeholt. Vielen Dank für deinen Einkauf bei {{shop.name}}.",
+      "",
+      "Bestellnummer: {{order.number}}",
+      "",
+      "Abholung:",
+      "{{order.shipping_address_text}}",
       "",
       "Rechnungsnummer: {{order.invoice_number}}{{order.invoice_note}}",
       "",
