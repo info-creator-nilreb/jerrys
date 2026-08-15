@@ -3,6 +3,7 @@ import { nonEmptyString } from "@/lib/validation/form";
 import { addressLine1HouseNumberMessage } from "@/lib/checkout/address-line-validation";
 import { normalizeAddressText } from "@/lib/checkout/address-text";
 import { parseCheckoutDeliveryMethod } from "@/lib/checkout/delivery-method";
+import { parseCheckoutPayPalSurface, parsePayPalVaultId } from "@/lib/checkout/checkout-paypal-surface";
 import { postalCodeErrorMessage } from "@/lib/checkout/postal-code-validation";
 
 export const paymentMethodSchema = z.enum(["paypal"]);
@@ -71,6 +72,8 @@ const checkoutBase = z.object({
     (v) => v === "1" || v === "on" || v === true,
     z.boolean().optional().default(false),
   ),
+  checkoutPayPalSurface: z.preprocess(parseCheckoutPayPalSurface, z.enum(["paypal", "card", "apple_pay", "google_pay", "sepa"])),
+  paypalVaultId: z.preprocess(parsePayPalVaultId, z.string().max(80).optional()),
 });
 
 export const checkoutFormSchema = checkoutBase
@@ -150,6 +153,8 @@ export const checkoutFormSchema = checkoutBase
       idempotencyKey: val.idempotencyKey,
       saveShippingAddress: val.saveShippingAddress ?? false,
       saveBillingAddress: val.saveBillingAddress ?? false,
+      checkoutPayPalSurface: val.checkoutPayPalSurface,
+      paypalVaultId: val.paypalVaultId,
     };
   });
 

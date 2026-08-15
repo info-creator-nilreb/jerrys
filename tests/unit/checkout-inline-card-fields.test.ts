@@ -64,6 +64,9 @@ describe("Checkout-Kartenfelder-Reihenfolge", () => {
     expect(hintIdx).toBeGreaterThan(cardIdx);
     expect(html).not.toContain("Apple Pay");
     expect(html).not.toContain("Google Pay");
+    expect(html).toContain('value="sepa"');
+    expect(html).toContain('value="card"');
+    expect(html).not.toContain("overflow-hidden rounded-lg border border-[#e5e7eb]");
   });
 
   it("verspricht bei Apple Pay keinen PayPal-Redirect", async () => {

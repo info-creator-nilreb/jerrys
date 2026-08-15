@@ -26,7 +26,7 @@ describe("checkoutPaymentMethodHint", () => {
     expect(google).toContain("keine Weiterleitung zur PayPal-Website");
   });
 
-  it("beschreibt PayPal und SEPA als PayPal-Weiterleitung", () => {
+  it("beschreibt PayPal als Konto-Weiterleitung und SEPA als Mandat", () => {
     const paypal = checkoutPaymentMethodHint({
       method: "paypal",
       submitLabel: "Jetzt kostenpflichtig bestellen",
@@ -40,8 +40,9 @@ describe("checkoutPaymentMethodHint", () => {
       nativeWallets: true,
     });
     expect(paypal).toContain("PayPal-Konto");
-    expect(sepa).toContain("SEPA-Lastschrift");
-    expect(sepa).toContain("PayPal");
+    expect(sepa).toContain("SEPA-Lastschriftmandat");
+    expect(sepa).toContain("keine Anmeldung");
+    expect(sepa).not.toContain("leiten wir Sie zu PayPal weiter");
   });
 });
 

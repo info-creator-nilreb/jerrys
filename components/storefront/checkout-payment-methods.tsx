@@ -111,7 +111,7 @@ export function CheckoutPaymentMethods({
 
   return (
     <div className="mt-4 w-full">
-      <fieldset className="overflow-hidden rounded-lg border border-[#e5e7eb] bg-white p-0">
+      <fieldset className="rounded-lg border border-[#e5e7eb] bg-white p-0">
         <legend className="sr-only">Zahlungsart</legend>
         {rows.map((row, i) => {
           const selected = value === row.id;
@@ -125,6 +125,8 @@ export function CheckoutPaymentMethods({
             <div
               key={row.id}
               className={`${selected ? "bg-[#f9fafb]" : ""} ${
+                i === 0 ? "rounded-t-lg" : ""
+              } ${i === rows.length - 1 ? "rounded-b-lg" : ""} ${
                 i < rows.length - 1 ? "border-b border-[#e5e7eb]" : ""
               }`}
             >
@@ -136,6 +138,7 @@ export function CheckoutPaymentMethods({
                 <input
                   type="radio"
                   name="checkoutPayPalSurface"
+                  value={row.id}
                   className="size-4 shrink-0 accent-primary"
                   checked={selected}
                   onChange={() => onChange(row.id)}

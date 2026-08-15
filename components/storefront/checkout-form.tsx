@@ -58,6 +58,7 @@ import type {
   CheckoutAddressPrefill,
   CustomerAddressListItem,
 } from "@/features/customers/checkout-prefill";
+import type { PayPalVaultedCard } from "@/lib/payments/paypal-vaulted-cards";
 import { z } from "zod";
 
 const initial: CheckoutActionState = null;
@@ -202,6 +203,8 @@ export function CheckoutForm({
   workshopBookingId,
   hidePromotionPanel = false,
   checkoutTitle = "Checkout",
+  paypalUserIdToken = null,
+  paypalVaultedCards = [],
 }: {
   idempotencyKey: string;
   lines: CheckoutSummaryLine[];
@@ -227,6 +230,8 @@ export function CheckoutForm({
   workshopBookingId?: string;
   hidePromotionPanel?: boolean;
   checkoutTitle?: string;
+  paypalUserIdToken?: string | null;
+  paypalVaultedCards?: PayPalVaultedCard[];
 }) {
   const [cartState, cartFormAction, cartPending] = useActionState(submitCheckout, initial);
   const [workshopState, workshopFormAction, workshopPending] = useActionState(
@@ -1263,6 +1268,9 @@ export function CheckoutForm({
                     submitRef={cardFieldsSubmitRef}
                     onEligibleChange={setPayPalCardFieldsPrimary}
                     onBusyChange={setCardPayBusy}
+                    userIdToken={paypalUserIdToken}
+                    vaultedCards={paypalVaultedCards}
+                    customerLoggedIn={canSaveAddressToAccount}
                   />
                 ) : null
               }

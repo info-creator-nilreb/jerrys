@@ -12,9 +12,14 @@ import { sendOrderConfirmationIfNeeded } from "@/lib/email/order-confirmation";
 import { sendWorkshopBookingConfirmationIfNeeded } from "@/lib/email/workshop-booking-emails";
 import { getPrisma } from "@/lib/db/prisma";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
-import { createPayPalCheckoutOrder } from "@/lib/payments/paypal-orders";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 import { usesPaypalHostedCheckout } from "@/lib/payments/online-payment-method";
+import { parseCheckoutPayPalSurface } from "@/lib/checkout/checkout-paypal-surface";
+import {
+  paymentSourceForCheckoutForm,
+  paypalOrderCreateUserMessage,
+  startPayPalCheckoutOrderFromForm,
+} from "@/lib/checkout/paypal-order-payment-source";
 import { ORDER_EVENT_PLACED } from "@/lib/orders/order-events";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
 import type { OrderPriceLineInput } from "@/lib/tax/order-price-totals";
@@ -62,6 +67,7 @@ export async function createWorkshopOrderFromFormData(
 
   const d: CheckoutFormInput = parsed.data;
   const bookingId = bookingParsed.data;
+  const surface = parseCheckoutPayPalSurface(d.checkoutPayPalSurface);
 
   const hold = await getWorkshopHoldForCheckout(bookingId);
   if (!hold) {
@@ -74,6 +80,16 @@ export async function createWorkshopOrderFromFormData(
   const usePaypalHostedCheckout = usesPaypalHostedCheckout(d.paymentMethod);
   if (usePaypalHostedCheckout && !isPayPalConfigured()) {
     return { ok: false, error: "PayPal ist derzeit nicht verfügbar." };
+  }
+
+  let customerId: string | null = null;
+  try {
+    const { getCustomerSession } = await import("@/lib/auth/customer-session");
+    const { getVerifiedActiveCustomerId } = await import("@/features/customers");
+    const session = await getCustomerSession();
+    customerId = session ? await getVerifiedActiveCustomerId(session.customerId) : null;
+  } catch {
+    customerId = null;
   }
 
   const prisma = getPrisma();
@@ -96,7 +112,9 @@ export async function createWorkshopOrderFromFormData(
         return { ok: false, error: "PayPal nicht konfiguriert." };
       }
       try {
-        const { paypalOrderId, approvalUrl: approvalUrlRaw } = await createPayPalCheckoutOrder({
+        const started = await startPayPalCheckoutOrderFromForm({
+          d,
+          shopCustomerId: customerId,
           internalOrderId: existing.id,
           orderNumber: existing.orderNumber,
           totalGrossCents: existing.totalGrossCents,
@@ -106,7 +124,7 @@ export async function createWorkshopOrderFromFormData(
           data: {
             orderId: existing.id,
             provider: "paypal",
-            providerRef: paypalOrderId,
+            providerRef: started.paypalOrderId,
             status: "pending",
             amountGrossCents: existing.totalGrossCents,
             currency: existing.currency,
@@ -117,12 +135,13 @@ export async function createWorkshopOrderFromFormData(
           paymentReady: true,
           orderNumber: existing.orderNumber,
           internalOrderId: existing.id,
-          paypalOrderId,
-          approvalUrl: approvalUrlRaw ?? "",
+          paypalOrderId: started.paypalOrderId,
+          approvalUrl: started.approvalUrl,
+          payerActionUrl: started.payerActionUrl ?? undefined,
         };
       } catch (e) {
         log.error("workshop_paypal_resume_failed", { orderId: existing.id, ...errorMeta(e) });
-        return { ok: false, error: "Zahlungsstart fehlgeschlagen. Bitte erneut versuchen." };
+        return { ok: false, error: paypalOrderCreateUserMessage(e, surface) };
       }
     }
 
@@ -169,14 +188,11 @@ export async function createWorkshopOrderFromFormData(
   const isFree = totals.totalCents <= 0;
   const orderStatus = isFree ? "paid" : "pending_payment";
 
-  let customerId: string | null = null;
-  try {
-    const { getCustomerSession } = await import("@/lib/auth/customer-session");
-    const { getVerifiedActiveCustomerId } = await import("@/features/customers");
-    const session = await getCustomerSession();
-    customerId = session ? await getVerifiedActiveCustomerId(session.customerId) : null;
-  } catch {
-    customerId = null;
+  if (!isFree) {
+    const paymentSource = paymentSourceForCheckoutForm(d, customerId);
+    if (!paymentSource.ok) {
+      return { ok: false, error: paymentSource.error };
+    }
   }
 
   let newOrderId = "";
@@ -308,7 +324,9 @@ export async function createWorkshopOrderFromFormData(
   }
 
   try {
-    const { paypalOrderId, approvalUrl: approvalUrlRaw } = await createPayPalCheckoutOrder({
+    const started = await startPayPalCheckoutOrderFromForm({
+      d,
+      shopCustomerId: customerId,
       internalOrderId: newOrderId,
       orderNumber,
       totalGrossCents: totals.totalCents,
@@ -318,7 +336,7 @@ export async function createWorkshopOrderFromFormData(
       data: {
         orderId: newOrderId,
         provider: "paypal",
-        providerRef: paypalOrderId,
+        providerRef: started.paypalOrderId,
         status: "pending",
         amountGrossCents: totals.totalCents,
         currency: hold.currency,
@@ -330,14 +348,15 @@ export async function createWorkshopOrderFromFormData(
       paymentReady: true,
       orderNumber,
       internalOrderId: newOrderId,
-      paypalOrderId,
-      approvalUrl: approvalUrlRaw ?? "",
+      paypalOrderId: started.paypalOrderId,
+      approvalUrl: started.approvalUrl,
+      payerActionUrl: started.payerActionUrl ?? undefined,
     };
   } catch (e) {
     log.error("workshop_paypal_create_failed", { orderId: newOrderId, ...errorMeta(e) });
     return {
       ok: false,
-      error: "Bestellung angelegt, Zahlungsstart fehlgeschlagen. Bitte erneut versuchen.",
+      error: paypalOrderCreateUserMessage(e, surface),
     };
   }
 }

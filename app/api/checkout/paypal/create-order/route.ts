@@ -69,5 +69,6 @@ export async function POST(req: Request) {
     ok: true,
     paypalOrderId: result.paypalOrderId,
     orderNumber: result.orderNumber,
+    payerActionUrl: result.payerActionUrl || undefined,
   });
 }

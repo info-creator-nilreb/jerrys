@@ -23,7 +23,7 @@ export function checkoutPaymentMethodHint(input: {
     return `Nach „${submitLabel}“ leiten wir Sie zu PayPal weiter, um mit Ihrem PayPal-Konto zu bezahlen.`;
   }
   if (method === "sepa") {
-    return `Nach „${submitLabel}“ leiten wir Sie zu PayPal weiter, um die SEPA-Lastschrift zu bestätigen.`;
+    return `Nach „${submitLabel}“ bestätigen Sie das SEPA-Lastschriftmandat. Es erfolgt keine Anmeldung im PayPal-Konto.`;
   }
   if (method === "apple_pay") {
     if (!input.nativeWallets) {

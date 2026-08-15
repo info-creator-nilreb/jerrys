@@ -1,6 +1,15 @@
 "use client";
 
 import { CHECKOUT_FIELD_SHELL } from "@/lib/checkout/checkout-field-shell";
+import {
+  PAYPAL_CARD_FIELDS_SCRIPT_ID,
+  PAYPAL_CARD_FIELDS_VAULT_SCRIPT_ID,
+  paypalCardFieldsSdkSrc,
+} from "@/lib/payments/paypal-card-fields-sdk";
+import {
+  formatPayPalVaultedCardLabel,
+  type PayPalVaultedCard,
+} from "@/lib/payments/paypal-vaulted-cards";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -37,16 +46,7 @@ declare global {
   }
 }
 
-function paypalCardSdkSrc(clientId: string, currency: string): string {
-  const p = new URLSearchParams({
-    "client-id": clientId,
-    components: "card-fields",
-    intent: "capture",
-    currency: currency.trim().toUpperCase(),
-    locale: "de_DE",
-  });
-  return `https://www.paypal.com/sdk/js?${p.toString()}`;
-}
+type Eligibility = "loading" | "eligible" | "ineligible";
 
 /**
  * Nur erlaubte PayPal-Card-Field-Keys (s. Style Guide). Innen flach halten: ein sichtbarer Rahmen
@@ -77,8 +77,6 @@ const cardFieldStyle: Record<string, Record<string, string>> = {
     color: "#9ca3af",
   },
 };
-
-type Eligibility = "loading" | "eligible" | "ineligible";
 
 function CardFieldsSkeletonOverlay() {
   const bar =
@@ -120,6 +118,9 @@ export function PayPalCardFieldsCheckout({
   submitRef,
   nested = false,
   className,
+  userIdToken = null,
+  vaultedCards = [],
+  customerLoggedIn = false,
 }: {
   formId: string;
   paypalClientId: string;
@@ -133,6 +134,10 @@ export function PayPalCardFieldsCheckout({
   /** Unter der Karten-Option in der Zahlungsliste (Rahmen/Innenabstand). */
   nested?: boolean;
   className?: string;
+  /** PayPal User-ID-Token, damit Card Fields hinterlegte Händler-Karten erkennen. */
+  userIdToken?: string | null;
+  vaultedCards?: PayPalVaultedCard[];
+  customerLoggedIn?: boolean;
 }) {
   const router = useRouter();
   const nameRef = useRef<HTMLDivElement>(null);
@@ -146,6 +151,9 @@ export function PayPalCardFieldsCheckout({
   const [sdkError, setSdkError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [eligibility, setEligibility] = useState<Eligibility>("loading");
+  const [selectedVaultId, setSelectedVaultId] = useState("");
+  const selectedVaultIdRef = useRef(selectedVaultId);
+  selectedVaultIdRef.current = selectedVaultId;
 
   const setBusyState = useCallback(
     (next: boolean) => {
@@ -163,15 +171,29 @@ export function PayPalCardFieldsCheckout({
   );
 
   useEffect(() => {
+    if (selectedVaultId && !vaultedCards.some((c) => c.id === selectedVaultId)) {
+      setSelectedVaultId("");
+    }
+  }, [selectedVaultId, vaultedCards]);
+
+  useEffect(() => {
+    if (vaultedCards.length > 0) {
+      notifyEligible(true);
+    }
+  }, [notifyEligible, vaultedCards.length]);
+
+  useEffect(() => {
     setEligibility("loading");
     setSdkError(null);
 
     if (!paypalClientId.trim()) {
       setEligibility("ineligible");
+      if (vaultedCards.length > 0) notifyEligible(true);
       return;
     }
 
-    const scriptId = "paypal-js-card-fields-checkout";
+    const wantedToken = userIdToken?.trim() ?? "";
+    const scriptId = wantedToken ? PAYPAL_CARD_FIELDS_VAULT_SCRIPT_ID : PAYPAL_CARD_FIELDS_SCRIPT_ID;
     let cancelled = false;
 
     const clearMountHosts = () => {
@@ -180,12 +202,17 @@ export function PayPalCardFieldsCheckout({
       }
     };
 
+    const markIneligible = () => {
+      setEligibility("ineligible");
+      if (vaultedCards.length > 0) notifyEligible(true);
+    };
+
     const mount = () => {
       const paypal = window.paypal;
       if (!paypal || cancelled) return;
       if (typeof paypal.CardFields !== "function") {
         setSdkError("PayPal Card Fields sind in dieser Umgebung nicht verfügbar.");
-        setEligibility("ineligible");
+        markIneligible();
         return;
       }
 
@@ -198,6 +225,8 @@ export function PayPalCardFieldsCheckout({
             throw new Error("Bitte alle Pflichtfelder und die rechtlichen Hinweise prüfen.");
           }
           const fd = new FormData(form);
+          fd.delete("paypalVaultId");
+          fd.set("checkoutPayPalSurface", "card");
           const res = await fetch("/api/checkout/paypal/create-order", {
             method: "POST",
             body: fd,
@@ -245,7 +274,7 @@ export function PayPalCardFieldsCheckout({
       });
 
       if (!cardFields.isEligible()) {
-        setEligibility("ineligible");
+        markIneligible();
         return;
       }
 
@@ -302,7 +331,7 @@ export function PayPalCardFieldsCheckout({
         } catch (e) {
           if (!cancelled) {
             setSdkError(e instanceof Error ? e.message : "Kartenfelder konnten nicht geladen werden.");
-            setEligibility("ineligible");
+            markIneligible();
           }
         }
       })();
@@ -316,12 +345,15 @@ export function PayPalCardFieldsCheckout({
     } else {
       const script = document.createElement("script");
       script.id = scriptId;
-      script.src = paypalCardSdkSrc(paypalClientId.trim(), currency);
+      script.src = paypalCardFieldsSdkSrc(paypalClientId.trim(), currency);
+      if (wantedToken) {
+        script.setAttribute("data-user-id-token", wantedToken);
+      }
       script.async = true;
       script.onload = () => mount();
       script.onerror = () => {
         setSdkError("PayPal-Skript konnte nicht geladen werden.");
-        setEligibility("ineligible");
+        markIneligible();
       };
       document.body.appendChild(script);
     }
@@ -333,12 +365,72 @@ export function PayPalCardFieldsCheckout({
       }
       fieldControlsRef.current = [];
       cardFieldsRef.current = null;
-      notifyEligible(false);
+      if (vaultedCards.length === 0) notifyEligible(false);
       clearMountHosts();
     };
-  }, [currency, formId, notifyEligible, paypalClientId, router]);
+  }, [currency, formId, notifyEligible, paypalClientId, router, userIdToken, vaultedCards.length]);
+
+  const payWithVaultedCard = async (vaultId: string) => {
+    const form = document.getElementById(formId) as HTMLFormElement | null;
+    if (!form?.reportValidity()) return;
+
+    setBusyState(true);
+    setSdkError(null);
+    try {
+      const fd = new FormData(form);
+      fd.set("paypalVaultId", vaultId);
+      fd.set("checkoutPayPalSurface", "card");
+      const res = await fetch("/api/checkout/paypal/create-order", {
+        method: "POST",
+        body: fd,
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        paypalOrderId?: string;
+        orderNumber?: string;
+        payerActionUrl?: string;
+        error?: string;
+      };
+      if (res.status === 409 && data.orderNumber) {
+        router.push(`/checkout/erfolg?nr=${encodeURIComponent(data.orderNumber)}`);
+        return;
+      }
+      if (!res.ok || !data.paypalOrderId) {
+        throw new Error(data.error ?? "Bestellung konnte nicht gestartet werden.");
+      }
+      if (data.payerActionUrl) {
+        window.location.assign(data.payerActionUrl);
+        return;
+      }
+      const cap = await fetch("/api/checkout/paypal/capture-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paypalOrderId: data.paypalOrderId }),
+      });
+      const j = (await cap.json().catch(() => ({}))) as {
+        ok?: boolean;
+        orderNumber?: string;
+        redirectUrl?: string;
+      };
+      if (!cap.ok || !j.ok) {
+        throw new Error("Zahlung konnte nicht abgeschlossen werden.");
+      }
+      const dest = j.redirectUrl ?? `/checkout/erfolg?nr=${encodeURIComponent(j.orderNumber ?? "")}`;
+      router.push(dest);
+    } catch (e) {
+      setSdkError(e instanceof Error ? e.message : "Zahlung fehlgeschlagen.");
+    } finally {
+      setBusyState(false);
+    }
+  };
 
   const handlePay = async () => {
+    const vaultId = selectedVaultIdRef.current.trim();
+    if (vaultId) {
+      await payWithVaultedCard(vaultId);
+      return;
+    }
+
     const form = document.getElementById(formId) as HTMLFormElement | null;
     if (!form?.reportValidity()) return;
 
@@ -380,25 +472,77 @@ export function PayPalCardFieldsCheckout({
     return null;
   }
 
-  if (eligibility === "ineligible") {
+  if (eligibility === "ineligible" && vaultedCards.length === 0) {
     return null;
   }
 
-  const showSkeleton = eligibility === "loading";
+  const showNewCardFields = !selectedVaultId;
+  const showSkeleton = showNewCardFields && eligibility === "loading";
+  const canPay = Boolean(selectedVaultId) || eligibility === "eligible";
   const layoutClass = [
-    nested ? "border-t border-[#e5e7eb] px-3 py-3" : "mt-4 max-w-lg",
+    nested ? "relative border-t border-[#e5e7eb] px-3 py-3" : "relative mt-4 max-w-lg",
     "space-y-4",
     className,
   ]
     .filter(Boolean)
     .join(" ");
 
+  const helperText = vaultedCards.length
+    ? "Wählen Sie eine gespeicherte Karte oder geben Sie eine neue ein. Kartendaten werden von PayPal verarbeitet (PCI-konform)."
+    : customerLoggedIn
+      ? "Nach der ersten erfolgreichen Kartenzahlung merken wir uns die Karte für Ihren nächsten Einkauf. Kartendaten werden von PayPal verarbeitet (PCI-konform). Im Browser gespeicherte Karten können in diesen Feldern nicht automatisch eingesetzt werden."
+      : "Kartendaten werden von PayPal verarbeitet (PCI-konform). Im Browser oder PayPal-Konto gespeicherte Karten erscheinen hier nicht. Für Karten in Ihrem PayPal-Konto wählen Sie die Zahlungsart PayPal.";
+
   return (
     <div id="checkout-card-fields" className={layoutClass} aria-busy={showSkeleton}>
       {showSkeleton ? (
         <span className="sr-only">Kartenfelder werden geladen.</span>
       ) : null}
-      <div className="relative">
+
+      {vaultedCards.length > 0 ? (
+        <fieldset className="space-y-2">
+          <legend className="text-sm text-[#6b7280]">Gespeicherte Karten</legend>
+          {vaultedCards.map((card) => {
+            const label = formatPayPalVaultedCardLabel(card);
+            return (
+              <label
+                key={card.id}
+                className="flex cursor-pointer items-center gap-3 rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#1f2937]"
+              >
+                <input
+                  type="radio"
+                  name="paypalVaultId"
+                  value={card.id}
+                  checked={selectedVaultId === card.id}
+                  onChange={() => setSelectedVaultId(card.id)}
+                  className="size-4 shrink-0 accent-primary"
+                />
+                <span>{label}</span>
+              </label>
+            );
+          })}
+          <label className="flex cursor-pointer items-center gap-3 rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#1f2937]">
+            <input
+              type="radio"
+              name="paypalVaultId"
+              value=""
+              checked={selectedVaultId === ""}
+              onChange={() => setSelectedVaultId("")}
+              className="size-4 shrink-0 accent-primary"
+            />
+            <span>Neue Karte verwenden</span>
+          </label>
+        </fieldset>
+      ) : null}
+
+      <div
+        className={
+          showNewCardFields
+            ? "relative"
+            : "pointer-events-none absolute h-0 overflow-hidden opacity-0"
+        }
+        aria-hidden={!showNewCardFields}
+      >
         {showSkeleton ? <CardFieldsSkeletonOverlay /> : null}
         <div
           className={
@@ -434,15 +578,12 @@ export function PayPalCardFieldsCheckout({
         </p>
       ) : null}
 
-      <p className="text-xs leading-relaxed text-[#6b7280]">
-        Kartendaten werden von PayPal verarbeitet (PCI-konform). Weitere Zahlungswege (PayPal-Guthaben, Apple Pay,
-        Google Pay, SEPA) können angezeigt werden, wenn Ihr Konto und das Gerät das unterstützen.
-      </p>
+      <p className="text-xs leading-relaxed text-[#6b7280]">{helperText}</p>
 
       {hidePayButton ? null : (
         <button
           type="button"
-          disabled={busy || eligibility !== "eligible"}
+          disabled={busy || !canPay}
           aria-busy={busy}
           onClick={() => void handlePay()}
           className="w-full rounded-md bg-primary py-3.5 text-sm font-semibold uppercase tracking-wide text-white shadow-sm transition-colors hover:bg-(--primary-hover) disabled:opacity-50"
