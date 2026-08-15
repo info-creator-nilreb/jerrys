@@ -10,5 +10,7 @@ describe("CONTENT_SECURITY_POLICY_BASE", () => {
     expect(CONTENT_SECURITY_POLICY_BASE).toContain("https://pay.google.com");
     expect(CONTENT_SECURITY_POLICY_BASE).toContain("https://www.gstatic.com");
     expect(CONTENT_SECURITY_POLICY_BASE).toContain("https://*.supabase.co");
+    expect(CONTENT_SECURITY_POLICY_BASE).toContain("https://www.openstreetmap.org");
+    expect(CONTENT_SECURITY_POLICY_BASE).toContain("frame-src");
   });
 });

@@ -52,6 +52,9 @@ const BASE_DIRECTIVES = [
     "https://*.paypalobjects.com",
     "https://pay.google.com",
     "https://payments.google.com",
+    /** Lieferadresse auf /checkout/erfolg (OSM-Embed-iframe). */
+    "https://www.openstreetmap.org",
+    "https://openstreetmap.org",
   ].join(" "),
   ["worker-src", "'self'", "blob:"].join(" "),
   "object-src 'none'",
