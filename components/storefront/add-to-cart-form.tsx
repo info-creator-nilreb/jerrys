@@ -83,11 +83,11 @@ export function AddToCartForm({
           compact
             ? "flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end"
             : isPdp
-              ? "flex w-full flex-row flex-wrap items-end gap-3"
+              ? "flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
               : "flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
         }
       >
-        <div className={`flex min-w-0 flex-col gap-1.5 ${isPdp ? "shrink-0" : ""}`}>
+        <div className={`flex min-w-0 flex-col gap-1.5 ${isPdp ? "sm:shrink-0" : ""}`}>
           <label htmlFor={qtyFieldId} className="text-sm font-medium text-(--foreground-muted) md:text-[0.9375rem]">
             Menge
           </label>
@@ -123,7 +123,7 @@ export function AddToCartForm({
             compact
               ? "rounded-md bg-primary px-4 py-2.5 text-base font-semibold text-white shadow-sm transition-colors hover:bg-(--primary-hover) disabled:opacity-50 sm:shrink-0"
               : isPdp
-                ? "inline-flex min-h-[2.85rem] w-full flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3.5 text-base font-semibold text-white shadow-md transition-all hover:bg-(--primary-hover) hover:shadow-lg disabled:opacity-50 sm:min-w-0 sm:py-3"
+                ? "inline-flex min-h-[2.85rem] w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3.5 text-base font-semibold text-white shadow-md transition-all hover:bg-(--primary-hover) hover:shadow-lg disabled:opacity-50 sm:min-h-[2.75rem] sm:min-w-0 sm:flex-1 sm:py-3"
                 : `inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-(--primary-hover) disabled:opacity-50 ${showCartIcon ? "w-full max-w-md sm:w-full" : "w-full max-w-xs sm:w-auto"}`
           }
         >
