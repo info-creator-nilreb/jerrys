@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { useCallback, useEffect, useId, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useId, useState, useSyncExternalStore, useTransition } from "react";
 import { createPortal } from "react-dom";
+import { usePathname, useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/catalog/format";
 import {
   decrementCartLineQuantity,
@@ -36,12 +36,39 @@ function useClientMounted(): boolean {
 
 export function HeaderCartFlyout({ cartBadgeCount }: Props) {
   const panelId = useId();
+  const router = useRouter();
+  const pathname = usePathname() || "/";
   const [open, setOpen] = useState(false);
+  const [navTarget, setNavTarget] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
   const mounted = useClientMounted();
   const [preview, setPreview] = useState<CartFlyoutPreview | null>(null);
   const [loading, setLoading] = useState(false);
   const { controlClassName } = useStorefrontHeaderUi();
   useStorefrontHeaderOverlayLock("cart", open);
+
+  const isNavigating = isPending || (navTarget !== null && pathname !== navTarget);
+
+  const closeFlyout = useCallback(() => {
+    if (isNavigating) return;
+    setOpen(false);
+    setNavTarget(null);
+  }, [isNavigating]);
+
+  const navigateFromFlyout = useCallback(
+    (href: string) => {
+      if (pathname === href) {
+        setOpen(false);
+        setNavTarget(null);
+        return;
+      }
+      setNavTarget(href);
+      startTransition(() => {
+        router.push(href);
+      });
+    },
+    [pathname, router],
+  );
 
   const loadPreview = useCallback(async () => {
     setLoading(true);
@@ -61,11 +88,23 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") closeFlyout();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [open, closeFlyout]);
+
+  useEffect(() => {
+    if (!navTarget) return;
+    const timer = window.setTimeout(() => setNavTarget(null), 12_000);
+    return () => window.clearTimeout(timer);
+  }, [navTarget]);
+
+  useEffect(() => {
+    if (!navTarget || pathname !== navTarget) return;
+    setOpen(false);
+    setNavTarget(null);
+  }, [navTarget, pathname]);
 
   useEffect(() => {
     if (!open) return;
@@ -81,14 +120,16 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
       <div className="fixed inset-0 z-[600000] flex justify-end">
         <button
           type="button"
-          className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"
+          className="absolute inset-0 bg-black/40 backdrop-blur-[1px] disabled:cursor-wait"
           aria-label="Warenkorb schließen"
-          onClick={() => setOpen(false)}
+          disabled={isNavigating}
+          onClick={closeFlyout}
         />
         <div
           id={panelId}
           role="dialog"
           aria-modal="true"
+          aria-busy={isNavigating}
           aria-labelledby={`${panelId}-title`}
           className="relative z-[600001] flex h-full w-full max-w-none flex-col border-l border-(--surface-muted) bg-white shadow-2xl sm:max-w-md"
         >
@@ -98,9 +139,10 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
             </h2>
             <button
               type="button"
-              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-(--foreground-muted) hover:bg-(--surface-soft) hover:text-(--foreground-heading)"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-(--foreground-muted) hover:bg-(--surface-soft) hover:text-(--foreground-heading) disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Schließen"
-              onClick={() => setOpen(false)}
+              disabled={isNavigating}
+              onClick={closeFlyout}
             >
               <span aria-hidden className="text-xl leading-none">
                 ×
@@ -134,13 +176,14 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <Link
-                        href={`/produkte/${line.productSlug}`}
-                        className="font-medium text-(--foreground-heading) hover:text-primary"
-                        onClick={() => setOpen(false)}
+                      <button
+                        type="button"
+                        className="text-left font-medium text-(--foreground-heading) hover:text-primary disabled:cursor-wait disabled:opacity-70"
+                        disabled={isNavigating}
+                        onClick={() => navigateFromFlyout(`/produkte/${line.productSlug}`)}
                       >
                         {line.title}
-                      </Link>
+                      </button>
                       <p className="mt-1 text-sm text-(--foreground-muted)">
                         {formatPrice(line.unitPriceGrossCents, line.currency)} × {line.quantity}
                       </p>
@@ -186,30 +229,35 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
                   </span>
                 </div>
                 <div className="mt-4 flex flex-col gap-2">
-                  <Link
-                    href="/checkout"
-                    className="rounded-md bg-primary px-4 py-3 text-center text-sm font-semibold text-white hover:bg-(--primary-hover)"
-                    onClick={() => setOpen(false)}
+                  <button
+                    type="button"
+                    disabled={isNavigating}
+                    className="rounded-md bg-primary px-4 py-3 text-center text-sm font-semibold text-white hover:bg-(--primary-hover) disabled:cursor-wait disabled:opacity-80"
+                    onClick={() => navigateFromFlyout("/checkout")}
                   >
-                    Zur Kasse
-                  </Link>
-                  <Link
-                    href="/warenkorb"
-                    className="rounded-md border border-(--surface-muted) bg-white px-4 py-3 text-center text-sm font-medium text-(--foreground-heading) hover:border-primary hover:text-primary"
-                    onClick={() => setOpen(false)}
+                    {isNavigating && navTarget === "/checkout" ? "Wird geladen…" : "Zur Kasse"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isNavigating}
+                    className="rounded-md border border-(--surface-muted) bg-white px-4 py-3 text-center text-sm font-medium text-(--foreground-heading) hover:border-primary hover:text-primary disabled:cursor-wait disabled:opacity-80"
+                    onClick={() => navigateFromFlyout("/warenkorb")}
                   >
-                    Warenkorb anzeigen
-                  </Link>
+                    {isNavigating && navTarget === "/warenkorb"
+                      ? "Wird geladen…"
+                      : "Warenkorb anzeigen"}
+                  </button>
                 </div>
               </>
             ) : (
-              <Link
-                href="/produkte"
-                className="block rounded-md bg-primary px-4 py-3 text-center text-sm font-semibold text-white hover:bg-(--primary-hover)"
-                onClick={() => setOpen(false)}
+              <button
+                type="button"
+                disabled={isNavigating}
+                className="block w-full rounded-md bg-primary px-4 py-3 text-center text-sm font-semibold text-white hover:bg-(--primary-hover) disabled:cursor-wait disabled:opacity-80"
+                onClick={() => navigateFromFlyout("/produkte")}
               >
-                Zu den Produkten
-              </Link>
+                {isNavigating && navTarget === "/produkte" ? "Wird geladen…" : "Zu den Produkten"}
+              </button>
             )}
           </div>
         </div>
@@ -224,7 +272,10 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
         aria-label={`Warenkorb${cartBadgeCount > 0 ? `, ${cartBadgeCount} Artikel` : ""}`}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          if (isNavigating) return;
+          setOpen((v) => !v);
+        }}
       >
         <span className="relative inline-flex">
           <CartIcon className="size-7" />
