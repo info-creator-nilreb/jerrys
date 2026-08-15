@@ -7,6 +7,9 @@ import { AsyncLocalStorage } from "node:async_hooks";
  */
 const emailAssetBaseStore = new AsyncLocalStorage<string>();
 
+/** Öffentliche Shop-Domain, die nach außen kommuniziert wird (Mails, Kundenlinks). */
+export const CANONICAL_PUBLIC_SHOP_ORIGIN = "https://jerry-s.com";
+
 export function runWithEmailAssetBaseUrl<T>(baseUrl: string, fn: () => T): T {
   const normalized = baseUrl.trim().replace(/\/$/, "");
   if (!normalized) return fn();
@@ -37,6 +40,21 @@ function isVercelAppHost(hostname: string): boolean {
   return hostname.toLowerCase().endsWith(".vercel.app");
 }
 
+function isManagedBlobHost(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return (
+    host.endsWith(".blob.vercel-storage.com") ||
+    host.endsWith(".public.blob.vercel-storage.com") ||
+    host === "memory.blob.local"
+  );
+}
+
+/** Eigene Shop-Hosts inkl. alter Vercel-URLs — in Mails auf die kanonische Domain umschreiben. */
+function isFirstPartyShopHost(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return host === "jerry-s.com" || host === "www.jerry-s.com" || isVercelAppHost(host);
+}
+
 function originFromEnvUrl(raw: string | undefined): string | null {
   const trimmed = raw?.trim();
   if (!trimmed) return null;
@@ -50,31 +68,31 @@ function originFromEnvUrl(raw: string | undefined): string | null {
   }
 }
 
+function usablePublicShopOrigin(raw: string | undefined): string | null {
+  const origin = originFromEnvUrl(raw);
+  if (!origin) return null;
+  const host = new URL(origin).hostname;
+  if (isVercelAppHost(host)) return null;
+  return origin;
+}
+
 /**
  * Öffentliche Origin für Bilder und Kunden-Links in Transaktions-Mails.
  *
- * `publicSiteBaseUrl()` bevorzugt AUTH_URL, dann VERCEL_URL — auf Vercel ist
- * `VERCEL_URL` immer `*.vercel.app` (oft Deployment Protection). Gmail kann
- * diese Bilder nicht laden. Deshalb: `NEXT_PUBLIC_SITE_URL` zuerst.
- * AUTH_URL bleibt AUTH_URL-first für Auth.js / Preview-Login.
+ * `NEXT_PUBLIC_SITE_URL` auf `*.vercel.app` (alte Preview-/Projekt-URL) wird ignoriert.
+ * Fallback ist `https://jerry-s.com`.
  */
 export function resolvedEmailAssetBase(): string {
   const fromStore = emailAssetBaseStore.getStore()?.replace(/\/$/, "");
   if (fromStore) return fromStore;
 
-  const publicSite = originFromEnvUrl(process.env.NEXT_PUBLIC_SITE_URL);
+  const publicSite = usablePublicShopOrigin(process.env.NEXT_PUBLIC_SITE_URL);
   if (publicSite) return publicSite;
 
-  const auth = originFromEnvUrl(process.env.AUTH_URL);
-  if (auth && !isVercelAppHost(new URL(auth).hostname)) return auth;
-
-  const vercel = originFromEnvUrl(process.env.VERCEL_URL);
-  if (vercel && !isVercelAppHost(new URL(vercel).hostname)) return vercel;
-
-  // Letzter Ausweg (Preview ohne Site-URL): Deployment-Host, auch *.vercel.app.
+  const auth = usablePublicShopOrigin(process.env.AUTH_URL);
   if (auth) return auth;
-  if (vercel) return vercel;
-  return "";
+
+  return CANONICAL_PUBLIC_SHOP_ORIGIN;
 }
 
 /** Alias für Kunden-CTA-Links in Transaktions-Mails. */
@@ -82,21 +100,34 @@ export function emailPublicOrigin(): string {
   return resolvedEmailAssetBase();
 }
 
+function rewriteToEmailAssetBase(url: URL): string {
+  const base = resolvedEmailAssetBase();
+  return `${base}${url.pathname}${url.search}${url.hash}`;
+}
+
 /**
  * Absolute URLs für E-Mail-`<img>` und Links.
  *
  * - **Kein** `127.0.0.1`-Fallback (anders als `canonicalSiteOrigin`): Gmail lädt keine
  *   Bilder von localhost; relative `src` funktionieren in Clients nicht.
- * - Setze in Production `NEXT_PUBLIC_SITE_URL` (https://www.deine-domain.de).
- * - HTTPS-Blob-URLs (z. B. Logo aus Einstellungen) werden unverändert durchgereicht.
+ * - Kanonische Kunden-Domain: `https://jerry-s.com` (`NEXT_PUBLIC_SITE_URL`).
+ * - HTTPS-Blob-URLs (Logo aus Object Storage) bleiben unverändert.
+ * - Absolute URLs auf jerry-s.com / `*.vercel.app` werden auf diese Domain umgeschrieben.
  */
 export function absoluteUrlForEmail(pathOrUrl: string): string | null {
   const raw = pathOrUrl.trim();
   if (!raw) return null;
-  if (raw.startsWith("https://")) return raw;
-  if (raw.startsWith("http://")) {
-    // E-Mail-Clients blocken Mixed Content oft — auf https anheben.
-    return `https://${raw.slice("http://".length)}`;
+
+  if (raw.startsWith("https://") || raw.startsWith("http://")) {
+    const href = raw.startsWith("http://") ? `https://${raw.slice("http://".length)}` : raw;
+    try {
+      const url = new URL(href);
+      if (isManagedBlobHost(url.hostname)) return url.href;
+      if (isFirstPartyShopHost(url.hostname)) return rewriteToEmailAssetBase(url);
+      return url.href;
+    } catch {
+      return null;
+    }
   }
 
   const base = resolvedEmailAssetBase();
