@@ -6,6 +6,7 @@ import {
   PG_POOL_CONFIG_VERSION,
   pgUsesRelaxedSsl,
 } from "@/lib/db/pg-pool-config";
+import { normalizeDatabaseUrl } from "@/lib/db/normalize-database-url";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -59,7 +60,7 @@ function discardCachedPrisma(reason: string): void {
  * The first DB access must happen at runtime with DATABASE_URL set.
  */
 export function getPrisma(): PrismaClient {
-  const connectionString = process.env.DATABASE_URL;
+  const connectionString = normalizeDatabaseUrl(process.env.DATABASE_URL);
   if (!connectionString) {
     throw new Error("DATABASE_URL is not set");
   }
