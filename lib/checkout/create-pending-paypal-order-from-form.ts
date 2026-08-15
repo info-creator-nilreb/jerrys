@@ -9,9 +9,15 @@ import { sendOrderConfirmationIfNeeded } from "@/lib/email/order-confirmation";
 import { ORDER_EVENT_PLACED } from "@/lib/orders/order-events";
 import { getPrisma } from "@/lib/db/prisma";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
-import { createPayPalCheckoutOrder, type PayPalShippingPreference } from "@/lib/payments/paypal-orders";
+import { type PayPalShippingPreference } from "@/lib/payments/paypal-orders";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 import { usesPaypalHostedCheckout } from "@/lib/payments/online-payment-method";
+import { parseCheckoutPayPalSurface } from "@/lib/checkout/checkout-paypal-surface";
+import {
+  paymentSourceForCheckoutForm,
+  paypalOrderCreateUserMessage,
+  startPayPalCheckoutOrderFromForm,
+} from "@/lib/checkout/paypal-order-payment-source";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
 import { loadPromotionsForCheckoutResolve } from "@/lib/promotions/checkout-load";
 import { computeCheckoutOrderTotalsWithDiscount } from "@/lib/promotions/checkout-totals";
@@ -44,6 +50,8 @@ export type CreatePendingPayPalOrderResult =
       paypalOrderId: string;
       /** Leer, wenn kein Wallet-Redirect (z. B. nur Advanced Card Fields). */
       approvalUrl: string;
+      /** 3DS / SEPA-Mandat; Client oder Redirect nutzen diese URL wenn gesetzt. */
+      payerActionUrl?: string;
     }
   /** Gleiche Idempotency erneut abgeschickt, Bestellung bereits erledigt (kein neuer PayPal-Start). */
   | { ok: true; paymentReady: false; orderNumber: string }
@@ -104,6 +112,8 @@ export function checkoutRawFromFormData(formData: FormData): Record<string, unkn
     checkoutDeclineAutomatic: fd(formData, "checkoutDeclineAutomatic"),
     saveShippingAddress: fd(formData, "saveShippingAddress"),
     saveBillingAddress: fd(formData, "saveBillingAddress"),
+    checkoutPayPalSurface: fd(formData, "checkoutPayPalSurface"),
+    paypalVaultId: fd(formData, "paypalVaultId"),
   };
 }
 
@@ -159,6 +169,18 @@ async function saveCheckoutAddressesToAccountIfRequested(
   }
 }
 
+async function loadVerifiedCheckoutCustomerId(): Promise<string | null> {
+  try {
+    const { getCustomerSession } = await import("@/lib/auth/customer-session");
+    const { getVerifiedActiveCustomerId } = await import("@/features/customers");
+    const session = await getCustomerSession();
+    return session ? await getVerifiedActiveCustomerId(session.customerId) : null;
+  } catch (e) {
+    log.warn("checkout_customer_link_skipped", { error: String(e) });
+    return null;
+  }
+}
+
 export async function createPendingPayPalOrderFromFormData(
   formData: FormData,
   options: CreatePendingPayPalOrderOptions = {},
@@ -193,7 +215,14 @@ async function createPendingPayPalOrderFromParsedRaw(
     };
   }
 
+  const customerId = await loadVerifiedCheckoutCustomerId();
+  const paymentSource = paymentSourceForCheckoutForm(d, customerId);
+  if (!paymentSource.ok) {
+    return { ok: false, error: paymentSource.error };
+  }
+
   const usePaypalHostedCheckout = usesPaypalHostedCheckout(d.paymentMethod) && isPayPalConfigured();
+  const surface = parseCheckoutPayPalSurface(d.checkoutPayPalSurface);
 
   const existing = await getPrisma().order.findUnique({
     where: { idempotencyKey: d.idempotencyKey },
@@ -224,19 +253,20 @@ async function createPendingPayPalOrderFromParsedRaw(
         };
       }
       try {
-        const { paypalOrderId, approvalUrl: approvalUrlRaw } = await createPayPalCheckoutOrder({
+        const started = await startPayPalCheckoutOrderFromForm({
+          d,
+          shopCustomerId: customerId,
           internalOrderId: existing.id,
           orderNumber: existing.orderNumber,
           totalGrossCents: existing.totalGrossCents,
           currency: existing.currency,
           shippingPreference: options.paypalShippingPreference,
         });
-        const approvalUrl = approvalUrlRaw ?? "";
         await getPrisma().orderPayment.create({
           data: {
             orderId: existing.id,
             provider: "paypal",
-            providerRef: paypalOrderId,
+            providerRef: started.paypalOrderId,
             status: "pending",
             amountGrossCents: existing.totalGrossCents,
             currency: existing.currency,
@@ -247,15 +277,16 @@ async function createPendingPayPalOrderFromParsedRaw(
           paymentReady: true,
           orderNumber: existing.orderNumber,
           internalOrderId: existing.id,
-          paypalOrderId,
-          approvalUrl,
+          paypalOrderId: started.paypalOrderId,
+          approvalUrl: started.approvalUrl,
+          payerActionUrl: started.payerActionUrl ?? undefined,
         };
       } catch (e) {
         log.error("paypal_checkout_resume_failed", {
           orderId: existing.id,
           ...errorMeta(e),
         });
-        return { ok: false, error: "Zahlungsstart fehlgeschlagen. Bitte erneut versuchen." };
+        return { ok: false, error: paypalOrderCreateUserMessage(e, surface) };
       }
     }
 
@@ -383,21 +414,6 @@ async function createPendingPayPalOrderFromParsedRaw(
   let newOrderId = "";
 
   const orderStatus = "pending_payment";
-
-  // Epic 3: attach order to verified customer session when present; guests stay null.
-  // Dynamic import keeps Auth.js out of the module graph for public checkout API tests.
-  let customerId: string | null = null;
-  try {
-    const { getCustomerSession } = await import("@/lib/auth/customer-session");
-    const { getVerifiedActiveCustomerId } = await import("@/features/customers");
-    const session = await getCustomerSession();
-    customerId = session
-      ? await getVerifiedActiveCustomerId(session.customerId)
-      : null;
-  } catch (e) {
-    log.warn("checkout_customer_link_skipped", { error: String(e) });
-    customerId = null;
-  }
 
   try {
     await getPrisma().$transaction(async (tx) => {
@@ -535,19 +551,20 @@ async function createPendingPayPalOrderFromParsedRaw(
   }
 
   try {
-    const { paypalOrderId, approvalUrl: approvalUrlRaw } = await createPayPalCheckoutOrder({
+    const started = await startPayPalCheckoutOrderFromForm({
+      d,
+      shopCustomerId: customerId,
       internalOrderId: newOrderId,
       orderNumber,
       totalGrossCents: totalGross,
       currency: orderCurrency,
       shippingPreference: options.paypalShippingPreference,
     });
-    const approvalUrl = approvalUrlRaw ?? "";
     await getPrisma().orderPayment.create({
       data: {
         orderId: newOrderId,
         provider: "paypal",
-        providerRef: paypalOrderId,
+        providerRef: started.paypalOrderId,
         status: "pending",
         amountGrossCents: totalGross,
         currency: orderCurrency,
@@ -567,8 +584,9 @@ async function createPendingPayPalOrderFromParsedRaw(
       paymentReady: true,
       orderNumber,
       internalOrderId: newOrderId,
-      paypalOrderId,
-      approvalUrl,
+      paypalOrderId: started.paypalOrderId,
+      approvalUrl: started.approvalUrl,
+      payerActionUrl: started.payerActionUrl ?? undefined,
     };
   } catch (e) {
     log.error("paypal_checkout_create_failed", {
@@ -578,8 +596,7 @@ async function createPendingPayPalOrderFromParsedRaw(
     });
     return {
       ok: false,
-      error:
-        "Die Bestellung wurde angelegt, der Zahlungsstart ist fehlgeschlagen. Bitte mit derselben Bestellung erneut versuchen oder den Support kontaktieren.",
+      error: paypalOrderCreateUserMessage(e, surface),
     };
   }
 }

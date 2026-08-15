@@ -23,7 +23,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "PayPal ist nicht konfiguriert." }, { status: 503 });
   }
 
-  let body: { paypalOrderId?: unknown; shippingCountry?: unknown } = {};
+  let body: {
+    paypalOrderId?: unknown;
+    shippingCountry?: unknown;
+    checkoutPromotionCode?: unknown;
+    checkoutDeclineAutomatic?: unknown;
+  } = {};
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -39,6 +44,8 @@ export async function POST(req: NextRequest) {
   const result = await updatePayPalExpressShipping({
     paypalOrderId,
     shippingCountry: body.shippingCountry,
+    promotionCode: body.checkoutPromotionCode,
+    declineAutomatic: body.checkoutDeclineAutomatic,
   });
 
   if (!result.ok) {

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { quoteExpressShippingForCart } from "@/lib/checkout/express-shipping-quote";
+import { parseExpressPromotionInput } from "@/lib/checkout/express-promotion";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 import { clientIpFromRequest } from "@/lib/security/client-ip";
 import {
@@ -21,14 +22,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "PayPal ist nicht konfiguriert." }, { status: 503 });
   }
 
-  let body: { shippingCountry?: unknown } = {};
+  let body: { shippingCountry?: unknown; checkoutPromotionCode?: unknown; checkoutDeclineAutomatic?: unknown } =
+    {};
   try {
     body = (await req.json()) as { shippingCountry?: unknown };
   } catch {
     body = {};
   }
 
-  const quote = await quoteExpressShippingForCart(body.shippingCountry);
+  const quote = await quoteExpressShippingForCart(
+    body.shippingCountry,
+    parseExpressPromotionInput(body),
+  );
   if (!quote.ok) {
     return NextResponse.json(
       { ok: false, code: quote.code, error: quote.message },

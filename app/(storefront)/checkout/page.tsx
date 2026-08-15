@@ -13,7 +13,8 @@ import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { cartLineCommerceRules, getCartWithLines } from "@/lib/cart/cart-queries";
 import { getShippingCountriesForStorefront } from "@/lib/shop/shipping-countries-for-storefront";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
-import { isPayPalConfigured } from "@/lib/payments/paypal-config";
+import { loadPayPalCustomerVault } from "@/lib/checkout/paypal-customer-vault";
+import { isPayPalConfigured, paypalApiEnv } from "@/lib/payments/paypal-config";
 
 export const dynamic = "force-dynamic";
 
@@ -86,12 +87,13 @@ export default async function CheckoutPage({
   const verifiedCustomerId = session
     ? await getVerifiedActiveCustomerId(session.customerId)
     : null;
-  const [addressPrefill, savedAddresses] = verifiedCustomerId
+  const [addressPrefill, savedAddresses, paypalVault] = verifiedCustomerId
     ? await Promise.all([
         getCheckoutAddressPrefillForCustomer(verifiedCustomerId),
         listCustomerAddresses(verifiedCustomerId),
+        loadPayPalCustomerVault(verifiedCustomerId),
       ])
-    : [null, []];
+    : [null, [], { userIdToken: null as string | null, cards: [] }];
 
   return (
     <div className="pb-12 lg:pb-0">
@@ -132,12 +134,15 @@ export default async function CheckoutPage({
           allowedShippingCountries={allowedShippingCountries}
           payPalConfigured={isPayPalConfigured()}
           payPalClientId={process.env.PAYPAL_CLIENT_ID?.trim() ?? ""}
+          payPalLive={paypalApiEnv() === "live"}
           prefillPaypal={prefillPaypal}
-          restoreFormDraft={paypalCancelled || Boolean(paypalError)}
+          restoreFormDraft
           addressPrefill={addressPrefill}
           savedAddresses={savedAddresses}
           canSaveAddressToAccount={Boolean(verifiedCustomerId)}
           showContactLogin={!session}
+          paypalUserIdToken={paypalVault.userIdToken}
+          paypalVaultedCards={paypalVault.cards}
         />
       </div>
     </div>

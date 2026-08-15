@@ -36,21 +36,29 @@ import {
 import { SmartAddressFields } from "@/components/storefront/smart-address-fields";
 import { CheckoutDeliveryMethodToggle } from "@/components/storefront/checkout-delivery-method-toggle";
 import { CheckoutPageExpress } from "@/components/storefront/checkout-page-express";
+import {
+  CheckoutRegularWallets,
+  type CheckoutWalletReady,
+  type CheckoutWalletStartRef,
+} from "@/components/storefront/checkout-regular-wallets";
 import { computeCheckoutOrderTotalsWithDiscount } from "@/lib/promotions/checkout-totals";
 import type { CheckoutDeliveryMethod } from "@/lib/checkout/delivery-method";
 import { CHECKOUT_FORM_COLUMN_CLASS } from "@/lib/checkout/checkout-form-layout";
+import { isCheckoutWalletMethod } from "@/lib/checkout/checkout-payment-hints";
 import {
-  clearCheckoutFormDraft,
+  checkoutFormDraftFromForm,
   loadCheckoutFormDraft,
   saveCheckoutFormDraft,
   type CheckoutFormDraft,
 } from "@/lib/checkout/checkout-form-draft";
+import { saveCheckoutPromoPreference } from "@/lib/checkout/checkout-promo-preference";
 import { openStorefrontLogin } from "@/lib/storefront/open-login-event";
 import type { OrderPriceLineInput } from "@/lib/tax/order-price-totals";
 import type {
   CheckoutAddressPrefill,
   CustomerAddressListItem,
 } from "@/features/customers/checkout-prefill";
+import type { PayPalVaultedCard } from "@/lib/payments/paypal-vaulted-cards";
 import { z } from "zod";
 
 const initial: CheckoutActionState = null;
@@ -185,8 +193,9 @@ export function CheckoutForm({
   allowedShippingCountries,
   payPalConfigured,
   payPalClientId,
+  payPalLive = false,
   prefillPaypal,
-  restoreFormDraft = false,
+  restoreFormDraft = true,
   addressPrefill,
   savedAddresses = [],
   canSaveAddressToAccount = false,
@@ -194,6 +203,8 @@ export function CheckoutForm({
   workshopBookingId,
   hidePromotionPanel = false,
   checkoutTitle = "Checkout",
+  paypalUserIdToken = null,
+  paypalVaultedCards = [],
 }: {
   idempotencyKey: string;
   lines: CheckoutSummaryLine[];
@@ -204,8 +215,10 @@ export function CheckoutForm({
   allowedShippingCountries: { code: string; label: string }[];
   payPalConfigured: boolean;
   payPalClientId: string;
+  /** Live-PayPal: Google Pay PRODUCTION, sonst TEST. */
+  payPalLive?: boolean;
   prefillPaypal?: boolean;
-  /** Nach PayPal-Abbruch/-Fehler: zuletzt eingegebene Formulardaten aus sessionStorage wiederherstellen. */
+  /** Formulardaten nach PayPal-Abbruch, Browser-Zurück und Reload wiederherstellen. */
   restoreFormDraft?: boolean;
   addressPrefill?: CheckoutAddressPrefill | null;
   /** Adressbuch des angemeldeten, verifizierten Kunden (leer für Gäste). */
@@ -217,6 +230,8 @@ export function CheckoutForm({
   workshopBookingId?: string;
   hidePromotionPanel?: boolean;
   checkoutTitle?: string;
+  paypalUserIdToken?: string | null;
+  paypalVaultedCards?: PayPalVaultedCard[];
 }) {
   const [cartState, cartFormAction, cartPending] = useActionState(submitCheckout, initial);
   const [workshopState, workshopFormAction, workshopPending] = useActionState(
@@ -243,6 +258,16 @@ export function CheckoutForm({
   const [payPalCardFieldsPrimary, setPayPalCardFieldsPrimary] = useState(false);
   const [cardPayBusy, setCardPayBusy] = useState(false);
   const cardFieldsSubmitRef = useRef<PayPalCardFieldsSubmitRef["current"]>(null);
+  const walletStartRef = useRef<CheckoutWalletStartRef>({
+    startApplePay: null,
+    startGooglePay: null,
+  });
+  const [walletReady, setWalletReady] = useState<CheckoutWalletReady>({
+    applePay: false,
+    googlePay: false,
+  });
+  const [walletBusy, setWalletBusy] = useState(false);
+  const [walletError, setWalletError] = useState<string | null>(null);
   /** Nur bei „Debit- oder Kreditkarte“ werden die Hosted Card Fields gemountet. */
   const [payPalSurface, setPayPalSurface] = useState<CheckoutPayPalMethodId>("paypal");
   const [email, setEmail] = useState(addressPrefill?.email ?? "");
@@ -296,39 +321,63 @@ export function CheckoutForm({
 
   const [committedPromoCode, setCommittedPromoCode] = useState("");
   const [declineAutomatic, setDeclineAutomatic] = useState(false);
+  const [rechtlicheKenntnis, setRechtlicheKenntnis] = useState(false);
+  const [addressFieldsEpoch, setAddressFieldsEpoch] = useState(0);
   const [promoPreview, setPromoPreview] = useState<CheckoutPromotionPreview | { error: string } | null>(
     null,
   );
   const draftRestoredRef = useRef(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const applyCheckoutFormDraft = (draft: CheckoutFormDraft) => {
+    setEmail(draft.email);
+    setPhone(draft.phone);
+    setDeliveryMethod(draft.deliveryMethod);
+    if (allowedShippingCountries.some((c) => c.code === draft.shippingCountry)) {
+      setShippingCountry(draft.shippingCountry);
+    }
+    setShippingPerson(draft.shippingPerson);
+    setShippingAddressValues(draft.shippingAddressValues);
+    setShippingAddressId(draft.shippingAddressId);
+    setBillingDifferent(draft.billingDifferent);
+    if (allowedShippingCountries.some((c) => c.code === draft.billingCountry)) {
+      setBillingCountry(draft.billingCountry);
+    }
+    setBillingPerson(draft.billingPerson);
+    setBillingAddressValues(draft.billingAddressValues);
+    setBillingAddressId(draft.billingAddressId);
+    setPayPalSurface(draft.payPalSurface);
+    setCommittedPromoCode(draft.committedPromoCode);
+    setDeclineAutomatic(draft.declineAutomatic);
+    setRechtlicheKenntnis(draft.rechtlicheKenntnis);
+    setAddressFieldsEpoch((n) => n + 1);
+  };
 
   useEffect(() => {
     if (!restoreFormDraft || draftRestoredRef.current || workshopBookingId) return;
     const draft = loadCheckoutFormDraft();
     if (!draft) return;
     draftRestoredRef.current = true;
-    clearCheckoutFormDraft();
     startTransition(() => {
-      setEmail(draft.email);
-      setPhone(draft.phone);
-      setDeliveryMethod(draft.deliveryMethod);
-      if (allowedShippingCountries.some((c) => c.code === draft.shippingCountry)) {
-        setShippingCountry(draft.shippingCountry);
-      }
-      setShippingPerson(draft.shippingPerson);
-      setShippingAddressValues(draft.shippingAddressValues);
-      setShippingAddressId(draft.shippingAddressId);
-      setBillingDifferent(draft.billingDifferent);
-      if (allowedShippingCountries.some((c) => c.code === draft.billingCountry)) {
-        setBillingCountry(draft.billingCountry);
-      }
-      setBillingPerson(draft.billingPerson);
-      setBillingAddressValues(draft.billingAddressValues);
-      setBillingAddressId(draft.billingAddressId);
-      setPayPalSurface(draft.payPalSurface);
-      setCommittedPromoCode(draft.committedPromoCode);
-      setDeclineAutomatic(draft.declineAutomatic);
+      applyCheckoutFormDraft(draft);
     });
-  }, [allowedShippingCountries, restoreFormDraft, workshopBookingId]);
+    // Nur beim ersten Mount wiederherstellen — Draft bleibt bis erfolgreicher Bestellung.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount restore
+  }, [restoreFormDraft, workshopBookingId]);
+
+  useEffect(() => {
+    if (workshopBookingId || !restoreFormDraft) return;
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted && draftRestoredRef.current) return;
+      const draft = loadCheckoutFormDraft();
+      if (!draft) return;
+      draftRestoredRef.current = true;
+      applyCheckoutFormDraft(draft);
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- bfcache restore
+  }, [restoreFormDraft, workshopBookingId]);
 
   const lineInputs: OrderPriceLineInput[] = useMemo(
     () =>
@@ -371,6 +420,14 @@ export function CheckoutForm({
       cancelled = true;
     };
   }, [shippingCountry, committedPromoCode, declineAutomatic, hidePromotionPanel, deliveryMethod]);
+
+  useEffect(() => {
+    if (workshopBookingId || hidePromotionPanel) return;
+    saveCheckoutPromoPreference({
+      code: committedPromoCode,
+      declineAutomatic,
+    });
+  }, [committedPromoCode, declineAutomatic, hidePromotionPanel, workshopBookingId]);
 
   const displayTotals =
     promoPreview && !("error" in promoPreview) ? promoPreview.totals : baseTotalsFallback;
@@ -438,6 +495,7 @@ export function CheckoutForm({
 
   const onPayPalSurfaceChange = (id: CheckoutPayPalMethodId) => {
     setPayPalSurface(id);
+    setWalletError(null);
     if (id !== "card") {
       setPayPalCardFieldsPrimary(false);
       setCardPayBusy(false);
@@ -485,6 +543,8 @@ export function CheckoutForm({
           name="rechtlicheKenntnis"
           value="on"
           required
+          checked={rechtlicheKenntnis}
+          onChange={(e) => setRechtlicheKenntnis(e.target.checked)}
           autoComplete="off"
           className="mt-1 size-4 shrink-0 checkbox-primary"
           {...ariaFieldErr(fe?.rechtlicheKenntnis, checkoutErrId.rechtlicheKenntnis)}
@@ -571,16 +631,79 @@ export function CheckoutForm({
     }
   }, [state]);
 
-  /**
-   * Ohne `preventDefault` setzt React 19 nach jeder abgeschlossenen Server Action das Formular zurück
-   * (auch bei `{ ok: false }`) — unkontrollierte Felder wie die E-Mail werden geleert.
-   * Termin-Checkout: natives Form-POST (MPA) — kein preventDefault / useActionState.
-   */
+  const persistCheckoutFormDraft = () => {
+    const form = formRef.current;
+    if (!form) {
+      saveCheckoutFormDraft(buildCheckoutFormDraftFromState());
+      return;
+    }
+    saveCheckoutFormDraft(
+      checkoutFormDraftFromForm(form, {
+        deliveryMethod,
+        shippingAddressId,
+        billingDifferent,
+        billingAddressId,
+        payPalSurface,
+        committedPromoCode,
+        declineAutomatic,
+      }),
+    );
+  };
+
+  useEffect(() => {
+    if (workshopBookingId) return;
+    const form = formRef.current;
+    if (!form) return;
+    let timer: number | null = null;
+    const schedule = () => {
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(() => persistCheckoutFormDraft(), 400);
+    };
+    form.addEventListener("input", schedule);
+    form.addEventListener("change", schedule);
+    return () => {
+      if (timer) window.clearTimeout(timer);
+      form.removeEventListener("input", schedule);
+      form.removeEventListener("change", schedule);
+    };
+    // Re-bind after address remount so new uncontrolled fields are included.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    addressFieldsEpoch,
+    workshopBookingId,
+    deliveryMethod,
+    shippingAddressId,
+    billingDifferent,
+    billingAddressId,
+    payPalSurface,
+    committedPromoCode,
+    declineAutomatic,
+  ]);
   const onFormSubmit = (e: FormEvent<HTMLFormElement>) => {
     if (workshopBookingId) return;
     e.preventDefault();
     const form = e.currentTarget;
-    saveCheckoutFormDraft(buildCheckoutFormDraftFromState());
+    persistCheckoutFormDraft();
+    if (isCheckoutWalletMethod(payPalSurface)) {
+      if (payPalSurface === "apple_pay") {
+        if (!walletReady.applePay || !walletStartRef.current.startApplePay) {
+          setWalletError(
+            "Apple Pay ist auf diesem Gerät nicht verfügbar. Bitte Safari auf einem Apple-Gerät nutzen oder eine andere Zahlungsart wählen.",
+          );
+          return;
+        }
+        walletStartRef.current.startApplePay(form);
+        return;
+      }
+      if (!walletReady.googlePay || !walletStartRef.current.startGooglePay) {
+        setWalletError(
+          "Google Pay ist auf diesem Gerät nicht verfügbar. Bitte eine andere Zahlungsart wählen.",
+        );
+        return;
+      }
+      void walletStartRef.current.startGooglePay(form);
+      return;
+    }
     startTransition(() => {
       formAction(new FormData(form));
     });
@@ -604,12 +727,18 @@ export function CheckoutForm({
       payPalSurface,
       committedPromoCode,
       declineAutomatic,
+      rechtlicheKenntnis,
     };
   }
 
   const workshopMpa = Boolean(workshopBookingId);
   const useCardPayButton =
     payPalConfigured && !workshopMpa && payPalSurface === "card" && payPalCardFieldsPrimary;
+  const walletMethod = isCheckoutWalletMethod(payPalSurface);
+  const walletBlocked =
+    (payPalSurface === "apple_pay" && !walletReady.applePay) ||
+    (payPalSurface === "google_pay" && !walletReady.googlePay);
+  const submitBusy = workshopMpa ? false : useCardPayButton ? cardPayBusy : walletMethod ? walletBusy : pending;
 
   const clearLive = (key: string) => {
     setLiveErrors((prev) => {
@@ -636,6 +765,7 @@ export function CheckoutForm({
   return (
     <form
       id={STOREFRONT_CHECKOUT_FORM_ID}
+      ref={formRef}
       action={workshopMpa ? "/api/workshop/complete-checkout" : undefined}
       method={workshopMpa ? "post" : undefined}
       onSubmit={workshopMpa ? undefined : onFormSubmit}
@@ -656,6 +786,8 @@ export function CheckoutForm({
             paypalClientId={payPalClientId}
             currency={currency}
             totalGrossCents={displayTotals.totalCents}
+            promotionCode={committedPromoCode}
+            declineAutomatic={declineAutomatic}
           />
         ) : null}
 
@@ -863,7 +995,7 @@ export function CheckoutForm({
               />
             </div>
             <SmartAddressFields
-              key={`shipping-${shippingAddressId || "neu"}`}
+              key={`shipping-${shippingAddressId || "neu"}-${addressFieldsEpoch}`}
               country={shippingCountry}
               names={{
                 zip: "shippingZip",
@@ -1063,7 +1195,7 @@ export function CheckoutForm({
                 />
               </div>
               <SmartAddressFields
-                key={`billing-${billingAddressId || "neu"}`}
+                key={`billing-${billingAddressId || "neu"}-${addressFieldsEpoch}`}
                 country={billingCountry}
                 names={{
                   zip: "billingZip",
@@ -1122,6 +1254,9 @@ export function CheckoutForm({
                   : undefined
               }
               cardInline={!workshopMpa}
+              nativeWallets={!workshopMpa}
+              applePayReady={walletReady.applePay}
+              googlePayReady={walletReady.googlePay}
               cardFields={
                 payPalConfigured && !workshopMpa ? (
                   <PayPalCardFieldsCheckout
@@ -1133,6 +1268,9 @@ export function CheckoutForm({
                     submitRef={cardFieldsSubmitRef}
                     onEligibleChange={setPayPalCardFieldsPrimary}
                     onBusyChange={setCardPayBusy}
+                    userIdToken={paypalUserIdToken}
+                    vaultedCards={paypalVaultedCards}
+                    customerLoggedIn={canSaveAddressToAccount}
                   />
                 ) : null
               }
@@ -1140,14 +1278,31 @@ export function CheckoutForm({
           ) : workshopMpa && displayTotals.totalCents === 0 ? (
             <p className="mt-2 text-sm text-[#6b7280]">Kostenlos — keine Zahlung nötig.</p>
           ) : null}
+          {payPalConfigured && !workshopMpa ? (
+            <CheckoutRegularWallets
+              paypalClientId={payPalClientId}
+              currency={currency}
+              payPalLive={payPalLive}
+              totalGrossCents={displayTotals.totalCents}
+              startRef={walletStartRef.current}
+              onReadyChange={setWalletReady}
+              onBusyChange={setWalletBusy}
+              onError={setWalletError}
+            />
+          ) : null}
+          {walletError ? (
+            <p className="mt-2 text-sm text-red-600" role="alert">
+              {walletError}
+            </p>
+          ) : null}
         </section>
 
         {legalConsentBlock}
 
         <button
           type={useCardPayButton ? "button" : "submit"}
-          disabled={workshopMpa ? false : useCardPayButton ? cardPayBusy : pending}
-          aria-busy={workshopMpa ? undefined : useCardPayButton ? cardPayBusy : pending}
+          disabled={workshopMpa ? false : submitBusy || walletBlocked}
+          aria-busy={workshopMpa ? undefined : submitBusy || undefined}
           onClick={
             useCardPayButton
               ? () => {
@@ -1163,7 +1318,7 @@ export function CheckoutForm({
               : "Weiter zur Zahlung"
             : useCardPayButton && cardPayBusy
               ? "Wird verarbeitet…"
-              : pending
+              : submitBusy
                 ? "Wird gesendet…"
                 : "Jetzt kostenpflichtig bestellen"}
         </button>

@@ -7,6 +7,10 @@ import {
   isPayPalApplePayConfigEligible,
   paypalExpressSdkSrc,
 } from "@/lib/payments/paypal-express-sdk";
+import {
+  loadCheckoutPromoPreference,
+  saveCheckoutPromoPreference,
+} from "@/lib/checkout/checkout-promo-preference";
 
 type PayPalButtonsInstance = {
   isEligible?: () => boolean;
@@ -151,6 +155,9 @@ type Props = {
   pdpExpress?: PdpExpressLine | null;
   /** Buttons deaktivieren (z. B. nicht bestellbar). */
   enabled?: boolean;
+  /** Angewendeter Rabattcode aus dem Checkout-Formular. */
+  promotionCode?: string;
+  declineAutomatic?: boolean;
 };
 
 export function CheckoutExpressPayPalOnly({
@@ -161,6 +168,8 @@ export function CheckoutExpressPayPalOnly({
   variant = "cart",
   pdpExpress = null,
   enabled = true,
+  promotionCode,
+  declineAutomatic = false,
 }: Props) {
   const router = useRouter();
   const paypalContainerRef = useRef<HTMLDivElement>(null);
@@ -175,6 +184,17 @@ export function CheckoutExpressPayPalOnly({
   const liveTotalCentsRef = useRef(totalGrossCents);
   const pdpExpressRef = useRef(pdpExpress);
   pdpExpressRef.current = pdpExpress;
+  const parentControlsPromo = typeof promotionCode === "string";
+  const promotionRef = useRef({
+    code: parentControlsPromo ? promotionCode : "",
+    declineAutomatic,
+  });
+  if (parentControlsPromo) {
+    promotionRef.current = {
+      code: promotionCode,
+      declineAutomatic,
+    };
+  }
   const [sdkError, setSdkError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [applePayDeviceReady, setApplePayDeviceReady] = useState(false);
@@ -188,6 +208,28 @@ export function CheckoutExpressPayPalOnly({
   useEffect(() => {
     liveTotalCentsRef.current = liveTotalCents;
   }, [liveTotalCents]);
+
+  useEffect(() => {
+    if (parentControlsPromo) {
+      saveCheckoutPromoPreference({ code: promotionCode ?? "", declineAutomatic });
+      return;
+    }
+    const stored = loadCheckoutPromoPreference();
+    if (stored) {
+      promotionRef.current = { code: stored.code, declineAutomatic: stored.declineAutomatic };
+    }
+  }, [parentControlsPromo, promotionCode, declineAutomatic]);
+
+  const expressPromotionPayload = useCallback(() => {
+    const stored =
+      promotionRef.current.code || promotionRef.current.declineAutomatic
+        ? promotionRef.current
+        : (loadCheckoutPromoPreference() ?? { code: "", declineAutomatic: false });
+    return {
+      checkoutPromotionCode: stored.code,
+      checkoutDeclineAutomatic: stored.declineAutomatic,
+    };
+  }, []);
 
   const ensureIdempotencyKey = useCallback((): string | undefined => {
     if (!idempotencyKeyRef.current) {
@@ -234,6 +276,7 @@ export function CheckoutExpressPayPalOnly({
       body: JSON.stringify({
         idempotencyKey: ensureIdempotencyKey(),
         shippingCountry: country,
+        ...expressPromotionPayload(),
       }),
     });
     const data = (await res.json().catch(() => ({}))) as {
@@ -251,13 +294,13 @@ export function CheckoutExpressPayPalOnly({
     }
     lastExpressPaypalOrderIdRef.current = data.paypalOrderId;
     return data.paypalOrderId;
-  }, [ensureIdempotencyKey, preparePdpCartIfNeeded, router]);
+  }, [ensureIdempotencyKey, expressPromotionPayload, preparePdpCartIfNeeded, router]);
 
   const updateExpressShipping = useCallback(async (paypalOrderId: string, shippingCountry: string) => {
     const res = await fetch("/api/checkout/paypal/express-update-shipping", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ paypalOrderId, shippingCountry }),
+      body: JSON.stringify({ paypalOrderId, shippingCountry, ...expressPromotionPayload() }),
     });
     const data = (await res.json().catch(() => ({}))) as {
       ok?: boolean;
@@ -271,13 +314,13 @@ export function CheckoutExpressPayPalOnly({
       liveTotalCentsRef.current = data.totalGrossCents;
       setLiveTotalCents(data.totalGrossCents);
     }
-  }, []);
+  }, [expressPromotionPayload]);
 
   const quoteExpressShipping = useCallback(async (shippingCountry: string) => {
     const res = await fetch("/api/checkout/paypal/express-shipping-quote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ shippingCountry }),
+      body: JSON.stringify({ shippingCountry, ...expressPromotionPayload() }),
     });
     const data = (await res.json().catch(() => ({}))) as {
       ok?: boolean;
@@ -291,14 +334,18 @@ export function CheckoutExpressPayPalOnly({
     setLiveTotalCents(data.totalGrossCents);
     selectedShippingCountryRef.current = shippingCountry.trim().toUpperCase();
     return data.totalGrossCents;
-  }, []);
+  }, [expressPromotionPayload]);
 
   const approveExpressOrder = useCallback(
     async (paypalOrderId: string, applePayShippingContact?: unknown) => {
       const res = await fetch("/api/checkout/paypal/express-approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paypalOrderId, applePayShippingContact }),
+        body: JSON.stringify({
+          paypalOrderId,
+          applePayShippingContact,
+          ...expressPromotionPayload(),
+        }),
       });
       const data = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
@@ -313,7 +360,7 @@ export function CheckoutExpressPayPalOnly({
       idempotencyKeyRef.current = null;
       router.push(data.redirectUrl ?? `/checkout/erfolg?nr=${encodeURIComponent(data.orderNumber ?? "")}`);
     },
-    [router],
+    [expressPromotionPayload, router],
   );
 
   const cancelExpressOrder = useCallback(async (paypalOrderId?: string | null) => {

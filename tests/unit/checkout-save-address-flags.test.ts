@@ -49,4 +49,15 @@ describe("Checkout: Adresse im Konto speichern", () => {
       expect(parsed.data.saveShippingAddress).toBe(false);
     }
   });
+
+  it("übernimmt die gewählte PayPal-Oberfläche", () => {
+    const parsed = checkoutFormSchema.safeParse(
+      checkoutInput({ checkoutPayPalSurface: "sepa", paypalVaultId: "tok_1" }),
+    );
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.checkoutPayPalSurface).toBe("sepa");
+      expect(parsed.data.paypalVaultId).toBe("tok_1");
+    }
+  });
 });

@@ -9,9 +9,8 @@ import { PriceEUR } from "@/components/storefront/price-eur";
 import { updateCartCustomerNote } from "@/lib/cart/actions";
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { cartLineCommerceRules, getCartWithLines } from "@/lib/cart/cart-queries";
-import { computeCheckoutOrderTotalsWithDiscount } from "@/lib/promotions/checkout-totals";
+import { resolveCartPromotionTotals } from "@/lib/checkout/cart-promotion-totals";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
-import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -38,24 +37,14 @@ export default async function WarenkorbPage({
   }, 0);
   const currency = activeLines[0]?.product.currency ?? "EUR";
   const hasCheckout = activeLines.length > 0;
-  const shippingSettings = hasCheckout ? await getShopShippingSettings() : null;
-  const expressTotals =
-    hasCheckout && shippingSettings
-      ? computeCheckoutOrderTotalsWithDiscount({
-          lines: activeLines.map((line) => {
-            const commerce = cartLineCommerceRules(line);
-            return {
-              quantity: line.quantity,
-              priceGrossCents: commerce.priceGrossCents,
-              taxRatePercent: commerce.taxRatePercent,
-            };
-          }),
-          shippingCountryCode: "DE",
-          shippingRatesCentsByCountry: shippingSettings.shippingRatesCentsByCountry,
-          freeShippingFromSubtotalGrossCents: shippingSettings.freeShippingFromSubtotalGrossCents,
-          discountOffSubtotalCents: 0,
-        })
-      : null;
+  const expressQuote = hasCheckout
+    ? await resolveCartPromotionTotals({
+        shippingCountry: "DE",
+        promotion: { promotionCode: "", declineAutomatic: false },
+        deliveryMethod: "shipping",
+      })
+    : null;
+  const expressTotals = expressQuote?.ok ? expressQuote.totals : null;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-24 md:py-28">

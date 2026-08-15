@@ -23,10 +23,130 @@ function requireOrigin(): string {
 type PayPalLink = { href?: string; rel?: string; method?: string };
 export type PayPalShippingPreference = "NO_SHIPPING" | "GET_FROM_FILE";
 
-function approvalUrlFromCreateResponse(json: { links?: PayPalLink[] }): string | null {
-  const links = json.links ?? [];
-  const approve = links.find((l) => l.rel === "approve" && l.href);
-  return approve?.href ?? null;
+export type PayPalSepaAddress = {
+  address_line_1: string;
+  address_line_2?: string;
+  admin_area_2: string;
+  postal_code: string;
+  country_code: string;
+};
+
+export type PayPalCheckoutPaymentSource =
+  | { type: "sepa_debit"; name: string; email: string; address: PayPalSepaAddress }
+  | { type: "card_vault_on_success"; customerId: string }
+  | { type: "vaulted_card"; vaultId: string; customerId: string };
+
+export class PayPalOrderCreateError extends Error {
+  readonly userMessage?: string;
+  constructor(message: string, userMessage?: string) {
+    super(message);
+    this.name = "PayPalOrderCreateError";
+    this.userMessage = userMessage;
+  }
+}
+
+function hrefForRel(links: PayPalLink[] | undefined, rel: string): string | null {
+  const href = links?.find((l) => l.rel === rel && l.href)?.href?.trim();
+  return href || null;
+}
+
+export function preferredPayPalRedirectUrl(
+  created: { approvalUrl: string | null; payerActionUrl: string | null },
+  surface: string,
+): string {
+  if (surface === "sepa") {
+    return created.payerActionUrl?.trim() || created.approvalUrl?.trim() || "";
+  }
+  return created.approvalUrl?.trim() || created.payerActionUrl?.trim() || "";
+}
+
+function returnUrls(origin: string): { return_url: string; cancel_url: string } {
+  return {
+    return_url: `${origin}/checkout/paypal-rueckkehr`,
+    cancel_url: `${origin}/checkout/paypal-abbruch`,
+  };
+}
+
+function applicationContext(
+  origin: string,
+  shippingPreference: PayPalShippingPreference,
+): Record<string, string> {
+  return {
+    brand_name: "jerry's",
+    locale: "de-DE",
+    landing_page: "NO_PREFERENCE",
+    shipping_preference: shippingPreference,
+    user_action: "PAY_NOW",
+    ...returnUrls(origin),
+  };
+}
+
+function paymentSourceBody(
+  source: PayPalCheckoutPaymentSource,
+  origin: string,
+): Record<string, unknown> {
+  if (source.type === "sepa_debit") {
+    return {
+      sepa_debit: {
+        name: source.name,
+        email: source.email,
+        address: source.address,
+        experience_context: {
+          brand_name: "jerry's",
+          locale: "de-DE",
+          ...returnUrls(origin),
+        },
+      },
+    };
+  }
+  if (source.type === "card_vault_on_success") {
+    return {
+      card: {
+        attributes: {
+          customer: { id: source.customerId },
+          vault: { store_in_vault: "ON_SUCCESS" },
+          verification: { method: "SCA_WHEN_REQUIRED" },
+        },
+      },
+    };
+  }
+  return {
+    card: {
+      vault_id: source.vaultId,
+      stored_credential: {
+        payment_initiator: "CUSTOMER",
+        payment_type: "ONE_TIME",
+        usage: "SUBSEQUENT",
+      },
+      attributes: {
+        verification: { method: "SCA_WHEN_REQUIRED" },
+      },
+    },
+  };
+}
+
+function paypalOrderCreateErrorFromResponse(
+  status: number,
+  json: { message?: string; details?: Array<{ issue?: string; description?: string }> },
+  source: PayPalCheckoutPaymentSource | undefined,
+): PayPalOrderCreateError {
+  const raw = json.message ?? JSON.stringify(json).slice(0, 300);
+  const issue = json.details?.[0]?.issue ?? "";
+  if (source?.type === "sepa_debit") {
+    return new PayPalOrderCreateError(
+      `PayPal Order create fehlgeschlagen (${status}): ${raw}`,
+      "SEPA-Lastschrift ist für diesen Shop derzeit nicht verfügbar oder die Angaben wurden nicht akzeptiert. Bitte PayPal oder Karte wählen.",
+    );
+  }
+  if (source?.type === "vaulted_card" || issue.includes("VAULT")) {
+    return new PayPalOrderCreateError(
+      `PayPal Order create fehlgeschlagen (${status}): ${raw}`,
+      "Die gespeicherte Karte konnte nicht belastet werden. Bitte eine neue Karte eingeben oder eine andere Zahlungsart wählen.",
+    );
+  }
+  return new PayPalOrderCreateError(
+    `PayPal Order create fehlgeschlagen (${status}): ${raw}`,
+  );
 }
 
 /**
@@ -38,7 +158,8 @@ export async function createPayPalCheckoutOrder(params: {
   totalGrossCents: number;
   currency: string;
   shippingPreference?: PayPalShippingPreference;
-}): Promise<{ paypalOrderId: string; approvalUrl: string | null }> {
+  paymentSource?: PayPalCheckoutPaymentSource;
+}): Promise<{ paypalOrderId: string; approvalUrl: string | null; payerActionUrl: string | null }> {
   const origin = requireOrigin();
   const token = await getPayPalAccessToken();
   const currency = params.currency.trim().toUpperCase();
@@ -47,7 +168,7 @@ export async function createPayPalCheckoutOrder(params: {
   }
 
   const shippingPreference = params.shippingPreference ?? "NO_SHIPPING";
-  const body = {
+  const body: Record<string, unknown> = {
     intent: "CAPTURE",
     purchase_units: [
       {
@@ -59,16 +180,16 @@ export async function createPayPalCheckoutOrder(params: {
         },
       },
     ],
-    application_context: {
-      brand_name: "jerry's",
-      locale: "de-DE",
-      landing_page: "NO_PREFERENCE",
-      shipping_preference: shippingPreference,
-      user_action: "PAY_NOW",
-      return_url: `${origin}/checkout/paypal-rueckkehr`,
-      cancel_url: `${origin}/checkout/paypal-abbruch`,
-    },
   };
+
+  if (params.paymentSource) {
+    body.payment_source = paymentSourceBody(params.paymentSource, origin);
+    if (params.paymentSource.type !== "sepa_debit") {
+      body.application_context = applicationContext(origin, shippingPreference);
+    }
+  } else {
+    body.application_context = applicationContext(origin, shippingPreference);
+  }
 
   const res = await fetch(`${paypalApiBaseUrl()}/v2/checkout/orders`, {
     method: "POST",
@@ -80,19 +201,25 @@ export async function createPayPalCheckoutOrder(params: {
     body: JSON.stringify(body),
   });
 
-  const json = (await res.json()) as { id?: string; links?: PayPalLink[]; message?: string };
+  const json = (await res.json()) as {
+    id?: string;
+    links?: PayPalLink[];
+    message?: string;
+    details?: Array<{ issue?: string; description?: string }>;
+  };
   if (!res.ok) {
-    throw new Error(
-      `PayPal Order create fehlgeschlagen (${res.status}): ${json.message ?? JSON.stringify(json).slice(0, 300)}`,
-    );
+    throw paypalOrderCreateErrorFromResponse(res.status, json, params.paymentSource);
   }
   const paypalOrderId = json.id;
-  const approvalUrl = approvalUrlFromCreateResponse(json);
   if (!paypalOrderId) {
-    throw new Error("PayPal Order create: keine Order-ID.");
+    throw new PayPalOrderCreateError("PayPal Order create: keine Order-ID.");
   }
   /** Bei reinem Advanced-Card-Flow kann die Approve-URL fehlen; Karten-Zahlung läuft über Card Fields + Capture. */
-  return { paypalOrderId, approvalUrl: approvalUrl ?? null };
+  return {
+    paypalOrderId,
+    approvalUrl: hrefForRel(json.links, "approve"),
+    payerActionUrl: hrefForRel(json.links, "payer-action"),
+  };
 }
 
 export async function getPayPalCheckoutOrderDetails(paypalOrderId: string) {

@@ -1,19 +1,7 @@
 "use server";
 
-import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
-import { cartLineCommerceRules, getCartWithLines } from "@/lib/cart/cart-queries";
-import { getPrisma } from "@/lib/db/prisma";
-import { loadPromotionsForCheckoutResolve } from "@/lib/promotions/checkout-load";
-import { computeCheckoutOrderTotalsWithDiscount } from "@/lib/promotions/checkout-totals";
-import {
-  evaluatePromotionCodeEntry,
-  normalizePromotionCode,
-  promotionValidationMessage,
-  resolveCheckoutPromotion,
-} from "@/lib/promotions/engine";
+import { resolveCartPromotionTotals } from "@/lib/checkout/cart-promotion-totals";
 import type { ResolvedCheckoutPromotion } from "@/lib/promotions/types";
-import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
-import type { OrderPriceLineInput } from "@/lib/tax/order-price-totals";
 
 export type CheckoutPromotionPreview = {
   codeError: string | null;
@@ -36,95 +24,31 @@ export async function previewCheckoutPromotion(input: {
   declineAutomatic?: boolean;
   deliveryMethod?: "shipping" | "pickup";
 }): Promise<CheckoutPromotionPreview | { error: string }> {
-  const cartId = await getCartIdFromCookie();
-  if (!cartId) {
-    return { error: "Warenkorb nicht gefunden." };
-  }
-  const cart = await getCartWithLines(cartId);
-  if (!cart?.lines.length) {
-    return { error: "Warenkorb ist leer." };
-  }
-
-  const activeLines = cart.lines.filter((l) => l.product.isActive);
-  if (!activeLines.length) {
-    return { error: "Keine bestellbaren Artikel im Warenkorb." };
-  }
-
-  const lines: OrderPriceLineInput[] = activeLines.map((line) => {
-    const commerce = cartLineCommerceRules(line);
-    return {
-      quantity: line.quantity,
-      priceGrossCents: commerce.priceGrossCents,
-      taxRatePercent: commerce.taxRatePercent,
-    };
-  });
-
-  const shopShip = await getShopShippingSettings();
-  const country = input.shippingCountry.trim().toUpperCase();
-  if (!shopShip.shippingCountryCodes.includes(country)) {
-    return { error: "Lieferland nicht verfügbar." };
-  }
-
-  const prisma = getPrisma();
-  const codeNorm = normalizePromotionCode(input.promotionCode ?? "");
-  const { automaticCandidates, codePromotion } = await loadPromotionsForCheckoutResolve(
-    prisma,
-    codeNorm.length > 0 ? codeNorm : null,
-  );
-
-  const now = new Date();
-  let codeError: string | null = null;
-  let effectiveCode: string | null = codeNorm.length > 0 ? codeNorm : null;
-
-  if (codeNorm.length > 0) {
-    const ev = evaluatePromotionCodeEntry(codeNorm, codePromotion, lines, now, country);
-    if (ev.status === "invalid") {
-      codeError = promotionValidationMessage(ev.reason);
-      effectiveCode = null;
-    }
-  }
-
-  const declineAutomatic = input.declineAutomatic === true;
-
-  const resolved = resolveCheckoutPromotion({
-    lines,
-    shippingCountryCode: country,
-    now,
-    promotionCode: effectiveCode,
-    declineAutomatic,
-    codePromotion: codePromotion && effectiveCode ? codePromotion : null,
-    automaticCandidates,
-    shippingRatesCentsByCountry: shopShip.shippingRatesCentsByCountry,
-    freeShippingFromSubtotalGrossCents: shopShip.freeShippingFromSubtotalGrossCents,
-  });
-
-  const discountOff =
-    resolved.kind === "applied" ? resolved.discountOffSubtotalCents : 0;
-  const applyFreeShipping =
-    resolved.kind === "applied" && resolved.promotionType === "free_shipping";
-
-  const totals = computeCheckoutOrderTotalsWithDiscount({
-    lines,
-    shippingCountryCode: country,
-    shippingRatesCentsByCountry: shopShip.shippingRatesCentsByCountry,
-    freeShippingFromSubtotalGrossCents: shopShip.freeShippingFromSubtotalGrossCents,
-    discountOffSubtotalCents: discountOff,
-    applyFreeShippingPromotion: applyFreeShipping,
+  const result = await resolveCartPromotionTotals({
+    shippingCountry: input.shippingCountry,
+    promotion: {
+      promotionCode: input.promotionCode ?? "",
+      declineAutomatic: input.declineAutomatic === true,
+    },
     deliveryMethod: input.deliveryMethod,
   });
 
+  if (!result.ok) {
+    return { error: result.message };
+  }
+
   return {
-    codeError,
-    resolved,
+    codeError: result.codeError,
+    resolved: result.resolved,
     totals: {
-      vatApplies: totals.vatApplies,
-      catalogSubtotalBeforeDiscountCents: totals.catalogSubtotalBeforeDiscountCents,
-      subtotalCents: totals.subtotalCents,
-      shippingCents: totals.shippingCents,
-      taxAmountCents: totals.taxAmountCents,
-      totalCents: totals.totalCents,
-      discountOffSubtotalCents: totals.discountOffSubtotalCents,
-      shippingSavedByPromotionCents: totals.shippingSavedByPromotionCents,
+      vatApplies: result.totals.vatApplies,
+      catalogSubtotalBeforeDiscountCents: result.totals.catalogSubtotalBeforeDiscountCents,
+      subtotalCents: result.totals.subtotalCents,
+      shippingCents: result.totals.shippingCents,
+      taxAmountCents: result.totals.taxAmountCents,
+      totalCents: result.totals.totalCents,
+      discountOffSubtotalCents: result.totals.discountOffSubtotalCents,
+      shippingSavedByPromotionCents: result.totals.shippingSavedByPromotionCents,
     },
   };
 }

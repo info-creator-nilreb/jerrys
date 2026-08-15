@@ -1,8 +1,5 @@
-import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
-import { cartLineCommerceRules, getCartWithLines } from "@/lib/cart/cart-queries";
-import { computeCheckoutOrderTotalsWithDiscount } from "@/lib/promotions/checkout-totals";
-import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
-import type { OrderPriceLineInput } from "@/lib/tax/order-price-totals";
+import { resolveCartPromotionTotals } from "@/lib/checkout/cart-promotion-totals";
+import type { ExpressPromotionInput } from "@/lib/checkout/express-promotion";
 
 export type ExpressShippingQuote =
   | {
@@ -12,71 +9,35 @@ export type ExpressShippingQuote =
       shippingCents: number;
       subtotalCents: number;
       totalGrossCents: number;
+      discountOffSubtotalCents: number;
     }
   | { ok: false; code: "warenkorb" | "land"; message: string };
 
-function normalizeCountry(raw: unknown): string {
-  return String(raw ?? "")
-    .trim()
-    .toUpperCase()
-    .slice(0, 2);
-}
-
 /**
- * Versandquote für Express-Checkout anhand Warenkorb + Lieferland
+ * Versandquote für Express-Checkout anhand Warenkorb + Lieferland + Promotion
  * (Shopify-/Premium-Muster: Betrag im Wallet nach Adresswahl aktualisieren).
  */
 export async function quoteExpressShippingForCart(
   shippingCountryRaw: unknown,
+  promotion?: ExpressPromotionInput | null,
 ): Promise<ExpressShippingQuote> {
-  const shippingCountry = normalizeCountry(shippingCountryRaw);
-  if (shippingCountry.length !== 2) {
-    return { ok: false, code: "land", message: "Lieferland fehlt oder ist ungültig." };
-  }
-
-  const cartId = await getCartIdFromCookie();
-  if (!cartId) {
-    return { ok: false, code: "warenkorb", message: "Warenkorb nicht gefunden." };
-  }
-  const cart = await getCartWithLines(cartId);
-  const activeLines = (cart?.lines ?? []).filter((l) => l.product.isActive);
-  if (!activeLines.length) {
-    return { ok: false, code: "warenkorb", message: "Warenkorb ist leer." };
-  }
-
-  const shipping = await getShopShippingSettings();
-  if (!shipping.shippingCountryCodes.includes(shippingCountry)) {
-    return {
-      ok: false,
-      code: "land",
-      message: "In dieses Land liefern wir derzeit nicht.",
-    };
-  }
-
-  const lines: OrderPriceLineInput[] = activeLines.map((line) => {
-    const commerce = cartLineCommerceRules(line);
-    return {
-      quantity: line.quantity,
-      priceGrossCents: commerce.priceGrossCents,
-      taxRatePercent: commerce.taxRatePercent,
-    };
+  const result = await resolveCartPromotionTotals({
+    shippingCountry: shippingCountryRaw,
+    promotion: promotion ?? { promotionCode: "", declineAutomatic: false },
+    deliveryMethod: "shipping",
   });
-
-  const totals = computeCheckoutOrderTotalsWithDiscount({
-    lines,
-    shippingCountryCode: shippingCountry,
-    shippingRatesCentsByCountry: shipping.shippingRatesCentsByCountry,
-    freeShippingFromSubtotalGrossCents: shipping.freeShippingFromSubtotalGrossCents,
-    discountOffSubtotalCents: 0,
-  });
+  if (!result.ok) {
+    return { ok: false, code: result.code, message: result.message };
+  }
 
   return {
     ok: true,
-    shippingCountry,
-    currency: activeLines[0]!.product.currency,
-    shippingCents: totals.shippingCents,
-    subtotalCents: totals.subtotalCents,
-    totalGrossCents: totals.totalCents,
+    shippingCountry: result.shippingCountry,
+    currency: result.currency,
+    shippingCents: result.totals.shippingCents,
+    subtotalCents: result.totals.subtotalCents,
+    totalGrossCents: result.totals.totalCents,
+    discountOffSubtotalCents: result.totals.discountOffSubtotalCents,
   };
 }
 

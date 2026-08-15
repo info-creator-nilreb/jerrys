@@ -53,6 +53,7 @@ const sampleDraft: CheckoutFormDraft = {
   payPalSurface: "paypal",
   committedPromoCode: "",
   declineAutomatic: false,
+  rechtlicheKenntnis: false,
 };
 
 describe("checkout form draft", () => {
@@ -82,5 +83,13 @@ describe("checkout form draft", () => {
       JSON.stringify({ v: 2, email: "a@b.de" }),
     );
     expect(loadCheckoutFormDraft()).toBeNull();
+  });
+
+  it("füllt fehlende rechtlicheKenntnis beim Laden", () => {
+    sessionStorage.setItem(
+      CHECKOUT_FORM_DRAFT_STORAGE_KEY,
+      JSON.stringify({ ...sampleDraft, rechtlicheKenntnis: undefined }),
+    );
+    expect(loadCheckoutFormDraft()?.rechtlicheKenntnis).toBe(false);
   });
 });
