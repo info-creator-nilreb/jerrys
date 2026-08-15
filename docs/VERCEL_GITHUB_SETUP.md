@@ -141,7 +141,8 @@ Vercel-Deploy-Secrets (`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`) sin
 3. Schema: `DATABASE_URL="…" npx prisma migrate deploy`
 4. Admin anlegen/Passwort:  
    `DATABASE_URL="…" npm run admin:set-password`  
-   (interaktiv) **oder** Seed nur für nicht-Production: `npm run db:seed`
+   (interaktiv) **oder** Seed nur für nicht-Production: `npm run db:seed`  
+   MFA-Lockout: `npm run admin:set-password -- --disable-mfa`
 5. `/admin/login` testen — **kein** Passwort in der URL; Formular nutzt POST.
 
 Lokal: eigenes `AUTH_SECRET` in `.env.local` (darf von Vercel abweichen).

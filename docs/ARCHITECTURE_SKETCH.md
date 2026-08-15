@@ -91,7 +91,7 @@ flowchart TB
 app/
   (storefront)/     /  /produkte  /kategorien  /kollektionen
                     /warenkorb  /checkout  /termine  /konto  /[...slug]
-  admin/            /login  /login/mfa (geplant)  /konto (geplant)
+  admin/            /login  /login/mfa  /konto
                     Dashboard: Produkte, Bestellungen, Bestand,
                     Termine, Inhalte, Versand, Einstellungen, …
   api/              Auth.js, PayPal, Webhooks, Workshop-Checkout,

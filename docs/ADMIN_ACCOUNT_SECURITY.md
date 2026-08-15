@@ -1,6 +1,6 @@
 # Admin-Konto: Passwort ändern und MFA
 
-**Status:** Umsetzungsvorschlag (nicht implementiert)  
+**Status:** umgesetzt (Slice 1 + 2, MFA optional ohne Zwang)  
 **ADR:** [0011-admin-self-service-security.md](./adr/0011-admin-self-service-security.md)  
 **Story:** [stories/admin-konto-passwort-mfa.md](./stories/admin-konto-passwort-mfa.md)
 

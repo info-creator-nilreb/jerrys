@@ -74,6 +74,18 @@ PRISMA_MIGRATE_DATABASE_URL="postgresql://…" npx prisma migrate deploy
 Neue Tabellen erst nach dem Deploy nutzbar: Die App zeigt bei fehlender Migration eine
 verständliche Meldung (`P2021`) statt einer Fehlerseite, speichert aber nichts.
 
+## Admin-Konto (Passwort und MFA)
+
+Self-Service unter `/admin/konto` (Avatar oder E-Mail unten links in der Sidebar). TOTP ist optional, nicht erzwungen. Details: [ADMIN_ACCOUNT_SECURITY.md](./ADMIN_ACCOUNT_SECURITY.md).
+
+Lockout (Gerät verloren, Recovery-Codes weg):
+
+```bash
+ADMIN_SEED_EMAIL="admin@example.com" ADMIN_SEED_PASSWORD="neues-passwort" npm run admin:set-password -- --disable-mfa
+```
+
+Setzt Passwort, `credentialsChangedAt` (alle JWTs ungültig) und deaktiviert MFA inklusive Recovery-Codes. Anschließend Login nur mit dem neuen Passwort.
+
 ## Shop Settings and Branding (Epic 11)
 
 Zentrale Konfiguration unter `/admin/einstellungen` (`ShopSettings` Singleton `id = default`, [ADR-0006](./adr/0006-shop-settings-branding.md)). Wirkt ohne Redeploy auf Storefront (CSS-Variablen, Metadata, Header/Footer), Admin-Login, Transaktions-E-Mails und Rechnungs-PDF.
@@ -318,7 +330,7 @@ The architecture is fixed; product choices remain deliberately open until evalua
 - managed PostgreSQL provider
 - ~~object storage provider and retention implementation~~ → decided: Vercel Blob for public branding/media ([ADR-0008](./adr/0008-object-storage.md)); private docs (invoices/labels) still open
 - durable queue/workflow provider
-- ~~authentication provider or retained Auth.js design~~ → decided: Auth.js retained for admin + customers ([ADR-0005](./adr/0005-customer-authentication.md)); Admin-Self-Service Passwort + TOTP MFA proposed ([ADR-0011](./adr/0011-admin-self-service-security.md), [ADMIN_ACCOUNT_SECURITY.md](./ADMIN_ACCOUNT_SECURITY.md))
+- ~~authentication provider or retained Auth.js design~~ → decided: Auth.js retained for admin + customers ([ADR-0005](./adr/0005-customer-authentication.md)); Admin-Self-Service Passwort + TOTP MFA ([ADR-0011](./adr/0011-admin-self-service-security.md), [ADMIN_ACCOUNT_SECURITY.md](./ADMIN_ACCOUNT_SECURITY.md))
 - error tracking, logs, metrics, and alert routing
 
 Each selection requires an ADR before implementation. Product selection must not be hidden inside a feature pull request.

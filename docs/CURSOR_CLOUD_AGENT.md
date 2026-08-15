@@ -29,6 +29,8 @@ Repository-Umgebung: `.cursor/environment.json` startet optional `dev:cloud` und
 
 ```bash
 ADMIN_SEED_EMAIL="deine@mail.de" ADMIN_SEED_PASSWORD="dein-dev-passwort" npm run admin:set-password
+# Lockout: MFA deaktivieren
+ADMIN_SEED_EMAIL="deine@mail.de" ADMIN_SEED_PASSWORD="dein-dev-passwort" npm run admin:set-password -- --disable-mfa
 ```
 
 ## Typische Fehler

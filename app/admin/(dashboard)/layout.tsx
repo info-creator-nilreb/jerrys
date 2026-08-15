@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getAdminSession } from "@/lib/auth/admin-session";
+import { getAdminAuthState } from "@/lib/auth/admin-auth-state";
 import { AdminDevClientNotice } from "@/components/admin/admin-dev-client-notice";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { formatAppVersionLabel, getAppVersion } from "@/lib/app-version";
@@ -19,10 +19,14 @@ export default async function AdminDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getAdminSession();
-  if (!session?.user) {
+  const authState = await getAdminAuthState();
+  if (authState.status === "none") {
     redirect("/admin/login");
   }
+  if (authState.status === "mfa_pending") {
+    redirect("/admin/login/mfa");
+  }
+  const session = authState.session;
 
   const email = session.user.email ?? "";
   const name = session.user.name?.trim() ?? "";

@@ -1,6 +1,6 @@
 # ADR-0011: Admin self-service password change and TOTP MFA
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-15
 - Owners: Engineering
 - Epic: 9 (Hardening) / Admin-Konto

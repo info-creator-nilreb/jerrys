@@ -4,18 +4,18 @@ import { Suspense } from "react";
 import { getAdminAuthState } from "@/lib/auth/admin-auth-state";
 import { resolveShopBrandingAssetUrl } from "@/lib/shop/branding-asset-fallbacks";
 import { getShopSettings } from "@/lib/shop/shop-settings";
-import { AdminLoginForm } from "./login-form";
-import { LoginHero } from "./login-hero";
+import { LoginHero } from "@/app/admin/login/login-hero";
+import { AdminMfaLoginForm } from "@/app/admin/login/mfa/mfa-form";
 
 export const metadata: Metadata = {
-  title: "Anmelden",
+  title: "Zwei-Faktor-Code",
   robots: { index: false, follow: false },
 };
 
-export default async function AdminLoginPage() {
-  const authState = await getAdminAuthState();
-  if (authState.status === "ready") redirect("/admin");
-  if (authState.status === "mfa_pending") redirect("/admin/login/mfa");
+export default async function AdminMfaLoginPage() {
+  const state = await getAdminAuthState();
+  if (state.status === "none") redirect("/admin/login");
+  if (state.status === "ready") redirect("/admin");
 
   const settings = await getShopSettings();
   const logoUrl = resolveShopBrandingAssetUrl(settings, "logoLight");
@@ -30,15 +30,14 @@ export default async function AdminLoginPage() {
       <div className="row-start-2 flex min-h-0 flex-col justify-center px-6 py-10 sm:px-10 lg:col-start-2 lg:row-start-1 lg:items-center lg:overflow-y-auto lg:px-12 lg:py-14 xl:px-20 2xl:px-24">
         <Suspense
           fallback={
-            <div className="w-full max-w-md animate-pulse space-y-4 lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
+            <div className="w-full max-w-md animate-pulse space-y-4 lg:max-w-lg">
               <div className="h-10 w-40 rounded bg-zinc-200" />
               <div className="h-8 w-3/4 rounded bg-zinc-100" />
-              <div className="h-12 rounded bg-zinc-100" />
               <div className="h-12 rounded bg-zinc-100" />
             </div>
           }
         >
-          <AdminLoginForm logoUrl={logoUrl} shopName={shopName} />
+          <AdminMfaLoginForm logoUrl={logoUrl} shopName={shopName} />
         </Suspense>
       </div>
     </div>

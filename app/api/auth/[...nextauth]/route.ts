@@ -3,6 +3,7 @@ import {
   credentialSignInRateLimitHeaders,
   touchCredentialSignInAttempt,
 } from "@/lib/security/sign-in-rate-limit";
+import { touchAdminMfaChallengeAttempt } from "@/lib/security/admin-account-rate-limit";
 import { touchCustomerLoginAttempt } from "@/lib/security/customer-auth-rate-limit";
 import {
   listAuthRelatedEnvKeys,
@@ -41,9 +42,14 @@ function misconfiguredAuthResponse() {
 function isCredentialCallbackPath(path: string): boolean {
   return (
     path.includes("/callback/credentials") ||
+    path.includes("/callback/admin-mfa") ||
     path.includes("/callback/customer-credentials") ||
     path.includes("/callback/customer-magic-link")
   );
+}
+
+function isAdminMfaCallbackPath(path: string): boolean {
+  return path.includes("/callback/admin-mfa");
 }
 
 function isCustomerCredentialCallbackPath(path: string): boolean {
@@ -65,6 +71,17 @@ export async function POST(req: NextRequest) {
     const ip = clientIpFromRequest(req);
     if (isCustomerCredentialCallbackPath(path)) {
       const limited = touchCustomerLoginAttempt(ip);
+      if (!limited.ok) {
+        return NextResponse.json(
+          { error: "Zu viele Anmeldeversuche. Bitte später erneut versuchen." },
+          {
+            status: 429,
+            headers: credentialSignInRateLimitHeaders(limited.retryAfterSec),
+          },
+        );
+      }
+    } else if (isAdminMfaCallbackPath(path)) {
+      const limited = touchAdminMfaChallengeAttempt(ip);
       if (!limited.ok) {
         return NextResponse.json(
           { error: "Zu viele Anmeldeversuche. Bitte später erneut versuchen." },

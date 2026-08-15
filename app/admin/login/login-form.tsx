@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { signIn } from "next-auth/react";
+import { getSession, signIn } from "next-auth/react";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useState } from "react";
@@ -31,6 +31,8 @@ export function AdminLoginForm({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
+  const passwordChanged = searchParams.get("passwordChanged") === "1";
+  const mfaDisabled = searchParams.get("mfaDisabled") === "1";
   const errorParam = searchParams.get("error");
   const urlAuthError =
     errorParam === "CredentialsSignin"
@@ -81,6 +83,11 @@ export function AdminLoginForm({
         setPending(false);
         return;
       }
+      const session = await getSession();
+      if (session?.user?.mfaPending) {
+        window.location.href = "/admin/login/mfa";
+        return;
+      }
       if (result?.url) {
         window.location.href = result.url;
         return;
@@ -110,6 +117,13 @@ export function AdminLoginForm({
       <h1 className="text-2xl font-semibold tracking-tight text-[#2d2e32] lg:text-[1.65rem] lg:leading-snug">
         Melde dich im Admin-Bereich an
       </h1>
+      {passwordChanged || mfaDisabled ? (
+        <p className="mt-4 text-sm font-medium text-primary" role="status">
+          {passwordChanged
+            ? "Passwort wurde geändert. Bitte mit dem neuen Passwort anmelden."
+            : "Zwei-Faktor-Authentifizierung wurde deaktiviert. Bitte erneut anmelden."}
+        </p>
+      ) : null}
 
       {process.env.NODE_ENV === "development" ? (
         <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">

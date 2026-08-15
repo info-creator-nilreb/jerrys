@@ -362,31 +362,67 @@ export function AdminSidebar({
       </div>
 
       <div ref={userMenuRef} className="relative border-t border-white/10 p-2">
-        <button
-          type="button"
-          onClick={() => setUserMenuOpen((o) => !o)}
-          className={`flex min-h-11 w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/5 ${showLabels ? "" : "justify-center px-1"}`}
-          aria-expanded={userMenuOpen}
+        <div
+          className={`flex min-h-11 w-full items-center gap-1 rounded-lg ${showLabels ? "" : "justify-center"}`}
         >
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white ring-2 ring-white/20">
-            {initials}
-          </span>
           {showLabels ? (
-            <>
+            <Link
+              href="/admin/konto"
+              data-testid="admin-konto-link"
+              onClick={() => onNavigate?.()}
+              className="flex min-h-11 min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/5"
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white ring-2 ring-white/20">
+                {initials}
+              </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-white">{displayName}</p>
-                <p className="truncate text-xs font-medium text-primary">Administrator</p>
+                <p className="truncate text-xs font-medium text-primary">{userEmail || "Administrator"}</p>
               </div>
+            </Link>
+          ) : (
+            <button
+              type="button"
+              data-testid="admin-account-menu"
+              onClick={() => setUserMenuOpen((o) => !o)}
+              className="flex size-11 items-center justify-center rounded-lg transition-colors hover:bg-white/5"
+              aria-expanded={userMenuOpen}
+              aria-label="Kontomenü"
+            >
+              <span className="flex size-9 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white ring-2 ring-white/20">
+                {initials}
+              </span>
+            </button>
+          )}
+          {showLabels ? (
+            <button
+              type="button"
+              onClick={() => setUserMenuOpen((o) => !o)}
+              className="flex size-11 shrink-0 items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/5 hover:text-white/90"
+              aria-expanded={userMenuOpen}
+              aria-label="Kontomenü"
+            >
               <IconChevronUp
-                className={`size-4 shrink-0 text-white/50 transition-transform ${userMenuOpen ? "" : "rotate-180"}`}
+                className={`size-4 transition-transform ${userMenuOpen ? "" : "rotate-180"}`}
               />
-            </>
+            </button>
           ) : null}
-        </button>
+        </div>
         {userMenuOpen ? (
           <div
             className={`absolute bottom-full left-2 right-2 z-20 mb-1 rounded-lg border border-white/10 bg-[#1f3a5c] py-1 shadow-lg ${collapsed ? "left-1 right-1" : ""}`}
           >
+            <Link
+              href="/admin/konto"
+              data-testid="admin-konto-menu-link"
+              className="block w-full px-3 py-2 text-left text-sm text-white/90 hover:bg-white/10"
+              onClick={() => {
+                setUserMenuOpen(false);
+                onNavigate?.();
+              }}
+            >
+              Konto
+            </Link>
             <button
               type="button"
               className="w-full px-3 py-2 text-left text-sm text-white/90 hover:bg-white/10"

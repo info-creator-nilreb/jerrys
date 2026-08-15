@@ -18,6 +18,7 @@ import {
   markCustomerLoggedIn,
   resolveAuthSubjectKind,
 } from "@/features/customers";
+import { verifyAdminMfaLogin } from "@/lib/auth/admin-mfa";
 import { isInsecureAdminPassword } from "@/lib/security/insecure-admin-passwords";
 
 syncAuthUrlForVercelPreview();
@@ -37,6 +38,10 @@ const customerCredentialsSchema = z.object({
 
 const magicLinkSchema = z.object({
   token: z.string().min(1),
+});
+
+const adminMfaSchema = z.object({
+  code: z.string().min(1),
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth(() => {
@@ -84,9 +89,41 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
               email: admin.email,
               name: admin.email,
               subjectKind: "admin" as const,
+              mfaPending: admin.mfaEnabled,
             };
           } catch (e) {
             log.error("authorize_failed", { error: String(e) });
+            return null;
+          }
+        },
+      }),
+      Credentials({
+        id: "admin-mfa",
+        name: "Admin MFA",
+        credentials: {
+          code: { label: "Code", type: "text" },
+        },
+        authorize: async (raw) => {
+          const parsed = adminMfaSchema.safeParse(raw);
+          if (!parsed.success) return null;
+          try {
+            const pending = await auth();
+            if (!pending?.user?.id) return null;
+            if (resolveAuthSubjectKind(pending.user.subjectKind) !== "admin") {
+              return null;
+            }
+            if (pending.user.mfaPending !== true) return null;
+            const result = await verifyAdminMfaLogin(pending.user.id, parsed.data.code);
+            if (!result.ok) return null;
+            return {
+              id: pending.user.id,
+              email: pending.user.email,
+              name: pending.user.email,
+              subjectKind: "admin" as const,
+              mfaPending: false,
+            };
+          } catch (e) {
+            log.error("admin_mfa_authorize_failed", { error: String(e) });
             return null;
           }
         },
@@ -154,6 +191,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
             await autoClaimGuestOrdersAfterVerification(id);
             return;
           }
+          if ((user as { mfaPending?: boolean }).mfaPending) return;
           await getPrisma().adminUser.update({
             where: { id },
             data: { lastLoginAt: new Date() },
@@ -170,6 +208,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
           token.sub = user.id;
           const kind = (user as { subjectKind?: unknown }).subjectKind;
           token.subjectKind = resolveAuthSubjectKind(kind);
+          const mfaPending = Boolean((user as { mfaPending?: boolean }).mfaPending);
+          token.mfaPending = mfaPending;
+          token.credentialsIssuedAt = Date.now();
+          token.mfaVerifiedAt = mfaPending ? undefined : Date.now();
         }
         return token;
       },
@@ -177,6 +219,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
         if (session.user && token.sub) {
           session.user.id = token.sub;
           session.user.subjectKind = resolveAuthSubjectKind(token.subjectKind);
+          session.user.mfaPending = token.mfaPending === true;
+          session.user.mfaVerifiedAt =
+            typeof token.mfaVerifiedAt === "number" ? token.mfaVerifiedAt : undefined;
+          session.user.credentialsIssuedAt =
+            typeof token.credentialsIssuedAt === "number"
+              ? token.credentialsIssuedAt
+              : undefined;
         }
         return session;
       },
