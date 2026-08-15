@@ -1,12 +1,14 @@
 "use client";
 
+import { CreditCard } from "lucide-react";
 import Image from "next/image";
 import { useId, type ReactNode } from "react";
+import { checkoutPaymentMethodHint } from "@/lib/checkout/checkout-payment-hints";
 import { showCheckoutInlineCardFields } from "@/lib/checkout/inline-card-fields";
 
 /**
- * Darstellung der über PayPal / Advanced Checkout typischerweise verfügbaren Wege.
- * Die finale Auswahl (z. B. Apple Pay vs. Karte) erfolgt auf der PayPal-Seite nach dem Formular-Submit.
+ * Zahlungsarten im Checkout. Apple Pay / Google Pay werden im regulären Checkout
+ * nativ (Wallet-Sheet) abgeschlossen — nicht über die PayPal-Website.
  */
 export const CHECKOUT_PAYPAL_METHOD_ROWS = [
   { id: "paypal", label: "PayPal", brand: "paypal" as const },
@@ -58,11 +60,8 @@ function MethodBrand({ brand }: { brand: (typeof CHECKOUT_PAYPAL_METHOD_ROWS)[nu
     );
   }
   return (
-    <span className={`${BRAND_SLOT} border-[#e5e7eb] bg-[#1a1a1a]`}>
-      <svg width="22" height="16" viewBox="0 0 22 16" fill="none" aria-hidden className="text-white">
-        <rect x="0.5" y="0.5" width="21" height="15" rx="2" stroke="currentColor" strokeOpacity="0.35" />
-        <rect x="1" y="3" width="20" height="3" fill="currentColor" fillOpacity="0.25" />
-      </svg>
+    <span className={`${BRAND_SLOT} border-[#e5e7eb] bg-[#1a1a1a] text-white`}>
+      <CreditCard className="size-4" aria-hidden strokeWidth={1.75} />
     </span>
   );
 }
@@ -73,6 +72,9 @@ export function CheckoutPaymentMethods({
   submitLabel = "Jetzt kostenpflichtig bestellen",
   cardInline = true,
   cardFields = null,
+  nativeWallets = false,
+  applePayReady,
+  googlePayReady,
 }: {
   value: CheckoutPayPalMethodId;
   onChange: (id: CheckoutPayPalMethodId) => void;
@@ -88,32 +90,30 @@ export function CheckoutPaymentMethods({
    * AGB und Bestellbutton folgen danach wie bei den anderen Zahlungsarten.
    */
   cardFields?: ReactNode;
+  /** true = Apple Pay / Google Pay als native Wallets (kein PayPal-Redirect). */
+  nativeWallets?: boolean;
+  applePayReady?: boolean;
+  googlePayReady?: boolean;
 }) {
   const hintId = useId();
+  const rows = nativeWallets
+    ? CHECKOUT_PAYPAL_METHOD_ROWS
+    : CHECKOUT_PAYPAL_METHOD_ROWS.filter((row) => row.id !== "apple_pay" && row.id !== "google_pay");
 
-  const hint =
-    value === "card" && cardInline ? (
-      <>
-        Geben Sie Ihre Kartendaten ein (sichere Felder von PayPal) und schließen Sie mit{" "}
-        <span className="font-medium text-[#374151]">„{submitLabel}“</span> ab.
-      </>
-    ) : value === "card" ? (
-      <>
-        Nach „{submitLabel}“ leiten wir Sie zu PayPal weiter. Dort können Sie mit Debit- oder Kreditkarte
-        bezahlen.
-      </>
-    ) : (
-      <>
-        Nach „{submitLabel}“ leiten wir Sie zu PayPal weiter. Dort wählen Sie die für Sie verfügbare Option
-        (je nach Land, Gerät und Konto, u. a. PayPal-Guthaben, Apple Pay, Google Pay, Karte oder SEPA).
-      </>
-    );
+  const hint = checkoutPaymentMethodHint({
+    method: value,
+    submitLabel,
+    cardInline,
+    nativeWallets,
+    applePayReady,
+    googlePayReady,
+  });
 
   return (
     <div className="mt-4 w-full">
       <fieldset className="overflow-hidden rounded-lg border border-[#e5e7eb] bg-white p-0">
-        <legend className="sr-only">Mögliche Zahlungswege über PayPal</legend>
-        {CHECKOUT_PAYPAL_METHOD_ROWS.map((row, i) => {
+        <legend className="sr-only">Zahlungsart</legend>
+        {rows.map((row, i) => {
           const selected = value === row.id;
           const showCardFields = showCheckoutInlineCardFields(
             row.id,
@@ -125,7 +125,7 @@ export function CheckoutPaymentMethods({
             <div
               key={row.id}
               className={`${selected ? "bg-[#f9fafb]" : ""} ${
-                i < CHECKOUT_PAYPAL_METHOD_ROWS.length - 1 ? "border-b border-[#e5e7eb]" : ""
+                i < rows.length - 1 ? "border-b border-[#e5e7eb]" : ""
               }`}
             >
               <label

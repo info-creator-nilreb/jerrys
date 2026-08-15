@@ -11,6 +11,12 @@ vi.mock("next/image", () => ({
   },
 }));
 
+vi.mock("lucide-react", () => ({
+  CreditCard: function CreditCard() {
+    return createElement("span", { "data-icon": "credit-card" });
+  },
+}));
+
 describe("showCheckoutInlineCardFields", () => {
   it("zeigt Kartenfelder nur unter der ausgewählten Karten-Option", () => {
     expect(showCheckoutInlineCardFields("card", "card", true, true)).toBe(true);
@@ -31,6 +37,11 @@ describe("Checkout-Kartenfelder-Reihenfolge", () => {
     expect(legal).toBeGreaterThan(cardFieldsProp);
     expect(submit).toBeGreaterThan(legal);
     expect(src.indexOf("hidePayButton")).toBeGreaterThan(cardFieldsProp);
+    expect(src).toContain("checkoutFormDraftFromForm");
+    expect(src).not.toContain("clearCheckoutFormDraft");
+    expect(src).toContain("CheckoutRegularWallets");
+    expect(src).toContain("pageshow");
+    expect(src).toContain("isCheckoutWalletMethod");
   });
 
   it("rendert Kartenfelder unter der Karten-Option, vor dem Hinweis", async () => {
@@ -51,5 +62,22 @@ describe("Checkout-Kartenfelder-Reihenfolge", () => {
     expect(cardLabelIdx).toBeGreaterThan(sepaIdx);
     expect(cardIdx).toBeGreaterThan(cardLabelIdx);
     expect(hintIdx).toBeGreaterThan(cardIdx);
+    expect(html).not.toContain("Apple Pay");
+    expect(html).not.toContain("Google Pay");
+  });
+
+  it("verspricht bei Apple Pay keinen PayPal-Redirect", async () => {
+    const { CheckoutPaymentMethods } = await import("@/components/storefront/checkout-payment-methods");
+    const html = renderToStaticMarkup(
+      createElement(CheckoutPaymentMethods, {
+        value: "apple_pay",
+        onChange: () => undefined,
+        nativeWallets: true,
+        applePayReady: true,
+      }),
+    );
+    expect(html).toContain("Apple Pay");
+    expect(html).toContain("keine Weiterleitung zur PayPal-Website");
+    expect(html).not.toContain("Dort wählen Sie die für Sie verfügbare Option");
   });
 });

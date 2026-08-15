@@ -15,6 +15,19 @@ export function paypalExpressSdkSrc(clientId: string, currency: string): string 
   return `https://www.paypal.com/sdk/js?${p.toString()}`;
 }
 
+/** PayPal JS SDK für Apple Pay / Google Pay im regulären Checkout (ohne PayPal-Redirect). */
+export function paypalCheckoutWalletSdkSrc(clientId: string, currency: string): string {
+  const p = new URLSearchParams({
+    "client-id": clientId,
+    components: "applepay,googlepay",
+    intent: "capture",
+    currency: currency.trim().toUpperCase(),
+    locale: "de_DE",
+    "enable-funding": "applepay,googlepay",
+  });
+  return `https://www.paypal.com/sdk/js?${p.toString()}`;
+}
+
 /** PayPal liefert `isEligible` nicht immer; nur explizites `false` gilt als ungeeignet. */
 export function isPayPalApplePayConfigEligible(
   config: { isEligible?: boolean } | null | undefined,

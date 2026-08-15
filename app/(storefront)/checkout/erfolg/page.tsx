@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OrderShippingMapSnippet } from "@/components/storefront/order-shipping-map-snippet";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
+import { ClearCheckoutDraftsOnSuccess } from "@/components/storefront/clear-checkout-drafts-on-success";
 import { formatPrice } from "@/lib/catalog/format";
 import { getPrisma } from "@/lib/db/prisma";
 
@@ -27,6 +28,7 @@ export default async function CheckoutErfolgPage({
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-24 text-center md:py-28">
+      <ClearCheckoutDraftsOnSuccess />
       <div className="text-left">
         <StorefrontBreadcrumbs items={[{ href: "/", label: "Start" }, { label: "Bestellung" }]} />
       </div>

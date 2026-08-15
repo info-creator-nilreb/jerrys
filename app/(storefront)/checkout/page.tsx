@@ -13,7 +13,7 @@ import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { cartLineCommerceRules, getCartWithLines } from "@/lib/cart/cart-queries";
 import { getShippingCountriesForStorefront } from "@/lib/shop/shipping-countries-for-storefront";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
-import { isPayPalConfigured } from "@/lib/payments/paypal-config";
+import { isPayPalConfigured, paypalApiEnv } from "@/lib/payments/paypal-config";
 
 export const dynamic = "force-dynamic";
 
@@ -132,8 +132,9 @@ export default async function CheckoutPage({
           allowedShippingCountries={allowedShippingCountries}
           payPalConfigured={isPayPalConfigured()}
           payPalClientId={process.env.PAYPAL_CLIENT_ID?.trim() ?? ""}
+          payPalLive={paypalApiEnv() === "live"}
           prefillPaypal={prefillPaypal}
-          restoreFormDraft={paypalCancelled || Boolean(paypalError)}
+          restoreFormDraft
           addressPrefill={addressPrefill}
           savedAddresses={savedAddresses}
           canSaveAddressToAccount={Boolean(verifiedCustomerId)}

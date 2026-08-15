@@ -30,6 +30,8 @@ export async function POST(req: NextRequest) {
   const result = await createPayPalExpressOrder({
     idempotencyKey: body.idempotencyKey,
     shippingCountry: body.shippingCountry,
+    promotionCode: body.checkoutPromotionCode ?? body.promotionCode,
+    declineAutomatic: body.checkoutDeclineAutomatic ?? body.declineAutomatic,
   });
 
   if (!result.ok) {

@@ -37,5 +37,7 @@ describe("Checkout Express oben", () => {
     expect(buttons).toContain("applePaySessionCanMakePayments");
     expect(buttons).toContain("FUNDING?.APPLEPAY");
     expect(buttons).toContain("isPayPalApplePayConfigEligible");
+    expect(buttons).toContain("expressPromotionPayload");
+    expect(buttons).toContain("checkoutPromotionCode");
   });
 });

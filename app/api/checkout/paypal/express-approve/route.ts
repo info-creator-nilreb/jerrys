@@ -58,6 +58,14 @@ export async function POST(req: NextRequest) {
       typeof applePayShippingContact === "object" && applePayShippingContact !== null
         ? applePayShippingContact
         : null,
+    promotionCode:
+      typeof body === "object" && body !== null && "checkoutPromotionCode" in body
+        ? (body as { checkoutPromotionCode: unknown }).checkoutPromotionCode
+        : undefined,
+    declineAutomatic:
+      typeof body === "object" && body !== null && "checkoutDeclineAutomatic" in body
+        ? (body as { checkoutDeclineAutomatic: unknown }).checkoutDeclineAutomatic
+        : undefined,
   });
 
   if (!result.ok) {
