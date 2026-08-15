@@ -13,7 +13,7 @@ import { getWorkshopHoldForCheckout } from "@/features/workshops";
 import { getCustomerSession } from "@/lib/auth/customer-session";
 import { getWorkshopBookingHoldIdFromCookie } from "@/lib/workshop/workshop-booking-cookie";
 import { getShippingCountriesForStorefront } from "@/lib/shop/shipping-countries-for-storefront";
-import { isPayPalConfigured } from "@/lib/payments/paypal-config";
+import { isPayPalConfigured, isPayPalSepaDebitEnabled } from "@/lib/payments/paypal-config";
 import { isTermineFeatureEnabled } from "@/lib/shop/termine-feature";
 import { formatWorkshopSessionDateTime } from "@/lib/workshop/format-session-datetime";
 import { getWorkshopCheckoutCatalogLine } from "@/lib/workshop/workshop-checkout-catalog-query";
@@ -162,6 +162,7 @@ export default async function WorkshopCheckoutPage({
           canSaveAddressToAccount={Boolean(verifiedCustomerId)}
           showContactLogin={!session}
           payPalConfigured={isPayPalConfigured()}
+          sepaAvailable={isPayPalSepaDebitEnabled()}
           checkoutError={checkoutError}
         />
       </div>

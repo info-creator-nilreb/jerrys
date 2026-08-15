@@ -31,6 +31,8 @@ export type SmartAddressFieldsProps = {
   names: { zip: string; city: string; line1: string; line2?: string };
   labels: { zip: string; city: string; line1: string; line2?: string };
   defaultValues?: { zip?: string; city?: string; line1?: string; line2?: string };
+  /** Live-Werte an den Checkout, damit der Draft nicht nur leere Parent-States speichert. */
+  onValuesChange?: (values: { zip: string; city: string; line1: string; line2: string }) => void;
   /** Feldfehler vom Server (gewinnen über lokale Hinweise). */
   serverErrors?: Partial<Record<SmartField, string>>;
   errorIds?: Partial<Record<SmartField, string>>;
@@ -126,6 +128,7 @@ export function SmartAddressFields({
   names,
   labels,
   defaultValues,
+  onValuesChange,
   serverErrors,
   errorIds,
   required = false,
@@ -142,6 +145,7 @@ export function SmartAddressFields({
   const [zip, setZip] = useState(defaultValues?.zip ?? "");
   const [city, setCity] = useState(defaultValues?.city ?? "");
   const [line1, setLine1] = useState(defaultValues?.line1 ?? "");
+  const [line2, setLine2] = useState(defaultValues?.line2 ?? "");
 
   const [localityResult, setLocalityResult] = useState<LocalityResult | null>(null);
   const [streetResult, setStreetResult] = useState<StreetResult | null>(null);
@@ -151,6 +155,10 @@ export function SmartAddressFields({
   const [liveErrors, setLiveErrors] = useState<Partial<Record<SmartField, string>>>({});
   const [status, setStatus] = useState("");
   const [needsHouseNumber, setNeedsHouseNumber] = useState(false);
+
+  useEffect(() => {
+    onValuesChange?.({ zip, city, line1, line2 });
+  }, [zip, city, line1, line2, onValuesChange]);
 
   const cityTouchedRef = useRef(Boolean(defaultValues?.city));
   /** Zuletzt übernommener Straßenname: danach nur noch die Hausnummer, keine neue Liste. */
@@ -618,7 +626,8 @@ export function SmartAddressFields({
             type="text"
             autoComplete={withAutoComplete(autoCompleteScope, "address-line2")}
             className={inputClass}
-            defaultValue={defaultValues?.line2 ?? ""}
+            value={line2}
+            onChange={(e) => setLine2(e.target.value)}
           />
         </div>
       ) : null}

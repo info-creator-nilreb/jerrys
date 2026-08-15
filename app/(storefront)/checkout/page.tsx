@@ -14,7 +14,7 @@ import { cartLineCommerceRules, getCartWithLines } from "@/lib/cart/cart-queries
 import { getShippingCountriesForStorefront } from "@/lib/shop/shipping-countries-for-storefront";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
 import { loadPayPalCustomerVault } from "@/lib/checkout/paypal-customer-vault";
-import { isPayPalConfigured, paypalApiEnv } from "@/lib/payments/paypal-config";
+import { isPayPalConfigured, isPayPalSepaDebitEnabled, paypalApiEnv } from "@/lib/payments/paypal-config";
 
 export const dynamic = "force-dynamic";
 
@@ -143,6 +143,7 @@ export default async function CheckoutPage({
           showContactLogin={!session}
           paypalUserIdToken={paypalVault.userIdToken}
           paypalVaultedCards={paypalVault.cards}
+          sepaAvailable={isPayPalSepaDebitEnabled()}
         />
       </div>
     </div>

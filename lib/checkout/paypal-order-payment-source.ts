@@ -5,6 +5,7 @@ import {
   type CheckoutPayPalSurface,
 } from "@/lib/checkout/checkout-paypal-surface";
 import { paypalVaultCustomerId } from "@/lib/payments/paypal-vault-customer-id";
+import { isPayPalSepaDebitEnabled } from "@/lib/payments/paypal-config";
 import {
   createPayPalCheckoutOrder,
   PayPalOrderCreateError,
@@ -47,6 +48,13 @@ export function paymentSourceForCheckoutForm(
   const surface: CheckoutPayPalSurface = parseCheckoutPayPalSurface(d.checkoutPayPalSurface);
 
   if (surface === "sepa") {
+    if (!isPayPalSepaDebitEnabled()) {
+      return {
+        ok: false,
+        error:
+          "SEPA-Lastschrift ist für diesen Shop derzeit nicht verfügbar. Bitte PayPal oder Karte wählen.",
+      };
+    }
     const country = d.billingCountry.trim().toUpperCase();
     if (!isSepaDirectDebitCountry(country)) {
       return {

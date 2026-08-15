@@ -5,6 +5,7 @@ import {
   paymentSourceForCheckoutForm,
 } from "@/lib/checkout/paypal-order-payment-source";
 import { checkoutFormSchema, type CheckoutFormInput } from "@/lib/checkout/schemas";
+import { isPayPalSepaDebitEnabled } from "@/lib/payments/paypal-config";
 import { paypalVaultCustomerId } from "@/lib/payments/paypal-vault-customer-id";
 
 function checkoutInput(extra: Record<string, unknown> = {}): CheckoutFormInput {
@@ -25,6 +26,17 @@ function checkoutInput(extra: Record<string, unknown> = {}): CheckoutFormInput {
   return parsed;
 }
 
+function withSepaEnabled<T>(fn: () => T): T {
+  const prev = process.env.PAYPAL_SEPA_DEBIT_ENABLED;
+  process.env.PAYPAL_SEPA_DEBIT_ENABLED = "1";
+  try {
+    return fn();
+  } finally {
+    if (prev === undefined) delete process.env.PAYPAL_SEPA_DEBIT_ENABLED;
+    else process.env.PAYPAL_SEPA_DEBIT_ENABLED = prev;
+  }
+}
+
 describe("isSepaDirectDebitCountry", () => {
   it("erlaubt DE und AT, nicht US", () => {
     expect(isSepaDirectDebitCountry("DE")).toBe(true);
@@ -33,37 +45,74 @@ describe("isSepaDirectDebitCountry", () => {
   });
 });
 
+describe("isPayPalSepaDebitEnabled", () => {
+  it("ist standardmäßig aus und akzeptiert 1/true/on", () => {
+    const prev = process.env.PAYPAL_SEPA_DEBIT_ENABLED;
+    try {
+      delete process.env.PAYPAL_SEPA_DEBIT_ENABLED;
+      expect(isPayPalSepaDebitEnabled()).toBe(false);
+      process.env.PAYPAL_SEPA_DEBIT_ENABLED = "1";
+      expect(isPayPalSepaDebitEnabled()).toBe(true);
+      process.env.PAYPAL_SEPA_DEBIT_ENABLED = "true";
+      expect(isPayPalSepaDebitEnabled()).toBe(true);
+      process.env.PAYPAL_SEPA_DEBIT_ENABLED = "0";
+      expect(isPayPalSepaDebitEnabled()).toBe(false);
+    } finally {
+      if (prev === undefined) delete process.env.PAYPAL_SEPA_DEBIT_ENABLED;
+      else process.env.PAYPAL_SEPA_DEBIT_ENABLED = prev;
+    }
+  });
+});
+
 describe("paymentSourceForCheckoutForm", () => {
   it("setzt SEPA-Lastschrift mit Rechnungsadresse, nicht das generische PayPal-Wallet", () => {
-    const d = checkoutInput({ checkoutPayPalSurface: "sepa" });
-    const r = paymentSourceForCheckoutForm(d, null);
-    expect(r.ok).toBe(true);
-    if (!r.ok) return;
-    expect(r.source).toMatchObject({
-      type: "sepa_debit",
-      name: "Max Muster",
-      email: "kunde@example.com",
-      address: {
-        address_line_1: "Invalidenstr. 12",
-        admin_area_2: "Berlin",
-        postal_code: "10115",
-        country_code: "DE",
-      },
+    withSepaEnabled(() => {
+      const d = checkoutInput({ checkoutPayPalSurface: "sepa" });
+      const r = paymentSourceForCheckoutForm(d, null);
+      expect(r.ok).toBe(true);
+      if (!r.ok) return;
+      expect(r.source).toMatchObject({
+        type: "sepa_debit",
+        name: "Max Muster",
+        email: "kunde@example.com",
+        address: {
+          address_line_1: "Invalidenstr. 12",
+          admin_area_2: "Berlin",
+          postal_code: "10115",
+          country_code: "DE",
+        },
+      });
     });
   });
 
+  it("lehnt SEPA ab, wenn der Shop die APM nicht aktiviert hat", () => {
+    const prev = process.env.PAYPAL_SEPA_DEBIT_ENABLED;
+    delete process.env.PAYPAL_SEPA_DEBIT_ENABLED;
+    try {
+      const r = paymentSourceForCheckoutForm(checkoutInput({ checkoutPayPalSurface: "sepa" }), null);
+      expect(r.ok).toBe(false);
+      if (r.ok) return;
+      expect(r.error).toContain("nicht verfügbar");
+    } finally {
+      if (prev === undefined) delete process.env.PAYPAL_SEPA_DEBIT_ENABLED;
+      else process.env.PAYPAL_SEPA_DEBIT_ENABLED = prev;
+    }
+  });
+
   it("lehnt SEPA außerhalb der Eurozone ab", () => {
-    const d = checkoutInput({
-      checkoutPayPalSurface: "sepa",
-      shippingCountry: "US",
-      shippingZip: "10001",
-      shippingLine1: "5th Avenue 12",
-      shippingCity: "New York",
+    withSepaEnabled(() => {
+      const d = checkoutInput({
+        checkoutPayPalSurface: "sepa",
+        shippingCountry: "US",
+        shippingZip: "10001",
+        shippingLine1: "5th Avenue 12",
+        shippingCity: "New York",
+      });
+      const r = paymentSourceForCheckoutForm(d, null);
+      expect(r.ok).toBe(false);
+      if (r.ok) return;
+      expect(r.error).toContain("Rechnungsland");
     });
-    const r = paymentSourceForCheckoutForm(d, null);
-    expect(r.ok).toBe(false);
-    if (r.ok) return;
-    expect(r.error).toContain("Rechnungsland");
   });
 
   it("vaultet neue Karten nur für eingeloggte Kunden", () => {

@@ -7,8 +7,9 @@ import { checkoutPaymentMethodHint } from "@/lib/checkout/checkout-payment-hints
 import { showCheckoutInlineCardFields } from "@/lib/checkout/inline-card-fields";
 
 /**
- * Zahlungsarten im Checkout. Apple Pay / Google Pay werden im regulären Checkout
- * nativ (Wallet-Sheet) abgeschlossen — nicht über die PayPal-Website.
+ * Zahlungsarten im Checkout. Es werden nur Optionen gelistet, die in diesem
+ * Checkout wirklich funktionieren: Apple Pay / Google Pay erst bei Geräte- und
+ * SDK-Bereitschaft, SEPA nur wenn der Shop die PayPal-APM aktiviert hat.
  */
 export const CHECKOUT_PAYPAL_METHOD_ROWS = [
   { id: "paypal", label: "PayPal", brand: "paypal" as const },
@@ -19,6 +20,32 @@ export const CHECKOUT_PAYPAL_METHOD_ROWS = [
 ] as const;
 
 export type CheckoutPayPalMethodId = (typeof CHECKOUT_PAYPAL_METHOD_ROWS)[number]["id"];
+
+export type VisibleCheckoutPaymentMethodOptions = {
+  nativeWallets: boolean;
+  applePayReady: boolean;
+  googlePayReady: boolean;
+  sepaAvailable: boolean;
+};
+
+/** Nur Zahlungsarten, die in diesem Checkout wirklich funktionieren. */
+export function visibleCheckoutPaymentMethodRows(
+  opts: VisibleCheckoutPaymentMethodOptions,
+): (typeof CHECKOUT_PAYPAL_METHOD_ROWS)[number][] {
+  return CHECKOUT_PAYPAL_METHOD_ROWS.filter((row) => {
+    if (row.id === "apple_pay") return opts.nativeWallets && opts.applePayReady;
+    if (row.id === "google_pay") return opts.nativeWallets && opts.googlePayReady;
+    if (row.id === "sepa") return opts.sepaAvailable;
+    return true;
+  });
+}
+
+export function isCheckoutPayPalMethodVisible(
+  id: CheckoutPayPalMethodId,
+  opts: VisibleCheckoutPaymentMethodOptions,
+): boolean {
+  return visibleCheckoutPaymentMethodRows(opts).some((row) => row.id === id);
+}
 
 /** Einheitliche Breite für alle Marken-Slots (Shopify-ähnliche Spalte). */
 const BRAND_SLOT =
@@ -73,8 +100,9 @@ export function CheckoutPaymentMethods({
   cardInline = true,
   cardFields = null,
   nativeWallets = false,
-  applePayReady,
-  googlePayReady,
+  applePayReady = false,
+  googlePayReady = false,
+  sepaAvailable = false,
 }: {
   value: CheckoutPayPalMethodId;
   onChange: (id: CheckoutPayPalMethodId) => void;
@@ -94,11 +122,16 @@ export function CheckoutPaymentMethods({
   nativeWallets?: boolean;
   applePayReady?: boolean;
   googlePayReady?: boolean;
+  /** true = SEPA-Lastschrift ist beim Händler in PayPal aktiv. */
+  sepaAvailable?: boolean;
 }) {
   const hintId = useId();
-  const rows = nativeWallets
-    ? CHECKOUT_PAYPAL_METHOD_ROWS
-    : CHECKOUT_PAYPAL_METHOD_ROWS.filter((row) => row.id !== "apple_pay" && row.id !== "google_pay");
+  const rows = visibleCheckoutPaymentMethodRows({
+    nativeWallets,
+    applePayReady,
+    googlePayReady,
+    sepaAvailable,
+  });
 
   const hint = checkoutPaymentMethodHint({
     method: value,

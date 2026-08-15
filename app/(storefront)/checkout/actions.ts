@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createPendingPayPalOrderFromFormData } from "@/lib/checkout/create-pending-paypal-order-from-form";
+import { setCheckoutFormDraftCookieFromServer } from "@/lib/checkout/checkout-form-draft-cookie";
 
 export type CheckoutActionState =
   | { ok: true; orderNumber: string; paymentRedirectUrl?: string }
@@ -20,6 +21,10 @@ export async function submitCheckout(
 
   if (!r.ok) {
     return { ok: false, error: r.error, fieldErrors: r.fieldErrors };
+  }
+
+  if (r.paymentReady && r.checkoutDraft) {
+    await setCheckoutFormDraftCookieFromServer(r.checkoutDraft);
   }
 
   const erfolgPath = `/checkout/erfolg?nr=${encodeURIComponent(r.orderNumber)}`;

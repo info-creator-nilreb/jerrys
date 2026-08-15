@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   isPayPalApplePayConfigEligible,
+  paypalExpressButtonsOnlySdkSrc,
   paypalExpressSdkSrc,
 } from "@/lib/payments/paypal-express-sdk";
 import {
@@ -539,19 +540,63 @@ export function CheckoutExpressPayPalOnly({
     };
 
     const existing = document.getElementById(scriptId) as HTMLScriptElement | null;
-    if (existing && currentPayPal()?.Buttons) {
-      void mount();
-    } else if (existing) {
-      existing.addEventListener("load", () => void mount(), { once: true });
-    } else {
-      const script = document.createElement("script");
-      script.id = scriptId;
-      script.src = paypalExpressSdkSrc(paypalClientId.trim(), currency);
-      script.async = true;
-      script.onload = () => void mount();
-      script.onerror = () => setSdkError("PayPal-Skript konnte nicht geladen werden.");
-      document.body.appendChild(script);
-    }
+    const loadScript = (src: string): Promise<void> =>
+      new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.id = scriptId;
+        script.src = src;
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () => {
+          script.remove();
+          reject(new Error("PayPal-Skript konnte nicht geladen werden."));
+        };
+        document.body.appendChild(script);
+      });
+
+    const tryLoadThenMount = async () => {
+      if (existing && currentPayPal()?.Buttons) {
+        await mount();
+        return;
+      }
+      if (existing) {
+        existing.addEventListener("load", () => void mount(), { once: true });
+        existing.addEventListener(
+          "error",
+          () => {
+            existing.remove();
+            void (async () => {
+              try {
+                await loadScript(paypalExpressButtonsOnlySdkSrc(paypalClientId.trim(), currency));
+                if (!cancelled) await mount();
+              } catch {
+                if (!cancelled) setSdkError("PayPal-Skript konnte nicht geladen werden.");
+              }
+            })();
+          },
+          { once: true },
+        );
+        return;
+      }
+
+      const urls = [
+        paypalExpressSdkSrc(paypalClientId.trim(), currency),
+        paypalExpressButtonsOnlySdkSrc(paypalClientId.trim(), currency),
+      ];
+      for (const src of urls) {
+        if (cancelled) return;
+        try {
+          await loadScript(src);
+          if (!cancelled) await mount();
+          return;
+        } catch {
+          // nächste URL (ohne applepay-Komponente)
+        }
+      }
+      if (!cancelled) setSdkError("PayPal-Skript konnte nicht geladen werden.");
+    };
+
+    void tryLoadThenMount();
 
     return () => {
       cancelled = true;

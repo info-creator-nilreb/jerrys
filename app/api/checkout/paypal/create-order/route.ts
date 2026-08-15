@@ -8,6 +8,7 @@ import {
   payPalApiRateLimitJsonHeaders,
   touchPayPalCheckoutApiAttempt,
 } from "@/lib/security/paypal-checkout-api-rate-limit";
+import { appendCheckoutFormDraftCookie } from "@/lib/checkout/checkout-form-draft-cookie";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 
 export async function POST(req: Request) {
@@ -65,10 +66,14 @@ export async function POST(req: Request) {
     );
   }
 
-  return NextResponse.json({
+  const res = NextResponse.json({
     ok: true,
     paypalOrderId: result.paypalOrderId,
     orderNumber: result.orderNumber,
     payerActionUrl: result.payerActionUrl || undefined,
   });
+  if (result.checkoutDraft) {
+    appendCheckoutFormDraftCookie(res, result.checkoutDraft);
+  }
+  return res;
 }

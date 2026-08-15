@@ -13,6 +13,7 @@ import { type PayPalShippingPreference } from "@/lib/payments/paypal-orders";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 import { usesPaypalHostedCheckout } from "@/lib/payments/online-payment-method";
 import { parseCheckoutPayPalSurface } from "@/lib/checkout/checkout-paypal-surface";
+import { checkoutFormDraftFromCheckoutInput, type CheckoutFormDraft } from "@/lib/checkout/checkout-form-draft";
 import {
   paymentSourceForCheckoutForm,
   paypalOrderCreateUserMessage,
@@ -52,6 +53,8 @@ export type CreatePendingPayPalOrderResult =
       approvalUrl: string;
       /** 3DS / SEPA-Mandat; Client oder Redirect nutzen diese URL wenn gesetzt. */
       payerActionUrl?: string;
+      /** Checkout-Felder zum Wiederherstellen nach PayPal-Abbruch. */
+      checkoutDraft?: CheckoutFormDraft;
     }
   /** Gleiche Idempotency erneut abgeschickt, Bestellung bereits erledigt (kein neuer PayPal-Start). */
   | { ok: true; paymentReady: false; orderNumber: string }
@@ -280,6 +283,7 @@ async function createPendingPayPalOrderFromParsedRaw(
           paypalOrderId: started.paypalOrderId,
           approvalUrl: started.approvalUrl,
           payerActionUrl: started.payerActionUrl ?? undefined,
+          checkoutDraft: checkoutFormDraftFromCheckoutInput(d),
         };
       } catch (e) {
         log.error("paypal_checkout_resume_failed", {
@@ -587,6 +591,7 @@ async function createPendingPayPalOrderFromParsedRaw(
       paypalOrderId: started.paypalOrderId,
       approvalUrl: started.approvalUrl,
       payerActionUrl: started.payerActionUrl ?? undefined,
+      checkoutDraft: checkoutFormDraftFromCheckoutInput(d),
     };
   } catch (e) {
     log.error("paypal_checkout_create_failed", {
