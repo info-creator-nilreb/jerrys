@@ -788,6 +788,7 @@ export function CheckoutForm({
             totalGrossCents={displayTotals.totalCents}
             promotionCode={committedPromoCode}
             declineAutomatic={declineAutomatic}
+            deliveryMethod={deliveryMethod}
           />
         ) : null}
 

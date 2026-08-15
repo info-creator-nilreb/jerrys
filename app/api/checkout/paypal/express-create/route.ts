@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
     shippingCountry: body.shippingCountry,
     promotionCode: body.checkoutPromotionCode ?? body.promotionCode,
     declineAutomatic: body.checkoutDeclineAutomatic ?? body.declineAutomatic,
+    deliveryMethod: body.deliveryMethod ?? body.checkoutDeliveryMethod,
   });
 
   if (!result.ok) {

@@ -66,6 +66,12 @@ export async function POST(req: NextRequest) {
       typeof body === "object" && body !== null && "checkoutDeclineAutomatic" in body
         ? (body as { checkoutDeclineAutomatic: unknown }).checkoutDeclineAutomatic
         : undefined,
+    deliveryMethod:
+      typeof body === "object" && body !== null && "deliveryMethod" in body
+        ? (body as { deliveryMethod: unknown }).deliveryMethod
+        : typeof body === "object" && body !== null && "checkoutDeliveryMethod" in body
+          ? (body as { checkoutDeliveryMethod: unknown }).checkoutDeliveryMethod
+          : undefined,
   });
 
   if (!result.ok) {

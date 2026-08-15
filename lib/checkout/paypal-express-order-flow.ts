@@ -1,5 +1,5 @@
 import { createPendingPayPalOrderFromJsonBody } from "@/lib/checkout/create-pending-paypal-order-from-form";
-import { parseExpressPromotionInput } from "@/lib/checkout/express-promotion";
+import { parseExpressDeliveryMethod, parseExpressPromotionInput } from "@/lib/checkout/express-promotion";
 import {
   expressAddressFromPayPalOrder,
   type ApplePayContactLike,
@@ -41,6 +41,7 @@ function placeholderExpressCheckoutBody(
   idempotencyKey: string,
   shippingCountry: string,
   promotion: { promotionCode: string; declineAutomatic: boolean },
+  deliveryMethod: string,
 ): Record<string, unknown> {
   return {
     email: PAYPAL_EXPRESS_PLACEHOLDER_EMAIL,
@@ -49,6 +50,7 @@ function placeholderExpressCheckoutBody(
     billingUseShipping: "on",
     phone: "",
     paymentMethod: "paypal",
+    deliveryMethod,
     rechtlicheKenntnis: "on",
     idempotencyKey,
     checkoutPromotionCode: promotion.promotionCode,
@@ -62,6 +64,7 @@ export async function createPayPalExpressOrder(params: {
   shippingCountry?: unknown;
   promotionCode?: unknown;
   declineAutomatic?: unknown;
+  deliveryMethod?: unknown;
 }): Promise<CreatePayPalExpressOrderResult> {
   const rawKey = typeof params.idempotencyKey === "string" ? params.idempotencyKey.trim() : "";
   const idempotencyKey = rawKey || crypto.randomUUID();
@@ -70,9 +73,10 @@ export async function createPayPalExpressOrder(params: {
     promotionCode: params.promotionCode,
     declineAutomatic: params.declineAutomatic,
   });
+  const deliveryMethod = parseExpressDeliveryMethod(params);
 
   const result = await createPendingPayPalOrderFromJsonBody(
-    placeholderExpressCheckoutBody(idempotencyKey, shippingCountry, promotion),
+    placeholderExpressCheckoutBody(idempotencyKey, shippingCountry, promotion, deliveryMethod),
     {
       paypalShippingPreference: "GET_FROM_FILE",
       orderEventChannel: "paypal_express",
@@ -102,6 +106,7 @@ export async function approvePayPalExpressOrder(params: {
   applePayShippingContact?: ApplePayContactLike | null;
   promotionCode?: unknown;
   declineAutomatic?: unknown;
+  deliveryMethod?: unknown;
 }): Promise<ApprovePayPalExpressOrderResult> {
   let paypalOrder: Awaited<ReturnType<typeof getPayPalCheckoutOrderDetails>>;
   try {
@@ -124,12 +129,14 @@ export async function approvePayPalExpressOrder(params: {
     return { ok: false, code: "land" };
   }
 
+  const deliveryMethod = parseExpressDeliveryMethod(params);
   const quote = await quoteExpressShippingForCart(
     address.shippingCountry,
     parseExpressPromotionInput({
       promotionCode: params.promotionCode,
       declineAutomatic: params.declineAutomatic,
     }),
+    deliveryMethod,
   );
   if (!quote.ok) {
     return { ok: false, code: quote.code === "land" ? "land" : "bestellung" };
@@ -185,6 +192,7 @@ export async function approvePayPalExpressOrder(params: {
           subtotalGrossCents: quote.subtotalCents,
           totalGrossCents: quote.totalGrossCents,
           discountOffSubtotalCents: quote.discountOffSubtotalCents,
+          deliveryMethod,
         },
       });
       await tx.orderPayment.updateMany({

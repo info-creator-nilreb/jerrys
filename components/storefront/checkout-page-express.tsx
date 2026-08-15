@@ -13,6 +13,7 @@ export function CheckoutPageExpress({
   totalGrossCents,
   promotionCode,
   declineAutomatic,
+  deliveryMethod = "shipping",
 }: {
   payPalConfigured: boolean;
   paypalClientId: string;
@@ -20,6 +21,7 @@ export function CheckoutPageExpress({
   totalGrossCents: number;
   promotionCode?: string;
   declineAutomatic?: boolean;
+  deliveryMethod?: "shipping" | "pickup";
 }) {
   if (!payPalConfigured || !paypalClientId.trim()) return null;
 
@@ -36,6 +38,7 @@ export function CheckoutPageExpress({
         variant="checkout"
         promotionCode={promotionCode}
         declineAutomatic={declineAutomatic}
+        deliveryMethod={deliveryMethod}
       />
       <div className="flex items-center gap-3 pt-2" role="separator" aria-label="oder weiter mit dem Formular">
         <span className="h-px flex-1 bg-[#e5e7eb]" aria-hidden />

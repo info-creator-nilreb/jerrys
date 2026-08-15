@@ -158,6 +158,8 @@ type Props = {
   /** Angewendeter Rabattcode aus dem Checkout-Formular. */
   promotionCode?: string;
   declineAutomatic?: boolean;
+  /** Checkout-Lieferart; Warenkorb/PDP bleiben Versand. */
+  deliveryMethod?: "shipping" | "pickup";
 };
 
 export function CheckoutExpressPayPalOnly({
@@ -170,6 +172,7 @@ export function CheckoutExpressPayPalOnly({
   enabled = true,
   promotionCode,
   declineAutomatic = false,
+  deliveryMethod = "shipping",
 }: Props) {
   const router = useRouter();
   const paypalContainerRef = useRef<HTMLDivElement>(null);
@@ -195,6 +198,9 @@ export function CheckoutExpressPayPalOnly({
       declineAutomatic,
     };
   }
+  const deliveryMethodRef = useRef(deliveryMethod);
+  deliveryMethodRef.current = deliveryMethod;
+
   const [sdkError, setSdkError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [applePayDeviceReady, setApplePayDeviceReady] = useState(false);
@@ -228,6 +234,7 @@ export function CheckoutExpressPayPalOnly({
     return {
       checkoutPromotionCode: stored.code,
       checkoutDeclineAutomatic: stored.declineAutomatic,
+      deliveryMethod: deliveryMethodRef.current,
     };
   }, []);
 

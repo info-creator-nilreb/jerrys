@@ -1,3 +1,4 @@
+import { parseCheckoutDeliveryMethod, type CheckoutDeliveryMethod } from "@/lib/checkout/delivery-method";
 import { normalizePromotionCode } from "@/lib/promotions/engine";
 
 /** Optionaler Rabatt aus Express-/Wallet-Requests (Checkout-Code oder gespeicherte Präferenz). */
@@ -25,4 +26,11 @@ export function parseExpressPromotionInput(body: {
     promotionCode: normalizePromotionCode(rawCode),
     declineAutomatic,
   };
+}
+
+export function parseExpressDeliveryMethod(body: {
+  deliveryMethod?: unknown;
+  checkoutDeliveryMethod?: unknown;
+}): CheckoutDeliveryMethod {
+  return parseCheckoutDeliveryMethod(body.deliveryMethod ?? body.checkoutDeliveryMethod);
 }

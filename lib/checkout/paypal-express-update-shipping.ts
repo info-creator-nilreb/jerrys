@@ -1,4 +1,4 @@
-import { parseExpressPromotionInput } from "@/lib/checkout/express-promotion";
+import { parseExpressDeliveryMethod, parseExpressPromotionInput } from "@/lib/checkout/express-promotion";
 import {
   defaultExpressShippingCountry,
   quoteExpressShippingForCart,
@@ -28,13 +28,16 @@ export async function updatePayPalExpressShipping(params: {
   shippingCountry: unknown;
   promotionCode?: unknown;
   declineAutomatic?: unknown;
+  deliveryMethod?: unknown;
 }): Promise<UpdateExpressShippingResult> {
+  const deliveryMethod = parseExpressDeliveryMethod(params);
   const quote = await quoteExpressShippingForCart(
     params.shippingCountry,
     parseExpressPromotionInput({
       promotionCode: params.promotionCode,
       declineAutomatic: params.declineAutomatic,
     }),
+    deliveryMethod,
   );
   if (!quote.ok) {
     return { ok: false, code: quote.code, message: quote.message };
@@ -70,6 +73,7 @@ export async function updatePayPalExpressShipping(params: {
           subtotalGrossCents: quote.subtotalCents,
           totalGrossCents: quote.totalGrossCents,
           discountOffSubtotalCents: quote.discountOffSubtotalCents,
+          deliveryMethod,
         },
       });
       await tx.orderPayment.update({

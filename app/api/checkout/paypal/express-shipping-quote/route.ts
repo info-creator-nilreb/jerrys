@@ -22,10 +22,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "PayPal ist nicht konfiguriert." }, { status: 503 });
   }
 
-  let body: { shippingCountry?: unknown; checkoutPromotionCode?: unknown; checkoutDeclineAutomatic?: unknown } =
-    {};
+  let body: {
+    shippingCountry?: unknown;
+    checkoutPromotionCode?: unknown;
+    checkoutDeclineAutomatic?: unknown;
+    deliveryMethod?: unknown;
+    checkoutDeliveryMethod?: unknown;
+  } = {};
   try {
-    body = (await req.json()) as { shippingCountry?: unknown };
+    body = (await req.json()) as typeof body;
   } catch {
     body = {};
   }
@@ -33,6 +38,7 @@ export async function POST(req: NextRequest) {
   const quote = await quoteExpressShippingForCart(
     body.shippingCountry,
     parseExpressPromotionInput(body),
+    body.deliveryMethod ?? body.checkoutDeliveryMethod,
   );
   if (!quote.ok) {
     return NextResponse.json(
