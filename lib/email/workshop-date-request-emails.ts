@@ -1,6 +1,7 @@
 import { sendTransactionalEmail } from "@/lib/email/provider";
 import { grayInfoCard } from "@/lib/email/transactional-email-layout";
-import { escapeHtmlForEmail, publicSiteBaseUrl } from "@/lib/email/template-utils";
+import { emailAbsoluteHref } from "@/lib/email/email-absolute-url";
+import { escapeHtmlForEmail } from "@/lib/email/template-utils";
 import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
 import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
 import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
@@ -10,9 +11,7 @@ import { createLogger } from "@/lib/logging/logger";
 const log = createLogger("email.workshop-date-request");
 
 function termineOverviewUrl(): string {
-  const base = publicSiteBaseUrl();
-  const path = "/termine";
-  return base ? `${base}${path}` : path;
+  return emailAbsoluteHref("/termine");
 }
 
 export async function sendWorkshopDateRequestApprovedEmail(input: {

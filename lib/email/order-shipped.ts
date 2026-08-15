@@ -20,7 +20,7 @@ import {
 } from "@/lib/email/templates/order-fragments";
 import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
 import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
-import { publicSiteBaseUrl } from "@/lib/email/template-utils";
+import { emailAbsoluteHref } from "@/lib/email/email-absolute-url";
 import { buildInvoicePdfBuffer } from "@/lib/invoice/build-invoice-pdf";
 import {
   transactionalEmailBrandingFromSettings,
@@ -67,9 +67,9 @@ export async function sendOrderShippedIfNeeded(
 
   const settings = await getShopSettings();
   const branding = transactionalEmailBrandingFromSettings(settings);
-  const base = publicSiteBaseUrl();
-  const successPath = `/checkout/erfolg?nr=${encodeURIComponent(order.orderNumber)}`;
-  const successUrl = base ? `${base}${successPath}` : successPath;
+  const successUrl = emailAbsoluteHref(
+    `/checkout/erfolg?nr=${encodeURIComponent(order.orderNumber)}`,
+  );
 
   const trackUrl =
     order.shippingCarrier && order.trackingNumber

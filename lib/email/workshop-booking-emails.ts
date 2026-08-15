@@ -4,14 +4,18 @@ import {
   EMAIL_WORKSHOP_BOOKING_CANCELLED,
   EMAIL_WORKSHOP_BOOKING_CONFIRMATION,
 } from "@/lib/email/email-types";
+import { emailAbsoluteHref } from "@/lib/email/email-absolute-url";
 import {
+  claimOrderEmailSend,
   findOrderEmailLog,
   isOrderEmailAlreadySentSuccessfully,
+  releaseOrderEmailClaim,
+  shouldSkipOrderEmailSend,
   upsertOrderEmailDeliveryLog,
 } from "@/lib/email/order-email-log";
 import { sendTransactionalEmail } from "@/lib/email/provider";
 import { grayInfoCard } from "@/lib/email/transactional-email-layout";
-import { escapeHtmlForEmail, publicSiteBaseUrl } from "@/lib/email/template-utils";
+import { escapeHtmlForEmail } from "@/lib/email/template-utils";
 import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
 import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
 import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
@@ -105,9 +109,7 @@ function bookingDetailPath(bookingId: string): string {
 }
 
 function bookingDetailUrl(bookingId: string): string {
-  const base = publicSiteBaseUrl();
-  const path = bookingDetailPath(bookingId);
-  return base ? `${base}${path}` : path;
+  return emailAbsoluteHref(bookingDetailPath(bookingId));
 }
 
 function calendarDownloadPath(bookingId: string): string {
@@ -133,15 +135,26 @@ export async function sendWorkshopBookingConfirmationIfNeeded(
 ): Promise<void> {
   const prisma = getPrisma();
 
-  const existing = await findOrderEmailLog(
-    prisma,
-    orderId,
-    EMAIL_WORKSHOP_BOOKING_CONFIRMATION,
-  );
-  if (!options?.force && isOrderEmailAlreadySentSuccessfully(existing)) return;
+  if (!options?.force) {
+    const existing = await findOrderEmailLog(
+      prisma,
+      orderId,
+      EMAIL_WORKSHOP_BOOKING_CONFIRMATION,
+    );
+    if (shouldSkipOrderEmailSend(existing)) return;
+  }
 
   const row = await loadBookingByOrderId(orderId);
   if (!row || row.status !== "confirmed") return;
+
+  if (!options?.force) {
+    const claim = await claimOrderEmailSend(prisma, {
+      orderId,
+      emailType: EMAIL_WORKSHOP_BOOKING_CONFIRMATION,
+      toEmail: row.contactEmail,
+    });
+    if (claim === "already_claimed") return;
+  }
 
   const greetingName = await resolveGreetingName(row.orderId, row.contactEmail);
   const branding = await resolveTransactionalEmailBranding();
@@ -185,7 +198,13 @@ export async function sendWorkshopBookingConfirmationIfNeeded(
   );
 
   const rendered = await renderStoredEmailTemplate("workshop_booking_confirmation", vars);
-  if (!rendered.enabled && !options?.force) return;
+  if (!rendered.enabled && !options?.force) {
+    await releaseOrderEmailClaim(prisma, {
+      orderId,
+      emailType: EMAIL_WORKSHOP_BOOKING_CONFIRMATION,
+    });
+    return;
+  }
 
   let result: Awaited<ReturnType<typeof sendTransactionalEmail>>;
   try {
@@ -236,11 +255,7 @@ export async function sendWorkshopBookingCancelledForBookingId(
     row.sessionStartsAtSnapshot,
     row.sessionTimezoneSnapshot,
   );
-  const termineUrl = (() => {
-    const base = publicSiteBaseUrl();
-    const path = "/konto/termine";
-    return base ? `${base}${path}` : path;
-  })();
+  const termineUrl = emailAbsoluteHref("/konto/termine");
 
   const detailsHtml = grayInfoCard(
     [

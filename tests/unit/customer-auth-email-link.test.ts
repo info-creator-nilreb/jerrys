@@ -3,7 +3,8 @@ import { customerAuthEmailActionUrl } from "@/lib/email/customer-auth-email-link
 
 describe("customerAuthEmailActionUrl", () => {
   it("setzt Verifizierungs-Token ins URL-Fragment", () => {
-    vi.stubEnv("AUTH_URL", "https://shop.example.com");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://shop.example.com");
+    vi.stubEnv("AUTH_URL", "https://preview.vercel.app");
     const url = customerAuthEmailActionUrl("/konto/verifizieren", "abc+def/xyz", {
       tokenInHash: true,
     });
@@ -12,6 +13,7 @@ describe("customerAuthEmailActionUrl", () => {
   });
 
   it("setzt Magic-Link-Token in Query", () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://shop.example.com");
     vi.stubEnv("AUTH_URL", "https://shop.example.com");
     const url = customerAuthEmailActionUrl("/konto/magic-link", "tok", {
       tokenInHash: false,

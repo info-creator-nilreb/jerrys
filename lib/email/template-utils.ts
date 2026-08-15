@@ -7,7 +7,8 @@ export function escapeHtmlForEmail(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-/** Basis-URL für Links in E-Mails (Shop-Frontend). */
+/** Basis-URL für Auth.js und interne App-Links (AUTH_URL zuerst, dann VERCEL_URL).
+ * Kunden-Mails nutzen `resolvedEmailAssetBase()` — sonst gewinnen Preview-Hosts. */
 export function publicSiteBaseUrl(): string {
   // Laufzeit-Variablen zuerst (Vercel Server Actions), dann Build-Zeit Public-URL.
   const auth = process.env.AUTH_URL?.trim().replace(/\/$/, "");

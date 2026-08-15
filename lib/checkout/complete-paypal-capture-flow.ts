@@ -87,8 +87,12 @@ export async function completePayPalCaptureFlow(
     log.error("paypal_inbox_race", { orderId: order.id });
     return { ok: false, code: "finalisierung" };
   }
-  if (inbox.duplicate && inbox.alreadyProcessed) {
-    return { ok: true, orderNumber: order.orderNumber };
+  if (inbox.duplicate) {
+    // Bereits finalisiert ODER parallel in Arbeit (Return-URL + Webhook):
+    // keine zweite Bestätigungsmail. Nur `failed` darf erneut finalisieren.
+    if (inbox.alreadyProcessed || inbox.status === "received") {
+      return { ok: true, orderNumber: order.orderNumber };
+    }
   }
 
   const result = await finalizeOrderAfterPendingPaymentCapture(prisma, {

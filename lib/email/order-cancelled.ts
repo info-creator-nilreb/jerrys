@@ -13,7 +13,7 @@ import { sendTransactionalEmail } from "@/lib/email/provider";
 import { orderItemsHtml, orderItemsText } from "@/lib/email/templates/order-fragments";
 import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
 import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
-import { publicSiteBaseUrl } from "@/lib/email/template-utils";
+import { emailAbsoluteHref } from "@/lib/email/email-absolute-url";
 import { formatGermanDateMedium } from "@/lib/email/transactional-email-layout";
 import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
 
@@ -45,9 +45,9 @@ export async function sendOrderCancelledIfNeeded(
   const cancelledDate = formatGermanDateMedium(new Date());
 
   const branding = await resolveTransactionalEmailBranding();
-  const base = publicSiteBaseUrl();
-  const successPath = `/checkout/erfolg?nr=${encodeURIComponent(order.orderNumber)}`;
-  const successUrl = base ? `${base}${successPath}` : successPath;
+  const successUrl = emailAbsoluteHref(
+    `/checkout/erfolg?nr=${encodeURIComponent(order.orderNumber)}`,
+  );
 
   const vars = mergeTemplateVars(buildShopTemplateVars(branding, { heroVariant: "order" }), {
     customer: { first_name: order.shippingFirstName },
