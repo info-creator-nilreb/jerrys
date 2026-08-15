@@ -222,6 +222,8 @@ Suggested fields:
 - createdAt
 - updatedAt
 - lastLoginAt nullable
+- credentialsChangedAt nullable (proposed, [ADR-0011](./adr/0011-admin-self-service-security.md))
+- mfaEnabled / encrypted TOTP secret / recovery code hashes (proposed)
 
 ### Customer / CustomerIdentity / CustomerAuthToken
 Purpose: storefront customer identity (Epic 3). Not derived from order emails.

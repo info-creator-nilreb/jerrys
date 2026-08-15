@@ -163,8 +163,9 @@ User stories:
 - As the team, we have security, privacy, load, resilience, and recovery gates.
 - As an operator, I have runbooks for provider failure, reconciliation, queue backlog, restore, and rollback.
 - As the product owner, I can activate the platform in measured stages.
+- As an admin, I can change my password and enable TOTP MFA from the sidebar avatar/account menu ([ADMIN_ACCOUNT_SECURITY.md](./ADMIN_ACCOUNT_SECURITY.md), [ADR-0011](./adr/0011-admin-self-service-security.md)).
 
-Exit criteria: migration and rollback are rehearsed; critical findings are closed; alerts and support paths are active.
+Exit criteria: migration and rollback are rehearsed; critical findings are closed; alerts and support paths are active; admin self-service password change exists; MFA is available (enforcement may follow).
 
 ## Epic 10: Product Categories and Storefront Navigation
 

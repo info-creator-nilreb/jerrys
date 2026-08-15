@@ -145,6 +145,7 @@ Rules:
 ### Admin Area
 The admin area must support:
 - secure login
+- self-service password change and optional TOTP MFA from the sidebar account menu (see [ADMIN_ACCOUNT_SECURITY.md](./ADMIN_ACCOUNT_SECURITY.md))
 - product list
 - product create/edit/deactivate
 - order list

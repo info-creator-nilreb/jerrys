@@ -318,7 +318,7 @@ The architecture is fixed; product choices remain deliberately open until evalua
 - managed PostgreSQL provider
 - ~~object storage provider and retention implementation~~ → decided: Vercel Blob for public branding/media ([ADR-0008](./adr/0008-object-storage.md)); private docs (invoices/labels) still open
 - durable queue/workflow provider
-- ~~authentication provider or retained Auth.js design~~ → decided: Auth.js retained for admin + customers ([ADR-0005](./adr/0005-customer-authentication.md))
+- ~~authentication provider or retained Auth.js design~~ → decided: Auth.js retained for admin + customers ([ADR-0005](./adr/0005-customer-authentication.md)); Admin-Self-Service Passwort + TOTP MFA proposed ([ADR-0011](./adr/0011-admin-self-service-security.md), [ADMIN_ACCOUNT_SECURITY.md](./ADMIN_ACCOUNT_SECURITY.md))
 - error tracking, logs, metrics, and alert routing
 
 Each selection requires an ADR before implementation. Product selection must not be hidden inside a feature pull request.

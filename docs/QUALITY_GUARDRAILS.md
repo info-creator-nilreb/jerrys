@@ -25,7 +25,7 @@ Pull request evidence:
 
 - Target OWASP ASVS Level 2 controls for internet-facing and administrative functionality.
 - Enforce authorization server-side at routes, actions, and application services.
-- Require MFA-capable admin authentication and least-privilege roles before expanding production administration.
+- Require MFA-capable admin authentication and least-privilege roles before expanding production administration. Proposal: [ADMIN_ACCOUNT_SECURITY.md](./ADMIN_ACCOUNT_SECURITY.md), [ADR-0011](./adr/0011-admin-self-service-security.md).
 - Use `HttpOnly`, `Secure`, and appropriate `SameSite` session cookies; protect state-changing browser operations against CSRF.
 - Validate every external input at runtime. Never trust client-provided prices, totals, availability, roles, or provider status.
 - Verify webhook signatures and timestamp windows before parsing business data. Deduplicate and protect against replay.
