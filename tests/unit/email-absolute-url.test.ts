@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  CANONICAL_PUBLIC_SHOP_ORIGIN,
   absoluteUrlForEmail,
   emailAbsoluteHref,
   resolvedEmailAssetBase,
@@ -27,7 +28,7 @@ function setEnv(key: (typeof keys)[number], value: string | undefined) {
 }
 
 describe("resolvedEmailAssetBase", () => {
-  it("bevorzugt NEXT_PUBLIC_SITE_URL vor AUTH_URL und VERCEL_URL", () => {
+  it("bevorzugt eine echte Shop-URL vor AUTH_URL und VERCEL_URL", () => {
     setEnv("NEXT_PUBLIC_SITE_URL", "https://shop.example/");
     setEnv("AUTH_URL", "https://preview-xyz.vercel.app");
     setEnv("VERCEL_URL", "preview-xyz.vercel.app");
@@ -44,33 +45,53 @@ describe("resolvedEmailAssetBase", () => {
     expect(resolvedEmailAssetBase()).toBe("https://auth.example");
   });
 
-  it("überspringt AUTH_URL auf *.vercel.app zugunsten der öffentlichen Shop-URL", () => {
-    setEnv("NEXT_PUBLIC_SITE_URL", "https://www.jerrys.example");
-    setEnv("AUTH_URL", "https://jerrys-git-main.vercel.app");
-    setEnv("VERCEL_URL", "jerrys-git-main.vercel.app");
+  it("nutzt https://jerry-s.com aus NEXT_PUBLIC_SITE_URL unverändert", () => {
+    setEnv("NEXT_PUBLIC_SITE_URL", "https://jerry-s.com/");
+    setEnv("AUTH_URL", "https://ecom-seven-livid.vercel.app");
+    expect(resolvedEmailAssetBase()).toBe("https://jerry-s.com");
     expect(emailAbsoluteHref("/checkout/erfolg?nr=J-1")).toBe(
-      "https://www.jerrys.example/checkout/erfolg?nr=J-1",
+      "https://jerry-s.com/checkout/erfolg?nr=J-1",
     );
   });
 
-  it("fällt nur ohne Shop-URL auf den Deployment-Host zurück", () => {
+  it("ignoriert NEXT_PUBLIC_SITE_URL auf *.vercel.app zugunsten von jerry-s.com", () => {
+    setEnv("NEXT_PUBLIC_SITE_URL", "https://ecom-seven-livid.vercel.app");
+    setEnv("AUTH_URL", "https://ecom-seven-livid.vercel.app");
+    setEnv("VERCEL_URL", "ecom-seven-livid.vercel.app");
+    expect(resolvedEmailAssetBase()).toBe(CANONICAL_PUBLIC_SHOP_ORIGIN);
+    expect(emailAbsoluteHref("/checkout/erfolg?nr=J-1")).toBe(
+      "https://jerry-s.com/checkout/erfolg?nr=J-1",
+    );
+  });
+
+  it("fällt ohne brauchbare Env auf jerry-s.com zurück", () => {
     setEnv("NEXT_PUBLIC_SITE_URL", undefined);
     setEnv("AUTH_URL", "https://jerrys.vercel.app");
     setEnv("VERCEL_URL", "jerrys.vercel.app");
-    expect(resolvedEmailAssetBase()).toBe("https://jerrys.vercel.app");
+    expect(resolvedEmailAssetBase()).toBe(CANONICAL_PUBLIC_SHOP_ORIGIN);
   });
 
-  it("verwendet kein localhost", () => {
+  it("verwendet kein localhost, sondern die kanonische Shop-Domain", () => {
     setEnv("NEXT_PUBLIC_SITE_URL", "http://127.0.0.1:3001");
     setEnv("AUTH_URL", "http://localhost:3001");
     setEnv("VERCEL_URL", undefined);
-    expect(resolvedEmailAssetBase()).toBe("");
-    expect(absoluteUrlForEmail("/logo.png")).toBeNull();
+    expect(resolvedEmailAssetBase()).toBe(CANONICAL_PUBLIC_SHOP_ORIGIN);
+    expect(absoluteUrlForEmail("/logo.png")).toBe("https://jerry-s.com/logo.png");
   });
 
   it("lässt https-Blob-URLs unverändert", () => {
     expect(absoluteUrlForEmail("https://blob.vercel-storage.com/logo.png")).toBe(
       "https://blob.vercel-storage.com/logo.png",
+    );
+  });
+
+  it("schreibt alte Vercel-URLs auf jerry-s.com um", () => {
+    setEnv("NEXT_PUBLIC_SITE_URL", "https://jerry-s.com");
+    expect(
+      absoluteUrlForEmail("https://ecom-seven-livid.vercel.app/branding/jerrys-wordmark.jpg"),
+    ).toBe("https://jerry-s.com/branding/jerrys-wordmark.jpg");
+    expect(absoluteUrlForEmail("https://www.jerry-s.com/media/product.jpg")).toBe(
+      "https://jerry-s.com/media/product.jpg",
     );
   });
 

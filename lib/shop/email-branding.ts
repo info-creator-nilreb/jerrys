@@ -43,12 +43,8 @@ function footerIdentityFromSettings(settings: ShopSettingsDTO): string {
 export function resolveEmailLogoAbsoluteUrl(settings: ShopSettingsDTO): string | null {
   const uploaded = settings.logoLightUrl?.trim() || null;
   if (uploaded) {
-    if (/^https:\/\//i.test(uploaded)) return uploaded;
-    // Manche Storage-URLs kommen als http — Clients blocken Mixed Content oft.
-    if (/^http:\/\//i.test(uploaded)) return uploaded.replace(/^http:\/\//i, "https://");
-    if (uploaded.startsWith("/")) {
-      return absoluteUrlForEmail(uploaded);
-    }
+    const resolved = absoluteUrlForEmail(uploaded);
+    if (resolved) return resolved;
   }
   const fallbackPath = resolveShopBrandingAssetUrl(settings, "logoLight");
   return absoluteUrlForEmail(fallbackPath);

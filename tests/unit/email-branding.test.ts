@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { runWithEmailAssetBaseUrl } from "@/lib/email/email-absolute-url";
 import { buildShopTemplateVars } from "@/lib/email/templates/shop-vars";
 import {
@@ -116,6 +116,18 @@ describe("resolveEmailLogoAbsoluteUrl", () => {
       settings({ logoLightUrl: "https://blob.example.com/logo-light.png" }),
     );
     expect(url).toBe("https://blob.example.com/logo-light.png");
+  });
+
+  it("schreibt Logo-URLs der alten Vercel-Domain auf jerry-s.com um", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://jerry-s.com");
+    const { resolveEmailLogoAbsoluteUrl } = await import("@/lib/shop/email-branding");
+    const url = resolveEmailLogoAbsoluteUrl(
+      settings({
+        logoLightUrl: "https://ecom-seven-livid.vercel.app/branding/jerrys-wordmark.jpg",
+      }),
+    );
+    expect(url).toBe("https://jerry-s.com/branding/jerrys-wordmark.jpg");
+    vi.unstubAllEnvs();
   });
 });
 
