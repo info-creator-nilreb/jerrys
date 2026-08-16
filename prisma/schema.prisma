@@ -143,6 +143,8 @@ model Manufacturer {
 model Product {
   id          String         @id @default(cuid())
   slug        String         @unique
+  /// Vorheriger Slug für 301-Redirect nach URL-Wechsel (wie ContentPage).
+  previousSlug String?       @map("previous_slug")
   title       String
   subtitle    String?
   /// Rich-Text-HTML (nach Speichern serverseitig bereinigt).
@@ -186,6 +188,7 @@ model Product {
   /// Öffentliches Suchdokument / Embedding-Index (Epic 14 Slice 2).
   searchDocument ProductSearchDocument?
 
+  @@index([previousSlug])
   @@index([isActive, sortOrder])
   @@map("products")
 }

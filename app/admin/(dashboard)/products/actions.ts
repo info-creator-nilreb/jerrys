@@ -329,13 +329,19 @@ export async function updateProduct(
 
   const existing = await getPrisma().product.findUnique({
     where: { id: d.id },
-    select: { id: true, slug: true },
+    select: { id: true, slug: true, previousSlug: true },
   });
   if (!existing) {
     return { error: "Produkt nicht gefunden." };
   }
 
-  const previousSlug = existing.slug;
+  const slugChanged = existing.slug !== d.slug;
+  let previousSlugForUpdate: string | null = existing.previousSlug;
+  if (slugChanged) {
+    previousSlugForUpdate = existing.slug;
+  } else if (previousSlugForUpdate === d.slug) {
+    previousSlugForUpdate = null;
+  }
 
   const variantMirror = {
     taxRatePercent: d.taxRatePercent,
@@ -362,6 +368,7 @@ export async function updateProduct(
         data: {
           title: d.title,
           slug: d.slug,
+          previousSlug: previousSlugForUpdate,
           subtitle: d.subtitle,
           description,
           manufacturerId: d.manufacturerId,
@@ -405,8 +412,8 @@ export async function updateProduct(
   updateStorefrontCatalogCacheTag();
   revalidatePath("/produkte");
   revalidatePath(`/produkte/${d.slug}`);
-  if (previousSlug !== d.slug) {
-    revalidatePath(`/produkte/${previousSlug}`);
+  if (slugChanged) {
+    revalidatePath(`/produkte/${existing.slug}`);
   }
   revalidatePath(`/admin/products/${d.id}/edit`);
   revalidatePath("/admin/categories");
