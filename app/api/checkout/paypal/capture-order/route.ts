@@ -45,7 +45,15 @@ export async function POST(req: NextRequest) {
   });
 
   if (!r.ok) {
-    return NextResponse.json({ ok: false, code: r.code }, { status: 422 });
+    const error =
+      r.code === "capture"
+        ? "Die Zahlung wurde abgelehnt oder konnte nicht abgeschlossen werden. Es wurde nichts abgebucht."
+        : r.code === "betrag"
+          ? "Der gezahlte Betrag passt nicht zur Bestellung. Bitte den Support kontaktieren."
+          : r.code === "bestellung"
+            ? "Die Bestellung wurde nicht gefunden. Bitte den Support kontaktieren."
+            : "Die Bestellung konnte nach der Zahlung nicht abgeschlossen werden. Bitte den Support kontaktieren.";
+    return NextResponse.json({ ok: false, code: r.code, error }, { status: 422 });
   }
 
   const origin = canonicalSiteOrigin().replace(/\/$/, "") || new URL(req.url).origin;

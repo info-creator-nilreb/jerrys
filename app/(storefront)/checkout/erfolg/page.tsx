@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { OrderShippingMapSnippet } from "@/components/storefront/order-shipping-map-snippet";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import { ClearCheckoutDraftsOnSuccess } from "@/components/storefront/clear-checkout-drafts-on-success";
 import { formatPrice } from "@/lib/catalog/format";
 import { getPrisma } from "@/lib/db/prisma";
+import { orderPaymentCaptured } from "@/lib/orders/order-status-machine";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,9 @@ export default async function CheckoutErfolgPage({
     include: { items: true },
   });
   if (!order) notFound();
+  if (!orderPaymentCaptured(order.status)) {
+    redirect("/checkout?paypal=unbezahlt");
+  }
 
   const firstName = order.shippingFirstName.trim();
   const thankYou =

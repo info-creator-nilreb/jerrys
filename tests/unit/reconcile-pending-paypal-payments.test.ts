@@ -58,24 +58,26 @@ describe("reconcilePendingPayPalPayments", () => {
     });
   });
 
-  it("zählt noch offene PayPal-Orders als still_open", async () => {
+  it("zählt abgelehntes Capture nicht als finalisierbar", async () => {
     findMany.mockResolvedValue([
       {
-        id: "o2",
-        orderNumber: "J-2",
+        id: "o3",
+        orderNumber: "J-3",
         status: "pending_payment",
-        payments: [{ providerRef: "PAYPAL-2", status: "pending" }],
+        payments: [{ providerRef: "PAYPAL-3", status: "pending" }],
       },
     ]);
     getSnapshot.mockResolvedValue({
-      paypalOrderId: "PAYPAL-2",
-      status: "CREATED",
+      paypalOrderId: "PAYPAL-3",
+      status: "COMPLETED",
       isCompleted: false,
       isApproved: false,
+      isDeclined: true,
     });
 
     const result = await reconcilePendingPayPalPayments(prisma());
-    expect(result.stillOpen).toBe(1);
+    expect(result.failed).toBe(1);
+    expect(result.details[0]?.message).toBe("capture_declined");
     expect(completeFlow).not.toHaveBeenCalled();
   });
 });

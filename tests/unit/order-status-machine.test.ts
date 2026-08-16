@@ -3,6 +3,7 @@ import {
   allowedNextOrderStatuses,
   isAllowedOrderStatusTransition,
   isTerminalOrderStatus,
+  orderPaymentCaptured,
 } from "@/lib/orders/order-status-machine";
 
 describe("order-status-machine", () => {
@@ -42,6 +43,14 @@ describe("order-status-machine", () => {
     expect(isAllowedOrderStatusTransition("paid", "refunded")).toBe(true);
     expect(isAllowedOrderStatusTransition("processing", "refunded")).toBe(true);
     expect(isAllowedOrderStatusTransition("shipped", "refunded")).toBe(true);
+  });
+
+  it("orderPaymentCaptured nur nach eingegangener Zahlung", () => {
+    expect(orderPaymentCaptured("paid")).toBe(true);
+    expect(orderPaymentCaptured("shipped")).toBe(true);
+    expect(orderPaymentCaptured("pending_payment")).toBe(false);
+    expect(orderPaymentCaptured("draft")).toBe(false);
+    expect(orderPaymentCaptured("cancelled")).toBe(false);
   });
 
   it("erlaubt shipped → retoure und retoure → refunded/processing", () => {

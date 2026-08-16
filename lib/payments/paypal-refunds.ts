@@ -55,8 +55,22 @@ export type ParsedPayPalCapture = {
   captureId: string | null;
 };
 
+function firstCapture(json: PayPalOrderApiResponse): PayPalCapture | undefined {
+  return json.purchase_units?.[0]?.payments?.captures?.[0];
+}
+
+export function paypalCaptureRecordStatus(json: PayPalOrderApiResponse): string {
+  return (firstCapture(json)?.status ?? "").trim().toUpperCase();
+}
+
+/** Capture abgelehnt/fehlgeschlagen — Shop darf nicht auf bezahlt gehen. */
+export function paypalCaptureIsDeclined(json: PayPalOrderApiResponse): boolean {
+  const status = paypalCaptureRecordStatus(json);
+  return status === "DECLINED" || status === "FAILED";
+}
+
 /**
- * Parst eine COMPLETED PayPal-Checkout-Order (Capture-Response oder GET).
+ * Parst eine COMPLETED PayPal-Checkout-Order inkl. COMPLETED-Capture (nicht DECLINED).
  * Exportiert für Unit-Tests.
  */
 export function parseCapturedPayPalOrder(json: PayPalOrderApiResponse): ParsedPayPalCapture | null {
@@ -68,16 +82,20 @@ export function parseCapturedPayPalOrder(json: PayPalOrderApiResponse): ParsedPa
     typeof pu.custom_id === "string" && pu.custom_id.length > 0 ? pu.custom_id : null;
   if (!internalOrderId) return null;
 
-  const cap = pu.payments?.captures?.[0];
-  const amount = cap?.amount ?? pu.amount;
+  if ((json.status ?? "").toUpperCase() !== "COMPLETED") return null;
+
+  const cap = firstCapture(json);
+  if (!cap) return null;
+  if ((cap.status ?? "").toUpperCase() !== "COMPLETED") return null;
+
+  const amount = cap.amount ?? pu.amount;
   const value = amount?.value;
   const currencyCode = amount?.currency_code;
   if (!value || !currencyCode) return null;
 
-  if (json.status !== "COMPLETED") return null;
-
   const captureId =
-    typeof cap?.id === "string" && cap.id.trim().length > 0 ? cap.id.trim() : null;
+    typeof cap.id === "string" && cap.id.trim().length > 0 ? cap.id.trim() : null;
+  if (!captureId) return null;
 
   return {
     paypalOrderId,

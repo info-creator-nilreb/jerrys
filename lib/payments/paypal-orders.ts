@@ -4,6 +4,9 @@ import { paypalApiBaseUrl } from "@/lib/payments/paypal-config";
 import {
   fetchPayPalOrder,
   parseCapturedPayPalOrder,
+  paypalCaptureIsDeclined,
+  paypalCaptureRecordStatus,
+  type PayPalOrderApiResponse,
 } from "@/lib/payments/paypal-refunds";
 
 function moneyStringFromGrossCents(cents: number): string {
@@ -227,16 +230,33 @@ export async function getPayPalCheckoutOrderDetails(paypalOrderId: string) {
   return fetchPayPalOrder(paypalOrderId.trim(), accessToken);
 }
 
+function paypalCaptureParseFailureMessage(json: PayPalOrderApiResponse): string {
+  const captureStatus = paypalCaptureRecordStatus(json);
+  if (paypalCaptureIsDeclined(json)) {
+    return `PayPal Capture abgelehnt (${captureStatus}).`;
+  }
+  if (captureStatus === "PENDING") {
+    return "PayPal Capture noch nicht abgeschlossen (PENDING).";
+  }
+  const orderStatus = (json.status ?? "").toUpperCase();
+  if (orderStatus && orderStatus !== "COMPLETED") {
+    return `PayPal Capture nicht abgeschlossen (Order ${orderStatus}).`;
+  }
+  return "PayPal Capture: Bestellzuordnung, Capture-Status oder Betrag fehlt.";
+}
+
 /**
  * Read-only Snapshot einer PayPal-Checkout-Order (für Reconciliation).
  */
 export async function getPayPalCheckoutOrderSnapshot(paypalOrderId: string): Promise<{
   paypalOrderId: string;
   status: string;
-  /** Capture bereits durch; Shop kann finalisieren. */
+  /** Capture COMPLETED — Shop darf finalisieren. */
   isCompleted: boolean;
   /** Kunde hat zugestimmt; Capture noch ausstehend oder parallel. */
   isApproved: boolean;
+  /** Karte/Instrument abgelehnt — nicht als bezahlt behandeln. */
+  isDeclined: boolean;
 }> {
   const accessToken = await getPayPalAccessToken();
   const json = await fetchPayPalOrder(paypalOrderId.trim(), accessToken);
@@ -244,8 +264,9 @@ export async function getPayPalCheckoutOrderSnapshot(paypalOrderId: string): Pro
   return {
     paypalOrderId: json.id ?? paypalOrderId,
     status,
-    isCompleted: status === "COMPLETED",
+    isCompleted: parseCapturedPayPalOrder(json) != null,
     isApproved: status === "APPROVED",
+    isDeclined: paypalCaptureIsDeclined(json),
   };
 }
 
@@ -271,10 +292,7 @@ export async function capturePayPalCheckoutOrder(paypalOrderId: string): Promise
     },
   });
 
-  const captureJson = (await captureRes.json()) as {
-    id?: string;
-    status?: string;
-    purchase_units?: Parameters<typeof parseCapturedPayPalOrder>[0]["purchase_units"];
+  const captureJson = (await captureRes.json()) as PayPalOrderApiResponse & {
     details?: unknown;
     message?: string;
   };
@@ -282,7 +300,7 @@ export async function capturePayPalCheckoutOrder(paypalOrderId: string): Promise
   if (captureRes.ok) {
     const parsed = parseCapturedPayPalOrder(captureJson);
     if (!parsed) {
-      throw new Error("PayPal Capture: Bestellzuordnung oder Betrag fehlt.");
+      throw new Error(paypalCaptureParseFailureMessage(captureJson));
     }
     return parsed;
   }
@@ -292,6 +310,9 @@ export async function capturePayPalCheckoutOrder(paypalOrderId: string): Promise
     const refreshed = await fetchPayPalOrder(paypalOrderId, accessToken);
     const parsed = parseCapturedPayPalOrder(refreshed);
     if (parsed) return parsed;
+    if (paypalCaptureIsDeclined(refreshed) || paypalCaptureIsDeclined(captureJson)) {
+      throw new Error(paypalCaptureParseFailureMessage(paypalCaptureIsDeclined(refreshed) ? refreshed : captureJson));
+    }
   }
 
   throw new Error(

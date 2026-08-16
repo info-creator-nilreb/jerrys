@@ -14,6 +14,7 @@ import { getPrisma } from "@/lib/db/prisma";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 import { usesPaypalHostedCheckout } from "@/lib/payments/online-payment-method";
+import { orderPaymentCaptured } from "@/lib/orders/order-status-machine";
 import { parseCheckoutPayPalSurface } from "@/lib/checkout/checkout-paypal-surface";
 import {
   paymentSourceForCheckoutForm,
@@ -145,6 +146,13 @@ export async function createWorkshopOrderFromFormData(
       }
     }
 
+    if (!orderPaymentCaptured(existing.status)) {
+      return {
+        ok: false,
+        error:
+          "Die vorherige Zahlung ist nicht abgeschlossen. Es wurde nichts abgebucht. Bitte erneut versuchen.",
+      };
+    }
     await sendOrderConfirmationIfNeeded(existing.id);
     await sendWorkshopBookingConfirmationIfNeeded(existing.id);
     return { ok: true, paymentReady: false, orderNumber: existing.orderNumber };

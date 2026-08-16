@@ -30,6 +30,8 @@ const paypalReturnErrors: Record<string, string> = {
   bestellung: "Die Bestellung wurde nicht gefunden. Bitte den Support mit deiner Bestellnummer kontaktieren.",
   betrag: "Der gezahlte Betrag passt nicht zur Bestellung. Bitte den Support kontaktieren.",
   finalisierung: "Die Bestellung konnte nach der Zahlung nicht abgeschlossen werden. Bitte den Support kontaktieren.",
+  unbezahlt: "Die Zahlung ist nicht abgeschlossen. Es wurde nichts abgebucht. Bitte erneut versuchen.",
+  abgelehnt: "Die Kartenzahlung wurde abgelehnt. Es wurde nichts abgebucht. Bitte andere Karte oder Zahlungsart wählen.",
 };
 
 export default async function CheckoutPage({
