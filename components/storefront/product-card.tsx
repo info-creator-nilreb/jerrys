@@ -3,6 +3,7 @@ import { formatPrice } from "@/lib/catalog/format";
 import { AddToCartForm } from "@/components/storefront/add-to-cart-form";
 import { AmazonRatingDisplay } from "@/components/storefront/amazon-rating-display";
 import { ProductCardImageSlider } from "@/components/storefront/product-card-image-slider";
+import { ProductCardImage } from "@/components/storefront/product-card-image";
 import {
   pickDefaultVariant,
   quantityRulesFromVariant,
@@ -61,7 +62,15 @@ export function ProductCard({ product }: { product: StorefrontProductCard }) {
               </span>
             ) : null}
           </div>
-          <ProductCardImageSlider images={product.images} productTitle={product.title} />
+          {product.images.length === 1 ? (
+            <ProductCardImage
+              url={product.images[0]!.url}
+              alt={product.images[0]!.alt}
+              productTitle={product.title}
+            />
+          ) : (
+            <ProductCardImageSlider images={product.images} productTitle={product.title} />
+          )}
         </div>
         <div className="relative z-10 flex min-h-0 flex-1 flex-col pointer-events-none p-6 md:p-7">
           <div className="min-h-0 flex-1">

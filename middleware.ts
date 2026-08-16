@@ -1,5 +1,7 @@
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { REQUEST_PATHNAME_HEADER } from "@/lib/http/request-pathname";
+import { resolveLegacyRedirect } from "@/lib/site/legacy-redirects";
 import {
   browseContextCookieOptions,
   browseContextFromPathname,
@@ -14,6 +16,13 @@ import { updateSession } from "@/utils/supabase/middleware";
  * Admin-Schutz: `app/admin/(dashboard)/layout.tsx` (`auth()`).
  */
 export async function middleware(request: NextRequest) {
+  const legacyTarget = resolveLegacyRedirect(request.nextUrl.pathname);
+  if (legacyTarget) {
+    const url = request.nextUrl.clone();
+    url.pathname = legacyTarget;
+    return NextResponse.redirect(url, 301);
+  }
+
   // Layouts kennen den angefragten Pfad nicht; das Kundenportal braucht ihn für `callbackUrl`.
   request.headers.set(REQUEST_PATHNAME_HEADER, request.nextUrl.pathname);
 

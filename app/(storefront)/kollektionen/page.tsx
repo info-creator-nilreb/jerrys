@@ -3,13 +3,21 @@ import { DatabaseUnavailableNotice } from "@/components/storefront/database-unav
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import { listActiveCollectionsForStorefront } from "@/lib/catalog/collection-queries";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
+import { getShopSettings } from "@/lib/shop/shop-settings";
+import { buildStorefrontMetadata } from "@/lib/site/storefront-metadata";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Kollektionen",
-  description: "Ausgewählte Produktgruppen von jerry's.",
-};
+export async function generateMetadata() {
+  const settings = await getShopSettings();
+  return buildStorefrontMetadata({
+    title: "Kollektionen",
+    description:
+      settings.shortDescription?.trim() ||
+      `Kuratierte Produktgruppen von ${settings.shopName}.`,
+    path: "/kollektionen",
+  });
+}
 
 export default async function KollektionenIndexPage() {
   let collections: Awaited<ReturnType<typeof listActiveCollectionsForStorefront>> = [];

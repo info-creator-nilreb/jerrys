@@ -11,6 +11,8 @@ import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { cartLineCommerceRules, getCartWithLines } from "@/lib/cart/cart-queries";
 import { resolveCartPromotionTotals } from "@/lib/checkout/cart-promotion-totals";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
+import { getShopSettings } from "@/lib/shop/shop-settings";
+import { applePayStoreLabel } from "@/lib/shop/storefront-branding";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +47,8 @@ export default async function WarenkorbPage({
       })
     : null;
   const expressTotals = expressQuote?.ok ? expressQuote.totals : null;
+  const shopSettings = await getShopSettings();
+  const walletStoreLabel = applePayStoreLabel(shopSettings);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-24 md:py-28">
@@ -172,6 +176,7 @@ export default async function WarenkorbPage({
                     paypalClientId={process.env.PAYPAL_CLIENT_ID?.trim() ?? ""}
                     currency={currency}
                     totalGrossCents={expressTotals?.totalCents ?? subtotalCents}
+                    applePayStoreLabel={walletStoreLabel}
                     variant="cart"
                   />
                 </div>

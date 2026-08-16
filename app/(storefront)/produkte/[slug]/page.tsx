@@ -1,9 +1,12 @@
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import {
   pickPrimaryCategoryRef,
   uniqueCategoriesBySlug,
 } from "@/lib/catalog/category-membership";
-import { getActiveProductBySlug } from "@/lib/catalog/queries";
+import {
+  getActiveProductByPreviousSlug,
+  getActiveProductBySlug,
+} from "@/lib/catalog/queries";
 import { resolvePdpDisplay } from "@/lib/catalog/pdp-resolve-display";
 import { isProductDescriptionRedundantWithLead } from "@/lib/catalog/pdp-description-overlap";
 import { pickDefaultVariant } from "@/lib/catalog/default-variant-storefront";
@@ -11,6 +14,12 @@ import {
   resolveProductBreadcrumbItems,
   truncateBreadcrumbLabel,
 } from "@/lib/catalog/product-storefront-breadcrumbs";
+import {
+  metadataForProduct,
+  productOfferJsonLdInputFromProduct,
+  type StorefrontProductMetadataSource,
+} from "@/lib/catalog/storefront-product-metadata";
+import { buildStorefrontMetadata } from "@/lib/site/storefront-metadata";
 import { readBrowseContextFromCookies } from "@/lib/storefront/browse-context";
 import { AmazonRatingDisplay } from "@/components/storefront/amazon-rating-display";
 import { ProductDetailGallery } from "@/components/storefront/product-detail-gallery";
@@ -22,17 +31,11 @@ import { ProductPdpTrustFooterBar, ProductPdpUspRow } from "@/components/storefr
 import { WorkshopSessionList } from "@/components/storefront/workshop-session-list";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
+import { getShopSettings } from "@/lib/shop/shop-settings";
+import { applePayStoreLabel } from "@/lib/shop/storefront-branding";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
-import { absoluteUrl } from "@/lib/site/canonical-origin";
 
 export const dynamic = "force-dynamic";
-
-function textPreviewFromHtml(html: string | null | undefined, max = 160): string | undefined {
-  if (!html?.trim()) return undefined;
-  const plain = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  if (!plain) return undefined;
-  return plain.length <= max ? plain : `${plain.slice(0, max - 1)}…`;
-}
 
 function displayFromProduct(
   product: NonNullable<Awaited<ReturnType<typeof getActiveProductBySlug>>>,
@@ -56,6 +59,28 @@ function displayFromProduct(
   });
 }
 
+function metadataSourceFromProduct(
+  product: NonNullable<Awaited<ReturnType<typeof getActiveProductBySlug>>>,
+  defaultVariant: NonNullable<ReturnType<typeof pickDefaultVariant>>,
+): StorefrontProductMetadataSource {
+  return {
+    slug: product.slug,
+    title: product.title,
+    subtitle: product.subtitle,
+    description: product.description,
+    leadText: displayFromProduct(product).leadText,
+    currency: product.currency,
+    images: product.images.map((i) => ({ url: i.url, alt: i.alt })),
+    defaultVariant: {
+      sku: defaultVariant.sku,
+      priceGrossCents: defaultVariant.priceGrossCents,
+      availableQuantity: defaultVariant.availableQuantity,
+    },
+    amazonRatingAverage: product.amazonRatingAverage,
+    amazonRatingCount: product.amazonRatingCount,
+  };
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -64,31 +89,18 @@ export async function generateMetadata({
   const { slug } = await params;
   const product = await getActiveProductBySlug(slug);
   if (!product) {
+    const relocated = await getActiveProductByPreviousSlug(slug);
+    if (relocated) {
+      return buildStorefrontMetadata({
+        title: "Produkt",
+        path: `/produkte/${relocated.slug}`,
+      });
+    }
     return { title: "Produkt" };
   }
-  const display = displayFromProduct(product);
-  const desc =
-    display.leadText || product.subtitle || textPreviewFromHtml(product.description);
-  const cover = product.images[0];
-  const ogImage = cover ? [{ url: absoluteUrl(cover.url), alt: cover.alt }] : undefined;
-  return {
-    title: product.title,
-    description: desc,
-    alternates: { canonical: `/produkte/${product.slug}` },
-    openGraph: {
-      title: product.title,
-      description: desc,
-      type: "website",
-      url: absoluteUrl(`/produkte/${product.slug}`),
-      images: ogImage,
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: product.title,
-      description: desc,
-      images: cover ? [absoluteUrl(cover.url)] : undefined,
-    },
-  };
+  const defaultVariant = pickDefaultVariant(product);
+  if (!defaultVariant) return { title: product.title };
+  return metadataForProduct(metadataSourceFromProduct(product, defaultVariant));
 }
 
 export default async function ProduktDetailPage({
@@ -97,15 +109,24 @@ export default async function ProduktDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const [product, shopShip] = await Promise.all([
+  const [product, shopShip, shopSettings] = await Promise.all([
     getActiveProductBySlug(slug),
     getShopShippingSettings(),
+    getShopSettings(),
   ]);
-  if (!product) notFound();
+
+  if (!product) {
+    const relocated = await getActiveProductByPreviousSlug(slug);
+    if (relocated) {
+      permanentRedirect(`/produkte/${relocated.slug}`);
+    }
+    notFound();
+  }
 
   const defaultVariant = pickDefaultVariant(product);
   if (!defaultVariant || product.variants.length === 0) notFound();
 
+  const metadataSource = metadataSourceFromProduct(product, defaultVariant);
   const display = displayFromProduct(product);
   const leadDisplay = display.leadText;
 
@@ -125,9 +146,6 @@ export default async function ProduktDetailPage({
   const categorySlugs = new Set(categoryBySlug.keys());
   const collectionSlugs = new Set(collectionTitleBySlug.keys());
 
-  const jsonLdDescription =
-    leadDisplay || product.subtitle || textPreviewFromHtml(product.description);
-
   const hasSpecsPanel = display.leftSpecs.length > 0 || display.propertySpecs.length > 0;
   const showFullDescription =
     Boolean(product.description?.trim()) &&
@@ -136,17 +154,7 @@ export default async function ProduktDetailPage({
   return (
     <>
       <div className="mx-auto max-w-6xl px-4 pb-14 pt-20 md:pb-16 md:pt-24">
-        <ProductJsonLd
-          name={product.title}
-          description={jsonLdDescription}
-          slug={product.slug}
-          priceGrossCents={defaultVariant.priceGrossCents}
-          currency={product.currency}
-          availableQuantity={defaultVariant.availableQuantity}
-          images={product.images.map((i) => ({ url: i.url, alt: i.alt }))}
-          aggregateRatingAverage={product.amazonRatingAverage}
-          aggregateRatingCount={product.amazonRatingCount}
-        />
+        <ProductJsonLd {...productOfferJsonLdInputFromProduct(metadataSource)} />
         <StorefrontBreadcrumbs
           items={resolveProductBreadcrumbItems({
             titleCrumb,
@@ -234,6 +242,7 @@ export default async function ProduktDetailPage({
                 deliveryTimeKeyFallback={defaultVariant.deliveryTimeKey}
                 payPalConfigured={isPayPalConfigured()}
                 paypalClientId={process.env.PAYPAL_CLIENT_ID?.trim() ?? ""}
+                applePayStoreLabel={applePayStoreLabel(shopSettings)}
                 variants={product.variants}
               />
             </article>

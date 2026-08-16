@@ -19,6 +19,11 @@ import {
   parseCollectionSort,
 } from "@/lib/catalog/collection-storefront-sort";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
+import {
+  buildStorefrontMetadata,
+  catalogListingHasNonIndexParams,
+  CATALOG_LISTING_NOINDEX_ROBOTS,
+} from "@/lib/site/storefront-metadata";
 
 export const dynamic = "force-dynamic";
 
@@ -38,18 +43,28 @@ function categoryListingBreadcrumbItems(category: {
   return items;
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ sort?: string; verfuegbar?: string; preis_min?: string; preis_max?: string }>;
+}) {
   const { slug } = await params;
+  const sp = await searchParams;
   try {
     const category = await listActiveProductsByCategorySlug(slug);
     if (!category || category.products.length === 0) {
       return { title: "Kategorie" };
     }
-    return {
+    return buildStorefrontMetadata({
       title: category.title,
       description: category.description ?? undefined,
-      alternates: { canonical: `/kategorien/${category.slug}` },
-    };
+      path: `/kategorien/${category.slug}`,
+      ...(catalogListingHasNonIndexParams(sp)
+        ? { robots: CATALOG_LISTING_NOINDEX_ROBOTS }
+        : {}),
+    });
   } catch {
     return { title: "Kategorie" };
   }

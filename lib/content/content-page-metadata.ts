@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ContentPageDTO } from "@/lib/content/content-pages";
 import { publicPathForContentSlug } from "@/lib/content/reserved-slugs";
-import { absoluteUrl } from "@/lib/site/canonical-origin";
+import { buildStorefrontMetadata } from "@/lib/site/storefront-metadata";
 
 /** Storefront-Metadata für eine published ContentPage. */
 export function metadataForContentPage(page: ContentPageDTO): Metadata {
@@ -10,20 +10,14 @@ export function metadataForContentPage(page: ContentPageDTO): Metadata {
   const description = page.seoDescription?.trim() || undefined;
   const og = page.ogImageUrl?.trim();
 
-  return {
+  return buildStorefrontMetadata({
     title,
     description,
-    alternates: { canonical: path },
+    path,
     robots: page.robotsIndex
       ? { index: true, follow: true }
       : { index: false, follow: false },
-    openGraph: {
-      title,
-      description,
-      url: absoluteUrl(path),
-      ...(og
-        ? { images: [{ url: absoluteUrl(og) }] }
-        : {}),
-    },
-  };
+    openGraphType: page.pageType === "legal" ? "article" : "website",
+    images: og ? [{ url: og }] : undefined,
+  });
 }

@@ -38,7 +38,7 @@ describe("buildShopMetadata", () => {
       }),
     );
     expect(meta.title).toEqual({
-      default: "Test Shop – Katzenmöbel Made in Germany",
+      default: "Test Shop",
       template: "%s | Test Shop",
     });
     expect(meta.description).toBe("Kurztext für SEO.");

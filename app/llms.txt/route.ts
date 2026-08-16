@@ -1,16 +1,22 @@
+import { getShopSettings } from "@/lib/shop/shop-settings";
 import { canonicalSiteOrigin } from "@/lib/site/canonical-origin";
 
 /**
  * Kurzinfo für KI-/Agent-Crawler (Epic 8 / Epic 14 Slice 4).
  * Nur kanonische öffentliche Ressourcen — keine personenbezogenen oder Admin-Daten.
+ *
+ * Hinweis: `llms.txt` ist ein de-facto-Community-Standard (kein IETF/W3C); experimentell,
+ * aber von mehreren KI-Anbietern unterstützt. Kein Ersatz für HTML, JSON-LD oder Sitemap.
  */
 export async function GET() {
-  const origin = (canonicalSiteOrigin() || "https://example.com").replace(
-    /\/$/,
-    "",
-  );
+  const settings = await getShopSettings();
+  const origin = (canonicalSiteOrigin() || "https://example.com").replace(/\/$/, "");
+  const shopName = settings.shopName.trim() || "Shop";
+  const tagline = settings.shortDescription?.trim();
+
   const body = [
-    "# jerry's – Katzenmöbel",
+    `# ${shopName}`,
+    ...(tagline ? ["", tagline] : []),
     "",
     `Website: ${origin}/`,
     "",

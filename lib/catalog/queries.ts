@@ -156,6 +156,16 @@ export async function getActiveProductBySlug(slug: string) {
   });
 }
 
+/** Aktives Produkt, dessen `previousSlug` dem Pfad entspricht (301-Ziel). */
+export async function getActiveProductByPreviousSlug(previousSlug: string) {
+  const normalized = previousSlug.trim().toLowerCase();
+  if (!normalized) return null;
+  return getPrisma().product.findFirst({
+    where: { previousSlug: normalized, isActive: true },
+    select: { slug: true },
+  });
+}
+
 const defaultVariantAdminSelect = {
   id: true,
   sku: true,
