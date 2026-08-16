@@ -30,6 +30,7 @@ import { renderStoredEmailTemplate } from "@/lib/email/templates/load";
 import { buildShopTemplateVars, mergeTemplateVars } from "@/lib/email/templates/shop-vars";
 import { transactionalPaymentLabel } from "@/lib/email/transactional-email-layout";
 import { resolveTransactionalEmailBranding } from "@/lib/shop/email-branding";
+import { orderPaymentCaptured } from "@/lib/orders/order-status-machine";
 
 /**
  * Sendet die Bestellbestätigung höchstens einmal erfolgreich pro Bestellung (Dedupe über `email_logs`).
@@ -50,7 +51,7 @@ export async function sendOrderConfirmationIfNeeded(
     include: { items: orderItemsIncludeForTransactionalEmail },
   });
   if (!order || !order.items.length) return;
-  if (order.status === "pending_payment") return;
+  if (!orderPaymentCaptured(order.status)) return;
 
   if (!options?.force) {
     const claim = await claimOrderEmailSend(prisma, {

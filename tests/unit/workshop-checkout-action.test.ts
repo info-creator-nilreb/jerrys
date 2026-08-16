@@ -55,4 +55,28 @@ describe("submitWorkshopCheckout", () => {
       paymentRedirectUrl: "https://paypal.example/approve",
     });
   });
+
+  it("leitet ohne Approval nicht auf die Erfolgsseite um", async () => {
+    const { createWorkshopOrderFromFormData } = await import(
+      "@/lib/checkout/create-workshop-order-from-form"
+    );
+    vi.mocked(createWorkshopOrderFromFormData).mockResolvedValue({
+      ok: true,
+      paymentReady: true,
+      orderNumber: "WS-1003",
+      internalOrderId: "ord_2",
+      paypalOrderId: "pp_2",
+      approvalUrl: "",
+    });
+
+    const { submitWorkshopCheckout } = await import(
+      "@/app/(storefront)/checkout/termine/actions"
+    );
+    const result = await submitWorkshopCheckout(null, new FormData());
+
+    expect(result?.ok).toBe(false);
+    if (result && !result.ok) {
+      expect(result.error).toMatch(/Zahlung konnte nicht gestartet werden/);
+    }
+  });
 });

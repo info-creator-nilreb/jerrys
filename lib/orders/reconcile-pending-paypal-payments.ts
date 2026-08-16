@@ -133,6 +133,19 @@ export async function reconcilePendingPayPalPayments(
       continue;
     }
 
+    if (snapshot.isDeclined) {
+      failed += 1;
+      details.push({
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        paypalOrderId,
+        outcome: "finalize_failed",
+        paypalStatus: snapshot.status,
+        message: "capture_declined",
+      });
+      continue;
+    }
+
     if (!snapshot.isCompleted && !snapshot.isApproved) {
       stillOpen += 1;
       details.push({

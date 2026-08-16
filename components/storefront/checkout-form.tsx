@@ -757,6 +757,16 @@ export function CheckoutForm({
       void walletStartRef.current.startGooglePay(form);
       return;
     }
+    if (payPalSurface === "card") {
+      if (cardFieldsSubmitRef.current) {
+        void cardFieldsSubmitRef.current();
+        return;
+      }
+      setWalletError(
+        "Kartenzahlung ist gerade nicht verfügbar. Bitte PayPal wählen oder die Seite neu laden.",
+      );
+      return;
+    }
     startTransition(() => {
       formAction(new FormData(form));
     });

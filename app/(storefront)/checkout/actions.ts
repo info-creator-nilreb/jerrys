@@ -38,5 +38,14 @@ export async function submitCheckout(
     redirect(approval);
   }
 
-  redirect(erfolgPath);
+  const payerAction = r.payerActionUrl?.trim();
+  if (payerAction) {
+    redirect(payerAction);
+  }
+
+  return {
+    ok: false,
+    error:
+      "Die Zahlung konnte nicht gestartet werden. Bitte eine andere Zahlungsart wählen oder die Kartenzahlung über die Kartenfelder abschließen.",
+  };
 }

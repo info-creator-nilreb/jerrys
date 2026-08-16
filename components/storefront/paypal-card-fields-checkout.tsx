@@ -256,9 +256,10 @@ export function PayPalCardFieldsCheckout({
             ok?: boolean;
             orderNumber?: string;
             redirectUrl?: string;
+            error?: string;
           };
           if (!res.ok || !j.ok) {
-            throw new Error("Zahlung konnte nicht abgeschlossen werden.");
+            throw new Error(j.error ?? "Zahlung konnte nicht abgeschlossen werden.");
           }
           const dest =
             j.redirectUrl ?? `/checkout/erfolg?nr=${encodeURIComponent(j.orderNumber ?? "")}`;
@@ -266,7 +267,7 @@ export function PayPalCardFieldsCheckout({
         },
         onError: (err) => {
           console.error(err);
-          setSdkError("Die Kartenzahlung ist fehlgeschlagen. Bitte erneut versuchen.");
+          setSdkError("Die Kartenzahlung ist fehlgeschlagen. Es wurde nichts abgebucht. Bitte erneut versuchen.");
         },
         onCancel: () => {
           setSdkError("Die Prüfung wurde abgebrochen. Sie wurden nicht belastet.");
@@ -411,9 +412,10 @@ export function PayPalCardFieldsCheckout({
         ok?: boolean;
         orderNumber?: string;
         redirectUrl?: string;
+        error?: string;
       };
       if (!cap.ok || !j.ok) {
-        throw new Error("Zahlung konnte nicht abgeschlossen werden.");
+        throw new Error(j.error ?? "Zahlung konnte nicht abgeschlossen werden.");
       }
       const dest = j.redirectUrl ?? `/checkout/erfolg?nr=${encodeURIComponent(j.orderNumber ?? "")}`;
       router.push(dest);

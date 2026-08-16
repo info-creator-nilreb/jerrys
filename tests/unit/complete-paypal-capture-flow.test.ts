@@ -80,7 +80,14 @@ beforeEach(() => {
 });
 
 describe("completePayPalCaptureFlow Inbox-Dedupe", () => {
-  it("sendet keine Mail wenn Capture bereits verarbeitet ist", async () => {
+  it("sendet keine Mail wenn Capture bereits verarbeitet ist und Bestellung paid", async () => {
+    orderFindUnique.mockResolvedValue({
+      id: "ord-1",
+      orderNumber: "J-100",
+      status: "paid",
+      totalGrossCents: 1990,
+      currency: "EUR",
+    });
     beginWebhookInboxProcessing.mockResolvedValue({
       ok: true,
       entryId: "in-1",
@@ -99,7 +106,7 @@ describe("completePayPalCaptureFlow Inbox-Dedupe", () => {
     expect(sendOrderConfirmationIfNeeded).not.toHaveBeenCalled();
   });
 
-  it("sendet keine Mail bei parallelem In-Flight-Capture (received)", async () => {
+  it("liefert keinen Erfolg bei parallelem In-Flight solange nicht paid", async () => {
     beginWebhookInboxProcessing.mockResolvedValue({
       ok: true,
       entryId: "in-1",
@@ -113,10 +120,23 @@ describe("completePayPalCaptureFlow Inbox-Dedupe", () => {
     );
     const result = await completePayPalCaptureFlow("PAYPAL-1", { eventSource: "paypal_return" });
 
-    expect(result).toEqual({ ok: true, orderNumber: "J-100" });
+    expect(result).toEqual({ ok: false, code: "finalisierung" });
     expect(finalizeOrderAfterPendingPaymentCapture).not.toHaveBeenCalled();
     expect(sendOrderConfirmationIfNeeded).not.toHaveBeenCalled();
     expect(sendWorkshopBookingConfirmationIfNeeded).not.toHaveBeenCalled();
+  });
+
+  it("sendet keine Mail wenn PayPal Capture fehlschlägt", async () => {
+    capturePayPalCheckoutOrder.mockRejectedValue(new Error("PayPal Capture abgelehnt (DECLINED)."));
+
+    const { completePayPalCaptureFlow } = await import(
+      "@/lib/checkout/complete-paypal-capture-flow"
+    );
+    const result = await completePayPalCaptureFlow("PAYPAL-1", { eventSource: "paypal_card_fields" });
+
+    expect(result).toEqual({ ok: false, code: "capture" });
+    expect(beginWebhookInboxProcessing).not.toHaveBeenCalled();
+    expect(sendOrderConfirmationIfNeeded).not.toHaveBeenCalled();
   });
 
   it("finalisiert erneut nach failed Inbox und sendet die Bestätigung", async () => {

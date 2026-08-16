@@ -12,6 +12,7 @@ import { createLogger, errorMeta } from "@/lib/logging/logger";
 import { type PayPalShippingPreference } from "@/lib/payments/paypal-orders";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 import { usesPaypalHostedCheckout } from "@/lib/payments/online-payment-method";
+import { orderPaymentCaptured } from "@/lib/orders/order-status-machine";
 import { parseCheckoutPayPalSurface } from "@/lib/checkout/checkout-paypal-surface";
 import { checkoutFormDraftFromCheckoutInput, type CheckoutFormDraft } from "@/lib/checkout/checkout-form-draft";
 import {
@@ -297,7 +298,15 @@ async function createPendingPayPalOrderFromParsedRaw(
     log.info("submit_idempotent_hit", {
       orderId: existing.id,
       orderNumber: existing.orderNumber,
+      status: existing.status,
     });
+    if (!orderPaymentCaptured(existing.status)) {
+      return {
+        ok: false,
+        error:
+          "Die vorherige Zahlung ist nicht abgeschlossen. Es wurde nichts abgebucht. Bitte erneut versuchen.",
+      };
+    }
     await sendOrderConfirmationIfNeeded(existing.id);
     return { ok: true, paymentReady: false, orderNumber: existing.orderNumber };
   }

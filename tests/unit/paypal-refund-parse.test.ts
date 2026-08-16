@@ -41,4 +41,62 @@ describe("parseCapturedPayPalOrder", () => {
       }),
     ).toBeNull();
   });
+
+  it("lehnt COMPLETED Order mit abgelehntem Capture ab", () => {
+    expect(
+      parseCapturedPayPalOrder({
+        id: "PAYPAL-ORDER-1",
+        status: "COMPLETED",
+        purchase_units: [
+          {
+            custom_id: "internal-order-1",
+            amount: { currency_code: "EUR", value: "49.00" },
+            payments: {
+              captures: [
+                {
+                  id: "CAPTURE-DECLINED",
+                  amount: { currency_code: "EUR", value: "49.00" },
+                  status: "DECLINED",
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    ).toBeNull();
+  });
+
+  it("lehnt COMPLETED Order ohne Capture-Objekt ab", () => {
+    expect(
+      parseCapturedPayPalOrder({
+        id: "PAYPAL-ORDER-1",
+        status: "COMPLETED",
+        purchase_units: [{ custom_id: "internal-order-1", amount: { currency_code: "EUR", value: "49.00" } }],
+      }),
+    ).toBeNull();
+  });
+
+  it("lehnt PENDING-Capture ab", () => {
+    expect(
+      parseCapturedPayPalOrder({
+        id: "PAYPAL-ORDER-1",
+        status: "COMPLETED",
+        purchase_units: [
+          {
+            custom_id: "internal-order-1",
+            amount: { currency_code: "EUR", value: "49.00" },
+            payments: {
+              captures: [
+                {
+                  id: "CAPTURE-PENDING",
+                  amount: { currency_code: "EUR", value: "49.00" },
+                  status: "PENDING",
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    ).toBeNull();
+  });
 });

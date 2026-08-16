@@ -54,3 +54,23 @@ export function isAllowedOrderStatusTransition(from: string, to: string): boolea
 export function orderStatusDecrementsWarehouse(status: string): boolean {
   return status === "shipped" || status === "abgeholt";
 }
+
+/**
+ * Zahlung ist serverseitig eingegangen (nicht nur Checkout gestartet).
+ * Erfolgseite, 409-„bereits bezahlt“ und Bestellbestätigung nur in diesen Status.
+ */
+export function orderPaymentCaptured(status: string): boolean {
+  switch (status) {
+    case "paid":
+    case "bestaetigt":
+    case "processing":
+    case "shipped":
+    case "abgeholt":
+    case "completed":
+    case "retoure":
+    case "refunded":
+      return true;
+    default:
+      return false;
+  }
+}

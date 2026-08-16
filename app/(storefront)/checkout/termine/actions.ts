@@ -32,5 +32,14 @@ export async function submitWorkshopCheckout(
     return { ok: true, orderNumber: r.orderNumber, paymentRedirectUrl: approval };
   }
 
-  return { ok: true, orderNumber: r.orderNumber, paymentRedirectUrl: erfolgPath };
+  const payerAction = r.payerActionUrl?.trim();
+  if (payerAction) {
+    return { ok: true, orderNumber: r.orderNumber, paymentRedirectUrl: payerAction };
+  }
+
+  return {
+    ok: false,
+    error:
+      "Die Zahlung konnte nicht gestartet werden. Bitte eine andere Zahlungsart wählen oder den Checkout erneut versuchen.",
+  };
 }

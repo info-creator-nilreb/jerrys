@@ -6,6 +6,7 @@ import { getPrisma } from "@/lib/db/prisma";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 import { finalizeOrderAfterPendingPaymentCapture } from "@/lib/orders/finalize-pending-payment";
 import { capturePayPalCheckoutOrder } from "@/lib/payments/paypal-orders";
+import { orderPaymentCaptured } from "@/lib/orders/order-status-machine";
 import {
   beginWebhookInboxProcessing,
   markWebhookInboxFailed,
@@ -89,9 +90,12 @@ export async function completePayPalCaptureFlow(
   }
   if (inbox.duplicate) {
     // Bereits finalisiert ODER parallel in Arbeit (Return-URL + Webhook):
-    // keine zweite Bestätigungsmail. Nur `failed` darf erneut finalisieren.
+    // keine zweite Bestätigungsmail. Erfolg nur bei autoritativ bezahlter Bestellung.
     if (inbox.alreadyProcessed || inbox.status === "received") {
-      return { ok: true, orderNumber: order.orderNumber };
+      if (orderPaymentCaptured(order.status)) {
+        return { ok: true, orderNumber: order.orderNumber };
+      }
+      return { ok: false, code: "finalisierung" };
     }
   }
 
