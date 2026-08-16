@@ -18,6 +18,8 @@ import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadc
 import { getActiveCollectionBySlugForStorefront } from "@/lib/catalog/collection-queries";
 import { filterAndSortCollectionProducts } from "@/lib/catalog/collection-storefront-sort";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
+import { resolveShopBrandingAssetUrl } from "@/lib/shop/branding-asset-fallbacks";
+import { getShopSettings } from "@/lib/shop/shop-settings";
 import {
   buildStorefrontMetadata,
   catalogListingHasNonIndexParams,
@@ -36,12 +38,17 @@ export async function generateMetadata({
   const { slug } = await params;
   const sp = await searchParams;
   try {
-    const col = await getActiveCollectionBySlugForStorefront(slug);
+    const [col, settings] = await Promise.all([
+      getActiveCollectionBySlugForStorefront(slug),
+      getShopSettings(),
+    ]);
     if (!col) return { title: "Kollektion" };
+    const ogImage = resolveShopBrandingAssetUrl(settings, "ogImage");
     return buildStorefrontMetadata({
       title: col.title,
       description: col.description ?? undefined,
       path: `/kollektionen/${col.slug}`,
+      images: [{ url: ogImage, alt: settings.shopName }],
       ...(catalogListingHasNonIndexParams(sp)
         ? { robots: CATALOG_LISTING_NOINDEX_ROBOTS }
         : {}),

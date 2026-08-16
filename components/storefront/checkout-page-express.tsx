@@ -11,6 +11,7 @@ export function CheckoutPageExpress({
   paypalClientId,
   currency,
   totalGrossCents,
+  applePayStoreLabel,
   promotionCode,
   declineAutomatic,
   deliveryMethod = "shipping",
@@ -19,6 +20,7 @@ export function CheckoutPageExpress({
   paypalClientId: string;
   currency: string;
   totalGrossCents: number;
+  applePayStoreLabel: string;
   promotionCode?: string;
   declineAutomatic?: boolean;
   deliveryMethod?: "shipping" | "pickup";
@@ -35,6 +37,7 @@ export function CheckoutPageExpress({
         paypalClientId={paypalClientId}
         currency={currency}
         totalGrossCents={totalGrossCents}
+        applePayStoreLabel={applePayStoreLabel}
         variant="checkout"
         promotionCode={promotionCode}
         declineAutomatic={declineAutomatic}

@@ -68,3 +68,19 @@ export function shopFooterTagline(
   if (text) return text;
   return JERRYS_SHOP_SETTINGS_DEFAULTS.shortDescription;
 }
+
+/**
+ * Apple Pay / Google Pay Händlerlabel (ASCII, max. 64 Zeichen).
+ * PayPal/Apple erwarten keinen Unicode-Apostroph — aus Shop-Namen ableiten.
+ */
+export function applePayStoreLabel(
+  settings: Pick<ShopSettingsDTO, "shopName">,
+): string {
+  const raw = (settings.shopName || JERRYS_SHOP_SETTINGS_DEFAULTS.shopName).trim();
+  const ascii = raw
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "")
+    .slice(0, 64);
+  return ascii || "Shop";
+}

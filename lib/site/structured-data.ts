@@ -214,3 +214,88 @@ export function buildProductOfferJsonLd(
 
   return jsonLd;
 }
+
+export type WorkshopEventJsonLdInput = {
+  name: string;
+  description: string | null | undefined;
+  sessionId: string;
+  startsAt: Date;
+  endsAt: Date;
+  timezone: string;
+  locationLabel: string;
+  locationLine1: string | null;
+  locationLine2: string | null;
+  locationZip: string | null;
+  locationCity: string | null;
+  locationCountry: string | null;
+  priceCentsPerSeat: number;
+  currency: string;
+  seatsRemaining: number;
+  shopName: string;
+};
+
+function workshopPostalAddress(
+  input: Pick<
+    WorkshopEventJsonLdInput,
+    "locationLine1" | "locationLine2" | "locationZip" | "locationCity" | "locationCountry"
+  >,
+): Record<string, unknown> | undefined {
+  const street = [input.locationLine1, input.locationLine2?.trim()]
+    .filter(Boolean)
+    .join(", ");
+  if (!street && !input.locationZip && !input.locationCity) return undefined;
+  return {
+    "@type": "PostalAddress",
+    streetAddress: street || undefined,
+    postalCode: input.locationZip || undefined,
+    addressLocality: input.locationCity || undefined,
+    addressCountry: input.locationCountry || undefined,
+  };
+}
+
+/**
+ * Event JSON-LD für Workshop-Termine (nur wenn Session veröffentlicht und in der Zukunft).
+ */
+export function buildWorkshopEventJsonLd(
+  input: WorkshopEventJsonLdInput,
+): Record<string, unknown> {
+  const pageUrl = absoluteUrl(`/termine/${input.sessionId}`);
+  const address = workshopPostalAddress(input);
+  const location: Record<string, unknown> = {
+    "@type": "Place",
+    name: input.locationLabel,
+  };
+  if (address) location.address = address;
+
+  const event: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: input.name,
+    description: input.description?.trim() || undefined,
+    startDate: input.startsAt.toISOString(),
+    endDate: input.endsAt.toISOString(),
+    eventStatus: "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    location,
+    organizer: {
+      "@id": organizationSchemaId(),
+      name: input.shopName,
+    },
+    url: pageUrl,
+  };
+
+  if (input.priceCentsPerSeat > 0) {
+    event.offers = {
+      "@type": "Offer",
+      url: pageUrl,
+      price: (input.priceCentsPerSeat / 100).toFixed(2),
+      priceCurrency: input.currency,
+      availability:
+        input.seatsRemaining > 0
+          ? "https://schema.org/InStock"
+          : "https://schema.org/SoldOut",
+    };
+  }
+
+  return event;
+}

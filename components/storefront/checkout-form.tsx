@@ -208,6 +208,7 @@ export function CheckoutForm({
   paypalUserIdToken = null,
   paypalVaultedCards = [],
   sepaAvailable = false,
+  applePayStoreLabel,
 }: {
   idempotencyKey: string;
   lines: CheckoutSummaryLine[];
@@ -237,6 +238,8 @@ export function CheckoutForm({
   paypalVaultedCards?: PayPalVaultedCard[];
   /** SEPA-Lastschrift nur listen, wenn PayPal APM beim Händler aktiv ist. */
   sepaAvailable?: boolean;
+  /** Apple Pay Händlerlabel (aus ShopSettings, ASCII). */
+  applePayStoreLabel: string;
 }) {
   const [cartState, cartFormAction, cartPending] = useActionState(submitCheckout, initial);
   const [workshopState, workshopFormAction, workshopPending] = useActionState(
@@ -836,6 +839,7 @@ export function CheckoutForm({
             paypalClientId={payPalClientId}
             currency={currency}
             totalGrossCents={displayTotals.totalCents}
+            applePayStoreLabel={applePayStoreLabel}
             promotionCode={committedPromoCode}
             declineAutomatic={declineAutomatic}
             deliveryMethod={deliveryMethod}
@@ -1338,6 +1342,7 @@ export function CheckoutForm({
               currency={currency}
               payPalLive={payPalLive}
               totalGrossCents={displayTotals.totalCents}
+              applePayStoreLabel={applePayStoreLabel}
               startRef={walletStartRef.current}
               onReadyChange={setWalletReady}
               onBusyChange={setWalletBusy}

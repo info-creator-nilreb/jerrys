@@ -27,6 +27,7 @@ describe("sitemap entries", () => {
     expect(entries).toHaveLength(STATIC_SITEMAP_PATHS.length);
     expect(entries[0]?.url).toBe("https://shop.example/");
     expect(entries.some((e) => e.url.endsWith("/produkte"))).toBe(true);
+    expect(entries.some((e) => e.url.endsWith("/kollektionen"))).toBe(true);
   });
 
   it("returns no product URLs when DATABASE_URL is unset", async () => {

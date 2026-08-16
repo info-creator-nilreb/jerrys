@@ -13,6 +13,8 @@ import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { cartLineCommerceRules, getCartWithLines } from "@/lib/cart/cart-queries";
 import { getShippingCountriesForStorefront } from "@/lib/shop/shipping-countries-for-storefront";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
+import { getShopSettings } from "@/lib/shop/shop-settings";
+import { applePayStoreLabel } from "@/lib/shop/storefront-branding";
 import { loadPayPalCustomerVault } from "@/lib/checkout/paypal-customer-vault";
 import { isPayPalConfigured, isPayPalSepaDebitEnabled, paypalApiEnv } from "@/lib/payments/paypal-config";
 
@@ -73,6 +75,8 @@ export default async function CheckoutPage({
   });
 
   const shopShip = await getShopShippingSettings();
+  const shopSettings = await getShopSettings();
+  const walletStoreLabel = applePayStoreLabel(shopSettings);
   const { countries: allowedShippingCountries, preferredCountry } =
     await getShippingCountriesForStorefront();
   if (!allowedShippingCountries.length) {
@@ -144,6 +148,7 @@ export default async function CheckoutPage({
           paypalUserIdToken={paypalVault.userIdToken}
           paypalVaultedCards={paypalVault.cards}
           sepaAvailable={isPayPalSepaDebitEnabled()}
+          applePayStoreLabel={walletStoreLabel}
         />
       </div>
     </div>

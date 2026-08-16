@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { HeroBackgroundCarousel } from "@/components/content/blocks/hero-background-carousel";
+import { HeroBackgroundImage } from "@/components/content/blocks/hero-background-image";
 import { HeroScrollHint } from "@/components/storefront/hero-scroll-hint";
 import {
   resolveHeroSlides,
@@ -8,14 +9,19 @@ import {
 
 export function HeroBlock({ data }: { data: HeroBlockData; blockId: string }) {
   const slides = resolveHeroSlides(data);
+  const useStaticHero = slides.length === 1;
 
   return (
     <section className="relative h-dvh max-h-dvh overflow-hidden">
-      <HeroBackgroundCarousel
-        slides={slides}
-        slideDurationSec={data.slideDurationSec}
-        motionEffect={data.motionEffect}
-      />
+      {useStaticHero ? (
+        <HeroBackgroundImage slide={slides[0]!} />
+      ) : (
+        <HeroBackgroundCarousel
+          slides={slides}
+          slideDurationSec={data.slideDurationSec}
+          motionEffect={data.motionEffect}
+        />
+      )}
       <div
         className="absolute inset-0 z-[2] bg-linear-to-r from-black/55 via-black/20 to-transparent md:from-black/45 md:via-black/10 md:to-transparent"
         aria-hidden

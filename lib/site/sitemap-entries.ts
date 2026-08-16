@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { listActiveCategoriesForStorefrontIndex } from "@/lib/catalog/category-queries";
+import { listActiveCollectionsForStorefront } from "@/lib/catalog/collection-queries";
 import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
 import { listPublishedContentPagesForDiscovery } from "@/lib/content/content-public-discovery";
 import {
@@ -11,6 +12,7 @@ export const STATIC_SITEMAP_PATHS = [
   "/",
   "/produkte",
   "/kategorien",
+  "/kollektionen",
   "/impressum",
   "/datenschutz",
   "/agb",
@@ -134,14 +136,46 @@ export async function buildContentPageSitemapEntries(
   }
 }
 
+export async function buildCollectionSitemapEntries(
+  base: string,
+  now: Date = new Date(),
+): Promise<MetadataRoute.Sitemap> {
+  if (!process.env.DATABASE_URL?.trim() || isNextProductionBuildPhase()) {
+    return [];
+  }
+
+  const normalizedBase = base.replace(/\/$/, "");
+
+  try {
+    const collections = await listActiveCollectionsForStorefront();
+    return collections
+      .filter((c) => c._count.products > 0)
+      .map((c) => ({
+        url: `${normalizedBase}/kollektionen/${c.slug}`,
+        lastModified: now,
+        changeFrequency: "weekly" as const,
+        priority: 0.72,
+      }));
+  } catch (e) {
+    if (e instanceof Error && e.message === "DATABASE_URL is not set") {
+      return [];
+    }
+    if (shouldSkipSitemapDatabase(e)) {
+      return [];
+    }
+    throw e;
+  }
+}
+
 export async function buildDynamicSitemapEntries(
   base: string,
   now: Date = new Date(),
 ): Promise<MetadataRoute.Sitemap> {
   const productEntries = await buildProductSitemapEntries(base, now);
   const categoryEntries = await buildCategorySitemapEntries(base, now);
+  const collectionEntries = await buildCollectionSitemapEntries(base, now);
   const contentEntries = await buildContentPageSitemapEntries(base, now);
-  return [...productEntries, ...categoryEntries, ...contentEntries];
+  return [...productEntries, ...categoryEntries, ...collectionEntries, ...contentEntries];
 }
 
 export async function buildFullSitemap(

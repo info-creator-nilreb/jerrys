@@ -31,6 +31,8 @@ import { ProductPdpTrustFooterBar, ProductPdpUspRow } from "@/components/storefr
 import { WorkshopSessionList } from "@/components/storefront/workshop-session-list";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
+import { getShopSettings } from "@/lib/shop/shop-settings";
+import { applePayStoreLabel } from "@/lib/shop/storefront-branding";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 
 export const dynamic = "force-dynamic";
@@ -107,9 +109,10 @@ export default async function ProduktDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const [product, shopShip] = await Promise.all([
+  const [product, shopShip, shopSettings] = await Promise.all([
     getActiveProductBySlug(slug),
     getShopShippingSettings(),
+    getShopSettings(),
   ]);
 
   if (!product) {
@@ -239,6 +242,7 @@ export default async function ProduktDetailPage({
                 deliveryTimeKeyFallback={defaultVariant.deliveryTimeKey}
                 payPalConfigured={isPayPalConfigured()}
                 paypalClientId={process.env.PAYPAL_CLIENT_ID?.trim() ?? ""}
+                applePayStoreLabel={applePayStoreLabel(shopSettings)}
                 variants={product.variants}
               />
             </article>

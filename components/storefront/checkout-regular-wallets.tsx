@@ -69,7 +69,6 @@ type GooglePayClient = {
   loadPaymentData: (request: Record<string, unknown>) => Promise<{ paymentMethodData?: unknown }>;
 };
 
-const APPLE_PAY_STORE_LABEL = "jerrys";
 const GOOGLE_PAY_SCRIPT_ID = "google-pay-js-checkout";
 const WALLET_SDK_SCRIPT_ID = "paypal-js-checkout-wallets";
 
@@ -227,6 +226,7 @@ export function CheckoutRegularWallets({
   currency,
   payPalLive,
   totalGrossCents,
+  applePayStoreLabel,
   onReadyChange,
   onBusyChange,
   onError,
@@ -236,6 +236,7 @@ export function CheckoutRegularWallets({
   currency: string;
   payPalLive: boolean;
   totalGrossCents: number;
+  applePayStoreLabel: string;
   onReadyChange?: (ready: CheckoutWalletReady) => void;
   onBusyChange?: (busy: boolean) => void;
   onError?: (message: string | null) => void;
@@ -377,7 +378,7 @@ export function CheckoutRegularWallets({
           merchantCapabilities: config.merchantCapabilities ?? ["supports3DS"],
           supportedNetworks: config.supportedNetworks ?? ["visa", "masterCard", "amex", "maestro"],
           total: {
-            label: APPLE_PAY_STORE_LABEL,
+            label: applePayStoreLabel,
             type: "final",
             amount: moneyStringFromGrossCents(totalRef.current),
           },
@@ -393,7 +394,7 @@ export function CheckoutRegularWallets({
           try {
             const result = await applepay.validateMerchant({
               validationUrl: event.validationURL,
-              displayName: APPLE_PAY_STORE_LABEL,
+              displayName: applePayStoreLabel,
               domainName: window.location.hostname,
             });
             session.completeMerchantValidation(merchantSessionForApple(result.merchantSession));

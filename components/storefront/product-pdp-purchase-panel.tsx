@@ -20,6 +20,7 @@ export function ProductPdpPurchasePanel({
   deliveryTimeKeyFallback,
   payPalConfigured,
   paypalClientId,
+  applePayStoreLabel,
   variants,
 }: {
   productId: string;
@@ -28,6 +29,7 @@ export function ProductPdpPurchasePanel({
   deliveryTimeKeyFallback: string | null;
   payPalConfigured: boolean;
   paypalClientId: string;
+  applePayStoreLabel: string;
   variants: StorefrontVariantCommerce[];
 }) {
   const initialId = variants.find((v) => v.isDefault)?.id ?? variants[0]?.id ?? "";
@@ -152,6 +154,7 @@ export function ProductPdpPurchasePanel({
         paypalClientId={paypalClientId}
         currency={currency}
         totalGrossCents={expressTotalEstimate}
+        applePayStoreLabel={applePayStoreLabel}
       />
 
       <p className="text-center text-[0.7rem] leading-snug text-(--foreground-muted)">

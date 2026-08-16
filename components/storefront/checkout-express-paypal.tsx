@@ -72,9 +72,6 @@ type ApplePaySessionConstructor = {
   STATUS_FAILURE: number;
 };
 
-/** Apple Pay mag Sonderzeichen im total.label oft nicht — Apostroph vermeiden. */
-const APPLE_PAY_STORE_LABEL = "jerrys";
-
 function moneyStringFromGrossCents(cents: number): string {
   return (Math.max(0, cents) / 100).toFixed(2);
 }
@@ -147,6 +144,7 @@ type Props = {
   paypalClientId: string;
   currency?: string;
   totalGrossCents?: number;
+  applePayStoreLabel: string;
   /** Legacy-Prop: die Komponente wird heute im Warenkorb genutzt. */
   variant?: "checkout" | "cart" | "pdp";
   /**
@@ -168,6 +166,7 @@ export function CheckoutExpressPayPalOnly({
   paypalClientId,
   currency = "EUR",
   totalGrossCents = 0,
+  applePayStoreLabel,
   variant = "cart",
   pdpExpress = null,
   enabled = true,
@@ -665,7 +664,7 @@ export function CheckoutExpressPayPalOnly({
         requiredShippingContactFields: ["name", "phone", "email", "postalAddress"],
         requiredBillingContactFields: ["postalAddress"],
         total: {
-          label: APPLE_PAY_STORE_LABEL,
+          label: applePayStoreLabel,
           type: "final",
           amount,
         },
@@ -678,7 +677,7 @@ export function CheckoutExpressPayPalOnly({
 
     const totalUpdate = () => ({
       newTotal: {
-        label: APPLE_PAY_STORE_LABEL,
+        label: applePayStoreLabel,
         type: "final",
         amount: moneyStringFromGrossCents(liveTotalCentsRef.current),
       },
@@ -689,7 +688,7 @@ export function CheckoutExpressPayPalOnly({
         try {
           const result = await applepay.validateMerchant({
             validationUrl: event.validationURL,
-            displayName: APPLE_PAY_STORE_LABEL,
+            displayName: applePayStoreLabel,
             domainName: window.location.hostname,
           });
           session.completeMerchantValidation(merchantSessionForApple(result.merchantSession));

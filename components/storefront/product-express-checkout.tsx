@@ -13,6 +13,7 @@ type Props = {
   currency: string;
   /** Brutto-Schätzung für Apple-Pay-Anzeige (Server berechnet final beim Prepare). */
   totalGrossCents: number;
+  applePayStoreLabel: string;
 };
 
 /**
@@ -28,6 +29,7 @@ export function ProductExpressCheckout({
   paypalClientId,
   currency,
   totalGrossCents,
+  applePayStoreLabel,
 }: Props) {
   if (!payPalConfigured) return null;
 
@@ -41,6 +43,7 @@ export function ProductExpressCheckout({
         paypalClientId={paypalClientId}
         currency={currency}
         totalGrossCents={totalGrossCents}
+        applePayStoreLabel={applePayStoreLabel}
         variant="pdp"
         enabled={enabled}
         pdpExpress={{ productId, productVariantId, quantity }}

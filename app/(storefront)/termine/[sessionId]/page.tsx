@@ -8,11 +8,14 @@ import {
 } from "@/features/workshops";
 import { WorkshopSessionLocationBlock } from "@/components/storefront/workshop-session-location-block";
 import { WorkshopBookSeatsPanel } from "@/components/storefront/workshop-book-seats-panel";
+import { WorkshopEventJsonLd } from "@/components/storefront/workshop-event-json-ld";
 import { formatPrice } from "@/lib/catalog/format";
 import {
   formatSelfCancelDeadline,
   formatWorkshopSessionDateTime,
 } from "@/lib/workshop/format-session-datetime";
+import { getShopSettings } from "@/lib/shop/shop-settings";
+import { buildStorefrontMetadata } from "@/lib/site/storefront-metadata";
 import { storefrontMainPagePaddingClass } from "@/lib/storefront/page-below-header-padding";
 
 export async function generateMetadata({
@@ -23,10 +26,13 @@ export async function generateMetadata({
   const { sessionId } = await params;
   const session = await getPublishedWorkshopSessionForStorefront(sessionId);
   if (!session) return { title: "Termin" };
-  return {
+  const when = formatWorkshopSessionDateTime(session.startsAt, session.timezone);
+  return buildStorefrontMetadata({
     title: session.title,
-    description: `${session.locationLabel} — ${formatWorkshopSessionDateTime(session.startsAt, session.timezone)}`,
-  };
+    description: `${session.locationLabel} — ${when}`,
+    path: `/termine/${session.id}`,
+    openGraphType: "website",
+  });
 }
 
 export default async function StorefrontWorkshopSessionDetailPage({
@@ -40,7 +46,10 @@ export default async function StorefrontWorkshopSessionDetailPage({
   const sp = await searchParams;
   const bookingErrorMessage =
     sp.buchung === "fehler" && sp.msg?.trim() ? sp.msg.trim() : null;
-  const session = await getPublishedWorkshopSessionForStorefront(sessionId);
+  const [session, shopSettings] = await Promise.all([
+    getPublishedWorkshopSessionForStorefront(sessionId),
+    getShopSettings(),
+  ]);
   if (!session) notFound();
 
   const when = formatWorkshopSessionDateTime(session.startsAt, session.timezone);
@@ -52,6 +61,24 @@ export default async function StorefrontWorkshopSessionDetailPage({
 
   return (
     <div className={`mx-auto max-w-3xl px-4 ${storefrontMainPagePaddingClass}`}>
+      <WorkshopEventJsonLd
+        name={session.title}
+        description={session.description}
+        sessionId={session.id}
+        startsAt={session.startsAt}
+        endsAt={session.endsAt}
+        timezone={session.timezone}
+        locationLabel={session.locationLabel}
+        locationLine1={session.locationLine1}
+        locationLine2={session.locationLine2}
+        locationZip={session.locationZip}
+        locationCity={session.locationCity}
+        locationCountry={session.locationCountry}
+        priceCentsPerSeat={session.priceCentsPerSeat}
+        currency={session.currency}
+        seatsRemaining={session.seatsRemaining}
+        shopName={shopSettings.shopName}
+      />
       <Link href="/termine" className="text-sm font-medium text-primary hover:underline">
         ← Alle Termine
       </Link>
