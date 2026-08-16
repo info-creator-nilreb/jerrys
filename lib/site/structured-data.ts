@@ -152,6 +152,7 @@ export type ProductOfferJsonLdInput = {
   name: string;
   description: string | null | undefined;
   slug: string;
+  sku?: string | null;
   priceGrossCents: number;
   currency: string;
   availableQuantity: number;
@@ -181,11 +182,14 @@ export function buildProductOfferJsonLd(
     input.aggregateRatingAverage >= 0 &&
     input.aggregateRatingAverage <= 5;
 
+  const sku = input.sku?.trim();
+
   const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: input.name,
     description: input.description?.trim() || undefined,
+    sku: sku || undefined,
     image: imageUrls.length ? imageUrls : undefined,
     brand: {
       "@id": organizationSchemaId(),

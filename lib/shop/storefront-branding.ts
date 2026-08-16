@@ -15,6 +15,10 @@ export function shopThemeStyle(
   } as CSSProperties;
 }
 
+function shopDefaultTitle(shopName: string): string {
+  return shopName.trim() || JERRYS_SHOP_SETTINGS_DEFAULTS.shopName;
+}
+
 /**
  * Root-Metadata / Open Graph aus ShopSettings.
  * Fehlende Assets fallen auf `/branding/*` zurück.
@@ -27,11 +31,12 @@ export function buildShopMetadata(settings: ShopSettingsDTO): Metadata {
     JERRYS_SHOP_SETTINGS_DEFAULTS.shortDescription;
   const favicon = resolveShopBrandingAssetUrl(settings, "favicon");
   const ogImage = resolveShopBrandingAssetUrl(settings, "ogImage");
+  const defaultTitle = shopDefaultTitle(shopName);
 
   return {
     ...(siteOrigin ? { metadataBase: new URL(siteOrigin) } : {}),
     title: {
-      default: `${shopName} – Katzenmöbel Made in Germany`,
+      default: defaultTitle,
       template: `%s | ${shopName}`,
     },
     description,
@@ -42,9 +47,15 @@ export function buildShopMetadata(settings: ShopSettingsDTO): Metadata {
       siteName: shopName,
       locale: "de_DE",
       type: "website",
-      title: `${shopName} – Katzenmöbel Made in Germany`,
+      title: defaultTitle,
       description,
       images: [{ url: ogImage, alt: shopName }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: defaultTitle,
+      description,
+      images: [ogImage],
     },
   };
 }

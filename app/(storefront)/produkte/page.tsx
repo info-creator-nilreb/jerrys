@@ -25,24 +25,42 @@ import {
 } from "@/lib/catalog/storefront-product-search";
 import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
+import { getShopSettings } from "@/lib/shop/shop-settings";
+import {
+  buildStorefrontMetadata,
+  catalogListingHasNonIndexParams,
+  CATALOG_LISTING_NOINDEX_ROBOTS,
+} from "@/lib/site/storefront-metadata";
 
 export async function generateMetadata({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; sort?: string; verfuegbar?: string; preis_min?: string; preis_max?: string; kategorie?: string }>;
 }) {
   const sp = await searchParams;
   const q = parseStorefrontSearchQuery(sp.q);
+  const settings = await getShopSettings();
+  const shopDescription =
+    settings.shortDescription?.trim() ||
+    `Produkte und Angebote von ${settings.shopName}.`;
+
   if (q) {
-    return {
+    return buildStorefrontMetadata({
       title: `Suche: ${q}`,
-      description: `Suchergebnisse für „${q}“ im jerry's Shop.`,
-    };
+      description: `Suchergebnisse für „${q}“ im ${settings.shopName} Shop.`,
+      path: "/produkte",
+      robots: CATALOG_LISTING_NOINDEX_ROBOTS,
+    });
   }
-  return {
+
+  return buildStorefrontMetadata({
     title: "Produkte",
-    description: "Design Katzenmöbel von jerry's – made in Germany.",
-  };
+    description: shopDescription,
+    path: "/produkte",
+    ...(catalogListingHasNonIndexParams(sp)
+      ? { robots: CATALOG_LISTING_NOINDEX_ROBOTS }
+      : {}),
+  });
 }
 
 function buildProdukteHref(opts: {

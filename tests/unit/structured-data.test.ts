@@ -133,6 +133,7 @@ describe("buildProductOfferJsonLd", () => {
       name: "Kratzbaum",
       description: "Hochwertig",
       slug: "kratzbaum",
+      sku: "KR-001",
       priceGrossCents: 19900,
       currency: "EUR",
       availableQuantity: 3,
@@ -140,6 +141,7 @@ describe("buildProductOfferJsonLd", () => {
     });
 
     expect(node["@type"]).toBe("Product");
+    expect(node.sku).toBe("KR-001");
     expect(node.brand).toEqual({ "@id": "https://shop.example/#organization" });
     expect(node.offers).toMatchObject({
       "@type": "Offer",
