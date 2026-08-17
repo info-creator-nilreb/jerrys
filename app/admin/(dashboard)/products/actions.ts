@@ -1,8 +1,7 @@
 "use server";
 
-import { randomUUID } from "crypto";
 import { existsSync } from "fs";
-import { mkdir, unlink, writeFile } from "fs/promises";
+import { unlink } from "fs/promises";
 import path from "path";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -13,7 +12,11 @@ import {
   attributesFromFormData,
   reconcileAttributesAndFeatureBullets,
 } from "@/features/catalog";
-import { syncDefaultVariantFromProduct } from "@/features/catalog/server";
+import {
+  persistProductImageUpload,
+  syncDefaultVariantFromProduct,
+} from "@/features/catalog/server";
+import { getObjectStorage } from "@/features/integrations";
 import { parseEuroInputToCents } from "@/lib/catalog/format";
 import {
   createProductFormSchema,
@@ -24,7 +27,8 @@ import { sanitizeProductDescriptionHtml } from "@/lib/catalog/sanitize-html";
 import { syncProductShopMemberships } from "@/lib/catalog/product-shop-membership";
 import { getPrisma } from "@/lib/db/prisma";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
-import { ALLOWED_IMAGE_TYPES, extFromMime, MAX_UPLOAD_BYTES } from "@/lib/admin/upload-image";
+import { ALLOWED_IMAGE_TYPES, MAX_UPLOAD_BYTES } from "@/lib/admin/upload-image";
+import { isManagedBlobUrl } from "@/lib/shop/branding-asset-fallbacks";
 import { nonEmptyString } from "@/lib/validation/form";
 
 function formIdList(formData: FormData, key: string): string[] {
@@ -503,6 +507,9 @@ async function deleteProductImageById(imageId: string): Promise<ProductFormState
 
   try {
     await tryUnlinkLocalProductUpload(image.url);
+    if (isManagedBlobUrl(image.url)) {
+      await getObjectStorage().deleteByUrl(image.url);
+    }
 
     await getPrisma().$transaction(async (tx) => {
       await tx.productImage.delete({ where: { id: imageId } });
@@ -628,9 +635,6 @@ export async function uploadProductImages(
     return { error: "Keine Dateien ausgewählt." };
   }
 
-  const dir = path.join(process.cwd(), "public", "media", "product-uploads", productId);
-  await mkdir(dir, { recursive: true });
-
   const maxSort = await getPrisma().productImage.aggregate({
     where: { productId },
     _max: { sortOrder: true },
@@ -648,22 +652,22 @@ export async function uploadProductImages(
       if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
         return { error: "Nur JPEG-, PNG- oder WebP-Bilder erlaubt." };
       }
-      const ext = extFromMime(file.type);
-      if (!ext) {
-        return { error: "Ungültiger Bildtyp." };
-      }
 
       const buf = Buffer.from(await file.arrayBuffer());
-      const filename = `${randomUUID()}.${ext}`;
-      const fullPath = path.join(dir, filename);
-      await writeFile(fullPath, buf);
+      const stored = await persistProductImageUpload({
+        productId,
+        bytes: buf,
+        contentType: file.type,
+      });
+      if (!stored.ok) {
+        return { error: stored.error };
+      }
 
-      const publicUrl = `/media/product-uploads/${productId}/${filename}`;
       const altBase = product.title.slice(0, 80);
       await getPrisma().productImage.create({
         data: {
           productId,
-          url: publicUrl,
+          url: stored.url,
           alt: `${altBase} – Produktbild`,
           sortOrder: nextOrder,
           isCover: isFirst,

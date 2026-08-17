@@ -5,6 +5,10 @@ export {
   type PersistAiProductImageResult,
 } from "@/features/catalog/application/persist-ai-product-image";
 export {
+  persistProductImageUpload,
+  type PersistProductImageUploadResult,
+} from "@/features/catalog/application/persist-product-image-upload";
+export {
   SEARCH_INDEX_STATE_ID,
   getSearchIndexStatusPublic,
   rebuildProductSearchIndex,

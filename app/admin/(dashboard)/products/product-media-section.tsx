@@ -49,13 +49,19 @@ export function ProductMediaSection({
         fd.append("files", f);
       }
       startUploadTransition(async () => {
-        const res: ProductFormState = await uploadProductImages(productId, fd);
-        if (res?.error) {
-          setError(res.error);
-          return;
+        try {
+          const res: ProductFormState = await uploadProductImages(productId, fd);
+          if (res?.error) {
+            setError(res.error);
+            return;
+          }
+          setMessage("Dateien hochgeladen.");
+          refresh();
+        } catch {
+          setError(
+            "Upload fehlgeschlagen. Seite neu laden und erneut versuchen. Auf Vercel ist BLOB_READ_WRITE_TOKEN erforderlich.",
+          );
         }
-        setMessage("Dateien hochgeladen.");
-        refresh();
       });
     },
     [productId, refresh],
