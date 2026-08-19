@@ -52,28 +52,25 @@ export async function OrderShippingMapSnippet({ line1, line2, zip, city, country
           />
         </svg>
       </div>
-      <figcaption className="mt-2 space-y-1 text-center text-xs text-(--foreground-muted)">
-        <p>Ungefährer Standort zur Lieferadresse (Vorschau, nicht verschiebbar).</p>
-        <p>
-          <a
-            href={externalMapUrl}
-            className="font-medium text-primary underline-offset-2 hover:underline"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Interaktive Karte öffnen
-          </a>
-          {" · "}
-          Kartenmaterial ©{" "}
-          <a
-            href="https://www.openstreetmap.org/copyright"
-            className="text-primary underline-offset-2 hover:underline"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            OpenStreetMap-Mitwirkende
-          </a>
-        </p>
+      <figcaption className="mt-2 text-center text-xs text-(--foreground-muted)">
+        <a
+          href={externalMapUrl}
+          className="font-medium text-primary underline-offset-2 hover:underline"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Interaktive Karte öffnen
+        </a>
+        {" · "}
+        Kartenmaterial ©{" "}
+        <a
+          href="https://www.openstreetmap.org/copyright"
+          className="text-primary underline-offset-2 hover:underline"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          OpenStreetMap-Mitwirkende
+        </a>
       </figcaption>
     </figure>
   );
