@@ -1,5 +1,6 @@
 import { geocodeShippingAddress } from "@/lib/maps/geocode-shipping-address";
 import { buildOsmEmbedShippingMapUrl } from "@/lib/maps/osm-embed-shipping-map-url";
+import { buildOsmExternalShippingMapUrl } from "@/lib/maps/osm-external-shipping-map-url";
 
 type Props = {
   line1: string;
@@ -10,27 +11,33 @@ type Props = {
 };
 
 /**
- * Kleiner Kartenausschnitt zur Lieferadresse (OSM-Embed, per CSS Graustufen).
+ * Statischer Kartenausschnitt zur Lieferadresse (OSM-Embed, Graustufen).
+ * Nicht verschiebbar: Overlay-Pin bleibt sonst irreführend an fester Bildschirmposition.
  */
 export async function OrderShippingMapSnippet({ line1, line2, zip, city, country }: Props) {
   const coords = await geocodeShippingAddress({ line1, line2, zip, city, country });
   if (!coords) return null;
 
   const src = buildOsmEmbedShippingMapUrl(coords.lat, coords.lon);
+  const externalMapUrl = buildOsmExternalShippingMapUrl(coords.lat, coords.lon);
 
   return (
-    <div className="mx-auto mt-8 w-full max-w-2xl">
-      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-black/10 bg-neutral-100 shadow-sm dark:border-white/15 dark:bg-neutral-900">
+    <figure className="mx-auto mt-8 w-full max-w-2xl">
+      <div
+        className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-black/10 bg-neutral-100 shadow-sm dark:border-white/15 dark:bg-neutral-900"
+        aria-hidden
+      >
         <iframe
-          title="Ungefährer Kartenausschnitt zur Lieferadresse"
+          title=""
           src={src}
           width={960}
           height={600}
           loading="lazy"
+          tabIndex={-1}
           referrerPolicy="strict-origin-when-cross-origin"
-          className="absolute inset-0 h-full w-full border-0 grayscale contrast-[1.03]"
+          className="pointer-events-none absolute inset-0 h-full w-full select-none border-0 grayscale contrast-[1.03]"
         />
-        {/* Markengrün: eigener Pin, Kartenmitte = Zielpunkt (bbox symmetrisch um Koordinate) */}
+        {/* Markengrün: Pin an Kartenmitte (= Geokoordinate, bbox symmetrisch). */}
         <svg
           aria-hidden
           viewBox="0 0 48 56"
@@ -45,17 +52,29 @@ export async function OrderShippingMapSnippet({ line1, line2, zip, city, country
           />
         </svg>
       </div>
-      <p className="mt-2 text-center text-xs text-(--foreground-muted)">
-        Kartenmaterial ©{" "}
-        <a
-          href="https://www.openstreetmap.org/copyright"
-          className="text-primary underline-offset-2 hover:underline"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          OpenStreetMap-Mitwirkende
-        </a>
-      </p>
-    </div>
+      <figcaption className="mt-2 space-y-1 text-center text-xs text-(--foreground-muted)">
+        <p>Ungefährer Standort zur Lieferadresse (Vorschau, nicht verschiebbar).</p>
+        <p>
+          <a
+            href={externalMapUrl}
+            className="font-medium text-primary underline-offset-2 hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Interaktive Karte öffnen
+          </a>
+          {" · "}
+          Kartenmaterial ©{" "}
+          <a
+            href="https://www.openstreetmap.org/copyright"
+            className="text-primary underline-offset-2 hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            OpenStreetMap-Mitwirkende
+          </a>
+        </p>
+      </figcaption>
+    </figure>
   );
 }
