@@ -32,6 +32,27 @@ describe("buildShippingMapTileLayout", () => {
     );
   });
 
+  it("zentriert die Koordinate im Viewport (Pin = Kartenmitte)", () => {
+    const lat = 52.52;
+    const lon = 13.405;
+    const layout = buildShippingMapTileLayout(lat, lon);
+    const tileSize = 256;
+    const scale = tileSize * 2 ** layout.zoom;
+    const x = ((lon + 180) / 360) * scale;
+    const latRad = (lat * Math.PI) / 180;
+    const y =
+      ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * scale;
+    const left = x - layout.viewportWidth / 2;
+    const startTileX = Math.floor(left / tileSize);
+    const geoX = (startTileX * tileSize - left + (x - startTileX * tileSize)) / layout.viewportWidth;
+    expect(geoX * 100).toBeCloseTo(50, 5);
+
+    const top = y - layout.viewportHeight / 2;
+    const startTileY = Math.floor(top / tileSize);
+    const geoY = (startTileY * tileSize - top + (y - startTileY * tileSize)) / layout.viewportHeight;
+    expect(geoY * 100).toBeCloseTo(50, 5);
+  });
+
   it("skaliert Zoom mit Breiten-Spanne", () => {
     const wide = shippingMapZoomForSpan(52.52, SHIPPING_MAP_VIEWPORT.halfWidthM, 960);
     const tight = shippingMapZoomForSpan(52.52, 200, 960);

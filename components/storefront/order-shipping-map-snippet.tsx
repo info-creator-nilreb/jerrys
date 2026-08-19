@@ -33,13 +33,13 @@ export async function OrderShippingMapSnippet({ line1, line2, zip, city, country
         <div
           className="absolute grayscale contrast-[1.03]"
           style={{
-            width: layout.gridWidth,
-            height: layout.gridHeight,
-            left: layout.gridLeft,
-            top: layout.gridTop,
+            left: `${layout.gridLeftPct}%`,
+            top: `${layout.gridTopPct}%`,
+            width: `${layout.gridWidthPct}%`,
+            height: `${layout.gridHeightPct}%`,
             display: "grid",
-            gridTemplateColumns: `repeat(${layout.tileColumns}, 256px)`,
-            gridTemplateRows: `repeat(${layout.tileRows}, 256px)`,
+            gridTemplateColumns: `repeat(${layout.tileColumns}, 1fr)`,
+            gridTemplateRows: `repeat(${layout.tileRows}, 1fr)`,
           }}
         >
           {layout.tiles.map((tile) => (
@@ -47,12 +47,10 @@ export async function OrderShippingMapSnippet({ line1, line2, zip, city, country
               key={`${layout.zoom}-${tile.x}-${tile.y}`}
               src={buildOsmTileUrl(layout.zoom, tile.x, tile.y)}
               alt=""
-              width={256}
-              height={256}
               loading="lazy"
               decoding="async"
               draggable={false}
-              className="block size-full"
+              className="block h-full w-full object-cover"
             />
           ))}
         </div>
