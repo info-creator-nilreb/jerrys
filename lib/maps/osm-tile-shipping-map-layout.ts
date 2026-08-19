@@ -16,11 +16,11 @@ export type ShippingMapTileLayout = {
   tiles: ShippingMapTile[];
   tileColumns: number;
   tileRows: number;
-  /** Position des Tile-Rasters relativ zum Kartenausschnitt (px). */
-  gridLeft: number;
-  gridTop: number;
-  gridWidth: number;
-  gridHeight: number;
+  /** Position des Tile-Rasters relativ zum Kartenausschnitt (Prozent des Viewports). */
+  gridLeftPct: number;
+  gridTopPct: number;
+  gridWidthPct: number;
+  gridHeightPct: number;
   viewportWidth: number;
   viewportHeight: number;
 };
@@ -59,6 +59,10 @@ export function buildShippingMapTileLayout(lat: number, lon: number): ShippingMa
 
   const tileColumns = endTileX - startTileX;
   const tileRows = endTileY - startTileY;
+  const gridLeft = startTileX * TILE_SIZE - left;
+  const gridTop = startTileY * TILE_SIZE - top;
+  const gridWidth = tileColumns * TILE_SIZE;
+  const gridHeight = tileRows * TILE_SIZE;
 
   const tiles: ShippingMapTile[] = [];
   for (let y = startTileY; y < endTileY; y++) {
@@ -72,10 +76,10 @@ export function buildShippingMapTileLayout(lat: number, lon: number): ShippingMa
     tiles,
     tileColumns,
     tileRows,
-    gridLeft: startTileX * TILE_SIZE - left,
-    gridTop: startTileY * TILE_SIZE - top,
-    gridWidth: tileColumns * TILE_SIZE,
-    gridHeight: tileRows * TILE_SIZE,
+    gridLeftPct: (gridLeft / viewportWidth) * 100,
+    gridTopPct: (gridTop / viewportHeight) * 100,
+    gridWidthPct: (gridWidth / viewportWidth) * 100,
+    gridHeightPct: (gridHeight / viewportHeight) * 100,
     viewportWidth,
     viewportHeight,
   };
