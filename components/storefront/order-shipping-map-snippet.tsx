@@ -1,6 +1,9 @@
 import { geocodeShippingAddress } from "@/lib/maps/geocode-shipping-address";
-import { buildOsmEmbedShippingMapUrl } from "@/lib/maps/osm-embed-shipping-map-url";
 import { buildOsmExternalShippingMapUrl } from "@/lib/maps/osm-external-shipping-map-url";
+import {
+  buildOsmTileUrl,
+  buildShippingMapTileLayout,
+} from "@/lib/maps/osm-tile-shipping-map-layout";
 
 type Props = {
   line1: string;
@@ -11,14 +14,14 @@ type Props = {
 };
 
 /**
- * Statischer Kartenausschnitt zur Lieferadresse (OSM-Embed, Graustufen).
- * Nicht verschiebbar: Overlay-Pin bleibt sonst irreführend an fester Bildschirmposition.
+ * Statischer Kartenausschnitt zur Lieferadresse (OSM-Kacheln, Graustufen).
+ * Kein interaktives Embed — ohne Zoom-/+−-Steuerung und ohne irreführendes Panning.
  */
 export async function OrderShippingMapSnippet({ line1, line2, zip, city, country }: Props) {
   const coords = await geocodeShippingAddress({ line1, line2, zip, city, country });
   if (!coords) return null;
 
-  const src = buildOsmEmbedShippingMapUrl(coords.lat, coords.lon);
+  const layout = buildShippingMapTileLayout(coords.lat, coords.lon);
   const externalMapUrl = buildOsmExternalShippingMapUrl(coords.lat, coords.lon);
 
   return (
@@ -27,17 +30,33 @@ export async function OrderShippingMapSnippet({ line1, line2, zip, city, country
         className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-black/10 bg-neutral-100 shadow-sm dark:border-white/15 dark:bg-neutral-900"
         aria-hidden
       >
-        <iframe
-          title=""
-          src={src}
-          width={960}
-          height={600}
-          loading="lazy"
-          tabIndex={-1}
-          referrerPolicy="strict-origin-when-cross-origin"
-          className="pointer-events-none absolute inset-0 h-full w-full select-none border-0 grayscale contrast-[1.03]"
-        />
-        {/* Markengrün: Pin an Kartenmitte (= Geokoordinate, bbox symmetrisch). */}
+        <div
+          className="absolute grayscale contrast-[1.03]"
+          style={{
+            width: layout.gridWidth,
+            height: layout.gridHeight,
+            left: layout.gridLeft,
+            top: layout.gridTop,
+            display: "grid",
+            gridTemplateColumns: `repeat(${layout.tileColumns}, 256px)`,
+            gridTemplateRows: `repeat(${layout.tileRows}, 256px)`,
+          }}
+        >
+          {layout.tiles.map((tile) => (
+            <img
+              key={`${layout.zoom}-${tile.x}-${tile.y}`}
+              src={buildOsmTileUrl(layout.zoom, tile.x, tile.y)}
+              alt=""
+              width={256}
+              height={256}
+              loading="lazy"
+              decoding="async"
+              draggable={false}
+              className="block size-full"
+            />
+          ))}
+        </div>
+        {/* Markengrün: Pin an Kartenmitte (= Geokoordinate). */}
         <svg
           aria-hidden
           viewBox="0 0 48 56"
