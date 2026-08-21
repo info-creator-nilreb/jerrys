@@ -125,6 +125,12 @@ export {
 } from "@/features/fulfillment/infrastructure/internetmarke-auth-error";
 
 export {
+  explainInternetmarkeCheckoutFailure,
+  explainInternetmarkeRetoureFailure,
+  formatInternetmarkeHttpErrorMessage,
+} from "@/features/fulfillment/infrastructure/internetmarke-provider-error";
+
+export {
   fetchInternetmarkeCatalogProducts,
   findInternetmarkeProductPriceCents,
   type InternetmarkeCatalogProduct,
