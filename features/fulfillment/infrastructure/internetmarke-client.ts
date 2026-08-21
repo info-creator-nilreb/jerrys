@@ -3,6 +3,7 @@
  * Spezifikation: https://developer.dhl.com/api-reference/deutsche-post-internetmarke-post-parcel-germany
  */
 
+import { explainInternetmarkeAuthFailure } from "@/features/fulfillment/infrastructure/internetmarke-auth-error";
 import {
   INTERNETMARKE_API_BASE_URL,
   type InternetmarkeEnvConfig,
@@ -55,9 +56,21 @@ export class InternetmarkeClient {
     private readonly baseUrl: string = INTERNETMARKE_API_BASE_URL,
   ) {}
 
-  /** Health check — GET / (ohne Auth). */
+  /** Gateway-Header `dhl-api-key` (API Key) — analog Products API. */
+  private commonHeaders(extra?: Record<string, string>): Record<string, string> {
+    return {
+      Accept: "application/json",
+      "dhl-api-key": this.config.clientId.trim(),
+      ...extra,
+    };
+  }
+
+  /** Health check — GET / (ohne Bearer; API Key am Gateway). */
   async healthCheck(): Promise<{ ok: true } | { ok: false; status: number; body: string }> {
-    const res = await this.fetchImpl(`${this.baseUrl}/`, { method: "GET" });
+    const res = await this.fetchImpl(`${this.baseUrl}/`, {
+      method: "GET",
+      headers: this.commonHeaders(),
+    });
     if (!res.ok) {
       return { ok: false, status: res.status, body: (await res.text()).slice(0, 300) };
     }
@@ -72,30 +85,28 @@ export class InternetmarkeClient {
 
     const body = new URLSearchParams({
       grant_type: "client_credentials",
-      client_id: this.config.clientId,
-      client_secret: this.config.clientSecret,
-      username: this.config.username,
+      client_id: this.config.clientId.trim(),
+      client_secret: this.config.clientSecret.trim(),
+      username: this.config.username.trim(),
       password: this.config.password,
     });
 
     const res = await this.fetchImpl(`${this.baseUrl}/user`, {
       method: "POST",
-      headers: {
+      headers: this.commonHeaders({
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        Accept: "application/json",
-      },
+      }),
       body: body.toString(),
     });
 
     if (!res.ok) {
       const text = await res.text();
-      const hint =
-        res.status === 401
-          ? "Token abgelehnt (401). Portokasse: unter „Meine Daten → Geschäftsanwendungen“ die App freigeben; Entwickler-Portokasse ggf. bei it-csp@deutschepost.de beantragen."
-          : res.status === 500
-            ? "DHL meldet 500 beim Token. Häufig: App im Developer Portal noch „in progress/pending“ (warten bis Approved), falsches Secret, oder Portokasse noch nicht freigegeben. API-Status und Portokasse-Freigabe prüfen, dann erneut verbinden."
-            : `INTERNETMARKE Auth fehlgeschlagen (${res.status}).`;
-      throw new InternetmarkeHttpError("authorize", res.status, text, hint);
+      throw new InternetmarkeHttpError(
+        "authorize",
+        res.status,
+        text,
+        explainInternetmarkeAuthFailure(res.status, text),
+      );
     }
 
     const data = (await res.json()) as {
@@ -148,11 +159,10 @@ export class InternetmarkeClient {
 
     const res = await this.fetchImpl(url, {
       method: "POST",
-      headers: {
+      headers: this.commonHeaders({
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
-        Accept: "application/json",
-      },
+      }),
       body: JSON.stringify(payload),
     });
 
@@ -189,11 +199,10 @@ export class InternetmarkeClient {
     const token = await this.getAccessToken();
     const res = await this.fetchImpl(`${this.baseUrl}/app/retoure`, {
       method: "POST",
-      headers: {
+      headers: this.commonHeaders({
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
-        Accept: "application/json",
-      },
+      }),
       body: JSON.stringify({
         shoppingCart: { shopOrderId },
       }),

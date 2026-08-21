@@ -1,7 +1,7 @@
 /**
  * INTERNETMARKE REST (DHL Developer Portal).
  * Base: https://api-eu.dhl.com/post/de/shipping/im/v1
- * Auth: POST /user (application/x-www-form-urlencoded)
+ * Auth: POST /user (application/x-www-form-urlencoded + Header dhl-api-key)
  * Kauf: POST /app/shoppingcart/pdf?directCheckout=true
  * Retoure: POST /app/retoure
  *
