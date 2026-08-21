@@ -32,9 +32,18 @@ export type OrderShipmentRow = {
   createdAt: Date | string;
 };
 
+type ProductPreset = {
+  productCode: number;
+  name: string;
+  priceCents: number;
+  transport: string;
+  maxWeightG: number | null;
+};
+
 type Props = {
   orderId: string;
   configured: boolean;
+  productPresets: ProductPreset[];
   canPrepareShipment: boolean;
   /** Erneute Versendung nach Retoure. */
   canReship: boolean;
@@ -60,9 +69,16 @@ function shipmentStatusLabelDe(status: string): string {
   }
 }
 
+function formatEuro(cents: number): string {
+  return new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(
+    cents / 100,
+  );
+}
+
 export function OrderInternetmarkePanel({
   orderId,
   configured,
+  productPresets,
   canPrepareShipment,
   canReship,
   shipments,
@@ -188,17 +204,48 @@ export function OrderInternetmarkePanel({
           >
             Admin → Einstellungen → Integrationen
           </Link>{" "}
-          verbinden. Manueller Versand und Reship-Entwurf bleiben möglich.
+          verbinden und 1–5 Porto-Produkte vorwählen. Manueller Versand und Reship-Entwurf bleiben
+          möglich.
         </p>
       ) : null}
 
       <div className="flex flex-wrap gap-2">
         {hasPurchasablePath ? (
-          <form action={purchaseAction}>
+          <form action={purchaseAction} className="w-full max-w-lg space-y-3">
             <input type="hidden" name="orderId" value={orderId} />
+            {productPresets.length > 1 ? (
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium text-[#374151]">Porto-Produkt</legend>
+                {productPresets.map((p, index) => (
+                  <label
+                    key={p.productCode}
+                    className="flex cursor-pointer items-start gap-2.5 rounded-md border border-[#e8eaed] px-3 py-2.5 text-sm text-[#374151] has-[:checked]:border-primary"
+                  >
+                    <input
+                      type="radio"
+                      name="productCode"
+                      value={p.productCode}
+                      defaultChecked={index === 0}
+                      required
+                      className="mt-1 size-3.5 accent-primary"
+                    />
+                    <span>
+                      <span className="font-medium">{p.name}</span>
+                      <span className="mt-0.5 block text-xs text-[#6b7280]">
+                        {formatEuro(p.priceCents)}
+                        {p.transport === "international" ? " · internat." : ""}
+                        {p.maxWeightG != null ? ` · bis ${p.maxWeightG} g` : ""}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </fieldset>
+            ) : productPresets.length === 1 ? (
+              <input type="hidden" name="productCode" value={productPresets[0]!.productCode} />
+            ) : null}
             <button
               type="submit"
-              disabled={anyPending}
+              disabled={anyPending || productPresets.length === 0}
               className="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-(--primary-hover) disabled:opacity-60"
             >
               {purchasePending ? "Kaufe Label…" : "Internetmarke kaufen"}

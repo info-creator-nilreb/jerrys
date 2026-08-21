@@ -36,7 +36,7 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | Seite `/admin/einstellungen/integrationen` | Admin-Session | Instagram-OAuth + Internetmarke + Zettle POS + KI-Content (OpenAI) |
 | Server Actions `app/admin/.../einstellungen/actions.ts` | `auth()` in Action | ShopSettings speichern; Branding-Upload/Clear (Vercel Blob); Audit via Outbox `shop_settings.*` |
 | Server Actions `app/admin/.../einstellungen/integrationen/instagram-actions.ts` | Admin-Session | Instagram trennen / manueller Sync |
-| Server Actions `app/admin/.../einstellungen/integrationen/internetmarke-actions.ts` | Admin-Session | Portokasse verbinden, Produkt wählen, trennen |
+| Server Actions `app/admin/.../einstellungen/integrationen/internetmarke-actions.ts` | Admin-Session | Portokasse verbinden, 1–5 Porto-Produkte vorwählen, trennen |
 | Server Actions `app/admin/.../einstellungen/integrationen/zettle-actions.ts` | Admin-Session | Zettle-API-Key verbinden, Varianten-Mapping, Kauf-Sync/Retry, trennen |
 | Server Actions `app/admin/.../einstellungen/integrationen/ai-actions.ts` | Admin-Session | OpenAI-Key (AES-GCM), Modellprofile, Tageslimit; Verify via GET `/v1/models`; kein Key im Client |
 | Server Actions `app/admin/.../products/ai-product-text-actions.ts` | Admin-Session | KI-Textentwurf aus Allowlist-Fakten; keine Persistenz/Publish — Übernahme nur clientseitig ins Formular |

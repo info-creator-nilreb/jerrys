@@ -2,12 +2,13 @@
 
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Plus, Trash2 } from "lucide-react";
 import {
+  addInternetmarkeProductPresetAction,
   disconnectInternetmarkeAction,
   loadInternetmarkeProductsAction,
+  removeInternetmarkeProductPresetAction,
   saveInternetmarkeCredentialsAction,
-  selectInternetmarkeProductAction,
   type InternetmarkeAdminActionState,
 } from "@/app/admin/(dashboard)/einstellungen/integrationen/internetmarke-actions";
 
@@ -26,9 +27,7 @@ type Props = {
   appCredentialsConfigured: boolean;
   clientIdMasked: string | null;
   username: string | null;
-  productCode: number | null;
-  productPriceCents: number | null;
-  productNameSnapshot: string | null;
+  productPresets: ProductOption[];
   lastVerifiedAt: string | null;
   lastError: string | null;
 };
@@ -61,8 +60,12 @@ export function InternetmarkeSettingsPanel(props: Props) {
     loadInternetmarkeProductsAction,
     null as InternetmarkeAdminActionState,
   );
-  const [selectState, selectAction, selectPending] = useActionState(
-    selectInternetmarkeProductAction,
+  const [addState, addAction, addPending] = useActionState(
+    addInternetmarkeProductPresetAction,
+    null as InternetmarkeAdminActionState,
+  );
+  const [removeState, removeAction, removePending] = useActionState(
+    removeInternetmarkeProductPresetAction,
     null as InternetmarkeAdminActionState,
   );
   const [disconnectState, disconnectAction, disconnectPending] = useActionState(
@@ -70,18 +73,29 @@ export function InternetmarkeSettingsPanel(props: Props) {
     null as InternetmarkeAdminActionState,
   );
 
-  const products: ProductOption[] = loadState?.products ?? [];
+  const products: ProductOption[] = addState?.products ?? loadState?.products ?? [];
+  const availableProducts = products.filter(
+    (p) => !props.productPresets.some((s) => s.productCode === p.productCode),
+  );
 
   useEffect(() => {
-    if (saveState?.ok || selectState?.ok || disconnectState?.ok) {
+    if (saveState?.ok || addState?.ok || removeState?.ok || disconnectState?.ok) {
       router.refresh();
     }
-  }, [saveState?.ok, selectState?.ok, disconnectState?.ok, router]);
+  }, [saveState?.ok, addState?.ok, removeState?.ok, disconnectState?.ok, router]);
 
   const error =
-    saveState?.error || loadState?.error || selectState?.error || disconnectState?.error;
+    saveState?.error ||
+    addState?.error ||
+    removeState?.error ||
+    loadState?.error ||
+    disconnectState?.error;
   const message =
-    saveState?.message || loadState?.message || selectState?.message || disconnectState?.message;
+    saveState?.message ||
+    addState?.message ||
+    removeState?.message ||
+    loadState?.message ||
+    disconnectState?.message;
 
   return (
     <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
@@ -170,19 +184,16 @@ export function InternetmarkeSettingsPanel(props: Props) {
               Portokasse: {props.username ?? "—"}
             </p>
             <p>Zuletzt geprüft: {formatDe(props.lastVerifiedAt)}</p>
-            {props.verified &&
-            props.productNameSnapshot &&
-            props.productCode != null &&
-            props.productPriceCents != null ? (
+            {props.verified && props.productPresets.length > 0 ? (
               <p className="text-[#374151]">
-                Aktives Produkt:{" "}
+                Versandauswahl:{" "}
                 <span className="font-medium">
-                  {props.productNameSnapshot} (Code {props.productCode},{" "}
-                  {formatEuro(props.productPriceCents)})
+                  {props.productPresets.length} Produkt
+                  {props.productPresets.length === 1 ? "" : "e"}
                 </span>
               </p>
             ) : props.verified ? (
-              <p>Noch kein Porto-Produkt ausgewählt.</p>
+              <p>Noch keine Porto-Produkte vorgewählt (1–5 für den Versand).</p>
             ) : null}
           </>
         ) : null}
@@ -236,6 +247,49 @@ export function InternetmarkeSettingsPanel(props: Props) {
 
       {props.connected && props.verified ? (
         <div className="mt-8 space-y-4 border-t border-[#e8eaed] pt-6">
+          <div>
+            <h3 className="text-sm font-semibold text-[#1f2937]">Produkte für den Versand</h3>
+            <p className="mt-1 text-xs text-[#6b7280]">
+              Wähle 1–5 Porto-Produkte. Beim Vorbereiten einer Sendung kannst du dann eines davon
+              auswählen.
+            </p>
+          </div>
+
+          {props.productPresets.length > 0 ? (
+            <ul className="divide-y divide-[#e8eaed] rounded-lg border border-[#e8eaed]">
+              {props.productPresets.map((p) => (
+                <li
+                  key={p.productCode}
+                  className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium text-[#374151]">{p.name}</p>
+                    <p className="text-xs text-[#6b7280]">
+                      {formatEuro(p.priceCents)}
+                      {p.transport === "international" ? " · internat." : ""}
+                      {p.maxWeightG != null ? ` · bis ${p.maxWeightG} g` : ""}
+                      {` · Code ${p.productCode}`}
+                    </p>
+                  </div>
+                  <form action={removeAction}>
+                    <input type="hidden" name="productCode" value={p.productCode} />
+                    <button
+                      type="submit"
+                      disabled={removePending}
+                      className="inline-flex min-h-11 items-center gap-1.5 rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb] disabled:opacity-60"
+                      aria-label={`${p.name} aus der Versandauswahl entfernen`}
+                    >
+                      <Trash2 className="size-3.5" aria-hidden />
+                      Entfernen
+                    </button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-[#6b7280]">Noch keine Auswahl — Produkte laden und hinzufügen.</p>
+          )}
+
           <div className="flex flex-wrap items-center gap-3">
             <form action={loadAction}>
               <button
@@ -251,22 +305,25 @@ export function InternetmarkeSettingsPanel(props: Props) {
             </p>
           </div>
 
-          {products.length > 0 ? (
-            <form action={selectAction} className="space-y-3">
+          {availableProducts.length > 0 ? (
+            <form action={addAction} className="space-y-3">
               <label htmlFor="im-product" className="block text-sm font-medium text-[#374151]">
-                Standardprodukt für Label-Kauf
+                Produkt zur Versandauswahl hinzufügen
               </label>
               <select
                 id="im-product"
                 name="productCode"
                 required
-                defaultValue={props.productCode ?? ""}
-                className="h-11 w-full rounded-md border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                defaultValue=""
+                disabled={props.productPresets.length >= 5}
+                className="h-11 w-full rounded-md border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:bg-[#f3f4f6] disabled:opacity-70"
               >
                 <option value="" disabled>
-                  Produkt wählen…
+                  {props.productPresets.length >= 5
+                    ? "Maximal 5 Produkte — zuerst eines entfernen"
+                    : "Produkt wählen…"}
                 </option>
-                {products.map((p) => (
+                {availableProducts.map((p) => (
                   <option key={p.productCode} value={p.productCode}>
                     {p.name} — {formatEuro(p.priceCents)}
                     {p.transport === "international" ? " (int.)" : ""}
@@ -277,10 +334,11 @@ export function InternetmarkeSettingsPanel(props: Props) {
               </select>
               <button
                 type="submit"
-                disabled={selectPending}
-                className="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-(--primary-hover) disabled:opacity-60"
+                disabled={addPending || props.productPresets.length >= 5}
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-(--primary-hover) disabled:opacity-60"
               >
-                {selectPending ? "Speichere…" : "Produkt übernehmen"}
+                <Plus className="size-4" aria-hidden />
+                {addPending ? "Füge hinzu…" : "Zur Auswahl hinzufügen"}
               </button>
             </form>
           ) : null}

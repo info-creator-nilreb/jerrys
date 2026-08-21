@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  addInternetmarkeProductPreset,
   appendApiKeyDiagnostic,
   disconnectInternetmarkeConnection,
   fetchInternetmarkeCatalogProducts,
@@ -11,10 +12,12 @@ import {
   getInternetmarkeConnectionSecrets,
   InternetmarkeClient,
   InternetmarkeHttpError,
+  INTERNETMARKE_PRESET_MAX,
   markInternetmarkeConnectionError,
   markInternetmarkeConnectionVerified,
+  removeInternetmarkeProductPreset,
   saveInternetmarkePortokasseConnection,
-  updateInternetmarkeSelectedProduct,
+  saveInternetmarkeProductPresets,
 } from "@/features/fulfillment";
 import { getAdminSession } from "@/lib/auth/admin-session";
 import { z } from "zod";
@@ -127,7 +130,7 @@ export async function saveInternetmarkeCredentialsAction(
   return {
     ok: true,
     message:
-      "Portokasse verbunden und Token geprüft. Als Nächstes ein Porto-Produkt aus der Liste wählen.",
+      "Portokasse verbunden und Token geprüft. Als Nächstes 1–5 Porto-Produkte für den Versand vorwählen.",
   };
 }
 
@@ -160,7 +163,7 @@ export async function loadInternetmarkeProductsAction(
   };
 }
 
-export async function selectInternetmarkeProductAction(
+export async function addInternetmarkeProductPresetAction(
   _prev: InternetmarkeAdminActionState,
   formData: FormData,
 ): Promise<InternetmarkeAdminActionState> {
@@ -187,17 +190,67 @@ export async function selectInternetmarkeProductAction(
     return { error: "Produkt nicht in der aktuellen Preisliste gefunden." };
   }
 
-  await updateInternetmarkeSelectedProduct({
+  const added = addInternetmarkeProductPreset(secrets.productPresets, {
     productCode: product.productCode,
-    productPriceCents: product.priceCents,
-    productNameSnapshot: product.name,
+    name: product.name,
+    priceCents: product.priceCents,
+    transport: product.transport,
+    maxWeightG: product.maxWeightG,
   });
+  if (!added.ok) {
+    return { error: added.error };
+  }
+
+  await saveInternetmarkeProductPresets(added.presets);
 
   revalidatePath("/admin/einstellungen/integrationen");
   revalidatePath("/admin/orders");
   return {
     ok: true,
-    message: `Produkt gespeichert: ${product.name} (${(product.priceCents / 100).toFixed(2)} €). Preis kommt aus der Products API.`,
+    message: `Hinzugefügt: ${product.name} (${(product.priceCents / 100).toFixed(2)} €). ${added.presets.length}/${INTERNETMARKE_PRESET_MAX} in der Versandauswahl.`,
+    products: catalog.products.map((p) => ({
+      productCode: p.productCode,
+      name: p.name,
+      priceCents: p.priceCents,
+      transport: p.transport,
+      maxWeightG: p.maxWeightG,
+    })),
+  };
+}
+
+export async function removeInternetmarkeProductPresetAction(
+  _prev: InternetmarkeAdminActionState,
+  formData: FormData,
+): Promise<InternetmarkeAdminActionState> {
+  await requireAdmin();
+
+  const productCodeRaw = formData.get("productCode");
+  const productCode =
+    typeof productCodeRaw === "string" ? Number.parseInt(productCodeRaw, 10) : NaN;
+  if (!Number.isFinite(productCode) || productCode <= 0) {
+    return { error: "Ungültiges Produkt." };
+  }
+
+  const secrets = await getInternetmarkeConnectionSecrets();
+  if (!secrets) {
+    return { error: "Zuerst Portokasse verbinden." };
+  }
+
+  const next = removeInternetmarkeProductPreset(secrets.productPresets, productCode);
+  if (next.length === secrets.productPresets.length) {
+    return { error: "Produkt war nicht in der Auswahl." };
+  }
+
+  await saveInternetmarkeProductPresets(next);
+
+  revalidatePath("/admin/einstellungen/integrationen");
+  revalidatePath("/admin/orders");
+  return {
+    ok: true,
+    message:
+      next.length > 0
+        ? `Produkt entfernt. ${next.length}/${INTERNETMARKE_PRESET_MAX} in der Versandauswahl.`
+        : "Produkt entfernt. Bitte mindestens ein Porto-Produkt vorwählen, um Labels zu kaufen.",
   };
 }
 

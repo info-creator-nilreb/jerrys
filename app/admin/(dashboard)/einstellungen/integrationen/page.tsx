@@ -172,9 +172,7 @@ export default async function AdminIntegrationenPage({
         appCredentialsConfigured={im.appCredentialsConfigured}
         clientIdMasked={im.clientIdMasked}
         username={im.username}
-        productCode={im.productCode}
-        productPriceCents={im.productPriceCents}
-        productNameSnapshot={im.productNameSnapshot}
+        productPresets={im.productPresets}
         lastVerifiedAt={im.lastVerifiedAt?.toISOString() ?? null}
         lastError={im.lastError}
       />

@@ -12,6 +12,7 @@ import { OrderInvoiceGenerateButton } from "@/app/admin/(dashboard)/orders/order
 import { OrderLifecycleControls } from "@/app/admin/(dashboard)/orders/order-lifecycle-controls";
 import {
   evaluateOrderShipmentEligibility,
+  getInternetmarkePurchasePresets,
   isInternetmarkeConfigured,
 } from "@/features/fulfillment";
 import { fulfillmentStatusLabel, orderAdminDeleteBlocker } from "@/features/orders";
@@ -174,6 +175,9 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
     (s) => s.status === "labeled" && s.trackingNumber,
   );
   const internetmarkeConfigured = await isInternetmarkeConfigured();
+  const internetmarkePresets = internetmarkeConfigured
+    ? await getInternetmarkePurchasePresets()
+    : [];
   const deleteBlocker = orderAdminDeleteBlocker({
     id: order.id,
     orderNumber: order.orderNumber,
@@ -223,6 +227,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         <OrderInternetmarkePanel
           orderId={order.id}
           configured={internetmarkeConfigured}
+          productPresets={internetmarkePresets}
           canPrepareShipment={shipmentEligibility.ok}
           canReship={reshipEligibility.ok && hasReturnContext}
           shipments={order.shipments}
