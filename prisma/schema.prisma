@@ -878,10 +878,12 @@ model InternetmarkeConnection {
   username             String
   /// AES-GCM Ciphertext.
   passwordEnc          String    @map("password_enc")
-  /// Gewähltes Produkt (extProductid aus Products API); Preis wird beim Kauf aktualisiert.
+  /// Erstes/Default-Produkt (extProductid); Preis wird beim Kauf aktualisiert.
   productCode          Int?      @map("product_code")
   productPriceCents    Int?      @map("product_price_cents")
   productNameSnapshot  String?   @map("product_name_snapshot")
+  /// Vorgewählte Produkte für den Versand (1–5). JSON: [{ productCode, name, priceCents, … }].
+  productPresets       Json      @default("[]") @map("product_presets")
   pageFormatId         Int       @default(1) @map("page_format_id")
   voucherLayout        String    @default("ADDRESS_ZONE") @map("voucher_layout")
   connectedAt          DateTime  @default(now()) @map("connected_at")

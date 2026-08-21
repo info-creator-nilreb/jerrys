@@ -1,8 +1,16 @@
 import "server-only";
 
+import type { Prisma } from "@/app/generated/prisma/client";
 import type { InternetmarkeVoucherLayout } from "@/features/fulfillment/application/shipping-label-port";
 import {
+  mergeLegacyInternetmarkeProduct,
+  parseInternetmarkeProductPresets,
+  withUpdatedInternetmarkePresetPrice,
+  type InternetmarkeProductPreset,
+} from "@/features/fulfillment/domain/internetmarke-product-presets";
+import {
   getInternetmarkeAppCredentialsFromEnv,
+  getInternetmarkeConfigFromEnv,
   type InternetmarkeEnvConfig,
 } from "@/features/fulfillment/infrastructure/internetmarke-config";
 import { getPrisma } from "@/lib/db/prisma";
@@ -22,6 +30,8 @@ export type InternetmarkeConnectionPublic = {
   productCode: number | null;
   productPriceCents: number | null;
   productNameSnapshot: string | null;
+  /** Vorgewählte Produkte (1–5) für die Auswahl beim Versand. */
+  productPresets: InternetmarkeProductPreset[];
   pageFormatId: number;
   voucherLayout: InternetmarkeVoucherLayout;
   connectedAt: Date | null;
@@ -52,6 +62,7 @@ export async function getInternetmarkeConnectionPublic(): Promise<InternetmarkeC
     productCode: null,
     productPriceCents: null,
     productNameSnapshot: null,
+    productPresets: [],
     pageFormatId: 1,
     voucherLayout: "ADDRESS_ZONE",
     connectedAt: null,
@@ -66,19 +77,29 @@ export async function getInternetmarkeConnectionPublic(): Promise<InternetmarkeC
     if (!row) return empty;
     const productCode = row.productCode;
     const productPriceCents = row.productPriceCents;
+    const productPresets = mergeLegacyInternetmarkeProduct(
+      parseInternetmarkeProductPresets(row.productPresets),
+      {
+        productCode,
+        productPriceCents,
+        productNameSnapshot: row.productNameSnapshot,
+      },
+    );
     const clientIdMasked = app
       ? maskClientId(app.clientId)
       : maskClientId(row.clientId);
     const verified = row.lastVerifiedAt != null && !row.lastError;
+    const defaultPreset = productPresets[0] ?? null;
     return {
       connected: true,
       verified,
       appCredentialsConfigured: app != null,
       clientIdMasked,
       username: row.username,
-      productCode,
-      productPriceCents,
-      productNameSnapshot: row.productNameSnapshot,
+      productCode: defaultPreset?.productCode ?? productCode,
+      productPriceCents: defaultPreset?.priceCents ?? productPriceCents,
+      productNameSnapshot: defaultPreset?.name ?? row.productNameSnapshot,
+      productPresets,
       pageFormatId: row.pageFormatId,
       voucherLayout: asLayout(row.voucherLayout),
       connectedAt: row.connectedAt,
@@ -87,10 +108,8 @@ export async function getInternetmarkeConnectionPublic(): Promise<InternetmarkeC
       readyForPurchase:
         app != null &&
         verified &&
-        productCode != null &&
-        productCode > 0 &&
-        productPriceCents != null &&
-        productPriceCents > 0,
+        productPresets.length > 0 &&
+        productPresets.every((p) => p.productCode > 0 && p.priceCents > 0),
     };
   } catch (e) {
     if (isMissingSchemaError(e)) return empty;
@@ -109,6 +128,7 @@ export async function getInternetmarkeConnectionSecrets(): Promise<{
   password: string;
   productCode: number | null;
   productPriceCents: number | null;
+  productPresets: InternetmarkeProductPreset[];
   pageFormatId: number;
   voucherLayout: InternetmarkeVoucherLayout;
 } | null> {
@@ -118,13 +138,23 @@ export async function getInternetmarkeConnectionSecrets(): Promise<{
     });
     if (!row) return null;
     const app = getInternetmarkeAppCredentialsFromEnv();
+    const productPresets = mergeLegacyInternetmarkeProduct(
+      parseInternetmarkeProductPresets(row.productPresets),
+      {
+        productCode: row.productCode,
+        productPriceCents: row.productPriceCents,
+        productNameSnapshot: row.productNameSnapshot,
+      },
+    );
+    const first = productPresets[0];
     return {
       clientId: app?.clientId ?? row.clientId,
       clientSecret: app?.clientSecret ?? decryptSecret(row.clientSecretEnc),
       username: row.username,
       password: decryptSecret(row.passwordEnc),
-      productCode: row.productCode,
-      productPriceCents: row.productPriceCents,
+      productCode: first?.productCode ?? row.productCode,
+      productPriceCents: first?.priceCents ?? row.productPriceCents,
+      productPresets,
       pageFormatId: row.pageFormatId,
       voucherLayout: asLayout(row.voucherLayout),
     };
@@ -132,6 +162,29 @@ export async function getInternetmarkeConnectionSecrets(): Promise<{
     if (isMissingSchemaError(e)) return null;
     throw e;
   }
+}
+
+/** Produkte für die Auswahl beim Label-Kauf (DB-Presets, sonst Env-Fallback). */
+export async function getInternetmarkePurchasePresets(): Promise<
+  InternetmarkeProductPreset[]
+> {
+  try {
+    const pub = await getInternetmarkeConnectionPublic();
+    if (pub.productPresets.length > 0) return pub.productPresets;
+  } catch {
+    /* Unit-Tests / Schema */
+  }
+  const env = getInternetmarkeConfigFromEnv();
+  if (!env) return [];
+  return [
+    {
+      productCode: env.productCode,
+      name: `Produkt ${env.productCode}`,
+      priceCents: env.productPriceCents,
+      transport: "unknown",
+      maxWeightG: null,
+    },
+  ];
 }
 
 export async function getInternetmarkeConfigFromDb(): Promise<InternetmarkeEnvConfig | null> {
@@ -241,12 +294,29 @@ export async function updateInternetmarkeSelectedProduct(input: {
   productPriceCents: number;
   productNameSnapshot: string;
 }): Promise<void> {
+  await saveInternetmarkeProductPresets([
+    {
+      productCode: input.productCode,
+      name: input.productNameSnapshot,
+      priceCents: input.productPriceCents,
+      transport: "unknown",
+      maxWeightG: null,
+    },
+  ]);
+}
+
+export async function saveInternetmarkeProductPresets(
+  presets: InternetmarkeProductPreset[],
+): Promise<void> {
+  const normalized = parseInternetmarkeProductPresets(presets);
+  const first = normalized[0] ?? null;
   await getPrisma().internetmarkeConnection.update({
     where: { id: INTERNETMARKE_CONNECTION_ID },
     data: {
-      productCode: input.productCode,
-      productPriceCents: input.productPriceCents,
-      productNameSnapshot: input.productNameSnapshot.slice(0, 200),
+      productPresets: normalized as unknown as Prisma.InputJsonValue,
+      productCode: first?.productCode ?? null,
+      productPriceCents: first?.priceCents ?? null,
+      productNameSnapshot: first?.name ?? null,
       lastError: null,
     },
   });
@@ -257,6 +327,20 @@ export async function updateInternetmarkeProductPriceCents(priceCents: number): 
     where: { id: INTERNETMARKE_CONNECTION_ID },
     data: { productPriceCents: priceCents },
   });
+}
+
+export async function updateInternetmarkePresetPriceCents(
+  productCode: number,
+  priceCents: number,
+): Promise<void> {
+  const secrets = await getInternetmarkeConnectionSecrets();
+  if (!secrets) return;
+  const next = withUpdatedInternetmarkePresetPrice(
+    secrets.productPresets,
+    productCode,
+    priceCents,
+  );
+  await saveInternetmarkeProductPresets(next);
 }
 
 export async function markInternetmarkeConnectionError(message: string): Promise<void> {

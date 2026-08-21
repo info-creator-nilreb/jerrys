@@ -356,17 +356,19 @@ export async function purchaseInternetmarkeLabelForOrderAction(
     createShipmentDraftForOrder,
     createShippingLabelPort,
     findInternetmarkeProductPriceCents,
+    findInternetmarkeProductPreset,
+    getInternetmarkePurchasePresets,
     isInternetmarkeConfigured,
     purchaseShippingLabelForShipment,
     resolveInternetmarkeConfig,
-    updateInternetmarkeProductPriceCents,
+    updateInternetmarkePresetPriceCents,
   } = await import("@/features/fulfillment");
   const { getShopSettings } = await import("@/lib/shop/shop-settings");
 
   if (!(await isInternetmarkeConfigured())) {
     return {
       error:
-        "INTERNETMARKE ist nicht konfiguriert. Unter Admin → Einstellungen → Integrationen verbinden und ein Porto-Produkt wählen.",
+        "INTERNETMARKE ist nicht konfiguriert. Unter Admin → Einstellungen → Integrationen verbinden und 1–5 Porto-Produkte vorwählen.",
     };
   }
 
@@ -411,15 +413,33 @@ export async function purchaseInternetmarkeLabelForOrderAction(
   }
 
   const config = await resolveInternetmarkeConfig();
-  const productCode = config?.productCode;
-  let totalCents = config?.productPriceCents;
-  if (config?.clientId && productCode != null) {
+  const presets = await getInternetmarkePurchasePresets();
+  const requestedRaw = formData.get("productCode");
+  const requestedCode =
+    typeof requestedRaw === "string" ? Number.parseInt(requestedRaw, 10) : NaN;
+  let productCode =
+    Number.isFinite(requestedCode) && requestedCode > 0 ? requestedCode : undefined;
+  if (productCode == null && presets.length === 1) {
+    productCode = presets[0]!.productCode;
+  }
+  const preset = productCode != null ? findInternetmarkeProductPreset(presets, productCode) : null;
+  if (!preset) {
+    return {
+      error:
+        presets.length > 0
+          ? "Bitte eines der vorgewählten Porto-Produkte wählen."
+          : "Kein Porto-Produkt vorgewählt. Unter Einstellungen → Integrationen 1–5 Produkte festlegen.",
+    };
+  }
+  productCode = preset.productCode;
+  let totalCents = preset.priceCents;
+  if (config?.clientId) {
     const livePrice = await findInternetmarkeProductPriceCents(config.clientId, productCode);
     if (livePrice != null) {
       totalCents = livePrice;
       if (config.source === "db") {
         try {
-          await updateInternetmarkeProductPriceCents(livePrice);
+          await updateInternetmarkePresetPriceCents(productCode, livePrice);
         } catch {
           /* Snapshot-Update optional */
         }

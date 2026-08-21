@@ -226,7 +226,7 @@ Symptoms: Storefront `/produkte?q=` liefert Treffer, aber semantisch schwache An
 
 Symptoms: Admin/Command liefert `not_configured` oder `provider_rejected`; Logs mit INTERNETMARKE 401/4xx.
 
-1. Primär: **Admin → Einstellungen → Integrationen → Internetmarke** — Credentials verschlüsselt in DB; Produkt aus Products API wählen (nicht manuell tippen). App-Credentials nur per Env `INTERNETMARKE_CLIENT_ID` / `INTERNETMARKE_CLIENT_SECRET`.
+1. Primär: **Admin → Einstellungen → Integrationen → Internetmarke** — Credentials verschlüsselt in DB; **1–5 Porto-Produkte** aus der Products API vorwählen (erscheinen beim Label-Kauf an der Bestellung). App-Credentials nur per Env `INTERNETMARKE_CLIENT_ID` / `INTERNETMARKE_CLIENT_SECRET`.
 2. Ohne Verbindung/Produkt: Adapter ist `not_configured` — manueller Versand bleibt möglich.
 3. **401 beim Token (`POST /user`, `genericUserAuthenticationError`):** Das ist **nicht** die Developer-Portal-Freigabe. DHL verlangt zusätzlich die App-Freigabe in der **Portokasse** unter „Meine Daten → Geschäftsanwendungen“ (nach dem ersten Versuch kommt eine E-Mail). Login = Portokasse (`portokasse.deutschepost.de`), nicht das Developer-Portal-Konto. Env: `INTERNETMARKE_CLIENT_ID` muss der **API Key** sein (wird auch als Header `dhl-api-key` gesendet). Entwickler-Portokasse ggf. via `it-csp@deutschepost.de`.
 4. Preise: beim Label-Kauf wird der Cent-Preis für das gewählte Produkt aus der Products API aktualisiert.

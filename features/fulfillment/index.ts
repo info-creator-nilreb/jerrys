@@ -71,6 +71,17 @@ export {
 } from "@/features/fulfillment/application/sync-manual-shipment-on-order-shipped";
 
 export {
+  INTERNETMARKE_PRESET_MAX,
+  addInternetmarkeProductPreset,
+  findInternetmarkeProductPreset,
+  mergeLegacyInternetmarkeProduct,
+  parseInternetmarkeProductPresets,
+  removeInternetmarkeProductPreset,
+  withUpdatedInternetmarkePresetPrice,
+  type InternetmarkeProductPreset,
+} from "@/features/fulfillment/domain/internetmarke-product-presets";
+
+export {
   buildInternetmarkeSenderFromShopSettings,
   type BuildInternetmarkeSenderResult,
 } from "@/features/fulfillment/application/build-internetmarke-sender";
@@ -92,10 +103,13 @@ export {
   getInternetmarkeConnectionPublic,
   saveInternetmarkeConnection,
   saveInternetmarkePortokasseConnection,
+  saveInternetmarkeProductPresets,
   updateInternetmarkeSelectedProduct,
   updateInternetmarkeProductPriceCents,
+  updateInternetmarkePresetPriceCents,
   disconnectInternetmarkeConnection,
   getInternetmarkeConnectionSecrets,
+  getInternetmarkePurchasePresets,
   markInternetmarkeConnectionError,
   markInternetmarkeConnectionVerified,
   type InternetmarkeConnectionPublic,
