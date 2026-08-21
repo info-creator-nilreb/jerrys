@@ -25,7 +25,7 @@ export type PurchaseShippingLabelInput = {
   /** Idempotenzschlüssel vom Aufrufer (z. B. shipmentId + attempt). */
   idempotencyKey: string;
   /**
-   * Stabile Shop-Order-ID für den Provider (keine Zeichen `<` / `&`).
+   * Stabile Shop-Order-ID für den Provider (1–18 Zeichen, keine `<` / `&`).
    * Default: idempotencyKey.
    */
   shopOrderId?: string;
