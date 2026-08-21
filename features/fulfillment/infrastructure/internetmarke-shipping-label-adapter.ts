@@ -16,10 +16,7 @@ import {
   type InternetmarkeEnvConfig,
 } from "@/features/fulfillment/infrastructure/internetmarke-config";
 import { toInternetmarkeCountryCode } from "@/features/fulfillment/infrastructure/internetmarke-country";
-
-function sanitizeShopOrderId(raw: string): string {
-  return raw.replace(/[<&]/g, "").trim().slice(0, 80);
-}
+import { sanitizeInternetmarkeShopOrderId } from "@/features/fulfillment/domain/internetmarke-shop-order-id";
 
 function toApiAddress(
   addr: ShippingLabelAddress,
@@ -106,7 +103,9 @@ export function createInternetmarkeShippingLabelAdapter(options?: {
         return { ok: false, error: "invalid_request", message: receiver.message };
       }
 
-      const shopOrderId = sanitizeShopOrderId(input.shopOrderId ?? input.idempotencyKey);
+      const shopOrderId = sanitizeInternetmarkeShopOrderId(
+        input.shopOrderId ?? input.idempotencyKey,
+      );
       if (!shopOrderId) {
         return {
           ok: false,
@@ -153,7 +152,7 @@ export function createInternetmarkeShippingLabelAdapter(options?: {
           message: `Provider ${input.provider} wird von diesem Adapter nicht bedient.`,
         };
       }
-      const shopOrderId = sanitizeShopOrderId(input.externalRef);
+      const shopOrderId = sanitizeInternetmarkeShopOrderId(input.externalRef);
       if (!shopOrderId) {
         return {
           ok: false,

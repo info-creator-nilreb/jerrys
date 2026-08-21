@@ -124,6 +124,53 @@ describe("InternetmarkeShippingLabelAdapter", () => {
     expect(body.positions[0]?.address.receiver.country).toBe("DEU");
   });
 
+  it("kürzt shopOrderId auf max. 18 Zeichen für die DHL-API", async () => {
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    const fetchImpl: typeof fetch = async (input, init) => {
+      const url = String(input);
+      calls.push({ url, init });
+      if (url.endsWith("/user")) {
+        return new Response(
+          JSON.stringify({ access_token: "tok", expires_in: 3600 }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      if (url.includes("/app/shoppingcart/pdf")) {
+        return new Response(
+          JSON.stringify({
+            link: "https://example.test/label.pdf",
+            shoppingCart: {
+              shopOrderId: "JR-A1B2C3-a1b2c3",
+              voucherList: [{ voucherId: "V1", trackId: "T1" }],
+            },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      return new Response("not found", { status: 404 });
+    };
+
+    const port = createInternetmarkeShippingLabelAdapter({
+      config: baseConfig,
+      fetchImpl,
+    })!;
+
+    const longKey = `im:${"x".repeat(40)}`;
+    const res = await port.purchaseLabel({
+      shipmentId: "s1",
+      orderId: "o1",
+      provider: "internetmarke",
+      idempotencyKey: longKey,
+      ...sampleAddresses,
+    });
+
+    expect(res.ok).toBe(true);
+    const checkout = calls.find((c) => c.url.includes("/app/shoppingcart/pdf"));
+    const body = JSON.parse(String(checkout?.init?.body)) as { shopOrderId: string };
+    expect(body.shopOrderId.length).toBeLessThanOrEqual(18);
+    expect(body.shopOrderId).toBe(`im:${"x".repeat(15)}`);
+  });
+
   it("voidet über POST /app/retoure mit shopOrderId", async () => {
     const fetchImpl: typeof fetch = async (input) => {
       const url = String(input);

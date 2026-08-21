@@ -4,6 +4,7 @@ import type {
   ShippingLabelAddress,
   ShippingLabelPort,
 } from "@/features/fulfillment/application/shipping-label-port";
+import { buildInternetmarkeShopOrderId } from "@/features/fulfillment/domain/internetmarke-shop-order-id";
 import { isAllowedShipmentTransition } from "@/features/fulfillment/domain/shipment-status-machine";
 
 export type PurchaseShippingLabelForShipmentInput = {
@@ -15,7 +16,7 @@ export type PurchaseShippingLabelForShipmentInput = {
   pageFormatId?: number;
   voucherLayout?: InternetmarkeVoucherLayout;
   /**
-   * Stabile Idempotenz — Default: `im:${shipmentId}`.
+   * Stabile Idempotenz — Default: provider-konforme shopOrderId aus Bestellnummer + Sendung.
    * Bei erneutem Aufruf mit derselben ID kauft der Provider idealerweise nicht doppelt
    * (shopOrderId); lokaler Short-Circuit wenn bereits labeled + gleiche Ref.
    */
@@ -84,6 +85,7 @@ export async function purchaseShippingLabelForShipment(
       trackingNumber: true,
       order: {
         select: {
+          orderNumber: true,
           shippingFirstName: true,
           shippingLastName: true,
           shippingCompany: true,
@@ -101,7 +103,12 @@ export async function purchaseShippingLabelForShipment(
     return { ok: false, error: "not_found", message: "Sendung nicht gefunden." };
   }
 
-  const idempotencyKey = input.idempotencyKey?.trim() || `im:${shipment.id}`;
+  const idempotencyKey =
+    input.idempotencyKey?.trim() ||
+    buildInternetmarkeShopOrderId({
+      shipmentId: shipment.id,
+      orderNumber: shipment.order.orderNumber,
+    });
 
   if (shipment.status === "labeled" && shipment.labelExternalRef) {
     return {
