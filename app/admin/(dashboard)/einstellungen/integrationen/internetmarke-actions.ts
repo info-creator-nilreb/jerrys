@@ -3,12 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  appendApiKeyDiagnostic,
   disconnectInternetmarkeConnection,
   fetchInternetmarkeCatalogProducts,
   getInternetmarkeAppCredentialsFromEnv,
   getInternetmarkeConnectionPublic,
   getInternetmarkeConnectionSecrets,
   InternetmarkeClient,
+  InternetmarkeHttpError,
   markInternetmarkeConnectionError,
   markInternetmarkeConnectionVerified,
   saveInternetmarkePortokasseConnection,
@@ -103,14 +105,16 @@ export async function saveInternetmarkeCredentialsAction(
     await client.getAccessToken();
     await markInternetmarkeConnectionVerified();
   } catch (e) {
-    const msg =
+    let msg =
       e instanceof Error
         ? e.message
         : "Token-Test fehlgeschlagen. Portokasse: Geschäftsanwendung freigeben?";
     const detail =
-      e && typeof e === "object" && "responseBody" in e
-        ? String((e as { responseBody?: string }).responseBody ?? "").slice(0, 160)
-        : "";
+      e instanceof InternetmarkeHttpError ? e.responseBody.slice(0, 160) : "";
+    if (e instanceof InternetmarkeHttpError && e.status === 401) {
+      const catalog = await fetchInternetmarkeCatalogProducts(secrets.clientId);
+      msg = appendApiKeyDiagnostic(msg, catalog);
+    }
     await markInternetmarkeConnectionError(msg);
     revalidatePath("/admin/einstellungen/integrationen");
     return {

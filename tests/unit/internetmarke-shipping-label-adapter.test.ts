@@ -107,11 +107,15 @@ describe("InternetmarkeShippingLabelAdapter", () => {
     expect(authCall?.init?.method).toBe("POST");
     const authHeaders = authCall?.init?.headers as Record<string, string>;
     expect(authHeaders["Content-Type"]).toMatch(/x-www-form-urlencoded/i);
+    expect(authHeaders["dhl-api-key"]).toBe("client");
     expect(String(authCall?.init?.body)).toContain("grant_type=client_credentials");
 
     const checkout = calls.find((c) => c.url.includes("/app/shoppingcart/pdf"));
     expect(checkout?.url).toContain("directCheckout=true");
     expect(checkout?.url).not.toContain("finalize=");
+    const checkoutHeaders = checkout?.init?.headers as Record<string, string>;
+    expect(checkoutHeaders["dhl-api-key"]).toBe("client");
+    expect(checkoutHeaders.Authorization).toBe("Bearer tok");
     const body = JSON.parse(String(checkout?.init?.body)) as {
       type: string;
       positions: Array<{ address: { receiver: { country: string } } }>;
@@ -168,7 +172,7 @@ describe("InternetmarkeShippingLabelAdapter", () => {
     expect(res.ok).toBe(false);
     if (!res.ok) {
       expect(res.error).toBe("provider_rejected");
-      expect(res.message).toMatch(/Geschäftsanwendung/i);
+      expect(res.message).toMatch(/Geschäftsanwendung|Portokasse/i);
     }
   });
 

@@ -101,7 +101,14 @@ export {
   type InternetmarkeConnectionPublic,
 } from "@/features/fulfillment/infrastructure/internetmarke-connection";
 
-export { InternetmarkeClient } from "@/features/fulfillment/infrastructure/internetmarke-client";
+export { InternetmarkeClient, InternetmarkeHttpError } from "@/features/fulfillment/infrastructure/internetmarke-client";
+
+export {
+  appendApiKeyDiagnostic,
+  explainInternetmarkeAuthFailure,
+  INTERNETMARKE_PORTOKASSE_URL,
+  parseInternetmarkeErrorTitle,
+} from "@/features/fulfillment/infrastructure/internetmarke-auth-error";
 
 export {
   fetchInternetmarkeCatalogProducts,

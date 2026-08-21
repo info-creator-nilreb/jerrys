@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { ExternalLink } from "lucide-react";
 import {
   disconnectInternetmarkeAction,
   loadInternetmarkeProductsAction,
@@ -86,9 +87,40 @@ export function InternetmarkeSettingsPanel(props: Props) {
     <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-[#1f2937]">Internetmarke</h2>
       <p className="mt-2 text-sm text-[#6b7280]">
-        API Key und Secret kommen aus der Env (wie Instagram-App-Credentials). Hier nur Portokasse
-        verbinden — Produktcode und Preis lädt die Products API.
+        API Key und Secret kommen aus der Env (Developer Portal). Hier nur die{" "}
+        <strong className="font-medium text-[#374151]">Portokasse</strong> verbinden —
+        Produktcode und Preis lädt die Products API.
       </p>
+
+      <div className="mt-4 rounded-md border border-[#e8eaed] bg-[#f7f8fa] px-3 py-3 text-sm text-[#374151]">
+        <p className="font-medium">Zwei getrennte Freigaben — Developer-Portal reicht nicht</p>
+        <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-[#6b7280]">
+          <li>
+            Im DHL Developer Portal die API auf <span className="font-medium text-[#374151]">Approved</span>{" "}
+            setzen und den <span className="font-medium text-[#374151]">API Key</span> (nicht App-Name)
+            als <code className="text-[11px]">INTERNETMARKE_CLIENT_ID</code> hinterlegen.
+          </li>
+          <li>
+            Hier die Portokasse-Zugangsdaten eintragen (nicht das Developer-Portal-Konto) und
+            verbinden. DHL schickt dann eine E-Mail an die Portokasse-Adresse.
+          </li>
+          <li>
+            Unter{" "}
+            <a
+              href="https://portokasse.deutschepost.de"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 font-medium text-primary underline-offset-2 hover:underline"
+            >
+              Portokasse
+              <ExternalLink className="size-3.5" aria-hidden />
+            </a>
+            {" → "}
+            Meine Daten → Geschäftsanwendungen die App <span className="font-medium text-[#374151]">dauerhaft freigeben</span>,
+            danach hier erneut verbinden. Bis dahin bleibt POST /user auf 401.
+          </li>
+        </ol>
+      </div>
 
       <div aria-live="polite" className="mt-4 space-y-2">
         {error ? (
@@ -170,6 +202,9 @@ export function InternetmarkeSettingsPanel(props: Props) {
             disabled={!props.appCredentialsConfigured}
             className="h-11 w-full rounded-md border border-[#e5e7eb] px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:bg-[#f3f4f6] disabled:opacity-70"
           />
+          <p className="mt-1 text-xs text-[#6b7280]">
+            E-Mail der Portokasse, nicht das Login vom DHL Developer Portal.
+          </p>
         </div>
         <div>
           <label htmlFor="im-password" className="mb-1 block text-sm font-medium text-[#374151]">
@@ -249,17 +284,19 @@ export function InternetmarkeSettingsPanel(props: Props) {
               </button>
             </form>
           ) : null}
-
-          <form action={disconnectAction}>
-            <button
-              type="submit"
-              disabled={disconnectPending}
-              className="min-h-11 rounded-md border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
-            >
-              {disconnectPending ? "Trenne…" : "Verbindung trennen"}
-            </button>
-          </form>
         </div>
+      ) : null}
+
+      {props.connected ? (
+        <form action={disconnectAction} className="mt-8 border-t border-[#e8eaed] pt-6">
+          <button
+            type="submit"
+            disabled={disconnectPending}
+            className="min-h-11 rounded-md border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+          >
+            {disconnectPending ? "Trenne…" : "Verbindung trennen"}
+          </button>
+        </form>
       ) : null}
     </section>
   );
