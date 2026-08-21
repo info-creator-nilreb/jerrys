@@ -15,9 +15,9 @@ const config: InternetmarkeEnvConfig = {
 
 describe("InternetmarkeClient.getAccessToken", () => {
   it("sendet dhl-api-key und form-urlencoded Credentials an POST /user", async () => {
-    let captured: { url: string; init?: RequestInit } | null = null;
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
     const fetchImpl: typeof fetch = async (input, init) => {
-      captured = { url: String(input), init };
+      calls.push({ url: String(input), init });
       return new Response(JSON.stringify({ access_token: "tok", expires_in: 3600 }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -27,11 +27,12 @@ describe("InternetmarkeClient.getAccessToken", () => {
     const client = new InternetmarkeClient(config, fetchImpl);
     await expect(client.getAccessToken()).resolves.toBe("tok");
 
-    expect(captured?.url).toMatch(/\/user$/);
-    const headers = captured?.init?.headers as Record<string, string>;
+    const authCall = calls.find((c) => c.url.endsWith("/user"));
+    expect(authCall?.init?.method).toBe("POST");
+    const headers = authCall?.init?.headers as Record<string, string>;
     expect(headers["dhl-api-key"]).toBe("ApiKey123");
     expect(headers["Content-Type"]).toMatch(/x-www-form-urlencoded/i);
-    const body = String(captured?.init?.body);
+    const body = String(authCall?.init?.body);
     expect(body).toContain("grant_type=client_credentials");
     expect(body).toContain("client_id=ApiKey123");
     expect(body).toContain("username=shop%40example.com");
@@ -54,6 +55,7 @@ describe("InternetmarkeClient.getAccessToken", () => {
       status: 401,
       operation: "authorize",
     });
+
     try {
       await client.getAccessToken();
     } catch (e) {
