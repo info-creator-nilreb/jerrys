@@ -23,7 +23,7 @@ Admins erzeugen Sendungen zu bezahlten Warenbestellungen, kaufen/voiden Labels (
 1. **ADR + Domäne:** `Shipment`, Statusmaschine, `ShippingLabelPort` Stub, `createShipmentDraftForOrder` — **kein** Provider-HTTP, **kein** neues Admin-UI. **Status:** umgesetzt (Slice 1).
 2. **Manual sync:** Beim bestehenden Admin-„Versandt“ optional/automatisch `Shipment` anlegen/aktualisieren; Order-Felder bleiben denormalisiert.
 3. **INTERNETMARKE:** REST-Adapter + `purchaseShippingLabelForShipment` / `voidShippingLabelForShipment`; Env-Credentials; Idempotenz über `shopOrderId`. **Status:** Adapter umgesetzt (Slice 3) — Admin-UI und privater Label-Blob folgen.
-4. **DHL Parcel (optional):** Zweiter Adapter; Produktauswahl/Regeln.
+4. **DHL Parcel (optional):** Zweiter Adapter; Produktauswahl/Regeln. **Ohne EKP:** [Slice 4B Konzept](./EPIC7_SLICE4B_DHL_PRIVATE_SHIPPING.md); **mit EKP:** Paket DE Versenden V2 (Slice 4A).
 5. **Kunde:** Versand-Mail/Tracking (bestehende Mail pflegen); Retoure/Reship Admin-MVP.
 
 ## Exit-Kriterien (Epic)
