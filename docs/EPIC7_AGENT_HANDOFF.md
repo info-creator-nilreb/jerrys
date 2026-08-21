@@ -44,6 +44,7 @@ Branch-Prefix: `cursor/epic7-slice<N>-<kurzname>-2fb1`
 | **2** | Sync mit Admin-„Versandt“ / Order-Denormalisierung | ✅ `syncManualShipmentOnOrderShipped` | Nein |
 | **3** | INTERNETMARKE Adapter + Admin Kauf/Void | ✅ Mock-HTTP; Env; Bestelldetail-Panel | **Ja** (Live) |
 | **4** | Optional DHL Parcel | Zweiter Adapter | **Ja** |
+| **4B** | DHL Private Shipping ohne EKP | [Konzept](./EPIC7_SLICE4B_DHL_PRIVATE_SHIPPING.md) | **Ja** (Sandbox + notifyUrl-Ticket) |
 | **5** | Retoure/Reship Admin-MVP + private Label-Keys | Auditierbar | Teilweise |
 
 ---
