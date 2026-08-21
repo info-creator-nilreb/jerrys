@@ -4,6 +4,7 @@
  */
 
 import { explainInternetmarkeAuthFailure } from "@/features/fulfillment/infrastructure/internetmarke-auth-error";
+import { explainInternetmarkeCheckoutFailure, explainInternetmarkeRetoureFailure } from "@/features/fulfillment/infrastructure/internetmarke-provider-error";
 import {
   INTERNETMARKE_API_BASE_URL,
   type InternetmarkeEnvConfig,
@@ -172,7 +173,7 @@ export class InternetmarkeClient {
         "checkout_pdf",
         res.status,
         text,
-        `INTERNETMARKE Label-Kauf fehlgeschlagen (${res.status}).`,
+        explainInternetmarkeCheckoutFailure(res.status, text),
       );
     }
 
@@ -214,7 +215,7 @@ export class InternetmarkeClient {
         "retoure",
         res.status,
         text,
-        `INTERNETMARKE Retoure fehlgeschlagen (${res.status}).`,
+        explainInternetmarkeRetoureFailure(res.status, text),
       );
     }
 

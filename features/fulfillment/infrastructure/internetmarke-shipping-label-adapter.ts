@@ -6,6 +6,7 @@ import type {
   VoidShippingLabelInput,
   VoidShippingLabelResult,
 } from "@/features/fulfillment/application/shipping-label-port";
+import { sanitizeInternetmarkeShopOrderId } from "@/features/fulfillment/domain/internetmarke-shop-order-id";
 import {
   InternetmarkeClient,
   InternetmarkeHttpError,
@@ -16,7 +17,7 @@ import {
   type InternetmarkeEnvConfig,
 } from "@/features/fulfillment/infrastructure/internetmarke-config";
 import { toInternetmarkeCountryCode } from "@/features/fulfillment/infrastructure/internetmarke-country";
-import { sanitizeInternetmarkeShopOrderId } from "@/features/fulfillment/domain/internetmarke-shop-order-id";
+import { formatInternetmarkeHttpErrorMessage } from "@/features/fulfillment/infrastructure/internetmarke-provider-error";
 
 function toApiAddress(
   addr: ShippingLabelAddress,
@@ -137,7 +138,7 @@ export function createInternetmarkeShippingLabelAdapter(options?: {
           return {
             ok: false,
             error: e.status >= 400 && e.status < 500 ? "provider_rejected" : "provider_rejected",
-            message: `${e.message} ${e.responseBody.slice(0, 180)}`.trim(),
+            message: formatInternetmarkeHttpErrorMessage(e),
           };
         }
         throw e;
@@ -168,7 +169,7 @@ export function createInternetmarkeShippingLabelAdapter(options?: {
           return {
             ok: false,
             error: "provider_rejected",
-            message: `${e.message} ${e.responseBody.slice(0, 180)}`.trim(),
+            message: formatInternetmarkeHttpErrorMessage(e),
           };
         }
         throw e;

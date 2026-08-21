@@ -200,6 +200,50 @@ describe("InternetmarkeShippingLabelAdapter", () => {
     expect(res).toEqual({ ok: true, shopRetoureId: "R1" });
   });
 
+  it("meldet unzureichendes Portokasse-Guthaben ohne JSON-Rohdaten", async () => {
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.endsWith("/user")) {
+        return new Response(
+          JSON.stringify({ access_token: "tok", expires_in: 3600 }),
+          { status: 200 },
+        );
+      }
+      if (url.includes("/app/shoppingcart/pdf")) {
+        return new Response(
+          JSON.stringify({
+            statusCode: "400",
+            title: "walletBalanceNotEnough",
+            description: "A005904E65",
+            instance: "PCF-A1031",
+          }),
+          { status: 400 },
+        );
+      }
+      return new Response("nope", { status: 404 });
+    };
+
+    const port = createInternetmarkeShippingLabelAdapter({
+      config: baseConfig,
+      fetchImpl,
+    })!;
+
+    const res = await port.purchaseLabel({
+      shipmentId: "s1",
+      orderId: "o1",
+      provider: "internetmarke",
+      idempotencyKey: "k1",
+      ...sampleAddresses,
+    });
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.error).toBe("provider_rejected");
+      expect(res.message).toMatch(/Portokasse-Guthaben nicht ausreichend/i);
+      expect(res.message).not.toMatch(/A005904E65/);
+      expect(res.message).not.toMatch(/\{/);
+    }
+  });
+
   it("meldet provider_rejected bei 401 inkl. Freigabe-Hinweis", async () => {
     const fetchImpl: typeof fetch = async () =>
       new Response("unauthorized", { status: 401 });
