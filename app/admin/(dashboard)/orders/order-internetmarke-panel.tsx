@@ -13,6 +13,7 @@ import {
   type ReshipShipmentActionState,
 } from "@/app/admin/(dashboard)/orders/actions";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { TextWithExternalLinks } from "@/components/admin/text-with-external-links";
 
 const purchaseInitial: InternetmarkeLabelActionState = null;
 const voidInitial: InternetmarkeLabelActionState = null;
@@ -135,12 +136,12 @@ export function OrderInternetmarkePanel({
       <div aria-live="polite" aria-atomic="true" className="space-y-2">
         {purchaseState?.error ? (
           <p className="text-sm text-red-600" role="alert">
-            {purchaseState.error}
+            <TextWithExternalLinks text={purchaseState.error} />
           </p>
         ) : null}
         {voidState?.error ? (
           <p className="text-sm text-red-600" role="alert">
-            {voidState.error}
+            <TextWithExternalLinks text={voidState.error} />
           </p>
         ) : null}
         {reshipState && "error" in reshipState ? (
