@@ -10,6 +10,8 @@ import {
   ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING,
   AdminFormActionDock,
 } from "@/components/admin/admin-form-action-dock";
+import { AdminSlugField } from "@/components/admin/admin-slug-field";
+import { useAutoSlugFromTitle } from "@/components/admin/use-auto-slug-from-title";
 
 const initial: CategoryFormState = null;
 
@@ -41,6 +43,18 @@ export function CategoryForm({
   const [state, formAction, pending] = useActionState(saveCategory, initial);
   const fe = state?.fieldErrors ?? {};
   const selected = new Set(category?.collectionIds ?? []);
+  const {
+    title,
+    setTitle,
+    slug,
+    setSlug,
+    slugManuallyEdited,
+    regenerateSlugFromTitle,
+  } = useAutoSlugFromTitle({
+    initialTitle: category?.title ?? "",
+    initialSlug: category?.slug ?? "",
+    mode: "catalog",
+  });
 
   useEffect(() => {
     if (state?.ok) router.refresh();
@@ -59,26 +73,24 @@ export function CategoryForm({
             id="category-title"
             name="title"
             required
-            defaultValue={category?.title ?? ""}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             className="rounded-md border border-[#e3e4e8] px-3 py-2 text-sm"
           />
           {fe.title ? <p className="text-xs text-red-600">{fe.title}</p> : null}
         </div>
-        <div className="flex flex-col gap-1">
-          <label htmlFor="category-slug" className="text-xs font-medium text-[#6b7280]">
-            URL-Slug <span className="text-primary">*</span>
-          </label>
-          <input
-            id="category-slug"
-            name="slug"
-            required
-            defaultValue={category?.slug ?? ""}
-            className="rounded-md border border-[#e3e4e8] px-3 py-2 font-mono text-sm"
-            placeholder="z. B. hund"
-          />
-          {fe.slug ? <p className="text-xs text-red-600">{fe.slug}</p> : null}
-          <p className="text-xs text-[#9ca3af]">Storefront: /kategorien/[slug]</p>
-        </div>
+        <AdminSlugField
+          id="category-slug"
+          name="slug"
+          slug={slug}
+          onSlugChange={setSlug}
+          slugManuallyEdited={slugManuallyEdited}
+          onRegenerateFromTitle={regenerateSlugFromTitle}
+          error={fe.slug}
+          hint="Storefront: /kategorien/[slug]"
+          inputClassName="rounded-md border border-[#e3e4e8] px-3 py-2 font-mono text-sm"
+          placeholder="z. B. hund"
+        />
         <div className="flex flex-col gap-1">
           <label htmlFor="category-sort" className="text-xs font-medium text-[#6b7280]">
             Sortierung

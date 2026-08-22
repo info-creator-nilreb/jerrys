@@ -32,7 +32,9 @@ import {
   type ContentBlockType,
 } from "@/lib/content/block-types";
 import { buildContentPageEditorSnapshot } from "@/lib/content/content-page-editor-snapshot";
-import { CONTENT_PAGE_HOME_SLUG } from "@/lib/content/reserved-slugs";
+import { CONTENT_PAGE_HOME_SLUG, isReservedContentSlug } from "@/lib/content/reserved-slugs";
+import { AdminSlugField } from "@/components/admin/admin-slug-field";
+import { useAutoSlugFromTitle } from "@/components/admin/use-auto-slug-from-title";
 
 type EditorBlock = {
   clientId: string;
@@ -122,7 +124,21 @@ export function ContentPageForm({
   >(saveContentPageAction, null);
 
   const [pageType, setPageType] = useState(initial?.pageType ?? "content");
-  const [title, setTitle] = useState(initial?.title ?? "");
+  const {
+    title,
+    setTitle,
+    slug,
+    setSlug,
+    applySlug,
+    slugManuallyEdited,
+    regenerateSlugFromTitle,
+  } = useAutoSlugFromTitle({
+    initialTitle: initial?.title ?? "",
+    initialSlug:
+      initial?.slug ?? (initial?.pageType === "homepage" ? CONTENT_PAGE_HOME_SLUG : ""),
+    mode: "content",
+    enabled: pageType !== "homepage",
+  });
   const [status, setStatus] = useState<"draft" | "published">(
     initial?.status ?? "draft",
   );
@@ -132,9 +148,6 @@ export function ContentPageForm({
   const [canonicalPath, setCanonicalPath] = useState(initial?.canonicalPath ?? "");
   const [robotsIndex, setRobotsIndex] = useState(initial?.robotsIndex ?? true);
   const [showInFooter, setShowInFooter] = useState(initial?.showInFooter ?? false);
-  const [slug, setSlug] = useState(
-    initial?.slug ?? (pageType === "homepage" ? CONTENT_PAGE_HOME_SLUG : ""),
-  );
   const [addType, setAddType] = useState<ContentBlockType>("hero");
   const [blocks, setBlocks] = useState<EditorBlock[]>(() =>
     (initial?.blocks ?? []).map((b) => ({
@@ -274,8 +287,12 @@ export function ContentPageForm({
               value={pageType}
               onChange={(e) => {
                 const t = e.target.value as typeof pageType;
+                if (t === "homepage") {
+                  applySlug(CONTENT_PAGE_HOME_SLUG);
+                } else if (pageType === "homepage") {
+                  regenerateSlugFromTitle();
+                }
                 setPageType(t);
-                if (t === "homepage") setSlug(CONTENT_PAGE_HOME_SLUG);
               }}
             >
               {(Object.keys(CONTENT_PAGE_TYPE_LABELS) as Array<
@@ -305,23 +322,31 @@ export function ContentPageForm({
               ))}
             </select>
           </label>
-          <label className="text-sm text-[#5c5f66] sm:col-span-2">
-            Slug <span className="text-primary">*</span>
-            <input
-              name={pageType === "homepage" ? undefined : "slug"}
+          <div className="sm:col-span-2">
+            <AdminSlugField
+              id="content-page-slug"
+              name="slug"
+              label="Slug"
+              slug={slug}
+              onSlugChange={setSlug}
+              slugManuallyEdited={slugManuallyEdited}
+              onRegenerateFromTitle={regenerateSlugFromTitle}
+              error={fe.slug}
               required={pageType !== "homepage"}
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
               disabled={pageType === "homepage"}
-              className={fieldClass}
+              inputClassName={fieldClass}
+              reservedWarning={
+                pageType !== "homepage" && slug.trim() && isReservedContentSlug(slug)
+                  ? "Dieser Slug ist ein reservierter Systempfad — bitte anpassen."
+                  : null
+              }
             />
             {pageType === "homepage" ? (
               <p className="mt-1 text-xs text-[#9ca3af]">
                 Startseite nutzt fest den Slug „{CONTENT_PAGE_HOME_SLUG}“ (öffentlich /).
               </p>
             ) : null}
-            {fe.slug ? <p className="mt-1 text-sm text-red-600">{fe.slug}</p> : null}
-          </label>
+          </div>
 
           <CmsPageSeoAiTextAssistant
             aiReady={aiReady}

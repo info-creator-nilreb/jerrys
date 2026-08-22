@@ -3,6 +3,8 @@
 import { CircleQuestionMark } from "lucide-react";
 import { ProductDescriptionEditor } from "@/app/admin/(dashboard)/products/description-editor";
 import type { ProductFormState } from "@/app/admin/(dashboard)/products/actions";
+import { AdminSlugField } from "@/components/admin/admin-slug-field";
+import { useAutoSlugFromTitle } from "@/components/admin/use-auto-slug-from-title";
 
 function RequiredStar() {
   return <span className="text-primary">*</span>;
@@ -40,6 +42,18 @@ type Props = {
 
 export function ProductGeneralFields({ state, manufacturers, defaults }: Props) {
   const fe = state?.fieldErrors ?? {};
+  const {
+    title,
+    setTitle,
+    slug,
+    setSlug,
+    slugManuallyEdited,
+    regenerateSlugFromTitle,
+  } = useAutoSlugFromTitle({
+    initialTitle: defaults.title,
+    initialSlug: defaults.slug,
+    mode: "catalog",
+  });
 
   return (
     <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
@@ -55,7 +69,8 @@ export function ProductGeneralFields({ state, manufacturers, defaults }: Props) 
             name="title"
             type="text"
             required
-            defaultValue={defaults.title}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
           />
           {fe.title ? <p className="text-sm text-red-600">{fe.title}</p> : null}
@@ -119,21 +134,16 @@ export function ProductGeneralFields({ state, manufacturers, defaults }: Props) 
           {fe.sku ? <p className="text-sm text-red-600">{fe.sku}</p> : null}
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="slug" className="text-xs font-medium text-[#6b7280]">
-            URL-Slug <RequiredStar />
-          </label>
-          <input
-            id="slug"
-            name="slug"
-            type="text"
-            required
-            placeholder="z. B. design-katzenhoehle"
-            defaultValue={defaults.slug}
-            className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
-          />
-          {fe.slug ? <p className="text-sm text-red-600">{fe.slug}</p> : null}
-        </div>
+        <AdminSlugField
+          id="slug"
+          name="slug"
+          slug={slug}
+          onSlugChange={setSlug}
+          slugManuallyEdited={slugManuallyEdited}
+          onRegenerateFromTitle={regenerateSlugFromTitle}
+          error={fe.slug}
+          hint="Storefront: /produkte/[slug]"
+        />
 
         <div className="flex flex-col gap-1">
           <label htmlFor="subtitle" className="text-xs font-medium text-[#6b7280]">
