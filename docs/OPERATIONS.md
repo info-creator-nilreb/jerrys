@@ -160,6 +160,7 @@ Create and test these before their associated feature is enabled:
 - provider outage
 - successful external payment with incomplete internal finalization
 - webhook or outbox backlog
+- canonical domain / www redirect and PayPal return URLs (see runbook below)
 - stuck or expired workshop reservations
 - Zettle inventory discrepancy (see runbook below)
 - INTERNETMARKE/DHL label purchase failure (see runbook below)
@@ -174,6 +175,56 @@ Concrete steps for the commerce paths already in production follow below. Featur
 2. **Promote** that deployment (or redeploy the git SHA) — do not “fix forward” with untested commits under incident pressure.
 3. Confirm Storefront + Admin login + one catalog page load.
 4. Schema: only **expand/contract** rollbacks; never drop columns that the previous release still reads. If a bad migration shipped, restore DB into an isolated clone first (see Backup and Recovery).
+
+### Runbook: Kanonische Domain (www → Apex) und PayPal
+
+**Ziel:** Eine Host-Variante für SEO (Canonicals, Sitemap) und Zahlungs-Return-URLs. Google behandelt **308** und **301** als permanente Weiterleitung — Vercel nutzt oft 308.
+
+**Symptome nach fehlerhafter Umstellung:** PayPal-Rückkehr bricht ab, leerer Warenkorb nach Redirect, doppelte Indexierung von `www` und Apex, Apple-Pay-Domain-Fehler.
+
+#### Vercel (Domains)
+
+1. Vercel → Projekt → **Settings → Domains**.
+2. **`jerry-s.com`** als **Production Domain** (Apex, ohne `www`).
+3. **`www.jerry-s.com`** hinzufügen → **Redirect to another domain** → Ziel **`jerry-s.com`** → **Permanent Redirect** (308 ist ok).
+4. DNS: Apex (`A`/ALIAS) und `www` (`CNAME`) wie in Vercel angezeigt — erst wenn beide „Valid“ sind, Redirect aktivieren.
+
+#### Env (Production — alle auf dieselbe kanonische URL)
+
+| Variable | Wert (Beispiel) |
+| --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | `https://jerry-s.com` (**ohne** `www`) |
+| `AUTH_URL` | `https://jerry-s.com` (identisch zum Apex) |
+| `COMMERCE_MAINTENANCE_SITE_URL` | `https://jerry-s.com` (falls GitHub-Cron genutzt) |
+
+**Preview:** `AUTH_URL` weglassen oder auf die jeweilige `*.vercel.app`-URL setzen — nicht auf Production zeigen ([VERCEL_GITHUB_SETUP.md](./VERCEL_GITHUB_SETUP.md)).
+
+Nach Env-Änderung: **Redeploy** Production.
+
+#### PayPal Developer Dashboard
+
+1. Webhook-URL: `https://jerry-s.com/api/webhooks/paypal` (nicht `www`).
+2. `PAYPAL_ENV=live` nur auf Production; Sandbox-Credentials nur Preview/Staging.
+3. Return-/Cancel-URLs werden serverseitig aus `NEXT_PUBLIC_SITE_URL` gebaut (`/checkout/paypal-rueckkehr`, `/checkout/paypal-abbruch`) — Env muss zur kanonischen Domain passen.
+4. **Apple Pay** (falls aktiv): Domain im PayPal-Dashboard **exakt** `jerry-s.com` registrieren (`www` und Apex sind getrennte Einträge).
+
+#### Google Search Console
+
+- Domain-Property `jerry-s.com` oder beide URL-Präfixe mit klarer kanonischer Host-Entscheidung.
+- Nach Redirect: Coverage/Indexierung beobachten (Duplikate sollten abnehmen).
+
+#### Smoke-Test nach Umstellung (Production)
+
+1. **Redirect:** `https://www.jerry-s.com/produkte` → permanent auf `https://jerry-s.com/produkte` (Query-String bleibt erhalten).
+2. **SEO-Artefakte:** `/robots.txt`, `/sitemap.xml`, eine Produktseite — Canonical zeigt Apex (Quelltext / Response-Header).
+3. **PayPal Standard-Checkout:** Warenkorb → Checkout → PayPal → Rückkehr auf `https://jerry-s.com/checkout/paypal-rueckkehr?token=…` → Erfolgsseite `/checkout/erfolg?nr=…`, Bestellung `paid`.
+4. **PayPal Express** (optional): Smart Buttons vom Warenkorb — gleicher Host durchgängig.
+5. **Abbruch:** Cancel führt auf `https://jerry-s.com/checkout/paypal-abbruch` bzw. Checkout mit Fehlercode, Pending-Order storniert.
+6. Bei „bezahlt bei PayPal, intern offen“: Runbook **Extern bezahlt, intern nicht finalisiert** (Reconcile / Webhook).
+
+**Häufige Ursache für PayPal-Probleme:** gemischte `www`/Apex-URLs in Env, Lesezeichen auf `www` **vor** Redirect-Konfiguration, oder Checkout auf anderem Host als `NEXT_PUBLIC_SITE_URL` (Cookies/Warenkorb sind host-spezifisch). Der Vercel-Redirect selbst ist unkritisch, wenn Env und PayPal dieselbe Apex-URL nutzen.
+
+Siehe auch [PAYMENT_PROVIDER_STRATEGY.md](./PAYMENT_PROVIDER_STRATEGY.md), [VERCEL_GITHUB_SETUP.md](./VERCEL_GITHUB_SETUP.md).
 
 ### Runbook: PayPal provider outage or sandbox/live misconfig
 

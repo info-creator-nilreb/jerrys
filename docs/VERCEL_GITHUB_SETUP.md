@@ -71,7 +71,9 @@ Optional später: Build Hook oder separates Deploy-Job — erst nach klarer DB-S
 ### Domains
 
 - Production: Custom Domain in Vercel → Domains.
-- `AUTH_URL` und `NEXT_PUBLIC_SITE_URL` auf dieselbe kanonische HTTPS-URL setzen.
+- **`jerry-s.com`** = Production Domain; **`www.jerry-s.com`** → permanent auf Apex redirecten (Vercel Settings → Domains).
+- `AUTH_URL` und `NEXT_PUBLIC_SITE_URL` auf **dieselbe** kanonische HTTPS-URL setzen (**ohne** `www`, wenn Apex kanonisch ist).
+- Checkliste + PayPal-Smoke-Test: [OPERATIONS.md — Runbook Kanonische Domain](./OPERATIONS.md#runbook-kanonische-domain-www--apex-und-paypal).
 
 ## 3. Alternative: Vercel CLI (lokal oder Codespace)
 
