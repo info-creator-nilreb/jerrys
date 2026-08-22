@@ -10,6 +10,8 @@ import {
   ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING,
   AdminFormActionDock,
 } from "@/components/admin/admin-form-action-dock";
+import { AdminSlugField } from "@/components/admin/admin-slug-field";
+import { useAutoSlugFromTitle } from "@/components/admin/use-auto-slug-from-title";
 
 const initial: CollectionFormState = null;
 
@@ -36,6 +38,18 @@ export function CollectionForm({
   const [state, formAction, pending] = useActionState(saveCollection, initial);
   const fe = state?.fieldErrors ?? {};
   const selected = new Set(collection?.productIds ?? []);
+  const {
+    title,
+    setTitle,
+    slug,
+    setSlug,
+    slugManuallyEdited,
+    regenerateSlugFromTitle,
+  } = useAutoSlugFromTitle({
+    initialTitle: collection?.title ?? "",
+    initialSlug: collection?.slug ?? "",
+    mode: "catalog",
+  });
 
   useEffect(() => {
     if (state?.ok) router.refresh();
@@ -54,26 +68,24 @@ export function CollectionForm({
             id="collection-title"
             name="title"
             required
-            defaultValue={collection?.title ?? ""}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             className="rounded-md border border-[#e3e4e8] px-3 py-2 text-sm"
           />
           {fe.title ? <p className="text-xs text-red-600">{fe.title}</p> : null}
         </div>
-        <div className="flex flex-col gap-1">
-          <label htmlFor="collection-slug" className="text-xs font-medium text-[#6b7280]">
-            URL-Slug <span className="text-primary">*</span>
-          </label>
-          <input
-            id="collection-slug"
-            name="slug"
-            required
-            defaultValue={collection?.slug ?? ""}
-            className="rounded-md border border-[#e3e4e8] px-3 py-2 font-mono text-sm"
-            placeholder="z. B. bestseller"
-          />
-          {fe.slug ? <p className="text-xs text-red-600">{fe.slug}</p> : null}
-          <p className="text-xs text-[#9ca3af]">Storefront: /kollektionen/[slug]</p>
-        </div>
+        <AdminSlugField
+          id="collection-slug"
+          name="slug"
+          slug={slug}
+          onSlugChange={setSlug}
+          slugManuallyEdited={slugManuallyEdited}
+          onRegenerateFromTitle={regenerateSlugFromTitle}
+          error={fe.slug}
+          hint="Storefront: /kollektionen/[slug]"
+          inputClassName="rounded-md border border-[#e3e4e8] px-3 py-2 font-mono text-sm"
+          placeholder="z. B. bestseller"
+        />
         <div className="flex flex-col gap-1">
           <label htmlFor="collection-sort" className="text-xs font-medium text-[#6b7280]">
             Sortierung
