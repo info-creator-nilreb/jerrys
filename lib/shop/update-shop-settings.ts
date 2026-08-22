@@ -22,6 +22,7 @@ import {
   revalidateStorefrontBranding,
   updateShopSettingsCacheTag,
 } from "@/lib/shop/shop-settings-cache";
+import { pdpTrustBarItemsFromFormData } from "@/lib/shop/pdp-trust-settings";
 
 const log = createLogger("shop-settings-update");
 
@@ -93,6 +94,8 @@ export function shopSettingsInputFromFormData(formData: FormData): Record<string
     footerShowLegalWiderruf: formCheckbox(formData, "footerShowLegalWiderruf"),
     footerShowLegalRueckgabe: formCheckbox(formData, "footerShowLegalRueckgabe", false),
     footerShowLegalVersand: formCheckbox(formData, "footerShowLegalVersand"),
+    pdpReturnPolicyText: str("pdpReturnPolicyText"),
+    pdpTrustBarItems: pdpTrustBarItemsFromFormData(formData),
   };
 }
 
@@ -134,6 +137,8 @@ function createDefaultsRow(values: ShopSettingsValues) {
     footerShowLegalWiderruf: values.footerShowLegalWiderruf,
     footerShowLegalRueckgabe: values.footerShowLegalRueckgabe,
     footerShowLegalVersand: values.footerShowLegalVersand,
+    pdpReturnPolicyText: values.pdpReturnPolicyText,
+    pdpTrustBarItems: values.pdpTrustBarItems,
   };
 }
 
@@ -189,6 +194,8 @@ export async function updateShopSettingsFromInput(
           footerShowLegalWiderruf: values.footerShowLegalWiderruf,
           footerShowLegalRueckgabe: values.footerShowLegalRueckgabe,
           footerShowLegalVersand: values.footerShowLegalVersand,
+          pdpReturnPolicyText: values.pdpReturnPolicyText,
+          pdpTrustBarItems: values.pdpTrustBarItems,
         },
       });
       await appendIntegrationOutbox(tx, {

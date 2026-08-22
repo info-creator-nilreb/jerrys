@@ -1187,6 +1187,11 @@ model ShopSettings {
   footerShowLegalRueckgabe Boolean @default(false) @map("footer_show_legal_rueckgabe")
   footerShowLegalVersand Boolean @default(true) @map("footer_show_legal_versand")
 
+  /// Kaufbox auf der Produktseite (z. B. „30 Tage Rückgaberecht“); null = ausblenden.
+  pdpReturnPolicyText String? @map("pdp_return_policy_text")
+  /// Drei Merkmale im grauen Banner unter der PDP (JSON-Array).
+  pdpTrustBarItems Json @default("[{\"enabled\":true,\"icon\":\"truck\",\"title\":\"Kostenloser Versand\",\"subtitle\":null,\"appendFreeShippingThreshold\":true},{\"enabled\":true,\"icon\":\"leaf\",\"title\":\"Klimaneutral verpackt\",\"subtitle\":null,\"appendFreeShippingThreshold\":false},{\"enabled\":true,\"icon\":\"headphones\",\"title\":\"Persönlicher Support\",\"subtitle\":null,\"appendFreeShippingThreshold\":false}]") @map("pdp_trust_bar_items")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

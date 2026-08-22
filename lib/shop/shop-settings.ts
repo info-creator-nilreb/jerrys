@@ -11,6 +11,10 @@ import {
   parseInfoBannerMessages,
 } from "@/lib/shop/info-banner";
 import {
+  parsePdpReturnPolicyText,
+  parsePdpTrustBarItems,
+} from "@/lib/shop/pdp-trust-settings";
+import {
   JERRYS_SHOP_SETTINGS_DEFAULTS,
   parseDesktopShopNavMode,
   parseHeaderNavPlacement,
@@ -65,6 +69,8 @@ function toDto(
     footerShowLegalWiderruf: boolean;
     footerShowLegalRueckgabe: boolean;
     footerShowLegalVersand: boolean;
+    pdpReturnPolicyText: string | null;
+    pdpTrustBarItems: unknown;
     updatedAt: Date;
   } | null,
 ): ShopSettingsDTO {
@@ -113,6 +119,8 @@ function toDto(
     footerShowLegalWiderruf: row.footerShowLegalWiderruf,
     footerShowLegalRueckgabe: row.footerShowLegalRueckgabe,
     footerShowLegalVersand: row.footerShowLegalVersand,
+    pdpReturnPolicyText: parsePdpReturnPolicyText(row.pdpReturnPolicyText),
+    pdpTrustBarItems: parsePdpTrustBarItems(row.pdpTrustBarItems),
     updatedAt: row.updatedAt,
   };
 }
@@ -158,6 +166,8 @@ const createDefaults = () => ({
   footerShowLegalWiderruf: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowLegalWiderruf,
   footerShowLegalRueckgabe: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowLegalRueckgabe,
   footerShowLegalVersand: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowLegalVersand,
+  pdpReturnPolicyText: JERRYS_SHOP_SETTINGS_DEFAULTS.pdpReturnPolicyText,
+  pdpTrustBarItems: JERRYS_SHOP_SETTINGS_DEFAULTS.pdpTrustBarItems,
 });
 
 async function loadShopSettingsFromDb(): Promise<ShopSettingsCached> {

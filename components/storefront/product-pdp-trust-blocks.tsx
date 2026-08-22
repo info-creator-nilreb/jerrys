@@ -1,6 +1,9 @@
-import { Gem, Headphones, Heart, Leaf, PawPrint, Shield, Sparkles, Truck } from "lucide-react";
+"use client";
+
+import { Gem, Headphones, Heart, Leaf, PawPrint, Shield, Sparkles, Truck, type LucideIcon } from "lucide-react";
 import { formatPriceWholeEurosWhenInteger } from "@/lib/catalog/format";
 import type { PdpResolvedUsp, PdpSpecIcon } from "@/lib/catalog/pdp-resolve-display";
+import type { PdpTrustBarIcon, PdpTrustBarItem } from "@/lib/shop/pdp-trust-settings";
 
 const lineIconClass = "size-[22px] shrink-0 text-primary";
 
@@ -111,49 +114,86 @@ export function ProductPdpUspRow({
   );
 }
 
-/**
- * Volle Breite über dem Footer: Versand, Nachhaltigkeit, Support – gleichmäßig verteilt.
- * {@link freeShippingFromSubtotalGrossCents} entspricht „Kostenloser Versand ab …“ unter /admin/versand.
- */
-export function ProductPdpTrustFooterBar({
+const TRUST_BAR_ICON_MAP: Record<PdpTrustBarIcon, LucideIcon> = {
+  truck: Truck,
+  leaf: Leaf,
+  headphones: Headphones,
+  shield: Shield,
+  heart: Heart,
+};
+
+function TrustBarItemBody({
+  item,
   freeShippingFromSubtotalGrossCents,
 }: {
+  item: PdpTrustBarItem;
   freeShippingFromSubtotalGrossCents: number | null;
 }) {
   const showFreeFrom =
-    freeShippingFromSubtotalGrossCents != null && freeShippingFromSubtotalGrossCents > 0;
+    item.appendFreeShippingThreshold &&
+    freeShippingFromSubtotalGrossCents != null &&
+    freeShippingFromSubtotalGrossCents > 0;
+
+  return (
+    <p className="text-sm leading-snug text-(--foreground-muted)">
+      <span className="font-medium text-(--foreground-heading)">{item.title}</span>
+      {item.subtitle ? (
+        <>
+          <span className="text-(--foreground-muted)"> · </span>
+          {item.subtitle}
+        </>
+      ) : null}
+      {showFreeFrom ? (
+        <>
+          <span className="text-(--foreground-muted)"> · </span>
+          ab {formatPriceWholeEurosWhenInteger(freeShippingFromSubtotalGrossCents, "EUR")} Bestellwert
+        </>
+      ) : null}
+    </p>
+  );
+}
+
+/**
+ * Volle Breite über dem Footer: konfigurierbare Service-Merkmale (Shop-Einstellungen).
+ */
+export function ProductPdpTrustFooterBar({
+  items,
+  freeShippingFromSubtotalGrossCents,
+}: {
+  items: PdpTrustBarItem[];
+  freeShippingFromSubtotalGrossCents: number | null;
+}) {
+  const visible = items.filter((item) => item.enabled && item.title.trim());
+  if (visible.length === 0) return null;
+
+  const cols =
+    visible.length === 1
+      ? "sm:grid-cols-1"
+      : visible.length === 2
+        ? "sm:grid-cols-2"
+        : "sm:grid-cols-3";
 
   return (
     <section
       className="relative left-1/2 mt-14 w-screen max-w-[100vw] -translate-x-1/2 border-t border-(--surface-muted) bg-[#eef1ee] py-8 md:mt-16 md:py-10"
       aria-label="Service und Versprechen"
     >
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 sm:grid-cols-3 sm:gap-6 md:gap-10">
-        <div className="flex gap-3 sm:flex-col sm:items-center sm:text-center md:flex-row md:items-start md:text-left">
-          <Truck className={`${lineIconClass} mt-0.5 sm:mt-0`} strokeWidth={1.5} aria-hidden />
-          <p className="text-sm leading-snug text-(--foreground-muted)">
-            <span className="font-medium text-(--foreground-heading)">Kostenloser Versand</span>
-            {showFreeFrom ? (
-              <>
-                <span className="text-(--foreground-muted)"> · </span>
-                ab {formatPriceWholeEurosWhenInteger(freeShippingFromSubtotalGrossCents, "EUR")}{" "}
-                Bestellwert
-              </>
-            ) : null}
-          </p>
-        </div>
-        <div className="flex gap-3 sm:flex-col sm:items-center sm:text-center md:flex-row md:items-start md:text-left">
-          <Leaf className={`${lineIconClass} mt-0.5 sm:mt-0`} strokeWidth={1.5} aria-hidden />
-          <p className="text-sm leading-snug text-(--foreground-muted)">
-            <span className="font-medium text-(--foreground-heading)">Klimaneutral verpackt</span>
-          </p>
-        </div>
-        <div className="flex gap-3 sm:flex-col sm:items-center sm:text-center md:flex-row md:items-start md:text-left">
-          <Headphones className={`${lineIconClass} mt-0.5 sm:mt-0`} strokeWidth={1.5} aria-hidden />
-          <p className="text-sm leading-snug text-(--foreground-muted)">
-            <span className="font-medium text-(--foreground-heading)">Persönlicher Support</span>
-          </p>
-        </div>
+      <div className={`mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 ${cols} sm:gap-6 md:gap-10`}>
+        {visible.map((item, index) => {
+          const Icon = TRUST_BAR_ICON_MAP[item.icon] ?? Truck;
+          return (
+            <div
+              key={`${item.icon}-${index}`}
+              className="flex gap-3 sm:flex-col sm:items-center sm:text-center md:flex-row md:items-start md:text-left"
+            >
+              <Icon className={`${lineIconClass} mt-0.5 sm:mt-0`} strokeWidth={1.5} aria-hidden />
+              <TrustBarItemBody
+                item={item}
+                freeShippingFromSubtotalGrossCents={freeShippingFromSubtotalGrossCents}
+              />
+            </div>
+          );
+        })}
       </div>
     </section>
   );

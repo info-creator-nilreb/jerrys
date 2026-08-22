@@ -22,6 +22,7 @@ export function ProductPdpPurchasePanel({
   paypalClientId,
   applePayStoreLabel,
   variants,
+  returnPolicyText,
 }: {
   productId: string;
   currency: string;
@@ -31,6 +32,8 @@ export function ProductPdpPurchasePanel({
   paypalClientId: string;
   applePayStoreLabel: string;
   variants: StorefrontVariantCommerce[];
+  /** Shop-Einstellung; null = Zeile ausblenden. */
+  returnPolicyText?: string | null;
 }) {
   const initialId = variants.find((v) => v.isDefault)?.id ?? variants[0]?.id ?? "";
   const [selectedId, setSelectedId] = useState(initialId);
@@ -130,10 +133,12 @@ export function ProductPdpPurchasePanel({
           />
           <span className="leading-snug">{stockLine}</span>
         </li>
-        <li className="flex gap-2.5">
-          <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden strokeWidth={1.5} />
-          <span className="leading-snug">30 Tage Rückgaberecht</span>
-        </li>
+        {returnPolicyText ? (
+          <li className="flex gap-2.5">
+            <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden strokeWidth={1.5} />
+            <span className="leading-snug">{returnPolicyText}</span>
+          </li>
+        ) : null}
       </ul>
 
       <AddToCartForm

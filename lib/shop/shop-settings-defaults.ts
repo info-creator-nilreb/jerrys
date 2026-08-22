@@ -3,6 +3,11 @@
  * Quelle: `app/globals.css`, Storefront-Metadata, Impressum, E-Mail-Layout.
  */
 import type { InfoBannerDurationSec } from "@/lib/shop/info-banner";
+import {
+  DEFAULT_PDP_RETURN_POLICY_TEXT,
+  DEFAULT_PDP_TRUST_BAR_ITEMS,
+  type PdpTrustBarItem,
+} from "@/lib/shop/pdp-trust-settings";
 
 export const SHOP_SETTINGS_DEFAULT_ID = "default" as const;
 
@@ -74,6 +79,10 @@ export type ShopSettingsDefaults = {
   footerShowLegalWiderruf: boolean;
   footerShowLegalRueckgabe: boolean;
   footerShowLegalVersand: boolean;
+  /** Kaufbox PDP; null = Zeile ausblenden. */
+  pdpReturnPolicyText: string | null;
+  /** Grauer Trust-Banner unter der PDP (genau 3 Einträge). */
+  pdpTrustBarItems: PdpTrustBarItem[];
 };
 
 export const JERRYS_SHOP_SETTINGS_DEFAULTS: ShopSettingsDefaults = {
@@ -118,6 +127,8 @@ export const JERRYS_SHOP_SETTINGS_DEFAULTS: ShopSettingsDefaults = {
   footerShowLegalWiderruf: true,
   footerShowLegalRueckgabe: false,
   footerShowLegalVersand: true,
+  pdpReturnPolicyText: DEFAULT_PDP_RETURN_POLICY_TEXT,
+  pdpTrustBarItems: DEFAULT_PDP_TRUST_BAR_ITEMS.map((item) => ({ ...item })),
 };
 
 /** Client-sichere DTO-Form (ohne next/cache / Prisma). */

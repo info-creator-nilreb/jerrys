@@ -5,6 +5,7 @@ import {
   DESKTOP_SHOP_NAV_MODES,
   HEADER_NAV_PLACEMENTS,
 } from "@/lib/shop/shop-settings-defaults";
+import { pdpTrustSettingsSchema } from "@/lib/shop/pdp-trust-settings";
 
 const HEX_COLOR_MSG = "Farbe als #RRGGBB angeben.";
 
@@ -85,6 +86,13 @@ export const shopSettingsValuesSchema = z.object({
   footerShowLegalWiderruf: z.boolean(),
   footerShowLegalRueckgabe: z.boolean(),
   footerShowLegalVersand: z.boolean(),
+  pdpReturnPolicyText: z
+    .string()
+    .trim()
+    .max(120)
+    .transform((s) => (s === "" ? null : s))
+    .nullable(),
+  pdpTrustBarItems: pdpTrustSettingsSchema.shape.pdpTrustBarItems,
 });
 
 export type ShopSettingsValues = z.infer<typeof shopSettingsValuesSchema>;

@@ -22,6 +22,11 @@ import {
   type HeaderNavPlacement,
   type ShopSettingsDTO,
 } from "@/lib/shop/shop-settings-defaults";
+import {
+  DEFAULT_PDP_TRUST_BAR_ITEMS,
+  PDP_TRUST_BAR_ICONS,
+  type PdpTrustBarIcon,
+} from "@/lib/shop/pdp-trust-settings";
 
 const initial: ShopSettingsFormState = null;
 
@@ -33,6 +38,14 @@ const saveBtnClass =
 
 const removeLinkClass =
   "text-sm font-medium text-[#b42318] transition-colors hover:text-[#912018] disabled:text-[#9ca3af]";
+
+const PDP_TRUST_ICON_LABELS: Record<PdpTrustBarIcon, string> = {
+  truck: "Versand (LKW)",
+  leaf: "Nachhaltigkeit (Blatt)",
+  headphones: "Support (Kopfhörer)",
+  shield: "Sicherheit (Schild)",
+  heart: "Herz",
+};
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
@@ -372,6 +385,128 @@ export function ShopSettingsForm({ defaults }: Props) {
             ) : (
               <input type="hidden" name="headerNavPlacement" value={headerNavPlacement} />
             )}
+          </div>
+        </SettingsCard>
+
+        <SettingsCard
+          title="Produktseite (PDP)"
+          description="Vertrauenselemente in der Kaufbox und im grauen Banner unter der Produktseite. Schwelle für kostenlosen Versand kommt aus Admin → Versand."
+        >
+          <div className="space-y-6">
+            <div>
+              <label htmlFor="pdpReturnPolicyText" className="text-sm font-medium text-[#374151]">
+                Rückgabe-Hinweis in der Kaufbox
+              </label>
+              <input
+                id="pdpReturnPolicyText"
+                name="pdpReturnPolicyText"
+                defaultValue={defaults.pdpReturnPolicyText ?? ""}
+                placeholder="z. B. 30 Tage Rückgaberecht"
+                className={`${inputClass} mt-1.5`}
+              />
+              <p className="mt-1.5 text-xs text-[#6b7280]">
+                Leer lassen, um die Zeile auf der Produktseite auszublenden.
+              </p>
+              <FieldError message={fe.pdpReturnPolicyText} />
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-sm font-semibold text-[#1f2937]">Trust-Banner (3 Merkmale)</p>
+              {(defaults.pdpTrustBarItems.length > 0
+                ? defaults.pdpTrustBarItems
+                : DEFAULT_PDP_TRUST_BAR_ITEMS
+              ).map((item, index) => (
+                <div
+                  key={index}
+                  className="rounded-lg border border-[#e8eaed] bg-[#fafbfc] p-4 space-y-3"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-[#374151]">Merkmal {index + 1}</p>
+                    <label className="flex cursor-pointer items-center gap-2 text-sm text-[#374151]">
+                      <input type="hidden" name={`pdpTrust${index}Enabled`} value="false" />
+                      <input
+                        type="checkbox"
+                        name={`pdpTrust${index}Enabled`}
+                        value="true"
+                        defaultChecked={item.enabled}
+                        className="checkbox-primary size-4"
+                      />
+                      Anzeigen
+                    </label>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label
+                        htmlFor={`pdpTrust${index}Title`}
+                        className="text-xs font-medium text-[#6b7280]"
+                      >
+                        Titel
+                      </label>
+                      <input
+                        id={`pdpTrust${index}Title`}
+                        name={`pdpTrust${index}Title`}
+                        defaultValue={item.title}
+                        className={`${inputClass} mt-1`}
+                      />
+                      <FieldError message={fe[`pdpTrustBarItems.${index}.title`]} />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor={`pdpTrust${index}Icon`}
+                        className="text-xs font-medium text-[#6b7280]"
+                      >
+                        Icon
+                      </label>
+                      <select
+                        id={`pdpTrust${index}Icon`}
+                        name={`pdpTrust${index}Icon`}
+                        defaultValue={item.icon}
+                        className={`${inputClass} mt-1`}
+                      >
+                        {PDP_TRUST_BAR_ICONS.map((icon) => (
+                          <option key={icon} value={icon}>
+                            {PDP_TRUST_ICON_LABELS[icon]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label
+                        htmlFor={`pdpTrust${index}Subtitle`}
+                        className="text-xs font-medium text-[#6b7280]"
+                      >
+                        Zusatztext (optional)
+                      </label>
+                      <input
+                        id={`pdpTrust${index}Subtitle`}
+                        name={`pdpTrust${index}Subtitle`}
+                        defaultValue={item.subtitle ?? ""}
+                        className={`${inputClass} mt-1`}
+                      />
+                    </div>
+                  </div>
+                  {(
+                    <label className="flex cursor-pointer items-start gap-2.5 text-sm text-[#374151]">
+                      <input type="hidden" name={`pdpTrust${index}AppendFreeShipping`} value="false" />
+                      <input
+                        type="checkbox"
+                        name={`pdpTrust${index}AppendFreeShipping`}
+                        value="true"
+                        defaultChecked={item.appendFreeShippingThreshold}
+                        className="checkbox-primary mt-0.5 size-4"
+                      />
+                      <span>
+                        <span className="font-medium">Versand-Schwelle anhängen</span>
+                        <span className="mt-0.5 block text-xs text-[#6b7280]">
+                          Ergänzt „· ab X € Bestellwert“ aus den Versandeinstellungen (sinnvoll bei Versand-Merkmal).
+                        </span>
+                      </span>
+                    </label>
+                  )}
+                </div>
+              ))}
+              <FieldError message={fe.pdpTrustBarItems} />
+            </div>
           </div>
         </SettingsCard>
 
