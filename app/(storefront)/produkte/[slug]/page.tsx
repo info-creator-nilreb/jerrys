@@ -244,6 +244,7 @@ export default async function ProduktDetailPage({
                 paypalClientId={process.env.PAYPAL_CLIENT_ID?.trim() ?? ""}
                 applePayStoreLabel={applePayStoreLabel(shopSettings)}
                 variants={product.variants}
+                returnPolicyText={shopSettings.pdpReturnPolicyText}
               />
             </article>
           </div>
@@ -251,6 +252,7 @@ export default async function ProduktDetailPage({
       </div>
 
       <ProductPdpTrustFooterBar
+        items={shopSettings.pdpTrustBarItems}
         freeShippingFromSubtotalGrossCents={shopShip.freeShippingFromSubtotalGrossCents}
       />
     </>
