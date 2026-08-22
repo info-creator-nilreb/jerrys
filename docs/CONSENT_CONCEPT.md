@@ -5,10 +5,10 @@
 | Kategorie   | Zweck (kurz) | Standard nach „Nur notwendige“ |
 |------------|--------------|--------------------------------|
 | Notwendig  | Betrieb des Shops: Session, Warenkorb, Sicherheit (z. B. CSRF/Auth-technisch nötig), Speicherung der Consent-Entscheidung | immer aktiv |
-| Statistik  | Reichweitenmessung (z. B. Matomo/Plausible), sobald eingebunden | Opt-in |
-| Marketing  | Remarketing/Werbe-Cookies, sobald eingebunden | Opt-in |
+| Statistik  | Reichweitenmessung (**Vercel Web Analytics**, seitenbasiert) | Opt-in |
+| Marketing  | Remarketing/Werbe-Cookies (reserviert, derzeit nicht aktiv) | Opt-in |
 
-Es werden nur Kategorien angeboten, die technisch auch genutzt werden. Aktuell können Statistik/Marketing gespeichert werden, ohne dass bereits Skripte geladen werden (Vorbereitung für Epic 7 Story 5).
+Es werden nur Kategorien angeboten, die technisch genutzt werden. **Statistik:** `@vercel/analytics` wird erst nach Opt-in im Storefront-Layout geladen (`VercelAnalyticsWithConsent`). Marketing ist vorbereitet, aber noch ohne Skripte.
 
 ## Speicherung
 
@@ -30,4 +30,6 @@ Es werden nur Kategorien angeboten, die technisch auch genutzt werden. Aktuell k
 ## Technik für spätere Skripte
 
 - Drittanbieter nur laden, wenn `consentAllowsStatistics()` / `consentAllowsMarketing()` (Client-Helfer) `true` liefern.
-- Vor Einbindung von GTM o. Ä. Epic 7 Story 5 und Datenschutz-Text anpassen.
+- Vercel Web Analytics: `components/storefront/vercel-analytics-with-consent.tsx` (reagiert auf `CONSENT_UPDATED_EVENT`).
+- Vercel Dashboard: Projekt → **Analytics** → Web Analytics aktivieren (zusätzlich zum Code).
+- Vor Einbindung weiterer Tools (GTM o. Ä.) Datenschutz-Text anpassen.

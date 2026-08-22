@@ -95,9 +95,10 @@ export function CookieConsentBanner() {
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-(--foreground-muted)">
           Wir verwenden Cookies und ähnliche Technologien. Notwendige Cookies sind für den Shopbetrieb erforderlich.
-          Statistik und Marketing sind optional und werden nur mit eurer Einwilligung aktiviert (derzeit werden keine
-          entsprechenden Drittanbieter-Skripte geladen – die Auswahl ist für spätere Erweiterungen gespeichert). Details
-          in der{" "}
+          Statistik und Marketing sind optional und werden nur mit eurer Einwilligung aktiviert. Bei Statistik wird{" "}
+          <span className="font-medium text-(--foreground-heading)">Vercel Web Analytics</span> geladen (seitenbasierte,
+          anonymisierte Auswertung ohne Marketing-Profile). Marketing-Cookies sind derzeit nicht im Einsatz. Details in
+          der{" "}
           <Link href="/datenschutz" className="font-medium text-primary underline-offset-2 hover:underline">
             Datenschutzerklärung
           </Link>
@@ -144,7 +145,7 @@ export function CookieConsentBanner() {
               <span>
                 <span className="font-medium">Statistik</span>
                 <span className="mt-0.5 block text-(--foreground-muted)">
-                  Anonymisierte Nutzungsauswertung (wenn ein Tool eingebunden ist).
+                  Vercel Web Analytics — anonymisierte Seitenaufrufe und Performance (nur mit Einwilligung).
                 </span>
               </span>
             </label>
@@ -158,7 +159,7 @@ export function CookieConsentBanner() {
               <span>
                 <span className="font-medium">Marketing</span>
                 <span className="mt-0.5 block text-(--foreground-muted)">
-                  Personalisierte Werbung (wenn eingebunden).
+                  Personalisierte Werbung (derzeit nicht eingebunden).
                 </span>
               </span>
             </label>

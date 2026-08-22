@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { CONSENT_JSON_VERSION, CONSENT_STORAGE_KEY } from "@/lib/consent/constants";
+import {
+  CONSENT_JSON_VERSION,
+  CONSENT_STORAGE_KEY,
+  CONSENT_UPDATED_EVENT,
+} from "@/lib/consent/constants";
 import type { StoredConsent } from "@/lib/consent/types";
 
 const storedConsentSchema = z.object({
@@ -43,6 +47,7 @@ export function readConsentFromWindow(): StoredConsent | null {
 export function writeConsentToWindow(record: StoredConsent): void {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(CONSENT_STORAGE_KEY, serializeConsent(record));
+  window.dispatchEvent(new CustomEvent(CONSENT_UPDATED_EVENT));
 }
 
 export function hasValidConsentRecord(): boolean {
