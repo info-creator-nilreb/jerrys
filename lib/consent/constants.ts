@@ -9,3 +9,6 @@ export const CONSENT_JSON_VERSION = 1;
 
 /** Öffnet den Cookie-Dialog (Footer-Link). */
 export const OPEN_COOKIE_SETTINGS_EVENT = "jerrys:cookie-settings";
+
+/** Nach Speichern der Cookie-Einstellungen (gleicher Tab). */
+export const CONSENT_UPDATED_EVENT = "jerrys:consent-updated";
