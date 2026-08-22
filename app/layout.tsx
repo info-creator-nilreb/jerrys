@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Source_Sans_3 } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { WebVitalsReporter } from "@/components/storefront/web-vitals-reporter";
 import { getShopSettings } from "@/lib/shop/shop-settings";
 import {
@@ -43,6 +44,7 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col font-sans">
         <WebVitalsReporter />
         {children}
+        <Analytics />
       </body>
     </html>
   );
