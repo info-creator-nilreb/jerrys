@@ -186,6 +186,8 @@ export function AdminSidebar({
   userEmail,
   userName,
   termineEnabled = true,
+  shopName,
+  adminLogoSrc,
   mobileOpen = false,
   onNavigate,
   className = "",
@@ -197,6 +199,8 @@ export function AdminSidebar({
   userName: string;
   /** Shop-Feature-Flag: Menüpunkt Termine. */
   termineEnabled?: boolean;
+  shopName: string;
+  adminLogoSrc: string;
   /** Off-canvas auf Viewports &lt; lg */
   mobileOpen?: boolean;
   onNavigate?: () => void;
@@ -262,11 +266,11 @@ export function AdminSidebar({
         {collapsed && !mobileOpen ? (
           <div
             className="flex justify-center px-0.5"
-            title={`jerry's Admin ${appVersion.startsWith("v") ? appVersion : `v${appVersion}`}`}
+            title={`${shopName} Admin ${appVersion.startsWith("v") ? appVersion : `v${appVersion}`}`}
           >
             <Image
-              src="/branding/jerrys-logo-white.png"
-              alt=""
+              src={adminLogoSrc}
+              alt={shopName}
               width={72}
               height={72}
               className="h-9 w-auto max-w-[2.75rem] object-contain"
@@ -277,8 +281,8 @@ export function AdminSidebar({
           <div className="flex items-start gap-3">
             <div className="relative h-11 w-[5.25rem] shrink-0">
               <Image
-                src="/branding/jerrys-logo-white.png"
-                alt=""
+                src={adminLogoSrc}
+                alt={shopName}
                 fill
                 className="object-contain object-left"
                 sizes="120px"

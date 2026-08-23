@@ -46,6 +46,10 @@ export async function ensureShopSettingsColumns(): Promise<void> {
           ALTER TABLE "shop_settings"
             ADD COLUMN IF NOT EXISTS "pdp_trust_bar_items" JSONB NOT NULL DEFAULT '[{"enabled":true,"icon":"truck","title":"Kostenloser Versand","subtitle":null,"appendFreeShippingThreshold":true},{"enabled":true,"icon":"leaf","title":"Klimaneutral verpackt","subtitle":null,"appendFreeShippingThreshold":false},{"enabled":true,"icon":"headphones","title":"Persönlicher Support","subtitle":null,"appendFreeShippingThreshold":false}]'
         `);
+        await prisma.$executeRawUnsafe(`
+          ALTER TABLE "shop_settings"
+            ADD COLUMN IF NOT EXISTS "footer_bg_color" TEXT NOT NULL DEFAULT '#182d4d'
+        `);
       } catch (e) {
         log.warn("ensure_shop_settings_columns_failed", errorMeta(e));
         ensurePromise = null;

@@ -69,6 +69,15 @@ export function shopFooterTagline(
   return JERRYS_SHOP_SETTINGS_DEFAULTS.shortDescription;
 }
 
+/** Storefront-Footer-Hintergrund (#RRGGBB). */
+export function shopFooterBgColor(
+  settings: Pick<ShopSettingsDTO, "footerBgColor">,
+): string {
+  const color = settings.footerBgColor?.trim();
+  if (color) return color;
+  return JERRYS_SHOP_SETTINGS_DEFAULTS.footerBgColor;
+}
+
 /**
  * Apple Pay / Google Pay Händlerlabel (ASCII, max. 64 Zeichen).
  * PayPal/Apple erwarten keinen Unicode-Apostroph — aus Shop-Namen ableiten.

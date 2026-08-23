@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { Facebook, Instagram } from "lucide-react";
 import Link from "next/link";
 import { CookieSettingsButton } from "@/components/storefront/cookie-consent/cookie-settings-button";
@@ -7,7 +8,7 @@ import { listPublishedContentNavLinks } from "@/lib/content/content-public-disco
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 import { resolveFooterLegalLinks } from "@/lib/shop/footer-settings";
 import { getShopSettings } from "@/lib/shop/shop-settings";
-import { shopFooterTagline } from "@/lib/shop/storefront-branding";
+import { shopFooterTagline, shopFooterBgColor } from "@/lib/shop/storefront-branding";
 import {
   buildStorefrontShopNavLinks,
   resolveFooterMerchandisingLinks,
@@ -51,6 +52,8 @@ export async function SiteFooter() {
 
   const tagline = shopFooterTagline(settings);
   const shopName = settings.shopName;
+  const footerBg = shopFooterBgColor(settings);
+  const footerFocusStyle = { "--tw-ring-offset-color": footerBg } as CSSProperties;
   const legalLinks = resolveFooterLegalLinks(settings);
   const socialLinks = [
     settings.instagramUrl
@@ -68,7 +71,10 @@ export async function SiteFooter() {
   const showSocial = settings.footerShowSocial && socialLinks.length > 0;
 
   return (
-    <footer className="mt-auto border-t border-white/10 bg-[#182d4d] py-12 text-center text-[0.98rem] leading-relaxed text-white/90 sm:py-14 sm:text-base">
+    <footer
+      className="mt-auto border-t border-white/10 py-12 text-center text-[0.98rem] leading-relaxed text-white/90 sm:py-14 sm:text-base"
+      style={{ backgroundColor: footerBg }}
+    >
       <div className="mx-auto max-w-6xl px-4">
         {settings.footerShowTagline ? (
           <p className="text-lg font-medium text-white sm:text-xl">{tagline}</p>
@@ -82,7 +88,8 @@ export async function SiteFooter() {
               <Link
                 key={href}
                 href={href}
-                className="font-medium text-primary underline-offset-4 transition-colors hover:text-(--primary-hover) hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#182d4d]"
+                className="font-medium text-primary underline-offset-4 transition-colors hover:text-(--primary-hover) hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                style={footerFocusStyle}
               >
                 {label}
               </Link>
@@ -98,7 +105,8 @@ export async function SiteFooter() {
               <Link
                 key={href}
                 href={href}
-                className="font-medium text-primary underline-offset-4 transition-colors hover:text-(--primary-hover) hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#182d4d]"
+                className="font-medium text-primary underline-offset-4 transition-colors hover:text-(--primary-hover) hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                style={footerFocusStyle}
               >
                 {label}
               </Link>
@@ -114,7 +122,8 @@ export async function SiteFooter() {
               <Link
                 key={href}
                 href={href}
-                className="font-medium text-primary underline-offset-4 transition-colors hover:text-(--primary-hover) hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#182d4d]"
+                className="font-medium text-primary underline-offset-4 transition-colors hover:text-(--primary-hover) hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                style={footerFocusStyle}
               >
                 {label}
               </Link>
@@ -129,12 +138,16 @@ export async function SiteFooter() {
             <Link
               key={href}
               href={href}
-              className="font-medium text-primary underline-offset-4 transition-colors hover:text-(--primary-hover) hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#182d4d]"
+              className="font-medium text-primary underline-offset-4 transition-colors hover:text-(--primary-hover) hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              style={footerFocusStyle}
             >
               {label}
             </Link>
           ))}
-          <CookieSettingsButton className="font-medium text-primary underline-offset-4 transition-colors hover:text-(--primary-hover) hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#182d4d]" />
+          <CookieSettingsButton
+            className="font-medium text-primary underline-offset-4 transition-colors hover:text-(--primary-hover) hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            style={footerFocusStyle}
+          />
         </nav>
         {showSocial ? (
           <nav
@@ -147,7 +160,8 @@ export async function SiteFooter() {
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex size-10 items-center justify-center rounded-sm text-primary transition-colors hover:text-(--primary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#182d4d]"
+                className="inline-flex size-10 items-center justify-center rounded-sm text-primary transition-colors hover:text-(--primary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                style={footerFocusStyle}
                 aria-label={label}
               >
                 <Icon className="size-5" aria-hidden strokeWidth={1.75} />

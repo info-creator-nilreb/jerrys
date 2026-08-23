@@ -1171,6 +1171,9 @@ model ShopSettings {
   /// Banner-Hintergrund als #RRGGBB; null = Shop-Primärfarbe.
   infoBannerBgColor String? @map("info_banner_bg_color")
 
+  /// Footer-Hintergrund als #RRGGBB (Storefront).
+  footerBgColor String @default("#182d4d") @map("footer_bg_color")
+
   /// Footer: Kurzbeschreibung/Tagline.
   footerShowTagline Boolean @default(true) @map("footer_show_tagline")
   /// Footer: Shop-Nav (Kategorien / Systemlinks) — oft redundant zur Header-Nav.

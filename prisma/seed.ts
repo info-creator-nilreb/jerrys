@@ -152,6 +152,7 @@ async function main() {
         infoBannerDurationSec: shopDefaults.infoBannerDurationSec,
         infoBannerHref: shopDefaults.infoBannerHref,
         infoBannerBgColor: shopDefaults.infoBannerBgColor,
+        footerBgColor: shopDefaults.footerBgColor,
         footerShowTagline: shopDefaults.footerShowTagline,
         footerShowShopNav: shopDefaults.footerShowShopNav,
         footerShowCollections: shopDefaults.footerShowCollections,
