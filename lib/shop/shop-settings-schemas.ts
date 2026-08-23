@@ -77,6 +77,7 @@ export const shopSettingsValuesSchema = z.object({
   showTermineInNav: z.boolean(),
   desktopShopNavMode: z.enum(DESKTOP_SHOP_NAV_MODES),
   headerNavPlacement: z.enum(HEADER_NAV_PLACEMENTS),
+  footerBgColor: hexColorSchema,
   footerShowTagline: z.boolean(),
   footerShowShopNav: z.boolean(),
   footerShowCollections: z.boolean(),

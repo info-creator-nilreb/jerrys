@@ -70,6 +70,8 @@ export type ShopSettingsDefaults = {
   infoBannerHref: string | null;
   /** null = Primärfarbe des Shops zur Laufzeit. */
   infoBannerBgColor: string | null;
+  /** Storefront-Footer-Hintergrund (#RRGGBB). */
+  footerBgColor: string;
   footerShowTagline: boolean;
   footerShowShopNav: boolean;
   footerShowCollections: boolean;
@@ -117,6 +119,7 @@ export const JERRYS_SHOP_SETTINGS_DEFAULTS: ShopSettingsDefaults = {
   infoBannerDurationSec: 6,
   infoBannerHref: null,
   infoBannerBgColor: null,
+  footerBgColor: "#182d4d",
   // Footer: schlank by default — Shop-Nav bleibt im Header; Rückgabe oft redundant zu Widerruf.
   footerShowTagline: true,
   footerShowShopNav: false,

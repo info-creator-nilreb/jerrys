@@ -12,6 +12,8 @@ export function AdminShell({
   userEmail,
   userName,
   termineEnabled = true,
+  shopName,
+  adminLogoSrc,
 }: {
   children: ReactNode;
   appVersion: string;
@@ -19,6 +21,9 @@ export function AdminShell({
   userName: string;
   /** Shop-Feature-Flag: Admin-Menüpunkt und Glocken-Termine. */
   termineEnabled?: boolean;
+  shopName: string;
+  /** Logo für dunkle Sidebar (ShopSettings logoDark). */
+  adminLogoSrc: string;
 }) {
   const { collapsed, toggle } = useSidebarCollapsed();
   const pathname = usePathname();
@@ -71,6 +76,8 @@ export function AdminShell({
         userEmail={userEmail}
         userName={userName}
         termineEnabled={termineEnabled}
+        shopName={shopName}
+        adminLogoSrc={adminLogoSrc}
         mobileOpen={mobileNavOpen}
         onNavigate={() => setMobileNavOpenForPath(null)}
         className={`fixed inset-y-0 left-0 z-50 w-[min(100%,18rem)] transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-auto lg:translate-x-0 ${

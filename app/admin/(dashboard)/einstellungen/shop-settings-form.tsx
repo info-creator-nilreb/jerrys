@@ -144,6 +144,7 @@ export function ShopSettingsForm({ defaults }: Props) {
   const [headerNavPlacement, setHeaderNavPlacement] = useState<HeaderNavPlacement>(
     defaults.headerNavPlacement,
   );
+  const [footerBgColor, setFooterBgColor] = useState(defaults.footerBgColor);
 
   const fe = state?.fieldErrors ?? {};
   const liveContrast = useMemo(
@@ -512,9 +513,17 @@ export function ShopSettingsForm({ defaults }: Props) {
 
         <SettingsCard
           title="Footer"
-          description="Steuert, welche Infos und Links in der Storefront-Fußzeile erscheinen. Weniger ist meist klarer — Shop-Navigation gehört typisch in den Header."
+          description="Hintergrundfarbe und sichtbare Bereiche der Storefront-Fußzeile. Weniger ist meist klarer — Shop-Navigation gehört typisch in den Header."
         >
           <div className="space-y-3">
+            <ColorRow
+              label="Hintergrundfarbe"
+              name="footerBgColor"
+              value={footerBgColor}
+              onChange={setFooterBgColor}
+              onRemove={() => setFooterBgColor(JERRYS_SHOP_SETTINGS_DEFAULTS.footerBgColor)}
+              error={fe.footerBgColor}
+            />
             {(
               [
                 {

@@ -4,6 +4,8 @@ import { getAdminAuthState } from "@/lib/auth/admin-auth-state";
 import { AdminDevClientNotice } from "@/components/admin/admin-dev-client-notice";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { formatAppVersionLabel, getAppVersion } from "@/lib/app-version";
+import { resolveShopBrandingAssetUrl } from "@/lib/shop/branding-asset-fallbacks";
+import { getShopSettings } from "@/lib/shop/shop-settings";
 import { isTermineFeatureEnabled } from "@/lib/shop/termine-feature";
 
 export const metadata: Metadata = {
@@ -37,6 +39,8 @@ export default async function AdminDashboardLayout({
       : "";
 
   const termineEnabled = await isTermineFeatureEnabled();
+  const shopSettings = await getShopSettings();
+  const adminLogoSrc = resolveShopBrandingAssetUrl(shopSettings, "logoDark");
 
   return (
     <AdminShell
@@ -44,6 +48,8 @@ export default async function AdminDashboardLayout({
       userEmail={email}
       userName={name || email}
       termineEnabled={termineEnabled}
+      shopName={shopSettings.shopName}
+      adminLogoSrc={adminLogoSrc}
     >
       {process.env.NODE_ENV === "development" ? (
         <AdminDevClientNotice devBaseUrl={devBaseUrl} />
