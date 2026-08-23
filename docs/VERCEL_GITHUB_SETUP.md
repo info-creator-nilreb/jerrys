@@ -65,6 +65,7 @@ Empfohlen:
 
 1. Migration lokal oder in CI gegen Staging testen (`npx prisma migrate deploy`).
 2. Production-Migration als kontrollierter Schritt laut [OPERATIONS.md](./OPERATIONS.md).
+3. **Zwei Production-Shops:** GitHub Secrets `PRISMA_MIGRATE_DATABASE_URL_JERRYS` + `PRISMA_MIGRATE_DATABASE_URL_EDELWEISS` setzen — Workflow [`.github/workflows/db-migrate-deploy.yml`](../.github/workflows/db-migrate-deploy.yml) migriert beide DBs nach Merge auf `main`.
 
 Optional später: Build Hook oder separates Deploy-Job — erst nach klarer DB-Strategie.
 

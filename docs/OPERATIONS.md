@@ -71,6 +71,33 @@ explizit übergeben (Supabase Pooler kann bei `migrate` mit `P1002` hängen — 
 PRISMA_MIGRATE_DATABASE_URL="postgresql://…" npx prisma migrate deploy
 ```
 
+### Migrationen automatisch (mehrere Shops)
+
+Wenn **zwei Vercel-Projekte** mit **getrennten Supabase-DBs** am selben Repo hängen, können Migrationen nach Merge auf `main` per GitHub Action auf **beide** Production-DBs laufen:
+
+Workflow: [`.github/workflows/db-migrate-deploy.yml`](../.github/workflows/db-migrate-deploy.yml)
+
+**Trigger:** Push auf `main`, sobald sich `prisma/migrations/**` oder `prisma/schema.prisma` ändert — zusätzlich manuell unter Actions → **DB migrate deploy**.
+
+**GitHub Repository → Settings → Secrets and variables → Actions** (je Secret die **Direct-** oder **Session-Pooler-URL**, Port **5432**):
+
+| Secret | Shop |
+| --- | --- |
+| `PRISMA_MIGRATE_DATABASE_URL_JERRYS` | jerry's / erstes Vercel-Projekt (Production-DB) |
+| `PRISMA_MIGRATE_DATABASE_URL_EDELWEISS` | zweites Vercel-Projekt (Production-DB) |
+
+Fehlt ein Secret, wird dieser Shop **übersprungen** (Notice im Action-Log), die anderen laufen weiter.
+
+**Lokal (beide Shops nacheinander):**
+
+```bash
+export PRISMA_MIGRATE_DATABASE_URL_JERRYS="postgresql://…5432…"
+export PRISMA_MIGRATE_DATABASE_URL_EDELWEISS="postgresql://…5432…"
+npm run db:migrate:deploy:all
+```
+
+Preview-Datenbanken sind bewusst **nicht** im Workflow — eigene Secrets + manueller Lauf bei Bedarf.
+
 Neue Tabellen erst nach dem Deploy nutzbar: Die App zeigt bei fehlender Migration eine
 verständliche Meldung (`P2021`) statt einer Fehlerseite, speichert aber nichts.
 
