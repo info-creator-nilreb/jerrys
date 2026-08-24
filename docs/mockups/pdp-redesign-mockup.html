@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PDP Mockup — Vorschlag (Mobile + Desktop)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #8bbe25;
+      --primary-hover: #74a320;
+      --foreground-heading: #3b3b3b;
+      --foreground-muted: #757575;
+      --surface-muted: #e9e8e8;
+      --surface-soft: #fafafa;
+      --trust-bg: #eef1ee;
+      --navy: #182d4d;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Source Sans 3", system-ui, sans-serif;
+      background: #ececec;
+      color: var(--foreground-heading);
+      line-height: 1.5;
+      font-size: 17px;
+    }
+
+    .doc-header {
+      background: #fff;
+      border-bottom: 1px solid var(--surface-muted);
+      padding: 1.5rem 2rem;
+    }
+
+    .doc-header h1 {
+      font-size: 1.35rem;
+      font-weight: 600;
+    }
+
+    .doc-header p {
+      margin-top: 0.35rem;
+      color: var(--foreground-muted);
+      font-size: 0.95rem;
+      max-width: 52rem;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.5rem;
+      margin-top: 1rem;
+      font-size: 0.8rem;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-commerce { background: var(--primary); }
+    .dot-badge { background: #c9a227; }
+    .dot-spec { background: #5b8def; }
+    .dot-trust { background: #8b8b8b; }
+    .dot-sticky { background: #182d4d; }
+
+    .canvas {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      padding: 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    @media (min-width: 1100px) {
+      .canvas {
+        grid-template-columns: 390px 1fr;
+        align-items: start;
+      }
+    }
+
+    .panel-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--foreground-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    /* Phone frame */
+    .phone-frame {
+      width: 375px;
+      max-width: 100%;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 28px;
+      box-shadow: 0 8px 40px rgb(0 0 0 / 0.15);
+      overflow: hidden;
+      border: 8px solid #222;
+      position: relative;
+    }
+
+    .phone-notch {
+      height: 28px;
+      background: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .phone-notch span {
+      width: 80px;
+      height: 6px;
+      background: #444;
+      border-radius: 99px;
+    }
+
+    .phone-scroll {
+      height: 720px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      position: relative;
+      background: var(--surface-soft);
+    }
+
+    /* Desktop frame */
+    .desktop-frame {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgb(0 0 0 / 0.08);
+      overflow: hidden;
+      border: 1px solid var(--surface-muted);
+    }
+
+    .desktop-scroll {
+      max-height: 680px;
+      overflow-y: auto;
+    }
+
+    /* Shared storefront components */
+    .store-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.65rem 1rem;
+      background: #fff;
+      border-bottom: 1px solid var(--surface-muted);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .store-header .logo {
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.02em;
+    }
+
+    .store-header .icons {
+      display: flex;
+      gap: 0.75rem;
+      color: var(--foreground-heading);
+      font-size: 0.75rem;
+    }
+
+    .breadcrumb {
+      padding: 0.6rem 1rem 0;
+      font-size: 0.72rem;
+      color: var(--foreground-muted);
+    }
+
+    .gallery {
+      position: relative;
+      aspect-ratio: 1;
+      background: linear-gradient(145deg, #ddd 0%, #eee 50%, #e5e5e5 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #aaa;
+      font-size: 0.8rem;
+    }
+
+    .badge-made {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(255,255,255,0.95);
+      border: 1px solid var(--surface-muted);
+      padding: 0.3rem 0.65rem;
+      border-radius: 99px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      box-shadow: 0 1px 4px rgb(0 0 0 / 0.06);
+    }
+
+    .badge-made::before {
+      content: "✦ ";
+      color: var(--primary);
+    }
+
+    .badge-bestseller {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: var(--primary);
+      color: #fff;
+      padding: 0.3rem 0.6rem;
+      border-radius: 99px;
+      font-size: 0.65rem;
+      font-weight: 600;
+    }
+
+    .content-card {
+      background: #fff;
+      margin: 0.75rem;
+      border-radius: 12px;
+      border: 1px solid var(--surface-muted);
+      padding: 1.1rem;
+      box-shadow: 0 1px 3px rgb(0 0 0 / 0.04);
+    }
+
+    .category-tag {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--primary);
+    }
+
+    .product-title {
+      margin-top: 0.35rem;
+      font-size: 1.35rem;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+
+    .product-subtitle {
+      margin-top: 0.25rem;
+      font-size: 0.95rem;
+      font-style: italic;
+      color: var(--foreground-muted);
+    }
+
+    .zone-label {
+      display: inline-block;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+    }
+
+    .zone-commerce { background: rgb(139 190 37 / 0.15); color: #5a8018; }
+    .zone-spec { background: rgb(91 141 239 / 0.12); color: #3a5fc0; }
+    .zone-trust { background: rgb(139 139 139 / 0.12); color: #555; }
+
+    .price {
+      font-size: 1.65rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .price-meta {
+      font-size: 0.8rem;
+      color: var(--foreground-muted);
+      margin-top: 0.15rem;
+    }
+
+    .variants {
+      margin-top: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .variant-opt {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 0.7rem;
+      border: 1px solid var(--surface-muted);
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+
+    .variant-opt.selected {
+      border-color: var(--primary);
+      background: rgb(139 190 37 / 0.06);
+    }
+
+    .stock-line {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin-top: 0.75rem;
+      font-size: 0.82rem;
+      color: var(--foreground-muted);
+    }
+
+    .stock-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+    }
+
+    .btn-primary {
+      display: block;
+      width: 100%;
+      margin-top: 0.85rem;
+      padding: 0.85rem;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    .express-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.6rem;
+    }
+
+    .express-btn {
+      flex: 1;
+      padding: 0.5rem;
+      border: 1px solid var(--surface-muted);
+      border-radius: 8px;
+      font-size: 0.72rem;
+      text-align: center;
+      color: var(--foreground-muted);
+      background: #fff;
+    }
+
+    .lead-text {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--surface-muted);
+      font-size: 0.85rem;
+      color: var(--foreground-muted);
+      line-height: 1.55;
+    }
+
+    .specs-simple {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--surface-muted);
+    }
+
+    .spec-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.45rem 0;
+      font-size: 0.82rem;
+      border-bottom: 1px solid rgb(233 232 232 / 0.6);
+    }
+
+    .spec-row:last-child { border-bottom: none; }
+
+    .spec-label {
+      color: var(--foreground-muted);
+      flex-shrink: 0;
+    }
+
+    .spec-value {
+      text-align: right;
+      color: var(--foreground-heading);
+    }
+
+    .spec-badge-de {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .flag-mini {
+      display: inline-flex;
+      flex-direction: column;
+      width: 14px;
+      height: 10px;
+      overflow: hidden;
+      border-radius: 1px;
+      border: 1px solid #ccc;
+    }
+
+    .flag-mini span { flex: 1; }
+    .flag-mini .b { background: #000; }
+    .flag-mini .r { background: #dd0000; }
+    .flag-mini .y { background: #ffce00; }
+
+    .link-more {
+      display: block;
+      margin-top: 0.5rem;
+      font-size: 0.78rem;
+      color: var(--primary);
+      font-weight: 500;
+      text-decoration: none;
+    }
+
+    .description-toggle {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--surface-muted);
+    }
+
+    .description-toggle p {
+      font-size: 0.82rem;
+      color: var(--foreground-muted);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .cross-sell {
+      margin: 0.75rem;
+      padding: 1rem;
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid var(--surface-muted);
+    }
+
+    .cross-sell h3 {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--foreground-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .cross-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.6rem;
+    }
+
+    .cross-item {
+      border: 1px solid var(--surface-muted);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .cross-img {
+      aspect-ratio: 1;
+      background: #e8e8e8;
+    }
+
+    .cross-info {
+      padding: 0.45rem;
+      font-size: 0.72rem;
+    }
+
+    .cross-price {
+      color: var(--primary);
+      font-weight: 600;
+      margin-top: 0.15rem;
+    }
+
+    .trust-bar {
+      background: var(--trust-bg);
+      padding: 1.25rem 1rem;
+      margin-top: 0.5rem;
+    }
+
+    .trust-item {
+      display: flex;
+      gap: 0.6rem;
+      font-size: 0.78rem;
+      color: var(--foreground-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .trust-item:last-child { margin-bottom: 0; }
+
+    .trust-item strong {
+      display: block;
+      color: var(--foreground-heading);
+      font-weight: 600;
+    }
+
+    /* Sticky ATC */
+    .sticky-atc {
+      position: sticky;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.65rem 0.85rem;
+      padding-bottom: max(0.65rem, env(safe-area-inset-bottom));
+      background: #fff;
+      border-top: 1px solid var(--surface-muted);
+      box-shadow: 0 -4px 16px rgb(0 0 0 / 0.08);
+      z-index: 20;
+    }
+
+    .sticky-thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+      background: #ddd;
+      flex-shrink: 0;
+    }
+
+    .sticky-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .sticky-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sticky-price {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .sticky-btn {
+      padding: 0.6rem 0.85rem;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* Desktop layout */
+    .desktop-inner {
+      padding: 1.25rem 1.5rem 1.5rem;
+    }
+
+    .desktop-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .desktop-gallery {
+      position: sticky;
+      top: 0;
+    }
+
+    .desktop-gallery .gallery {
+      border-radius: 12px;
+      border: 1px solid var(--surface-muted);
+    }
+
+    .usp-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--surface-muted);
+      text-align: center;
+    }
+
+    .usp-item {
+      font-size: 0.78rem;
+    }
+
+    .usp-icon {
+      width: 36px;
+      height: 36px;
+      margin: 0 auto 0.4rem;
+      border-radius: 50%;
+      border: 1px solid var(--surface-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      font-size: 1rem;
+    }
+
+    .usp-title {
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+
+    .usp-sub {
+      font-size: 0.7rem;
+      color: var(--foreground-muted);
+      margin-top: 0.15rem;
+    }
+
+    .comparison {
+      grid-column: 1 / -1;
+      margin-top: 1rem;
+      padding: 1.25rem;
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid var(--surface-muted);
+    }
+
+    .comparison h2 {
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 700px) {
+      .compare-grid { grid-template-columns: 1fr; }
+    }
+
+    .compare-col h3 {
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    .compare-col.ist h3 { color: #b42318; }
+    .compare-col.soll h3 { color: #008060; }
+
+    .compare-list {
+      list-style: none;
+      font-size: 0.82rem;
+    }
+
+    .compare-list li {
+      padding: 0.35rem 0;
+      padding-left: 1.2rem;
+      position: relative;
+      color: var(--foreground-muted);
+    }
+
+    .compare-col.ist .compare-list li::before {
+      content: "✕";
+      position: absolute;
+      left: 0;
+      color: #b42318;
+      font-size: 0.7rem;
+    }
+
+    .compare-col.soll .compare-list li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #008060;
+      font-weight: 700;
+    }
+
+    .annotation {
+      margin-top: 1rem;
+      padding: 0.85rem 1rem;
+      background: rgb(24 45 77 / 0.06);
+      border-left: 3px solid var(--navy);
+      border-radius: 0 8px 8px 0;
+      font-size: 0.82rem;
+      color: var(--foreground-muted);
+    }
+
+    .annotation strong {
+      color: var(--foreground-heading);
+    }
+
+    .spacer { height: 80px; }
+  </style>
+</head>
+<body>
+  <header class="doc-header">
+    <h1>PDP Mockup — Vorschlag (Referenz: edelweissdesigns.de)</h1>
+    <p>
+      Ziel: Commerce-first-Hierarchie, kuratierte Specs, Badges statt Listen-Dumps.
+      Markengrün und Source Sans 3 wie im bestehenden Design System.
+    </p>
+    <div class="legend">
+      <span><span class="dot dot-commerce"></span> Commerce-Zone (oben)</span>
+      <span><span class="dot dot-badge"></span> Badge auf Galerie</span>
+      <span><span class="dot dot-spec"></span> Kuratierte Specs</span>
+      <span><span class="dot dot-trust"></span> Trust / Cross-Sell</span>
+      <span><span class="dot dot-sticky"></span> Sticky ATC (Mobile)</span>
+    </div>
+  </header>
+
+  <main class="canvas">
+    <!-- MOBILE -->
+    <section>
+      <p class="panel-label">Mobile (375 px) — Soll-Zustand</p>
+      <div class="phone-frame">
+        <div class="phone-notch"><span></span></div>
+        <div class="phone-scroll" id="mobile-scroll">
+          <header class="store-header">
+            <span>☰</span>
+            <span class="logo">edel weiss</span>
+            <span class="icons">🔍 👤 🛒</span>
+          </header>
+
+          <nav class="breadcrumb">Start › Schmuck › Ketten › Kette Coffee</nav>
+
+          <div class="gallery">
+            <span class="badge-made">Made by me</span>
+            <span class="badge-bestseller">★ Bestseller</span>
+            Produktbild
+          </div>
+
+          <article class="content-card">
+            <p class="category-tag">Neu im Sortiment</p>
+            <h1 class="product-title">Kette Coffee von edel weiss</h1>
+            <p class="product-subtitle">selected by edel weiss</p>
+
+            <div style="margin-top: 1rem;">
+              <span class="zone-label zone-commerce">① Commerce — direkt unter Titel</span>
+              <p class="price">€ 49,00 <span style="font-size:0.9rem;font-weight:400;color:var(--foreground-muted)">*</span></p>
+              <p class="price-meta">inkl. MwSt., zzgl. Versand</p>
+
+              <div class="variants">
+                <label class="variant-opt selected">
+                  <input type="radio" checked disabled /> Länge 50 cm
+                </label>
+                <label class="variant-opt">
+                  <input type="radio" disabled /> Länge 60 cm
+                </label>
+              </div>
+
+              <div class="stock-line">
+                <span class="stock-dot"></span>
+                In 3–5 Werktagen bei dir
+              </div>
+
+              <button class="btn-primary" type="button">In den Warenkorb</button>
+              <div class="express-row">
+                <div class="express-btn">PayPal</div>
+                <div class="express-btn">Apple Pay</div>
+              </div>
+            </div>
+
+            <p class="lead-text">
+              Schillernde Frischwasserperle an filigran vergoldeter Kette — wasserfest und ideal zum Kombinieren.
+            </p>
+
+            <div class="specs-simple">
+              <span class="zone-label zone-spec">② Specs — max. 4, dedupliziert</span>
+              <div class="spec-row">
+                <span class="spec-label">Material</span>
+                <span class="spec-value">Steel vergoldet, Frischwasserperle</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Farbe</span>
+                <span class="spec-value">gold, weiß</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Maße</span>
+                <span class="spec-value">50 cm, Anhänger ca. 2 cm</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Herkunft</span>
+                <span class="spec-value spec-badge-de">
+                  <span class="flag-mini"><span class="b"></span><span class="r"></span><span class="y"></span></span>
+                  Deutschland
+                </span>
+              </div>
+              <a href="#" class="link-more">+ Alle Details anzeigen</a>
+            </div>
+
+            <div class="description-toggle">
+              <p>Perlmuttperlen aus weißen Muscheln schmücken den filigranen goldenen Ring. Er ist einzeln ein wunderschöner Blickfang, lässt sich aber auch hervorragend mit anderen Schmuckstücken kombinieren …</p>
+              <a href="#" class="link-more">Mehr anzeigen</a>
+            </div>
+          </article>
+
+          <section class="cross-sell">
+            <h3>Das könnte dir auch gefallen</h3>
+            <div class="cross-grid">
+              <div class="cross-item">
+                <div class="cross-img"></div>
+                <div class="cross-info">Ring Shell<div class="cross-price">€ 25,00</div></div>
+              </div>
+              <div class="cross-item">
+                <div class="cross-img"></div>
+                <div class="cross-info">Creole Wave<div class="cross-price">€ 32,00</div></div>
+              </div>
+              <div class="cross-item">
+                <div class="cross-img"></div>
+                <div class="cross-info">Armband Tide<div class="cross-price">€ 38,00</div></div>
+              </div>
+              <div class="cross-item">
+                <div class="cross-img"></div>
+                <div class="cross-info">Ohrring Pearl<div class="cross-price">€ 28,00</div></div>
+              </div>
+            </div>
+          </section>
+
+          <footer class="trust-bar">
+            <span class="zone-label zone-trust">③ Trust — getrennt von Specs</span>
+            <div class="trust-item"><span>🚚</span><div><strong>Plastikfreier Versand</strong>Gebrauchte Kartons, ab € 100 gratis in DE</div></div>
+            <div class="trust-item"><span>↩</span><div><strong>14 Tage Rückgabe</strong>Einfach und unkompliziert</div></div>
+            <div class="trust-item"><span>🏪</span><div><strong>Abholung im Store</strong>Berlin — schont die Umwelt</div></div>
+          </footer>
+
+          <div class="spacer"></div>
+
+          <div class="sticky-atc">
+            <div class="sticky-thumb"></div>
+            <div class="sticky-info">
+              <div class="sticky-title">Kette Coffee von edel weiss</div>
+              <div class="sticky-price">€ 49,00</div>
+            </div>
+            <button class="sticky-btn" type="button">Warenkorb</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DESKTOP + COMPARISON -->
+    <section>
+      <p class="panel-label">Desktop — Soll-Zustand + Ist/Soll-Vergleich</p>
+      <div class="desktop-frame">
+        <div class="desktop-scroll">
+          <header class="store-header" style="position:relative;">
+            <span class="logo">edel weiss</span>
+            <span style="font-size:0.8rem;color:var(--foreground-muted)">Schmuck · Accessoires · Termine</span>
+            <span class="icons">🔍 👤 🛒</span>
+          </header>
+
+          <div class="desktop-inner">
+            <nav class="breadcrumb" style="padding:0 0 1rem;">Start › Schmuck › Ketten › Kette Coffee</nav>
+
+            <div class="desktop-grid">
+              <div class="desktop-gallery">
+                <div class="gallery" style="aspect-ratio:1;">
+                  <span class="badge-made">Made by me</span>
+                  <span class="badge-bestseller">★ Bestseller</span>
+                  Produktbild
+                </div>
+              </div>
+
+              <article class="content-card" style="margin:0;box-shadow:none;border:none;padding:0;">
+                <p class="category-tag">Neu im Sortiment</p>
+                <h1 class="product-title" style="font-size:1.75rem;">Kette Coffee von edel weiss</h1>
+                <p class="product-subtitle">selected by edel weiss</p>
+
+                <div style="margin-top:1.25rem;">
+                  <span class="zone-label zone-commerce">Commerce-Block oben</span>
+                  <p class="price">€ 49,00</p>
+                  <p class="price-meta">inkl. MwSt., zzgl. Versand · In 3–5 Werktagen</p>
+
+                  <div class="variants" style="flex-direction:row;">
+                    <label class="variant-opt selected" style="flex:1;"><input type="radio" checked disabled /> 50 cm</label>
+                    <label class="variant-opt" style="flex:1;"><input type="radio" disabled /> 60 cm</label>
+                  </div>
+
+                  <button class="btn-primary" type="button">In den Warenkorb</button>
+                </div>
+
+                <p class="lead-text">Schillernde Frischwasserperle an filigran vergoldeter Kette — wasserfest und ideal zum Kombinieren.</p>
+
+                <div class="specs-simple">
+                  <span class="zone-label zone-spec">Kompakte Specs (ohne Icon-Wand)</span>
+                  <div class="spec-row"><span class="spec-label">Material</span><span class="spec-value">Steel vergoldet, Frischwasserperle</span></div>
+                  <div class="spec-row"><span class="spec-label">Farbe</span><span class="spec-value">gold, weiß</span></div>
+                  <div class="spec-row"><span class="spec-label">Maße</span><span class="spec-value">50 cm, Anhänger ca. 2 cm</span></div>
+                  <div class="spec-row"><span class="spec-label">Herkunft</span><span class="spec-value">🇩🇪 Deutschland</span></div>
+                </div>
+
+                <ul class="usp-row">
+                  <li class="usp-item">
+                    <div class="usp-icon">🚚</div>
+                    <p class="usp-title">Plastikfrei</p>
+                    <p class="usp-sub">Nachhaltige Verpackung</p>
+                  </li>
+                  <li class="usp-item">
+                    <div class="usp-icon">↩</div>
+                    <p class="usp-title">14 Tage Rückgabe</p>
+                    <p class="usp-sub">Unkompliziert</p>
+                  </li>
+                  <li class="usp-item">
+                    <div class="usp-icon">🏪</div>
+                    <p class="usp-title">Store Berlin</p>
+                    <p class="usp-sub">Abholung möglich</p>
+                  </li>
+                </ul>
+              </article>
+            </div>
+
+            <section class="cross-sell" style="margin:1.5rem 0 0;">
+              <h3>Das könnte dir auch gefallen</h3>
+              <div class="cross-grid" style="grid-template-columns:repeat(4,1fr);">
+                <div class="cross-item"><div class="cross-img"></div><div class="cross-info">Ring Shell<div class="cross-price">€ 25</div></div></div>
+                <div class="cross-item"><div class="cross-img"></div><div class="cross-info">Creole Wave<div class="cross-price">€ 32</div></div></div>
+                <div class="cross-item"><div class="cross-img"></div><div class="cross-info">Armband Tide<div class="cross-price">€ 38</div></div></div>
+                <div class="cross-item"><div class="cross-img"></div><div class="cross-info">Ohrring Pearl<div class="cross-price">€ 28</div></div></div>
+              </div>
+            </section>
+
+            <div class="comparison">
+              <h2>Ist vs. Soll — Informationsarchitektur</h2>
+              <div class="compare-grid">
+                <div class="compare-col ist">
+                  <h3>Aktuell (Ist)</h3>
+                  <ul class="compare-list">
+                    <li>Specs-Panel mit 10+ Merkmalen vor dem Kauf</li>
+                    <li>FARBE doppelt, Material + Schmuckmaterial redundant</li>
+                    <li>Made in Germany UND Herkunft Deutschland</li>
+                    <li>Made by me als USP-Zeile statt Badge</li>
+                    <li>Preis + ATC erst nach langem Scrollen (Mobile)</li>
+                    <li>Grüner Icon-Kasten „PRODUKTDETAILS“ dominiert</li>
+                    <li>Kein Cross-Sell, kein Sticky ATC</li>
+                  </ul>
+                </div>
+                <div class="compare-col soll">
+                  <h3>Vorschlag (Soll)</h3>
+                  <ul class="compare-list">
+                    <li>Commerce-Block direkt unter Titel</li>
+                    <li>Max. 4–5 kuratierte Specs, dedupliziert</li>
+                    <li>Herkunft DE nur einmal (Spec oder Badge)</li>
+                    <li>Made by me + Bestseller als Galerie-Badges</li>
+                    <li>Specs flach, ohne Icon-Wand — Rest unter „Alle Details“</li>
+                    <li>USPs nur für Service-Versprechen (Versand, Rückgabe)</li>
+                    <li>Cross-Sell + Sticky ATC auf Mobile</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="annotation">
+                <strong>Implementierungs-Hinweis:</strong>
+                Kein neues Design — nur Umordnung in <code>page.tsx</code>,
+                Dedup-Logik in <code>pdp-resolve-display.ts</code>,
+                Badge in <code>product-detail-gallery.tsx</code>,
+                Sticky-Bar als neues Client-Component.
+                Filter-Metadaten (Altersgruppe, Zielgeschlecht) bleiben für Suche/Katalog, erscheinen nicht auf der PDP.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
