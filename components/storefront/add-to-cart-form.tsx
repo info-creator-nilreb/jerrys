@@ -58,7 +58,17 @@ export function AddToCartForm({
 
   if (!canAdd) {
     return (
-      <p className={compact ? "text-base leading-snug text-(--foreground-muted)" : "mt-8 text-base text-(--foreground-muted)"}>
+      <p
+        className={
+          layout === "sticky"
+            ? "hidden"
+            : compact
+              ? "text-base leading-snug text-(--foreground-muted)"
+              : isPdp
+                ? "text-base text-(--foreground-muted)"
+                : "mt-8 text-base text-(--foreground-muted)"
+        }
+      >
         Derzeit nicht bestellbar (Lager oder Mindestabnahme).
       </p>
     );

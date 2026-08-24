@@ -156,7 +156,10 @@ export async function getActiveProductBySlug(slug: string) {
   });
 }
 
-/** Verwandte Produkte aus gemeinsamen Kollektionen (PDP Cross-Sell). */
+/**
+ * Verwandte Produkte für PDP-Cross-Sell: gleiche Kollektion(en), ohne aktuelles Produkt.
+ * Sortierung: Bestseller zuerst, dann Katalog-sortOrder — kein Zufall, derzeit nicht admin-konfigurierbar.
+ */
 export async function listRelatedProductsForPdp(
   productId: string,
   collectionSlugs: string[],

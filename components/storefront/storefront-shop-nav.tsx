@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { X } from "lucide-react";
+import { StorefrontMenuIcon } from "@/components/storefront/storefront-menu-icon";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useState } from "react";
 import {
@@ -158,7 +159,7 @@ export function StorefrontShopNav({
           {drawerOpen ? (
             <X className="size-6" aria-hidden strokeWidth={1.75} />
           ) : (
-            <Menu className="size-6" aria-hidden strokeWidth={1.75} />
+            <StorefrontMenuIcon className="h-[18px] w-6" />
           )}
         </button>
 

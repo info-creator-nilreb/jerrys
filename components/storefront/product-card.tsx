@@ -32,6 +32,7 @@ export function ProductCard({ product }: { product: StorefrontProductCard }) {
   const displayPriceCents = variant?.priceGrossCents ?? 0;
   const listPriceCents = variant?.listPriceGrossCents ?? null;
   const onSale = listPriceCents != null && listPriceCents > displayPriceCents;
+  const productHref = `/produkte/${product.slug}`;
 
   if (!variant) {
     return (
@@ -43,14 +44,12 @@ export function ProductCard({ product }: { product: StorefrontProductCard }) {
 
   return (
     <article className="group relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl border border-(--surface-muted) bg-white shadow-sm transition-shadow hover:shadow-md">
-      <div className="relative flex min-h-0 flex-1 flex-col">
-        <Link
-          href={`/produkte/${product.slug}`}
-          className="absolute inset-0 z-0 rounded-t-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-          aria-label={`${product.title} – zur Produktseite`}
-        />
-        <div className="relative z-10 shrink-0 pointer-events-auto">
-          <div className="absolute left-3 top-3 z-30 flex flex-col gap-1.5">
+      <Link
+        href={productHref}
+        className="relative flex min-h-0 flex-1 flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
+      >
+        <div className="relative shrink-0">
+          <div className="pointer-events-none absolute left-3 top-3 z-30 flex flex-col gap-1.5">
             {onSale ? (
               <span className="inline-flex w-fit items-center rounded-full bg-(--foreground-heading) px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-white shadow-sm">
                 Sale
@@ -72,7 +71,7 @@ export function ProductCard({ product }: { product: StorefrontProductCard }) {
             <ProductCardImageSlider images={product.images} productTitle={product.title} />
           )}
         </div>
-        <div className="relative z-10 flex min-h-0 flex-1 flex-col pointer-events-none p-6 md:p-7">
+        <div className="flex min-h-0 flex-1 flex-col p-6 md:p-7">
           <div className="min-h-0 flex-1">
             <h3 className="text-xl font-semibold text-(--foreground-heading) md:text-2xl">{product.title}</h3>
             <p className="mt-2 min-h-[2.75rem] text-base leading-snug text-(--foreground-muted) md:min-h-[3rem] md:text-[1.05rem]">
@@ -99,7 +98,7 @@ export function ProductCard({ product }: { product: StorefrontProductCard }) {
             </p>
           </div>
         </div>
-      </div>
+      </Link>
       <div className="relative z-10 flex shrink-0 flex-col justify-start border-t border-(--surface-muted) bg-white px-6 pt-4 pb-6 md:min-h-[8.5rem] md:px-7 md:pb-7">
         <AddToCartForm
           productId={product.id}

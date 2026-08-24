@@ -4,15 +4,21 @@ import { formatPrice } from "@/lib/catalog/format";
 import { pickDefaultVariant } from "@/lib/catalog/default-variant-storefront";
 import type { StorefrontProductCard } from "@/components/storefront/product-card";
 
+/** Kurzer Hinweis zur Empfehlungslogik (kein Zufall). */
+export const PDP_CROSS_SELL_HINT =
+  "Aus derselben Kollektion — sortiert nach Bestseller und Katalog-Reihenfolge.";
+
 /**
  * Kompakte Produktempfehlungen unterhalb der PDP-Beschreibung.
  */
 export function ProductPdpCrossSell({
   products,
   heading = "Das könnte dir auch gefallen",
+  hint = PDP_CROSS_SELL_HINT,
 }: {
   products: StorefrontProductCard[];
   heading?: string;
+  hint?: string | null;
 }) {
   if (products.length === 0) return null;
 
@@ -27,6 +33,9 @@ export function ProductPdpCrossSell({
       >
         {heading}
       </h2>
+      {hint ? (
+        <p className="mt-1.5 text-xs leading-snug text-(--foreground-muted)">{hint}</p>
+      ) : null}
       <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         {products.map((product) => {
           const variant = pickDefaultVariant(product);

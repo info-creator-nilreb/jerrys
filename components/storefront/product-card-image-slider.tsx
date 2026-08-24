@@ -85,7 +85,11 @@ export function ProductCardImageSlider({
           <div className="pointer-events-none absolute inset-x-0 top-1/2 z-20 flex -translate-y-1/2 justify-between px-1.5">
             <button
               type="button"
-              onClick={() => go(-1)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                go(-1);
+              }}
               aria-label="Vorheriges Bild"
               className="pointer-events-auto flex size-9 items-center justify-center rounded-full border border-white/30 bg-black/35 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-black/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
             >
@@ -93,7 +97,11 @@ export function ProductCardImageSlider({
             </button>
             <button
               type="button"
-              onClick={() => go(1)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                go(1);
+              }}
               aria-label="Nächstes Bild"
               className="pointer-events-auto flex size-9 items-center justify-center rounded-full border border-white/30 bg-black/35 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-black/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
             >
@@ -110,7 +118,11 @@ export function ProductCardImageSlider({
                 type="button"
                 aria-current={i === index ? "true" : undefined}
                 aria-label={`Bild ${i + 1} von ${n}`}
-                onClick={() => setIndex(i)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIndex(i);
+                }}
                 className={`size-2 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
                   i === index ? "bg-primary" : "bg-white/70 hover:bg-white"
                 }`}

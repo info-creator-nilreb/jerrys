@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { AddToCartForm } from "@/components/storefront/add-to-cart-form";
 import type { ProductQuantityRules } from "@/lib/cart/quantity";
 
 /**
- * Mobile Sticky-Leiste: erscheint, wenn der Commerce-Block aus dem Viewport scrollt.
+ * Mobile Sticky-Leiste: erscheint, wenn der Commerce-Block nach oben aus dem Viewport scrollt.
+ * Portal auf document.body, damit position:fixed zuverlässig am Viewport klebt.
  */
 export function ProductPdpStickyAtcBar({
   sentinelId,
@@ -32,24 +34,28 @@ export function ProductPdpStickyAtcBar({
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    if (!canAdd) return;
+
     const el = document.getElementById(sentinelId);
-    if (!el || !canAdd) return;
+    if (!el) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry) setVisible(!entry.isIntersecting);
+        if (!entry) return;
+        const scrolledPast = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+        setVisible(scrolledPast);
       },
-      { root: null, threshold: 0, rootMargin: "0px 0px -1px 0px" },
+      { root: null, threshold: [0, 1] },
     );
     observer.observe(el);
     return () => observer.disconnect();
   }, [sentinelId, canAdd]);
 
-  if (!visible || !canAdd) return null;
+  if (!canAdd || !visible || typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-(--surface-muted) bg-white/98 shadow-[0_-4px_16px_rgb(0_0_0/0.08)] backdrop-blur-sm md:hidden"
+      className="fixed inset-x-0 bottom-0 z-[600000] border-t border-(--surface-muted) bg-white/98 shadow-[0_-4px_16px_rgb(0_0_0/0.08)] backdrop-blur-sm md:hidden"
       style={{ paddingBottom: "max(0.65rem, env(safe-area-inset-bottom))" }}
       role="region"
       aria-label="Schnell in den Warenkorb"
@@ -77,6 +83,7 @@ export function ProductPdpStickyAtcBar({
           layout="sticky"
         />
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

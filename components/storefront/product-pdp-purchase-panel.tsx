@@ -75,6 +75,7 @@ export function ProductPdpPurchasePanel({
   return (
     <>
       <div className="mt-5 space-y-5 border-t border-(--surface-muted) pt-5">
+      <div id={PDP_PURCHASE_SENTINEL_ID} className="h-px w-full" aria-hidden />
       {showPicker ? (
         <fieldset className="space-y-2">
           <legend className="text-sm font-medium text-(--foreground-heading)">Auswahl</legend>
@@ -151,26 +152,30 @@ export function ProductPdpPurchasePanel({
         ) : null}
       </ul>
 
-      <AddToCartForm
-        productId={productId}
-        productVariantId={selected.id}
-        canAdd={canAdd}
-        quantityRules={qtyRules}
-        showCartIcon
-        layout="pdp"
-      />
+      {canAdd ? (
+        <AddToCartForm
+          productId={productId}
+          productVariantId={selected.id}
+          canAdd
+          quantityRules={qtyRules}
+          showCartIcon
+          layout="pdp"
+        />
+      ) : null}
 
-      <ProductExpressCheckout
-        enabled={canAdd}
-        productId={productId}
-        productVariantId={selected.id}
-        quantity={expressQty}
-        payPalConfigured={payPalConfigured}
-        paypalClientId={paypalClientId}
-        currency={currency}
-        totalGrossCents={expressTotalEstimate}
-        applePayStoreLabel={applePayStoreLabel}
-      />
+      {canAdd ? (
+        <ProductExpressCheckout
+          enabled
+          productId={productId}
+          productVariantId={selected.id}
+          quantity={expressQty}
+          payPalConfigured={payPalConfigured}
+          paypalClientId={paypalClientId}
+          currency={currency}
+          totalGrossCents={expressTotalEstimate}
+          applePayStoreLabel={applePayStoreLabel}
+        />
+      ) : null}
 
       <p className="text-center text-[0.7rem] leading-snug text-(--foreground-muted)">
         Im Checkout:{" "}
@@ -180,7 +185,6 @@ export function ProductPdpPurchasePanel({
       <p className="border-t border-(--surface-muted) pt-4 text-[0.68rem] leading-relaxed text-(--foreground-muted)">
         * inkl. MwSt., zzgl. Versand. Nach dem Warenkorb folgen Warenkorb und Checkout.
       </p>
-      <div id={PDP_PURCHASE_SENTINEL_ID} className="h-px w-full" aria-hidden />
     </div>
 
       <ProductPdpStickyAtcBar
