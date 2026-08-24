@@ -81,7 +81,13 @@ export function AddToCartForm({
     <form
       action={formAction}
       className={
-        compact ? "flex flex-col gap-3" : isPdp ? "mt-0 flex w-full max-w-md flex-col gap-3" : "mt-8 flex flex-col gap-2"
+        isSticky
+          ? "flex shrink-0 items-center self-center"
+          : compact
+            ? "flex flex-col gap-3"
+            : isPdp
+              ? "mt-0 flex w-full max-w-md flex-col gap-3"
+              : "mt-8 flex flex-col gap-2"
       }
     >
       <input type="hidden" name="productId" value={productId} />
@@ -150,9 +156,19 @@ export function AddToCartForm({
           {pending ? "Wird hinzugefügt…" : isSticky ? "Warenkorb" : "In den Warenkorb"}
         </button>
       </div>
-      {state?.error ? <p className="text-base text-red-600">{state.error}</p> : null}
-      {state?.ok ? (
+      {state?.error && !isSticky ? <p className="text-base text-red-600">{state.error}</p> : null}
+      {state?.ok && !isSticky ? (
         <p className="text-base font-medium text-primary" role="status">
+          Zum Warenkorb hinzugefügt.
+        </p>
+      ) : null}
+      {isSticky && state?.error ? (
+        <p className="sr-only" role="alert">
+          {state.error}
+        </p>
+      ) : null}
+      {isSticky && state?.ok ? (
+        <p className="sr-only" role="status">
           Zum Warenkorb hinzugefügt.
         </p>
       ) : null}
