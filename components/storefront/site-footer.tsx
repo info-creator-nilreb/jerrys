@@ -6,6 +6,7 @@ import { listActiveCategoriesForNav } from "@/lib/catalog/category-queries";
 import { listActiveCollectionsForStorefront } from "@/lib/catalog/collection-queries";
 import { listPublishedContentNavLinks } from "@/lib/content/content-public-discovery";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
+import { isMissingSchemaError } from "@/lib/db/prisma-error";
 import { resolveFooterLegalLinks } from "@/lib/shop/footer-settings";
 import { getShopSettings } from "@/lib/shop/shop-settings";
 import { shopFooterTagline, shopFooterBgColor } from "@/lib/shop/storefront-branding";
@@ -14,41 +15,61 @@ import {
   resolveFooterMerchandisingLinks,
 } from "@/lib/storefront/shop-nav-links";
 
+function isFooterDataLoadError(e: unknown): boolean {
+  return isDatabaseUnreachable(e) || isMissingSchemaError(e);
+}
+
+async function loadFooterCategories() {
+  try {
+    return await listActiveCategoriesForNav();
+  } catch (e) {
+    if (!isFooterDataLoadError(e)) throw e;
+    return [];
+  }
+}
+
+async function loadFooterCollections() {
+  try {
+    return await listActiveCollectionsForStorefront();
+  } catch (e) {
+    if (!isFooterDataLoadError(e)) throw e;
+    return [];
+  }
+}
+
+async function loadFooterCmsLinks() {
+  try {
+    return await listPublishedContentNavLinks({ footerOnly: true });
+  } catch (e) {
+    if (!isFooterDataLoadError(e)) throw e;
+    return [];
+  }
+}
+
 /** Dunkles Navy wie Admin-Sidebar; helle Schrift, Primärgrün für Links. */
 export async function SiteFooter() {
-  let shopLinks = buildStorefrontShopNavLinks([], {
-    showAllProducts: true,
-    showTermine: true,
-  });
-  let merchandisingLinks: ReturnType<typeof resolveFooterMerchandisingLinks> = [];
-  /** Nur published CMS-Content-Seiten mit showInFooter — Drafts nie (Epic 12 Slice 4). */
-  let cmsContentLinks: Array<{ href: string; label: string }> = [];
-  let settings: Awaited<ReturnType<typeof getShopSettings>>;
-  try {
-    const [shopSettings, categories, collections, cmsLinks] = await Promise.all([
-      getShopSettings(),
-      listActiveCategoriesForNav(),
-      listActiveCollectionsForStorefront(),
-      listPublishedContentNavLinks({ footerOnly: true }),
-    ]);
-    settings = shopSettings;
-    const navOptions = {
-      showAllProducts: settings.showAllProductsInNav,
-      showTermine: settings.showTermineInNav,
-    };
-    shopLinks = buildStorefrontShopNavLinks(
-      categories.map((c) => ({ slug: c.slug, title: c.title })),
-      navOptions,
-    );
-    merchandisingLinks = resolveFooterMerchandisingLinks(
-      shopLinks,
-      collections.filter((c) => c._count.products > 0).map((c) => ({ slug: c.slug, title: c.title })),
-    );
-    cmsContentLinks = cmsLinks;
-  } catch (e) {
-    if (!isDatabaseUnreachable(e)) throw e;
-    settings = await getShopSettings();
-  }
+  const settings = await getShopSettings();
+
+  const [categories, collections, cmsContentLinks] = await Promise.all([
+    loadFooterCategories(),
+    loadFooterCollections(),
+    loadFooterCmsLinks(),
+  ]);
+
+  const navOptions = {
+    showAllProducts: settings.showAllProductsInNav,
+    showTermine: settings.showTermineInNav,
+  };
+  const shopLinks = buildStorefrontShopNavLinks(
+    categories.map((c) => ({ slug: c.slug, title: c.title })),
+    navOptions,
+  );
+  const merchandisingLinks = resolveFooterMerchandisingLinks(
+    shopLinks,
+    collections
+      .filter((c) => c._count.products > 0)
+      .map((c) => ({ slug: c.slug, title: c.title })),
+  );
 
   const tagline = shopFooterTagline(settings);
   const shopName = settings.shopName;
