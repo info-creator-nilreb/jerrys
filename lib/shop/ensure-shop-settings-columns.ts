@@ -51,9 +51,9 @@ export async function ensureShopSettingsColumns(): Promise<void> {
             ADD COLUMN IF NOT EXISTS "footer_bg_color" TEXT NOT NULL DEFAULT '#182d4d'
         `);
       } catch (e) {
+        // DDL schlägt z. B. am Supabase-Pooler fehl — kein harter Abbruch;
+        // `findUnique` liefert P2022, `getShopSettings` fällt auf Defaults zurück.
         log.warn("ensure_shop_settings_columns_failed", errorMeta(e));
-        ensurePromise = null;
-        throw e;
       }
     })();
   }
