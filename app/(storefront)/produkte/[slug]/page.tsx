@@ -6,6 +6,7 @@ import {
 import {
   getActiveProductByPreviousSlug,
   getActiveProductBySlug,
+  listRelatedProductsForPdp,
 } from "@/lib/catalog/queries";
 import { resolvePdpDisplay } from "@/lib/catalog/pdp-resolve-display";
 import { isProductDescriptionRedundantWithLead } from "@/lib/catalog/pdp-description-overlap";
@@ -24,6 +25,7 @@ import { readBrowseContextFromCookies } from "@/lib/storefront/browse-context";
 import { AmazonRatingDisplay } from "@/components/storefront/amazon-rating-display";
 import { ProductDetailGallery } from "@/components/storefront/product-detail-gallery";
 import { ProductJsonLd } from "@/components/storefront/product-json-ld";
+import { ProductPdpCrossSell } from "@/components/storefront/product-pdp-cross-sell";
 import { ProductPdpDescription } from "@/components/storefront/product-pdp-description";
 import { ProductPdpPurchasePanel } from "@/components/storefront/product-pdp-purchase-panel";
 import { ProductPdpSpecsPanel } from "@/components/storefront/product-pdp-specs-panel";
@@ -142,14 +144,18 @@ export default async function ProduktDetailPage({
   const collectionTitleBySlug = new Map(
     product.collectionMemberships.map((m) => [m.collection.slug, m.collection.title] as const),
   );
+  const collectionSlugs = product.collectionMemberships.map((m) => m.collection.slug);
   const browseContext = await readBrowseContextFromCookies();
   const categorySlugs = new Set(categoryBySlug.keys());
-  const collectionSlugs = new Set(collectionTitleBySlug.keys());
+  const collectionSlugSet = new Set(collectionTitleBySlug.keys());
 
-  const hasSpecsPanel = display.leftSpecs.length > 0 || display.propertySpecs.length > 0;
+  const hasSpecsPanel = display.visibleSpecs.length > 0 || display.extraSpecs.length > 0;
   const showFullDescription =
     Boolean(product.description?.trim()) &&
     !isProductDescriptionRedundantWithLead(product.description, leadDisplay);
+
+  const coverImage = product.images[0];
+  const relatedProducts = await listRelatedProductsForPdp(product.id, collectionSlugs, 4);
 
   return (
     <>
@@ -161,7 +167,7 @@ export default async function ProduktDetailPage({
             browseContext,
             primaryCategory,
             categorySlugs,
-            collectionSlugs,
+            collectionSlugs: collectionSlugSet,
             categoryBySlug,
             collectionTitleBySlug,
           })}
@@ -177,6 +183,7 @@ export default async function ProduktDetailPage({
               <ProductDetailGallery
                 images={product.images}
                 isBestseller={product.isBestseller}
+                galleryBadgeLabel={display.galleryBadgeLabel}
                 productTitle={product.title}
               />
             )}
@@ -214,13 +221,33 @@ export default async function ProduktDetailPage({
                 </p>
               ) : null}
 
-              {hasSpecsPanel ? <ProductPdpSpecsPanel display={display} /> : null}
+              <ProductPdpPurchasePanel
+                productId={product.id}
+                productTitle={product.title}
+                coverImageUrl={coverImage?.url ?? null}
+                coverImageAlt={coverImage?.alt || product.title}
+                currency={product.currency}
+                listPriceGrossCents={defaultVariant.listPriceGrossCents}
+                deliveryTimeKeyFallback={defaultVariant.deliveryTimeKey}
+                payPalConfigured={isPayPalConfigured()}
+                paypalClientId={process.env.PAYPAL_CLIENT_ID?.trim() ?? ""}
+                applePayStoreLabel={applePayStoreLabel(shopSettings)}
+                variants={product.variants}
+                returnPolicyText={shopSettings.pdpReturnPolicyText}
+              />
 
-              <ProductPdpUspRow usps={display.usps} />
+              {hasSpecsPanel ? (
+                <ProductPdpSpecsPanel
+                  visibleSpecs={display.visibleSpecs}
+                  extraSpecs={display.extraSpecs}
+                />
+              ) : null}
 
               {showFullDescription ? (
                 <ProductPdpDescription html={product.description} />
               ) : null}
+
+              <ProductPdpUspRow usps={display.usps} />
 
               {product.showWorkshopCalendar ? (
                 <div className="mt-6 border-t border-(--surface-muted) pt-6">
@@ -235,17 +262,7 @@ export default async function ProduktDetailPage({
                 </div>
               ) : null}
 
-              <ProductPdpPurchasePanel
-                productId={product.id}
-                currency={product.currency}
-                listPriceGrossCents={defaultVariant.listPriceGrossCents}
-                deliveryTimeKeyFallback={defaultVariant.deliveryTimeKey}
-                payPalConfigured={isPayPalConfigured()}
-                paypalClientId={process.env.PAYPAL_CLIENT_ID?.trim() ?? ""}
-                applePayStoreLabel={applePayStoreLabel(shopSettings)}
-                variants={product.variants}
-                returnPolicyText={shopSettings.pdpReturnPolicyText}
-              />
+              <ProductPdpCrossSell products={relatedProducts} />
             </article>
           </div>
         </div>

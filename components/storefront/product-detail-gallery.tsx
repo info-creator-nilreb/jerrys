@@ -2,17 +2,19 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react";
+import { ChevronLeft, ChevronRight, ShoppingCart, Sparkles } from "lucide-react";
 
 export type GalleryImage = { id: string; url: string; alt: string };
 
 export function ProductDetailGallery({
   images,
   isBestseller,
+  galleryBadgeLabel,
   productTitle,
 }: {
   images: GalleryImage[];
   isBestseller: boolean;
+  galleryBadgeLabel?: string | null;
   productTitle: string;
 }) {
   const [index, setIndex] = useState(0);
@@ -45,9 +47,15 @@ export function ProductDetailGallery({
     <div className="space-y-4">
       <div className="relative aspect-square overflow-hidden rounded-xl border border-(--surface-muted) bg-(--surface-muted)">
         {isBestseller ? (
-          <span className="absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white shadow-sm">
+          <span className="absolute right-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white shadow-sm">
             <ShoppingCart width={14} height={14} aria-hidden strokeWidth={1.5} />
             Bestseller
+          </span>
+        ) : null}
+        {galleryBadgeLabel?.trim() ? (
+          <span className="absolute left-3 top-3 z-20 inline-flex items-center gap-1 rounded-full border border-(--surface-muted) bg-white/95 px-3 py-1 text-xs font-semibold text-(--foreground-heading) shadow-sm">
+            <Sparkles width={14} height={14} className="text-primary" aria-hidden strokeWidth={1.5} />
+            {galleryBadgeLabel.trim()}
           </span>
         ) : null}
         <Image

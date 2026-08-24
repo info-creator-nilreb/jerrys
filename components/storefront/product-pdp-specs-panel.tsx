@@ -1,94 +1,64 @@
-import type { ReactNode } from "react";
-import {
-  Gem,
-  Heart,
-  Layers,
-  Leaf,
-  MapPin,
-  Palette,
-  PawPrint,
-  Ruler,
-  Scale,
-  Shield,
-  Sparkles,
-  Tag,
-  Users,
-} from "lucide-react";
-import type { PdpResolvedDisplay, PdpSpecIcon } from "@/lib/catalog/pdp-resolve-display";
+"use client";
 
-const specIconClass = "size-[22px] text-primary";
+import { useState } from "react";
+import type { PdpResolvedSpec } from "@/lib/catalog/pdp-resolve-display";
 
-function SpecIcon({ name }: { name: PdpSpecIcon }) {
-  const props = { className: specIconClass, strokeWidth: 1.5 as const, "aria-hidden": true as const };
-  switch (name) {
-    case "ruler":
-      return <Ruler {...props} />;
-    case "scale":
-      return <Scale {...props} />;
-    case "layers":
-      return <Layers {...props} />;
-    case "palette":
-      return <Palette {...props} />;
-    case "map-pin":
-      return <MapPin {...props} />;
-    case "gem":
-      return <Gem {...props} />;
-    case "users":
-      return <Users {...props} />;
-    case "paw":
-      return <PawPrint {...props} />;
-    case "leaf":
-      return <Leaf {...props} />;
-    case "heart":
-      return <Heart {...props} />;
-    case "shield":
-      return <Shield {...props} />;
-    case "sparkles":
-      return <Sparkles {...props} />;
-    case "flag-de":
-      return <MapPin {...props} />;
-    case "tag":
-    default:
-      return <Tag {...props} />;
-  }
+function FlagDe() {
+  return (
+    <span
+      className="inline-flex h-2.5 w-3.5 shrink-0 flex-col overflow-hidden rounded-sm border border-(--surface-muted)"
+      aria-hidden
+    >
+      <span className="h-1/3 w-full bg-black" />
+      <span className="h-1/3 w-full bg-[#DD0000]" />
+      <span className="h-1/3 w-full bg-[#FFCE00]" />
+    </span>
+  );
 }
 
-function SpecRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string;
-}) {
+function SpecValue({ spec }: { spec: PdpResolvedSpec }) {
+  if (spec.label === "Herkunft" && /\bdeutschland|germany\b/i.test(spec.value)) {
+    return (
+      <span className="inline-flex items-center justify-end gap-1.5">
+        <FlagDe />
+        {spec.value}
+      </span>
+    );
+  }
+  return <>{spec.value}</>;
+}
+
+function SpecTable({ specs }: { specs: PdpResolvedSpec[] }) {
   return (
-    <div className="flex gap-3">
-      <span className="mt-0.5 shrink-0 text-primary">{icon}</span>
-      <div className="min-w-0">
-        <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-(--foreground-heading)">
-          {label}
-        </p>
-        <p className="mt-1 text-sm leading-snug text-(--foreground-muted)">{value}</p>
-      </div>
-    </div>
+    <dl className="divide-y divide-(--surface-muted)/70">
+      {specs.map((spec) => (
+        <div key={spec.key} className="flex justify-between gap-4 py-2.5 text-sm first:pt-0 last:pb-0">
+          <dt className="shrink-0 text-(--foreground-muted)">{spec.label}</dt>
+          <dd className="min-w-0 text-right leading-snug text-(--foreground-heading)">
+            <SpecValue spec={spec} />
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
 /**
- * Produktdetails: Specs links, Merkmale (Label/Wert) rechts.
- * Freie Verkaufsargumente erscheinen nur als USP-Zeile — nicht noch einmal als Stichpunktliste.
+ * Kuratierte Produktdetails — flache Label/Wert-Liste ohne Icon-Wand.
  */
-export function ProductPdpSpecsPanel({ display }: { display: PdpResolvedDisplay }) {
-  const hasLeft = display.leftSpecs.length > 0;
-  const hasRight = display.propertySpecs.length > 0;
-  if (!hasLeft && !hasRight) return null;
-
-  const twoCols = hasLeft && hasRight;
+export function ProductPdpSpecsPanel({
+  visibleSpecs,
+  extraSpecs,
+}: {
+  visibleSpecs: PdpResolvedSpec[];
+  extraSpecs: PdpResolvedSpec[];
+}) {
+  const [expanded, setExpanded] = useState(false);
+  if (visibleSpecs.length === 0 && extraSpecs.length === 0) return null;
 
   return (
     <section
-      className="mt-5 rounded-xl border border-primary/25 bg-primary/[0.07] px-4 py-4 md:px-5 md:py-5"
+      className="mt-5 border-t border-(--surface-muted) pt-5"
       aria-labelledby="pdp-specs-heading"
     >
       <h2
@@ -97,34 +67,24 @@ export function ProductPdpSpecsPanel({ display }: { display: PdpResolvedDisplay 
       >
         Produktdetails
       </h2>
-      <div className={`mt-4 grid gap-6 ${twoCols ? "md:grid-cols-2 md:gap-8" : "grid-cols-1"}`}>
-        {hasLeft ? (
-          <div className="flex min-w-0 flex-col gap-4">
-            {display.leftSpecs.map((spec) => (
-              <SpecRow
-                key={spec.key}
-                icon={<SpecIcon name={spec.icon} />}
-                label={spec.label}
-                value={spec.value}
-              />
-            ))}
-          </div>
-        ) : null}
-        {hasRight ? (
-          <div
-            className={`flex min-w-0 flex-col gap-4 ${twoCols ? "border-t border-primary/15 pt-4 md:border-t-0 md:border-l md:border-primary/15 md:pl-8 md:pt-0" : ""}`}
-          >
-            {display.propertySpecs.map((spec) => (
-              <SpecRow
-                key={spec.key}
-                icon={<SpecIcon name={spec.icon} />}
-                label={spec.label}
-                value={spec.value}
-              />
-            ))}
+      <div className="mt-3">
+        <SpecTable specs={visibleSpecs} />
+        {extraSpecs.length > 0 && expanded ? (
+          <div className="mt-1 border-t border-(--surface-muted)/70 pt-1">
+            <SpecTable specs={extraSpecs} />
           </div>
         ) : null}
       </div>
+      {extraSpecs.length > 0 ? (
+        <button
+          type="button"
+          className="mt-2 text-sm font-medium text-primary hover:text-(--primary-hover)"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((v) => !v)}
+        >
+          {expanded ? "Weniger Details" : "+ Alle Details anzeigen"}
+        </button>
+      ) : null}
     </section>
   );
 }

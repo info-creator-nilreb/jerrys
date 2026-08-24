@@ -45,7 +45,7 @@ export function AddToCartForm({
   /** Warenkorb-Icon im Button (Produktdetailseite). */
   showCartIcon?: boolean;
   /** Stärkerer Kauf-CTA und vertikale Klarheit auf der PDP. */
-  layout?: "default" | "pdp";
+  layout?: "default" | "pdp" | "sticky";
 }) {
   const [state, formAction, pending] = useActionState(addToCart, initial);
   const qtyFieldId = useId();
@@ -54,6 +54,7 @@ export function AddToCartForm({
   const maxQty = maxSelectableQuantity(quantityRules);
   const [quantity, setQuantity] = useState(() => clampQty(quantityRules, defaultQty));
   const isPdp = !compact && layout === "pdp";
+  const isSticky = layout === "sticky";
 
   if (!canAdd) {
     return (
@@ -80,55 +81,63 @@ export function AddToCartForm({
       <input type="hidden" name="quantity" value={quantity} />
       <div
         className={
-          compact
-            ? "flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end"
-            : isPdp
-              ? "flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
-              : "flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
+          isSticky
+            ? "flex"
+            : compact
+              ? "flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end"
+              : isPdp
+                ? "flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
+                : "flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
         }
       >
-        <div className={`flex min-w-0 flex-col gap-1.5 ${isPdp ? "sm:shrink-0" : ""}`}>
-          <label htmlFor={qtyFieldId} className="text-sm font-medium text-(--foreground-muted) md:text-[0.9375rem]">
-            Menge
-          </label>
-          <div className="inline-flex items-center gap-1.5" role="group" aria-labelledby={qtyFieldId}>
-            <span id={qtyFieldId} className="sr-only">
+        {!isSticky ? (
+          <div className={`flex min-w-0 flex-col gap-1.5 ${isPdp ? "sm:shrink-0" : ""}`}>
+            <label htmlFor={qtyFieldId} className="text-sm font-medium text-(--foreground-muted) md:text-[0.9375rem]">
               Menge
-            </span>
-            <QuantityStepperButton
-              type="button"
-              direction="dec"
-              label="Menge verringern"
-              disabled={!canDec || pending}
-              onClick={() =>
-                setQuantity((q) => clampQty(quantityRules, q - quantityRules.purchaseStep))
-              }
-            />
-            <QuantityStepperValue quantity={quantity} />
-            <QuantityStepperButton
-              type="button"
-              direction="inc"
-              label="Menge erhöhen"
-              disabled={!canInc || pending}
-              onClick={() =>
-                setQuantity((q) => clampQty(quantityRules, q + quantityRules.purchaseStep))
-              }
-            />
+            </label>
+            <div className="inline-flex items-center gap-1.5" role="group" aria-labelledby={qtyFieldId}>
+              <span id={qtyFieldId} className="sr-only">
+                Menge
+              </span>
+              <QuantityStepperButton
+                type="button"
+                direction="dec"
+                label="Menge verringern"
+                disabled={!canDec || pending}
+                onClick={() =>
+                  setQuantity((q) => clampQty(quantityRules, q - quantityRules.purchaseStep))
+                }
+              />
+              <QuantityStepperValue quantity={quantity} />
+              <QuantityStepperButton
+                type="button"
+                direction="inc"
+                label="Menge erhöhen"
+                disabled={!canInc || pending}
+                onClick={() =>
+                  setQuantity((q) => clampQty(quantityRules, q + quantityRules.purchaseStep))
+                }
+              />
+            </div>
           </div>
-        </div>
+        ) : null}
         <button
           type="submit"
           disabled={pending}
           className={
-            compact
-              ? "rounded-md bg-primary px-4 py-2.5 text-base font-semibold text-white shadow-sm transition-colors hover:bg-(--primary-hover) disabled:opacity-50 sm:shrink-0"
-              : isPdp
-                ? "inline-flex min-h-[2.85rem] w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3.5 text-base font-semibold text-white shadow-md transition-all hover:bg-(--primary-hover) hover:shadow-lg disabled:opacity-50 sm:min-h-[2.75rem] sm:min-w-0 sm:flex-1 sm:py-3"
-                : `inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-(--primary-hover) disabled:opacity-50 ${showCartIcon ? "w-full max-w-md sm:w-full" : "w-full max-w-xs sm:w-auto"}`
+            isSticky
+              ? "inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-(--primary-hover) disabled:opacity-50"
+              : compact
+                ? "rounded-md bg-primary px-4 py-2.5 text-base font-semibold text-white shadow-sm transition-colors hover:bg-(--primary-hover) disabled:opacity-50 sm:shrink-0"
+                : isPdp
+                  ? "inline-flex min-h-[2.85rem] w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3.5 text-base font-semibold text-white shadow-md transition-all hover:bg-(--primary-hover) hover:shadow-lg disabled:opacity-50 sm:min-h-[2.75rem] sm:min-w-0 sm:flex-1 sm:py-3"
+                  : `inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-(--primary-hover) disabled:opacity-50 ${showCartIcon ? "w-full max-w-md sm:w-full" : "w-full max-w-xs sm:w-auto"}`
           }
         >
-          {!compact && showCartIcon ? <CartIcon className={isPdp ? "size-5 shrink-0" : "shrink-0"} /> : null}
-          {pending ? "Wird hinzugefügt…" : "In den Warenkorb"}
+          {!compact && !isSticky && showCartIcon ? (
+            <CartIcon className={isPdp ? "size-5 shrink-0" : "shrink-0"} />
+          ) : null}
+          {pending ? "Wird hinzugefügt…" : isSticky ? "Warenkorb" : "In den Warenkorb"}
         </button>
       </div>
       {state?.error ? <p className="text-base text-red-600">{state.error}</p> : null}

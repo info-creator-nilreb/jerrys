@@ -156,6 +156,37 @@ export async function getActiveProductBySlug(slug: string) {
   });
 }
 
+/** Verwandte Produkte aus gemeinsamen Kollektionen (PDP Cross-Sell). */
+export async function listRelatedProductsForPdp(
+  productId: string,
+  collectionSlugs: string[],
+  limit = 4,
+) {
+  const slugs = [...new Set(collectionSlugs.map((s) => s.trim()).filter(Boolean))];
+  if (slugs.length === 0) return [];
+
+  return getPrisma().product.findMany({
+    where: {
+      isActive: true,
+      id: { not: productId },
+      collectionMemberships: {
+        some: {
+          collection: {
+            isActive: true,
+            slug: { in: slugs },
+          },
+        },
+      },
+    },
+    orderBy: [{ isBestseller: "desc" }, { sortOrder: "asc" }, { title: "asc" }],
+    take: Math.max(1, limit),
+    select: {
+      ...storefrontProductCardSelect,
+      ...storefrontCategoryViaCollectionsSelect,
+    },
+  });
+}
+
 /** Aktives Produkt, dessen `previousSlug` dem Pfad entspricht (301-Ziel). */
 export async function getActiveProductByPreviousSlug(previousSlug: string) {
   const normalized = previousSlug.trim().toLowerCase();

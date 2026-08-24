@@ -12,9 +12,15 @@ import {
 import { defaultAddQuantity } from "@/lib/cart/quantity";
 import { AddToCartForm } from "@/components/storefront/add-to-cart-form";
 import { ProductExpressCheckout } from "@/components/storefront/product-express-checkout";
+import { ProductPdpStickyAtcBar } from "@/components/storefront/product-pdp-sticky-atc-bar";
+
+export const PDP_PURCHASE_SENTINEL_ID = "pdp-purchase-sentinel";
 
 export function ProductPdpPurchasePanel({
   productId,
+  productTitle,
+  coverImageUrl,
+  coverImageAlt,
   currency,
   listPriceGrossCents,
   deliveryTimeKeyFallback,
@@ -25,6 +31,9 @@ export function ProductPdpPurchasePanel({
   returnPolicyText,
 }: {
   productId: string;
+  productTitle: string;
+  coverImageUrl: string | null;
+  coverImageAlt: string;
   currency: string;
   listPriceGrossCents: number | null;
   deliveryTimeKeyFallback: string | null;
@@ -64,7 +73,8 @@ export function ProductPdpPurchasePanel({
   const expressTotalEstimate = selected.priceGrossCents * expressQty;
 
   return (
-    <div className="mt-6 space-y-5 border-t border-(--surface-muted) pt-6">
+    <>
+      <div className="mt-5 space-y-5 border-t border-(--surface-muted) pt-5">
       {showPicker ? (
         <fieldset className="space-y-2">
           <legend className="text-sm font-medium text-(--foreground-heading)">Auswahl</legend>
@@ -170,6 +180,20 @@ export function ProductPdpPurchasePanel({
       <p className="border-t border-(--surface-muted) pt-4 text-[0.68rem] leading-relaxed text-(--foreground-muted)">
         * inkl. MwSt., zzgl. Versand. Nach dem Warenkorb folgen Warenkorb und Checkout.
       </p>
+      <div id={PDP_PURCHASE_SENTINEL_ID} className="h-px w-full" aria-hidden />
     </div>
+
+      <ProductPdpStickyAtcBar
+        sentinelId={PDP_PURCHASE_SENTINEL_ID}
+        productTitle={productTitle}
+        imageUrl={coverImageUrl}
+        imageAlt={coverImageAlt}
+        priceFormatted={formatPrice(selected.priceGrossCents, currency)}
+        productId={productId}
+        productVariantId={selected.id}
+        canAdd={canAdd}
+        quantityRules={qtyRules}
+      />
+    </>
   );
 }
