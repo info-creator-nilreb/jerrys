@@ -262,7 +262,7 @@ export async function issueOrderRefund(
     };
   }
 
-  // Manuell / ohne PayPal-Capture (Vorkasse, Demo, Override)
+  // Manuell / ohne PayPal-Capture (Vorkasse, Override)
   if (params.manualOnly || !paypalPayment) {
     if (params.amountCents != null && params.amountCents !== order.totalGrossCents) {
       return {
