@@ -12,7 +12,7 @@ Der Shop bleibt **Source of Truth** für Bestand. Zettle ist ein **POS-Kanal mit
 | Shop → Zettle | Online-Zahlung (`paid`) | Zettle STORE→SOLD für gemappte Varianten |
 | Shop → Zettle | Storno (nach Zahlung) / Retoure | Zettle SOLD→STORE |
 
-Varianten werden automatisch gemappt, wenn eine eindeutige Zuordnung über SKU, Barcode (Shop-SKU vs. Zettle-Barcode) oder Namen möglich ist. Mehrdeutige oder fehlende Treffer bleiben ungemappt und werden im Admin manuell zugeordnet. Sync-/Push-Fehler sind im Admin sichtbar und über den Maintenance-Cron erneut anstoßbar. Zettle setzt den Shop-Bestand **nie absolut** (kein Overwrite).
+Varianten werden automatisch gemappt, wenn eine eindeutige Zuordnung über SKU, Barcode (Shop-SKU vs. Zettle-Barcode) oder Namen möglich ist. Mehrdeutige oder fehlende Treffer bleiben ungemappt und werden im Admin manuell zugeordnet. Bestände: Shop bleibt Quelle der Wahrheit; der Discrepancy-Report vergleicht verfügbar vs. Zettle STORE, mit optionaler Übernahme aus Zettle. In der Produktkonfiguration ist physischer Lagerbestand mit verfügbar gekoppelt (Delta-Anpassung). Sync-/Push-Fehler sind im Admin sichtbar und über den Maintenance-Cron erneut anstoßbar. Zettle setzt den Shop-Bestand **nie absolut** ohne explizite Admin-Aktion (kein stiller Overwrite).
 
 ## Abgrenzung
 
@@ -36,7 +36,7 @@ Varianten werden automatisch gemappt, wenn eine eindeutige Zuordnung über SKU, 
 1. **Verbindung + Mapping + Pull-Sync:** `ZettleConnection`, Produkt-Mapping (eindeutige SKU/Barcode/Name-Treffer automatisch, Rest manuell), Admin-Panel unter Integrationen, manueller Kauf-Sync mit Idempotenz und `pos_sale`/`pos_refund`-Movements. **Status:** umgesetzt.
 2. **Maintenance-Cron:** periodischer Purchase-Pull in `commerce-maintenance`. **Status:** umgesetzt.
 3. **Pusher/Webhooks:** Near-realtime `PurchaseCreated` + Inbox-Idempotenz (`/api/webhooks/zettle`). **Status:** umgesetzt.
-4. **Discrepancy-Report:** Admin-Button „Bestands-Abweichungen prüfen“ (Shop `available` vs. Zettle STORE). **Status:** umgesetzt.
+4. **Discrepancy-Report:** Admin-Button „Bestands-Abweichungen prüfen“ (Shop `available` vs. Zettle STORE); optional Zettle-Bestand übernehmen. **Status:** umgesetzt.
 5. **Shop→Zettle Inventory-Push:** Online-Verkauf/Storno/Retoure → Inventory-API (STORE↔SOLD), Ledger + Cron-Retry. **Status:** umgesetzt.
 
 ## Exit-Kriterien (Epic)
@@ -51,5 +51,5 @@ Varianten werden automatisch gemappt, wenn eine eindeutige Zuordnung über SKU, 
 
 - Multi-Merchant / Partner-OAuth-Code-Grant als Pflichtweg
 - Automatischer Katalog-Export Shop → Zettle
-- Zettle als Inventory-SoT / absolutes Setzen von Shop-Beständen aus Zettle
+- Zettle als Inventory-SoT / absolutes Setzen von Shop-Beständen aus Zettle ohne Admin-Aktion
 - Push bei reiner Reservierung vor Zahlung (erst bei `paid`)

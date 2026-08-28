@@ -122,7 +122,8 @@ const sharedProductFields = {
   lowest30GrossEuro: z.string().trim(),
   lowest30NetEuro: z.string().trim(),
   stockQuantity: z.coerce.number().int().min(0),
-  availableQuantity: z.coerce.number().int().min(0),
+  /** Wird serverseitig aus Lagerbestand abgeleitet — nicht mehr separat im Admin pflegen. */
+  availableQuantity: z.coerce.number().int().min(0).optional(),
   deliveryTimeKey: optionalText,
   restockDays: z.preprocess(optionalPositiveIntNullable, z.number().int().min(0).nullable()),
   minOrderQty: z.coerce.number().int().min(1),

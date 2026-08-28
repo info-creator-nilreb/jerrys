@@ -29,7 +29,7 @@ function DeliveryFieldStack({
   children,
 }: {
   label: string;
-  htmlFor: string;
+  htmlFor?: string;
   hint?: ReactNode;
   error?: string;
   children: ReactNode;
@@ -37,9 +37,13 @@ function DeliveryFieldStack({
   return (
     <div className="flex flex-col gap-1 lg:h-full">
       <div className="flex flex-col gap-1">
-        <label htmlFor={htmlFor} className="text-xs font-medium text-[#6b7280]">
-          {label}
-        </label>
+        {htmlFor ? (
+          <label htmlFor={htmlFor} className="text-xs font-medium text-[#6b7280]">
+            {label}
+          </label>
+        ) : (
+          <p className="text-xs font-medium text-[#6b7280]">{label}</p>
+        )}
         {hint ? <p className="text-[11px] leading-snug text-[#9ca3af]">{hint}</p> : null}
       </div>
       <div className="mt-auto flex flex-col gap-1">
@@ -52,6 +56,7 @@ function DeliveryFieldStack({
 
 export function ProductDeliveryFields({ state, defaults }: Props) {
   const fe = state?.fieldErrors ?? {};
+  const reservedGap = Math.max(0, defaults.stockQuantity - defaults.availableQuantity);
 
   return (
     <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
@@ -68,7 +73,7 @@ export function ProductDeliveryFields({ state, defaults }: Props) {
         <DeliveryFieldStack
           label="Lagerbestand (physikalisch)"
           htmlFor="stockQuantity"
-          hint="Wird bei Status „Versandt“ je Bestellposition reduziert."
+          hint="Pflegst du hier — z. B. +10 auffüllen erhöht auch den verfügbaren Bestand um 10. Online-Bestellungen reduzieren zuerst verfügbar (Reservierung), physisch erst bei Versand; POS reduziert beides sofort."
           error={fe.stockQuantity}
         >
           <input
@@ -84,24 +89,22 @@ export function ProductDeliveryFields({ state, defaults }: Props) {
 
         <DeliveryFieldStack
           label="Verfügbarer Bestand (Shop)"
-          htmlFor="availableQuantity"
           hint={
             <>
-              Für Produktseite, Warenkorb und Checkout; wird bei Bestellaufgabe (Zahlung ausstehend) reserviert und bei
-              Storno bzw. Ablauf der Reservierung wieder freigegeben.
+              Wird automatisch mit dem physischen Bestand gekoppelt. Steuert Produktseite, Warenkorb und Checkout.
+              {reservedGap > 0 ? (
+                <>
+                  {" "}
+                  Aktuell {reservedGap} Stück reserviert/committed (Lager {defaults.stockQuantity} − verfügbar{" "}
+                  {defaults.availableQuantity}).
+                </>
+              ) : null}
             </>
           }
-          error={fe.availableQuantity}
         >
-          <input
-            id="availableQuantity"
-            name="availableQuantity"
-            type="number"
-            min={0}
-            step={1}
-            defaultValue={defaults.availableQuantity}
-            className={inputClass}
-          />
+          <p className="rounded-md border border-[#e8eaed] bg-[#f9fafb] px-3 py-2 text-sm tabular-nums text-[#374151]">
+            {defaults.availableQuantity}
+          </p>
         </DeliveryFieldStack>
 
         <div className="sm:col-span-2 lg:col-span-1 lg:h-full">

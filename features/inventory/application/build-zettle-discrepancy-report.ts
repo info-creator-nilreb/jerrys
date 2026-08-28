@@ -31,7 +31,7 @@ export type ZettleDiscrepancyReport = {
  * Vergleicht gemappte Shop-Bestände mit Zettle STORE-Inventory.
  * Delta nutzt `availableQuantity` (verkaufbarer Bestand), weil Online-Verkäufe
  * Zettle bereits bei Zahlung reduzieren — nicht erst bei Versand.
- * Zettle überschreibt den Shop nicht — nur Report/Alert.
+ * Optional kann der Admin Zettle-Bestände gezielt übernehmen (`adoptZettleDiscrepancyStock`).
  */
 export async function buildZettleDiscrepancyReport(): Promise<ZettleDiscrepancyReport> {
   try {

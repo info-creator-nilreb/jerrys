@@ -107,21 +107,8 @@ export function ProductVariantsSection({
             {fe.priceGrossEuro ? <p className="text-xs text-red-600">{fe.priceGrossEuro}</p> : null}
           </div>
           <div className="flex flex-col gap-1">
-            <label htmlFor="variant-available" className="text-xs font-medium text-[#6b7280]">
-              Verfügbar (Shop)
-            </label>
-            <input
-              id="variant-available"
-              name="availableQuantity"
-              type="number"
-              min={0}
-              defaultValue={0}
-              className="rounded-md border border-[#e3e4e8] px-3 py-2 text-sm"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
             <label htmlFor="variant-stock" className="text-xs font-medium text-[#6b7280]">
-              Lagerbestand
+              Lagerbestand (physikalisch)
             </label>
             <input
               id="variant-stock"
@@ -131,6 +118,9 @@ export function ProductVariantsSection({
               defaultValue={0}
               className="rounded-md border border-[#e3e4e8] px-3 py-2 text-sm"
             />
+            <p className="text-[11px] text-[#9ca3af]">
+              Verfügbarer Shop-Bestand wird automatisch gleich gesetzt.
+            </p>
           </div>
           <div className="flex items-end sm:col-span-2">
             <button

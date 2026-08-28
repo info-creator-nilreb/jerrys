@@ -1,6 +1,15 @@
 export type { ReservationLine } from "@/features/inventory/domain/reservation-line";
 export { STOCK_RESERVATION_TTL_MS, reservationExpiresAt } from "@/features/inventory/domain/reservation-ttl";
 export {
+  coupledStockAfterPhysicalEdit,
+  coupledStockAfterZettleAdoption,
+  initialCoupledStock,
+  stockAdjustmentDelta,
+  type CoupledStockQuantities,
+  type CoupledStockError,
+  type CoupledStockResult,
+} from "@/features/inventory/domain/stock-quantity-coupling";
+export {
   formatZettleAutoMapMessage,
   matchZettleVariants,
   normalizeZettleIdentifier,
@@ -51,6 +60,11 @@ export {
   type ZettleDiscrepancyReport,
   type ZettleDiscrepancyRow,
 } from "@/features/inventory/application/build-zettle-discrepancy-report";
+
+export {
+  adoptZettleDiscrepancyStock,
+  type AdoptZettleStockResult,
+} from "@/features/inventory/application/adopt-zettle-discrepancy-stock";
 
 export {
   autoMapUnmappedZettleVariants,
