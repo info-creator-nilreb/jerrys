@@ -8,7 +8,7 @@ Umsetzung des Live-Feeds für den CMS-Block **Social / Reviews** (Bilder zuerst)
 2. OAuth (Instagram Professional / `instagram_business_basic`)
 3. Long-Lived Token verschlüsselt in `instagram_connections`
 4. Sync nach `instagram_media_cache` (Cron + manueller Button unter Integrationen); Bilder idealerweise Blob-Spiegel
-5. Storefront: bestehendes `HomepageSocialCarousel` (Desktop Embla / Mobile / Reduced-Motion-Grid)
+5. Storefront: CSS-Raster (`HomepageSocialGrid`) — Desktop-Spalten und Zeilen aus dem CMS, Mobil immer 2 Spalten, dieselben Bilder. Kein Karussell.
 6. Kuratierte Fallback-Bilder und Amazon-Zitate: **Inhalte → Marketing**
 
 ## Env
@@ -66,12 +66,12 @@ Die Admin-Diagnose unter Marketing zeigt Redirect-URI, Meta-App-Domain und eine 
 
 ## CMS
 
-Block-Felder `socialSource` (`auto` | `instagram` | `curated`) und `socialLimit`. Default `auto`: Feed wenn Cache gefüllt, sonst kuratierte Marketing-Bilder.
+Block-Felder `socialSource` (`auto` | `instagram` | `curated`), `socialDesktopColumns` (2–6, Default 4) und `socialDesktopRows` (1–4, Default 2). Die Anzahl Bilder ist Spalten × Zeilen (max. 24). Default `auto`: Feed wenn Cache gefüllt, sonst kuratierte Marketing-Bilder. Alte Blöcke mit nur `socialLimit` werden auf 4 Spalten und passende Zeilen abgebildet.
 
 ## Ops
 
 - Migration: `20260811170000_instagram_oauth_feed`
 - Sync läuft in `/api/internal/commerce-maintenance` wenn verbunden
-- Sync holt per Pagination **12 Standbilder/Carousel-Cover** (Videos/Reels werden übersprungen, Pagination läuft weiter)
-- Storefront-Block `socialLimit` Default 12; nach Connect/Deploy ggf. **Jetzt synchronisieren**
+- Sync holt per Pagination **24 Standbilder/Carousel-Cover** (Videos/Reels werden übersprungen, Pagination läuft weiter)
+- Storefront-Raster Default 4×2 (8 Bilder); nach Connect/Deploy ggf. **Jetzt synchronisieren**, damit genug Cache-Bilder für größere Raster da sind
 - Trennen löscht Verbindung + Cache

@@ -89,7 +89,9 @@ export function defaultDataForContentBlockType(
         titleSocial: "Einblicke",
         introSocial: "",
         socialSource: "auto",
-        socialLimit: 12,
+        socialDesktopColumns: 4,
+        socialDesktopRows: 2,
+        socialLimit: 8,
       };
     case "workshopCalendar":
       return {

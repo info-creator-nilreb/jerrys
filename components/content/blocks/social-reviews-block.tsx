@@ -1,6 +1,9 @@
 import { HomepageReviewsCarousel } from "@/components/storefront/homepage-reviews-carousel";
-import { HomepageSocialCarousel } from "@/components/storefront/homepage-social-carousel";
-import type { SocialReviewsBlockData } from "@/lib/content/blocks/social-reviews";
+import { HomepageSocialGrid } from "@/components/storefront/homepage-social-grid";
+import {
+  resolveSocialReviewsLayout,
+  type SocialReviewsBlockData,
+} from "@/lib/content/blocks/social-reviews";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 import { listActiveHomepageAmazonReviews } from "@/lib/homepage/marketing-queries";
 import { listSocialFeedSlides } from "@/lib/instagram/media-queries";
@@ -11,6 +14,7 @@ export async function SocialReviewsBlock({
   data: SocialReviewsBlockData;
   blockId: string;
 }) {
+  const socialLayout = resolveSocialReviewsLayout(data);
   let reviews: Awaited<ReturnType<typeof listActiveHomepageAmazonReviews>> = [];
   let social: Awaited<ReturnType<typeof listSocialFeedSlides>> = [];
   try {
@@ -19,7 +23,7 @@ export async function SocialReviewsBlock({
       data.showSocial
         ? listSocialFeedSlides({
             source: data.socialSource ?? "auto",
-            limit: data.socialLimit ?? 12,
+            limit: socialLayout.socialLimit,
           })
         : Promise.resolve([]),
     ]);
@@ -72,7 +76,10 @@ export async function SocialReviewsBlock({
                 {data.introSocial}
               </p>
             ) : null}
-            <HomepageSocialCarousel items={social} />
+            <HomepageSocialGrid
+              items={social}
+              desktopColumns={socialLayout.socialDesktopColumns}
+            />
           </div>
         </section>
       ) : null}

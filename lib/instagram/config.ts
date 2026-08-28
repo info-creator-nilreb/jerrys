@@ -2,8 +2,8 @@ import { getInstagramAuthMode, type InstagramAuthMode } from "@/lib/instagram/au
 
 export const INSTAGRAM_OAUTH_STATE_COOKIE = "jerrys_ig_oauth_state";
 export const INSTAGRAM_CONNECTION_ID = "default";
-/** Anzahl Standbilder/Carousel-Cover im Cache (Storefront-Default zeigt 12). */
-export const INSTAGRAM_MEDIA_SYNC_LIMIT = 12;
+/** Anzahl Standbilder/Carousel-Cover im Cache (Storefront-Raster bis 6×4 = 24). */
+export const INSTAGRAM_MEDIA_SYNC_LIMIT = 24;
 export const INSTAGRAM_SCOPE = "instagram_business_basic";
 
 export type InstagramAppConfig = {
