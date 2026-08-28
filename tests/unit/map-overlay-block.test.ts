@@ -235,6 +235,7 @@ describe("MapOverlayBlock", () => {
     );
     expect(src).toContain("layout.pinXPct");
     expect(src).toContain("buildMutedMapTileUrl");
+    expect(src).toContain("bg-white/20");
     expect(src).not.toContain("w-[140%]");
     expect(src).not.toContain("from \"lucide-react\"");
   });

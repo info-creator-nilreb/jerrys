@@ -32,7 +32,7 @@ export function OsmStaticMapCanvas({
       >
         {layout.tiles.map((tile) => (
           // Rasterkacheln: kein next/image (Tile-Nutzungsbedingungen).
-          // eslint-disable-next-line @next/next/no-img-element -- CARTO/OSM-Tiles
+          // eslint-disable-next-line @next/next/no-img-element -- OSM-Tiles
           <img
             key={`${layout.zoom}-${tile.x}-${tile.y}`}
             src={buildMutedMapTileUrl(layout.zoom, tile.x, tile.y)}
@@ -44,6 +44,9 @@ export function OsmStaticMapCanvas({
           />
         ))}
       </div>
+      {grayscale ? (
+        <div className="pointer-events-none absolute inset-0 bg-white/20" />
+      ) : null}
       {showMarker ? (
         <MapLocationPin
           className={pinClassName}

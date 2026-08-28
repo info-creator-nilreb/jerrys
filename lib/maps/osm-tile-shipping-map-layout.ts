@@ -114,13 +114,13 @@ export function buildShippingMapTileLayout(lat: number, lon: number): ShippingMa
 }
 
 /**
- * Helle, detailarme Rasterkacheln (CARTO Positron / light_all) — näher an Graustufen-Google
- * als OSM-Mapnik (Gebäudeumrisse, POI-Icons, harte Bahnlinien).
+ * OSM-DE-Kacheln (FOSSGIS) plus CSS-Filter in der Canvas:
+ * helleres Grau, weniger Kontrast als Standard-Mapnik — ohne Drittanbieter-API-Key.
  */
 export function buildMutedMapTileUrl(zoom: number, x: number, y: number): string {
   const world = 2 ** zoom;
   const wrappedX = ((x % world) + world) % world;
-  return `https://basemaps.cartocdn.com/light_all/${zoom}/${wrappedX}/${y}.png`;
+  return `https://tile.openstreetmap.de/${zoom}/${wrappedX}/${y}.png`;
 }
 
 /** Alias für bestehende Aufrufer. */
@@ -129,4 +129,5 @@ export function buildOsmTileUrl(zoom: number, x: number, y: number): string {
 }
 
 /** Graustufen, helleres Grau, weniger Kontrast (Standortkarte + Checkout). */
-export const MUTED_MAP_FILTER_CLASS = "grayscale contrast-[0.88] brightness-[1.08]";
+export const MUTED_MAP_FILTER_CLASS =
+  "grayscale contrast-[0.72] brightness-[1.16]";

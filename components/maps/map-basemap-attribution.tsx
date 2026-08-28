@@ -1,5 +1,4 @@
 const OSM_COPYRIGHT = "https://www.openstreetmap.org/copyright";
-const CARTO_ATTRIBUTION = "https://carto.com/attributions";
 
 export function MapBasemapAttribution({
   prefix = "Kartenmaterial",
@@ -18,15 +17,6 @@ export function MapBasemapAttribution({
         rel="noopener noreferrer"
       >
         OpenStreetMap
-      </a>
-      {" · "}
-      <a
-        href={CARTO_ATTRIBUTION}
-        className={linkClassName}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        CARTO
       </a>
     </>
   );

@@ -989,7 +989,7 @@ export function ContentBlockFields({
       <div className="grid gap-3 sm:grid-cols-2">
         <p className="rounded-md border border-[#e8eaed] bg-[#f7f8fa] px-3 py-2 text-xs text-[#6b7280] sm:col-span-2">
           <span className="font-medium text-[#374151]">Kartenhintergrund:</span>{" "}
-          Helle, kontrastarme Graustufen-Karte (OpenStreetMap / CARTO), analog
+          Helle, kontrastarme Graustufen-Karte (OpenStreetMap), analog
           zur Standort-Sektion auf edelweissdesigns.de. Overlay-Text ist optional —
           ohne Text bleibt nur die Karte.
         </p>

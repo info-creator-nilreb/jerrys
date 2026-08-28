@@ -29,7 +29,7 @@ describe("buildShippingMapTileLayout", () => {
     expect(layout.tiles.length).toBeGreaterThan(0);
     expect(layout.tileColumns * layout.tileRows).toBe(layout.tiles.length);
     expect(buildOsmTileUrl(layout.zoom, layout.tiles[0]!.x, layout.tiles[0]!.y)).toMatch(
-      /^https:\/\/basemaps\.cartocdn\.com\/light_all\//,
+      /^https:\/\/tile\.openstreetmap\.de\//,
     );
     expect(buildMutedMapTileUrl(layout.zoom, layout.tiles[0]!.x, layout.tiles[0]!.y)).toBe(
       buildOsmTileUrl(layout.zoom, layout.tiles[0]!.x, layout.tiles[0]!.y),
