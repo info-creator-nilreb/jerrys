@@ -12,6 +12,7 @@ export const CONTENT_BLOCK_TYPES = [
   "faq",
   "socialReviews",
   "workshopCalendar",
+  "mapOverlay",
 ] as const;
 
 export type ContentBlockType = (typeof CONTENT_BLOCK_TYPES)[number];

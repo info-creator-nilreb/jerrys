@@ -100,6 +100,11 @@ function buildPageContextFromBlocks(blocks: EditorBlock[]): string {
       const intro = strData(block.data, "intro").trim();
       if (title) parts.push(title);
       if (intro) parts.push(intro);
+    } else if (block.type === "mapOverlay") {
+      const headline = strData(block.data, "headline").trim();
+      const address = strData(block.data, "address").trim();
+      if (headline) parts.push(headline);
+      if (address) parts.push(address);
     }
     if (parts.join("\n").length > 2200) break;
   }

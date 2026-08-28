@@ -33,6 +33,10 @@ import {
   workshopCalendarBlockDataSchema,
   type WorkshopCalendarBlockData,
 } from "@/lib/content/blocks/workshop-calendar";
+import {
+  mapOverlayBlockDataSchema,
+  type MapOverlayBlockData,
+} from "@/lib/content/blocks/map-overlay";
 import type { z } from "zod";
 
 export type ContentBlockDataMap = {
@@ -45,6 +49,7 @@ export type ContentBlockDataMap = {
   faq: FaqBlockData;
   socialReviews: SocialReviewsBlockData;
   workshopCalendar: WorkshopCalendarBlockData;
+  mapOverlay: MapOverlayBlockData;
 };
 
 export const CONTENT_BLOCK_SCHEMAS = {
@@ -57,6 +62,7 @@ export const CONTENT_BLOCK_SCHEMAS = {
   faq: faqBlockDataSchema,
   socialReviews: socialReviewsBlockDataSchema,
   workshopCalendar: workshopCalendarBlockDataSchema,
+  mapOverlay: mapOverlayBlockDataSchema,
 } as const satisfies {
   [K in ContentBlockType]: z.ZodType<ContentBlockDataMap[K]>;
 };

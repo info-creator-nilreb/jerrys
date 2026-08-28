@@ -34,3 +34,16 @@ export const optionalInternalPathSchema = z.preprocess(
     .refine((p) => p.startsWith("/"), "Pfad mit führendem /.")
     .nullable(),
 );
+
+/** Interner Pfad oder HTTPS (z. B. OpenStreetMap / Google Maps). */
+export const optionalHttpOrPathSchema = z.preprocess(
+  emptyToNull,
+  z
+    .string()
+    .max(800)
+    .refine(
+      (p) => p.startsWith("/") || p.startsWith("https://"),
+      "Pfad mit führendem / oder HTTPS-URL.",
+    )
+    .nullable(),
+);

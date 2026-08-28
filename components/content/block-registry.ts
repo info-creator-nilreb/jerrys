@@ -7,6 +7,7 @@ import { ProductCategoryPickBlock } from "@/components/content/blocks/product-ca
 import { RichTextBlock } from "@/components/content/blocks/rich-text-block";
 import { SocialReviewsBlock } from "@/components/content/blocks/social-reviews-block";
 import { UspStripBlock } from "@/components/content/blocks/usp-strip-block";
+import { MapOverlayBlock } from "@/components/content/blocks/map-overlay-block";
 import { WorkshopCalendarBlock } from "@/components/content/blocks/workshop-calendar-block";
 import {
   CONTENT_BLOCK_SCHEMAS,
@@ -48,6 +49,10 @@ export const CONTENT_BLOCK_REGISTRY = {
   workshopCalendar: {
     schema: CONTENT_BLOCK_SCHEMAS.workshopCalendar,
     Component: WorkshopCalendarBlock,
+  },
+  mapOverlay: {
+    schema: CONTENT_BLOCK_SCHEMAS.mapOverlay,
+    Component: MapOverlayBlock,
   },
 } as const satisfies {
   [K in ContentBlockType]: ContentBlockRegistryEntry<ContentBlockDataMap[K]>;

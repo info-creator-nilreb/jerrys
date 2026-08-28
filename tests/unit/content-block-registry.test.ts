@@ -101,6 +101,24 @@ describe("parseContentBlockData", () => {
     expect(parseContentBlockData("workshopCalendar", { limit: 0 }).ok).toBe(false);
     expect(parseContentBlockData("workshopCalendar", { limit: 48 }).ok).toBe(false);
   });
+
+  it("parst mapOverlay mit Adresse und optionalem Overlay", () => {
+    const r = parseContentBlockData("mapOverlay", {
+      query: "Berlin",
+      headline: "Besuch uns",
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.data).toMatchObject({
+        query: "Berlin",
+        headline: "Besuch uns",
+        grayscale: true,
+        overlayPosition: "left",
+        mapSpan: "neighborhood",
+      });
+    }
+    expect(parseContentBlockData("mapOverlay", {}).ok).toBe(false);
+  });
 });
 
 describe("sanitizeContentRichTextHtml", () => {

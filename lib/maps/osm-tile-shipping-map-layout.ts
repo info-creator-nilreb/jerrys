@@ -45,8 +45,15 @@ export function shippingMapZoomForSpan(
   return Math.max(1, Math.min(MAX_ZOOM, Math.round(zoom)));
 }
 
-export function buildShippingMapTileLayout(lat: number, lon: number): ShippingMapTileLayout {
-  const { width: viewportWidth, height: viewportHeight, halfWidthM } = SHIPPING_MAP_VIEWPORT;
+/** Zentrierter OSM-Kachelausschnitt (Lieferkarte, CMS-Standortkarte). */
+export function buildOsmCenteredTileLayout(input: {
+  lat: number;
+  lon: number;
+  viewportWidth: number;
+  viewportHeight: number;
+  halfWidthM: number;
+}): ShippingMapTileLayout {
+  const { lat, lon, viewportWidth, viewportHeight, halfWidthM } = input;
   const zoom = shippingMapZoomForSpan(lat, halfWidthM, viewportWidth);
   const center = latLonToWorldPixel(lat, lon, zoom);
 
@@ -83,6 +90,17 @@ export function buildShippingMapTileLayout(lat: number, lon: number): ShippingMa
     viewportWidth,
     viewportHeight,
   };
+}
+
+export function buildShippingMapTileLayout(lat: number, lon: number): ShippingMapTileLayout {
+  const { width: viewportWidth, height: viewportHeight, halfWidthM } = SHIPPING_MAP_VIEWPORT;
+  return buildOsmCenteredTileLayout({
+    lat,
+    lon,
+    viewportWidth,
+    viewportHeight,
+    halfWidthM,
+  });
 }
 
 export function buildOsmTileUrl(zoom: number, x: number, y: number): string {
