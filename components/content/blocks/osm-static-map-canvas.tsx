@@ -1,20 +1,31 @@
 import { MapPin } from "lucide-react";
+import type { MapOverlayPinSlot } from "@/lib/content/blocks/map-overlay";
 import {
   buildOsmTileUrl,
   type ShippingMapTileLayout,
 } from "@/lib/maps/osm-tile-shipping-map-layout";
 
+const PIN_SLOT_CANVAS_CLASS: Record<MapOverlayPinSlot, string> = {
+  center: "absolute inset-0",
+  /** Mobil: Pin mittig über der gestapelten Karte. Desktop: Pin rechts neben dem Overlay. */
+  "map-right": "absolute inset-0 md:left-0 md:w-[140%] md:right-auto",
+  /** Mobil mittig, Desktop links neben rechtem Overlay. */
+  "map-left": "absolute inset-0 md:left-[-40%] md:w-[140%] md:right-auto",
+};
+
 export function OsmStaticMapCanvas({
   layout,
   grayscale = true,
   showMarker = true,
+  pinSlot = "center",
 }: {
   layout: ShippingMapTileLayout;
   grayscale?: boolean;
   showMarker?: boolean;
+  pinSlot?: MapOverlayPinSlot;
 }) {
   return (
-    <div className="absolute inset-0 overflow-hidden bg-neutral-200" aria-hidden>
+    <div className={`${PIN_SLOT_CANVAS_CLASS[pinSlot]} overflow-hidden bg-neutral-200`} aria-hidden>
       <div
         className={grayscale ? "absolute grayscale contrast-[1.03]" : "absolute"}
         style={{

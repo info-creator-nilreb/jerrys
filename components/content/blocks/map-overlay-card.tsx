@@ -19,7 +19,7 @@ export function MapOverlayCard({
 }) {
   return (
     <div
-      className={`w-full max-w-md bg-white/95 text-center shadow-[var(--shadow-overlay)] ${
+      className={`w-full max-w-md bg-white/85 text-center shadow-[var(--shadow-overlay)] ${
         compact ? "px-5 py-6" : "px-8 py-10 md:w-[26rem] md:px-10 md:py-12"
       }`}
     >

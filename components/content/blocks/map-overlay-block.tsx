@@ -5,6 +5,7 @@ import {
   MAP_OVERLAY_SPAN_METERS,
   mapOverlayHasCard,
   mapOverlayHeadingId,
+  mapOverlayPinSlot,
   resolveMapOverlayCtaHref,
   type MapOverlayBlockData,
 } from "@/lib/content/blocks/map-overlay";
@@ -39,25 +40,33 @@ export async function MapOverlayBlock({
       })
     : null;
   const hasCard = mapOverlayHasCard(data);
+  const pinSlot = mapOverlayPinSlot(hasCard, data.overlayPosition);
   const ctaHref = resolveMapOverlayCtaHref(data, coords);
   const labelledBy = data.headline ? mapOverlayHeadingId(blockId) : undefined;
+  const overlayOnRight = data.overlayPosition === "right";
 
   return (
     <section
       aria-labelledby={labelledBy}
       aria-label={labelledBy ? undefined : (data.query ?? "Standortkarte")}
-      className="relative min-h-[22rem] w-full overflow-hidden bg-neutral-200 md:min-h-[28rem] lg:min-h-[32rem]"
+      className="relative w-full overflow-hidden bg-neutral-200 md:min-h-[28rem] lg:min-h-[32rem]"
     >
-      {layout ? (
-        <OsmStaticMapCanvas layout={layout} grayscale={data.grayscale} />
-      ) : (
-        <div className="absolute inset-0 bg-neutral-200" aria-hidden />
-      )}
+      <div className="relative min-h-[18rem] md:absolute md:inset-0 md:min-h-0">
+        {layout ? (
+          <OsmStaticMapCanvas
+            layout={layout}
+            grayscale={data.grayscale}
+            pinSlot={pinSlot}
+          />
+        ) : (
+          <div className="absolute inset-0 bg-neutral-200" aria-hidden />
+        )}
+      </div>
 
       {hasCard ? (
         <div
-          className={`relative z-10 flex min-h-[22rem] items-center px-4 py-10 md:min-h-[28rem] md:px-10 lg:min-h-[32rem] lg:px-16 ${
-            data.overlayPosition === "right" ? "justify-center md:justify-end" : "justify-center md:justify-start"
+          className={`relative z-10 px-4 py-6 md:absolute md:inset-0 md:flex md:min-h-[28rem] md:items-center md:px-10 md:py-10 lg:min-h-[32rem] lg:px-16 ${
+            overlayOnRight ? "md:justify-end" : "md:justify-start"
           }`}
         >
           <MapOverlayCard data={data} ctaHref={ctaHref} headingId={labelledBy} />
@@ -66,7 +75,7 @@ export async function MapOverlayBlock({
         <span className="sr-only">{data.query ?? "Standortkarte"}</span>
       )}
 
-      <p className="pointer-events-none absolute right-3 bottom-2 z-10 text-[10px] text-neutral-600/80">
+      <p className="pointer-events-none absolute right-3 bottom-2 z-20 text-[10px] text-neutral-600/80">
         ©{" "}
         <a
           href="https://www.openstreetmap.org/copyright"

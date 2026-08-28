@@ -100,6 +100,20 @@ export function mapOverlayHeadingId(blockId: string): string {
   return `map-overlay-${blockId}`;
 }
 
+/**
+ * Sichtbare Pin-Lage im Kartenausschnitt, wenn ein Overlay die Mitte verdeckt.
+ * `map-right` = Pin rechts neben linker Karte; `map-left` = links neben rechter Karte.
+ */
+export type MapOverlayPinSlot = "center" | "map-left" | "map-right";
+
+export function mapOverlayPinSlot(
+  hasCard: boolean,
+  overlayPosition: MapOverlayPosition,
+): MapOverlayPinSlot {
+  if (!hasCard) return "center";
+  return overlayPosition === "right" ? "map-left" : "map-right";
+}
+
 export function mapOverlaySearchUrl(query: string): string {
   return `https://www.openstreetmap.org/search?query=${encodeURIComponent(query.trim())}`;
 }

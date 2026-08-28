@@ -6,6 +6,7 @@ import { defaultDataForContentBlockType } from "@/lib/content/block-defaults";
 import {
   LOCATION_MAP_VIEWPORT,
   mapOverlayHasCard,
+  mapOverlayPinSlot,
   mapOverlaySearchUrl,
   resolveMapOverlayCtaHref,
   type MapOverlayBlockData,
@@ -147,6 +148,15 @@ describe("location map tile layout", () => {
   });
 });
 
+describe("mapOverlayPinSlot", () => {
+  it("legt den Pin neben das Overlay, sonst in die Mitte", () => {
+    expect(mapOverlayPinSlot(false, "left")).toBe("center");
+    expect(mapOverlayPinSlot(false, "right")).toBe("center");
+    expect(mapOverlayPinSlot(true, "left")).toBe("map-right");
+    expect(mapOverlayPinSlot(true, "right")).toBe("map-left");
+  });
+});
+
 describe("MapOverlayBlock", () => {
   it("rendert OSM-Kacheln ohne iframe und ohne Google Maps", () => {
     const src = readFileSync(
@@ -154,8 +164,18 @@ describe("MapOverlayBlock", () => {
       "utf8",
     );
     expect(src).toContain("OsmStaticMapCanvas");
+    expect(src).toContain("pinSlot");
     expect(src).not.toContain("<iframe");
     expect(src).not.toContain("google.com/maps");
     expect(src).toContain("OpenStreetMap");
+  });
+
+  it("nutzt durchsichtigeres Overlay", () => {
+    const src = readFileSync(
+      path.resolve("components/content/blocks/map-overlay-card.tsx"),
+      "utf8",
+    );
+    expect(src).toContain("bg-white/85");
+    expect(src).not.toContain("bg-white/95");
   });
 });

@@ -15,6 +15,7 @@ import {
 } from "@/lib/content/blocks/hero";
 import {
   mapOverlayHasCard,
+  mapOverlayPinSlot,
   resolveMapOverlayCtaHref,
 } from "@/lib/content/blocks/map-overlay";
 import { resolveSocialReviewsLayout } from "@/lib/content/blocks/social-reviews";
@@ -420,36 +421,46 @@ function PreviewBlock({
     );
     const right = str(data, "overlayPosition") === "right";
     const grayscale = bool(data, "grayscale", true);
+    const hasCard = mapOverlayHasCard(overlay);
+    const pinSlot = mapOverlayPinSlot(hasCard, right ? "right" : "left");
+    const pinLeftClass =
+      pinSlot === "map-right"
+        ? "left-[70%]"
+        : pinSlot === "map-left"
+          ? "left-[30%]"
+          : "left-1/2";
 
     return (
-      <section className="relative min-h-56 overflow-hidden bg-neutral-200">
-        <div
-          className={`absolute inset-0 ${grayscale ? "grayscale" : ""}`}
-          aria-hidden
-          style={{
-            backgroundImage:
-              "linear-gradient(#d4d4d4 1px, transparent 1px), linear-gradient(90deg, #d4d4d4 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
-            backgroundColor: "#e5e5e5",
-          }}
-        />
-        <MapPin
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/2 z-10 size-10 -translate-x-1/2 -translate-y-full text-primary drop-shadow-md"
-          fill="currentColor"
-          stroke="white"
-          strokeWidth={1.5}
-        />
-        {mapOverlayHasCard(overlay) ? (
+      <section className="relative overflow-hidden bg-neutral-200">
+        <div className="relative min-h-40">
           <div
-            className={`relative z-10 flex min-h-56 items-center px-4 py-6 ${
-              right ? "justify-end" : "justify-start"
+            className={`absolute inset-0 ${grayscale ? "grayscale" : ""}`}
+            aria-hidden
+            style={{
+              backgroundImage:
+                "linear-gradient(#d4d4d4 1px, transparent 1px), linear-gradient(90deg, #d4d4d4 1px, transparent 1px)",
+              backgroundSize: "28px 28px",
+              backgroundColor: "#e5e5e5",
+            }}
+          />
+          <MapPin
+            aria-hidden
+            className={`pointer-events-none absolute top-1/2 z-10 size-10 -translate-x-1/2 -translate-y-full text-primary drop-shadow-md ${pinLeftClass}`}
+            fill="currentColor"
+            stroke="white"
+            strokeWidth={1.5}
+          />
+        </div>
+        {hasCard ? (
+          <div
+            className={`relative z-10 px-4 py-4 sm:absolute sm:inset-0 sm:flex sm:items-center ${
+              right ? "sm:justify-end" : "sm:justify-start"
             }`}
           >
             <MapOverlayCard data={overlay} ctaHref={ctaHref} compact />
           </div>
         ) : (
-          <p className="relative z-10 px-4 py-16 text-center text-[11px] text-[#6b7280]">
+          <p className="relative z-10 px-4 py-8 text-center text-[11px] text-[#6b7280]">
             {str(data, "query") || "Standortkarte"}
           </p>
         )}
