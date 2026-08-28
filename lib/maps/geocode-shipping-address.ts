@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { nominatimUserAgent } from "@/lib/maps/nominatim-user-agent";
 
 export type ShippingAddressGeoInput = {
   line1: string;
@@ -9,14 +10,6 @@ export type ShippingAddressGeoInput = {
 };
 
 type NominatimHit = { lat?: string; lon?: string };
-
-function nominatimUserAgent(): string {
-  const site = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  const custom = process.env.NOMINATIM_USER_AGENT?.trim();
-  if (custom) return custom;
-  if (site) return `JerrysStorefront/1.0 (${site})`;
-  return "JerrysStorefront/1.0 (order-confirmation-map)";
-}
 
 function buildStreet(input: ShippingAddressGeoInput): string {
   const parts = [input.line1.trim(), input.line2?.trim()].filter(Boolean) as string[];
@@ -47,7 +40,7 @@ export const geocodeShippingAddress = cache(
     try {
       const res = await fetch(url, {
         headers: {
-          "User-Agent": nominatimUserAgent(),
+          "User-Agent": nominatimUserAgent("order-confirmation-map"),
           Accept: "application/json",
         },
         next: { revalidate: 86_400 },

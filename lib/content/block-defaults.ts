@@ -101,5 +101,20 @@ export function defaultDataForContentBlockType(
         limit: 6,
         emptyMessage: "Derzeit sind keine Termine buchbar.",
         showDateRequestLink: true,
-      };  }
+      };
+    case "mapOverlay":
+      return {
+        query: "Stargarder Str. 16, 10437 Berlin, Deutschland",
+        lat: null,
+        lon: null,
+        mapSpan: "neighborhood",
+        grayscale: true,
+        overlayPosition: "left",
+        headline: "Lass dich vor Ort inspirieren",
+        address: "Stargarder Str. 16, 10437 Berlin, Deutschland",
+        hours: "Mi – Fr, 12 – 18 Uhr\nSa, 12 – 15 Uhr",
+        ctaLabel: "Der schnellste Weg zu uns",
+        ctaHref: "",
+      };
+  }
 }

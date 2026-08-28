@@ -14,6 +14,7 @@ const STREAMED_BLOCK_TYPES = new Set<ContentBlockType>([
   "curatedProductList",
   "socialReviews",
   "workshopCalendar",
+  "mapOverlay",
 ]);
 
 function streamedBlockFallback(type: ContentBlockType) {
@@ -29,6 +30,14 @@ function streamedBlockFallback(type: ContentBlockType) {
     return (
       <div
         className="min-h-56 border-y border-(--surface-muted) bg-(--surface-soft)"
+        aria-hidden
+      />
+    );
+  }
+  if (type === "mapOverlay") {
+    return (
+      <div
+        className="min-h-[22rem] bg-neutral-200 md:min-h-[28rem] lg:min-h-[32rem]"
         aria-hidden
       />
     );

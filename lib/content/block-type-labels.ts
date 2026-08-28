@@ -10,6 +10,7 @@ export const CONTENT_BLOCK_TYPE_LABELS: Record<ContentBlockType, string> = {
   faq: "FAQ",
   socialReviews: "Social / Reviews",
   workshopCalendar: "Termin-Kalender",
+  mapOverlay: "Karte / Standort",
 };
 
 export const CONTENT_PAGE_TYPE_LABELS = {

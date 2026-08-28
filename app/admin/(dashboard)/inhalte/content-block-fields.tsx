@@ -983,6 +983,137 @@ export function ContentBlockFields({
       </div>
     );
   }
+
+  if (type === "mapOverlay") {
+    return (
+      <div className="grid gap-3 sm:grid-cols-2">
+        <p className="rounded-md border border-[#e8eaed] bg-[#f7f8fa] px-3 py-2 text-xs text-[#6b7280] sm:col-span-2">
+          <span className="font-medium text-[#374151]">Kartenhintergrund:</span>{" "}
+          OpenStreetMap (Graustufen), analog zur Standort-Sektion auf edelweissdesigns.de.
+          Overlay-Text ist optional — ohne Text bleibt nur die Karte.
+        </p>
+        <label className="text-sm text-[#5c5f66] sm:col-span-2">
+          Adresse für die Karte <span className="text-primary">*</span>
+          <input
+            className={fieldClass}
+            value={str(data, "query")}
+            onChange={(e) => set("query", e.target.value)}
+            placeholder="Stargarder Str. 16, 10437 Berlin"
+          />
+        </label>
+        <label className="text-sm text-[#5c5f66]">
+          Breite (optional)
+          <input
+            className={fieldClass}
+            inputMode="decimal"
+            value={data.lat == null || data.lat === "" ? "" : String(data.lat)}
+            onChange={(e) => {
+              const v = e.target.value.trim();
+              set("lat", v === "" ? null : Number(v));
+            }}
+            placeholder="52.54…"
+          />
+        </label>
+        <label className="text-sm text-[#5c5f66]">
+          Länge (optional)
+          <input
+            className={fieldClass}
+            inputMode="decimal"
+            value={data.lon == null || data.lon === "" ? "" : String(data.lon)}
+            onChange={(e) => {
+              const v = e.target.value.trim();
+              set("lon", v === "" ? null : Number(v));
+            }}
+            placeholder="13.42…"
+          />
+        </label>
+        <p className="text-xs text-[#9ca3af] sm:col-span-2">
+          Koordinaten überschreiben die Geocoding-Suche, falls beide gesetzt sind.
+        </p>
+        <label className="text-sm text-[#5c5f66]">
+          Ausschnitt
+          <select
+            className={fieldClass}
+            value={str(data, "mapSpan") || "neighborhood"}
+            onChange={(e) => set("mapSpan", e.target.value)}
+          >
+            <option value="near">Nah (Straße)</option>
+            <option value="neighborhood">Viertel</option>
+            <option value="city">Stadt</option>
+          </select>
+        </label>
+        <label className="text-sm text-[#5c5f66]">
+          Overlay-Position
+          <select
+            className={fieldClass}
+            value={str(data, "overlayPosition") || "left"}
+            onChange={(e) => set("overlayPosition", e.target.value)}
+          >
+            <option value="left">Links</option>
+            <option value="right">Rechts</option>
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-sm text-[#2d2e32] sm:col-span-2">
+          <input
+            type="checkbox"
+            className="size-4 checkbox-primary"
+            checked={bool(data, "grayscale", true)}
+            onChange={(e) => set("grayscale", e.target.checked)}
+          />
+          Karte in Graustufen
+        </label>
+        <label className="text-sm text-[#5c5f66] sm:col-span-2">
+          Overlay-Überschrift
+          <input
+            className={fieldClass}
+            value={str(data, "headline")}
+            onChange={(e) => set("headline", e.target.value)}
+            placeholder="Lass dich vor Ort inspirieren"
+          />
+        </label>
+        <label className="text-sm text-[#5c5f66] sm:col-span-2">
+          Adresse im Overlay
+          <textarea
+            className={`${fieldClass} min-h-16`}
+            value={str(data, "address")}
+            onChange={(e) => set("address", e.target.value)}
+            placeholder="Stargarder Str. 16&#10;10437 Berlin, Deutschland"
+          />
+        </label>
+        <label className="text-sm text-[#5c5f66] sm:col-span-2">
+          Öffnungszeiten
+          <textarea
+            className={`${fieldClass} min-h-16`}
+            value={str(data, "hours")}
+            onChange={(e) => set("hours", e.target.value)}
+            placeholder="Mi – Fr, 12 – 18 Uhr"
+          />
+        </label>
+        <label className="text-sm text-[#5c5f66]">
+          Link-Text
+          <input
+            className={fieldClass}
+            value={str(data, "ctaLabel")}
+            onChange={(e) => set("ctaLabel", e.target.value)}
+            placeholder="Der schnellste Weg zu uns"
+          />
+        </label>
+        <label className="text-sm text-[#5c5f66]">
+          Link-Ziel (optional)
+          <input
+            className={fieldClass}
+            value={str(data, "ctaHref")}
+            onChange={(e) => set("ctaHref", e.target.value)}
+            placeholder="https://… oder /kontakt"
+          />
+        </label>
+        <p className="text-xs text-[#9ca3af] sm:col-span-2">
+          Leer lassen beim Ziel: der Link öffnet OpenStreetMap zur Adresse. HTTPS oder interner
+          Pfad ab /.
+        </p>
+      </div>
+    );
+  }
   return (
     <p className="text-sm text-[#6b7280]">Keine Felder für diesen Block-Typ.</p>
   );

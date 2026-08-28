@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import { MapPin } from "lucide-react";
 import { useDeferredValue, useMemo } from "react";
 import { HeroBackgroundCarousel } from "@/components/content/blocks/hero-background-carousel";
+import { MapOverlayCard } from "@/components/content/blocks/map-overlay-card";
 import { UspIcon } from "@/components/storefront/usp-icons";
 import {
   HERO_MOTION_EFFECTS,
@@ -11,6 +13,10 @@ import {
   type HeroMotionEffect,
   type HeroSlideDurationSec,
 } from "@/lib/content/blocks/hero";
+import {
+  mapOverlayHasCard,
+  resolveMapOverlayCtaHref,
+} from "@/lib/content/blocks/map-overlay";
 import { resolveSocialReviewsLayout } from "@/lib/content/blocks/social-reviews";
 import { isContentBlockType, type ContentBlockType } from "@/lib/content/block-types";
 import { sanitizeContentRichTextHtml } from "@/lib/content/sanitize-content-html";
@@ -393,6 +399,60 @@ function PreviewBlock({
             Vorschau — Live-Termine ohne Ort/Preis; Details auf Terminseite.
           </p>
         </div>
+      </section>
+    );
+  }
+
+  if (type === "mapOverlay") {
+    const overlay = {
+      headline: str(data, "headline") || null,
+      address: str(data, "address") || null,
+      hours: str(data, "hours") || null,
+      ctaLabel: str(data, "ctaLabel") || null,
+    };
+    const ctaHref = resolveMapOverlayCtaHref(
+      {
+        ctaLabel: overlay.ctaLabel,
+        ctaHref: str(data, "ctaHref") || null,
+        query: str(data, "query") || null,
+      },
+      null,
+    );
+    const right = str(data, "overlayPosition") === "right";
+    const grayscale = bool(data, "grayscale", true);
+
+    return (
+      <section className="relative min-h-56 overflow-hidden bg-neutral-200">
+        <div
+          className={`absolute inset-0 ${grayscale ? "grayscale" : ""}`}
+          aria-hidden
+          style={{
+            backgroundImage:
+              "linear-gradient(#d4d4d4 1px, transparent 1px), linear-gradient(90deg, #d4d4d4 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+            backgroundColor: "#e5e5e5",
+          }}
+        />
+        <MapPin
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-1/2 z-10 size-10 -translate-x-1/2 -translate-y-full text-primary drop-shadow-md"
+          fill="currentColor"
+          stroke="white"
+          strokeWidth={1.5}
+        />
+        {mapOverlayHasCard(overlay) ? (
+          <div
+            className={`relative z-10 flex min-h-56 items-center px-4 py-6 ${
+              right ? "justify-end" : "justify-start"
+            }`}
+          >
+            <MapOverlayCard data={overlay} ctaHref={ctaHref} compact />
+          </div>
+        ) : (
+          <p className="relative z-10 px-4 py-16 text-center text-[11px] text-[#6b7280]">
+            {str(data, "query") || "Standortkarte"}
+          </p>
+        )}
       </section>
     );
   }
