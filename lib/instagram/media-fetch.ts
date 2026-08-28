@@ -4,19 +4,30 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : null;
 }
 
-export function parseInstagramMediaRow(raw: unknown): InstagramMediaItem | null {
+export const INSTAGRAM_GRAPH_MEDIA_FIELDS =
+  "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp";
+
+export function parseInstagramMediaRow(
+  raw: unknown,
+  options?: { requirePermalink?: boolean },
+): InstagramMediaItem | null {
   const row = asRecord(raw);
   if (!row) return null;
   const id = typeof row.id === "string" ? row.id : "";
   const permalink = typeof row.permalink === "string" ? row.permalink : "";
-  if (!id || !permalink) return null;
+  const mediaUrl = typeof row.media_url === "string" ? row.media_url : null;
+  const thumbnailUrl = typeof row.thumbnail_url === "string" ? row.thumbnail_url : null;
+  const requirePermalink = options?.requirePermalink ?? true;
+  if (!id) return null;
+  if (requirePermalink && !permalink) return null;
+  if (!requirePermalink && !permalink && !mediaUrl && !thumbnailUrl) return null;
   return {
     id,
     caption: typeof row.caption === "string" ? row.caption : null,
     mediaType: typeof row.media_type === "string" ? row.media_type : "UNKNOWN",
-    mediaUrl: typeof row.media_url === "string" ? row.media_url : null,
-    thumbnailUrl: typeof row.thumbnail_url === "string" ? row.thumbnail_url : null,
-    permalink,
+    mediaUrl,
+    thumbnailUrl,
+    permalink: permalink || "https://www.instagram.com/",
     timestamp: typeof row.timestamp === "string" ? row.timestamp : null,
   };
 }

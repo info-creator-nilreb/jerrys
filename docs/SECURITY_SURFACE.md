@@ -24,6 +24,7 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | `GET /api/admin/search` | Admin-Session (`auth()`) | Globale Suche |
 | `GET /api/storefront/product-suggest` | Öffentlich | Typeahead-Produktvorschläge (`q`, min. 2 Zeichen); **Rate-Limit** pro IP (`lib/security/storefront-search-api-rate-limit.ts`) |
 | `GET /api/storefront/address-suggest` | Öffentlich | Adressvorschläge für Checkout und Adressbuch (`land`, `plz`, `ort`, `strasse`); ausschließlich Proxy auf OpenPLZ API (DE/AT/CH/LI), keine Shop-Daten; **Rate-Limit** pro IP (`lib/security/address-suggest-api-rate-limit.ts`) |
+| `GET /api/storefront/instagram-media/[id]` | Öffentlich | Storefront-Proxy für Instagram-Cache-Bilder (kein Graph-Token im Browser); CDN ohne Referer, bei toter URL Graph-Refresh; **Rate-Limit** pro IP (`lib/security/instagram-media-api-rate-limit.ts`); nur aktive Cache-IDs; Host-Allowlist |
 | `GET /api/admin/order-alerts` | Admin-Session | Admin-Glocke: neue Bestellungen, Terminbuchungen, Wunschtermine (`since`) |
 | `GET /api/admin/orders/[id]/invoice` | Admin-Session | Rechnungs-PDF (falls `invoiceNumber` gesetzt); sonst 404 |
 | Server Actions `lib/cart/actions.ts` | Öffentlich (Cart-Cookie) | Warenkorb |

@@ -2,6 +2,7 @@ import { getPrisma } from "@/lib/db/prisma";
 import { isMissingSchemaError } from "@/lib/db/prisma-error";
 import { instagramCaptionAlt } from "@/lib/instagram/caption";
 import { getInstagramConnectionPublic } from "@/lib/instagram/connection";
+import { storefrontInstagramMediaSrc } from "@/lib/instagram/storefront-media-url";
 import {
   listActiveHomepageSocialImages,
 } from "@/lib/homepage/marketing-queries";
@@ -28,7 +29,7 @@ export async function listActiveInstagramMediaCache(
     const username = conn.username ?? "";
     return rows.map((row) => ({
       id: row.id,
-      url: row.imageUrl,
+      url: storefrontInstagramMediaSrc(row.id, row.imageUrl),
       alt: instagramCaptionAlt(row.caption, username),
       href: row.permalink,
     }));

@@ -21,6 +21,15 @@ describe("parseInstagramMediaRow", () => {
   it("verwirft Zeilen ohne permalink", () => {
     expect(parseInstagramMediaRow({ id: "1", media_type: "IMAGE" })).toBeNull();
   });
+
+  it("akzeptiert Graph-Einzelabruf ohne permalink wenn eine Bild-URL da ist", () => {
+    const item = parseInstagramMediaRow(
+      { id: "9", media_type: "IMAGE", media_url: "https://cdn.example/a.jpg" },
+      { requirePermalink: false },
+    );
+    expect(item?.id).toBe("9");
+    expect(item?.mediaUrl).toContain("cdn.example");
+  });
 });
 
 describe("paginateInstagramGraphMedia", () => {

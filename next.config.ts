@@ -45,6 +45,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "*.fbcdn.net",
       },
+      {
+        protocol: "https",
+        hostname: "lookaside.fbsbx.com",
+      },
       /** Shopify CDN — Produktimport kann vor Blob-Spiegelung Remote-URLs behalten. */
       {
         protocol: "https",

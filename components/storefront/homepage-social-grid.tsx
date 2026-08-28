@@ -8,7 +8,8 @@ export type HomepageSocialSlide = {
   href: string | null;
 };
 
-function isBlobOrLocal(url: string): boolean {
+function shouldOptimizeImage(url: string): boolean {
+  if (url.startsWith("/api/")) return false;
   if (url.startsWith("/")) return true;
   return url.includes("blob.vercel-storage.com");
 }
@@ -28,7 +29,8 @@ function SocialSlide({
         fill
         className="object-cover"
         sizes={`(max-width: 767px) 50vw, ${Math.round(100 / desktopColumns)}vw`}
-        unoptimized={!isBlobOrLocal(item.url)}
+        unoptimized={!shouldOptimizeImage(item.url)}
+        referrerPolicy="no-referrer"
       />
     </div>
   );
