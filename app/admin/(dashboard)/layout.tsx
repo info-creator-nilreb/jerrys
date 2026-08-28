@@ -4,7 +4,7 @@ import { getAdminAuthState } from "@/lib/auth/admin-auth-state";
 import { AdminDevClientNotice } from "@/components/admin/admin-dev-client-notice";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { formatAppVersionLabel, getAppVersion } from "@/lib/app-version";
-import { resolveShopBrandingAssetUrl } from "@/lib/shop/branding-asset-fallbacks";
+import { resolveStorefrontHeaderLogos } from "@/lib/shop/resolve-storefront-header-logos";
 import { getShopSettings } from "@/lib/shop/shop-settings";
 import { isTermineFeatureEnabled } from "@/lib/shop/termine-feature";
 
@@ -40,7 +40,9 @@ export default async function AdminDashboardLayout({
 
   const termineEnabled = await isTermineFeatureEnabled();
   const shopSettings = await getShopSettings();
-  const adminLogoSrc = resolveShopBrandingAssetUrl(shopSettings, "logoDark");
+  const logos = await resolveStorefrontHeaderLogos(shopSettings);
+  const adminLogoSrc = logos.logoDarkSrc;
+  const adminLogoInvert = logos.invertLogoOnDarkUi;
 
   return (
     <AdminShell
@@ -50,6 +52,7 @@ export default async function AdminDashboardLayout({
       termineEnabled={termineEnabled}
       shopName={shopSettings.shopName}
       adminLogoSrc={adminLogoSrc}
+      adminLogoInvert={adminLogoInvert}
     >
       {process.env.NODE_ENV === "development" ? (
         <AdminDevClientNotice devBaseUrl={devBaseUrl} />

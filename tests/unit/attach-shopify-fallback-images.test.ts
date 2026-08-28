@@ -69,4 +69,29 @@ describe("attachShopifyFallbackImages", () => {
     expect(out[0]?.images).toEqual([]);
     expect(getIndexMock).not.toHaveBeenCalled();
   });
+
+  it("ersetzt blockierte Blob-URLs durch Shopify-CDN", async () => {
+    const originalFetch = global.fetch;
+    global.fetch = vi.fn(async () => new Response("Your store is blocked", { status: 403 })) as never;
+    getShopSettingsMock.mockResolvedValue({ shopName: "Edelweiss" } as never);
+    getIndexMock.mockResolvedValue({
+      "ring-curly-pearl": [{ url: "https://cdn.shopify.com/s/files/ring.jpg", alt: "Ring" }],
+    });
+    try {
+      const out = await attachShopifyFallbackImages([
+        {
+          slug: "ring-curly-pearl",
+          images: [
+            {
+              url: "https://abc.public.blob.vercel-storage.com/products/ring.jpg",
+              alt: "Ring",
+            },
+          ],
+        },
+      ]);
+      expect(out[0]?.images[0]?.url).toBe("https://cdn.shopify.com/s/files/ring.jpg");
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
 });

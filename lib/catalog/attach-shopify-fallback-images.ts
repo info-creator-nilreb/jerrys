@@ -4,14 +4,19 @@ import { getShopifyPublicImageIndex } from "@/lib/catalog/shopify-public-product
 import { resolveShopifyPublicOrigin } from "@/lib/catalog/shopify-public-origin";
 import { normalizeStorefrontProductImageUrl } from "@/lib/catalog/storefront-product-image";
 import { isUsableStoredProductImageUrl } from "@/lib/catalog/usable-product-image-url";
+import {
+  collectBlockedBlobHosts,
+  urlHostIsBlocked,
+} from "@/lib/catalog/blob-host-reachability";
 import { getShopSettings } from "@/lib/shop/shop-settings";
 
 type ImageRow = { url: string; alt: string };
 
-function usableImages(images: ImageRow[]): ImageRow[] {
+function usableImages(images: ImageRow[], blockedHosts: Set<string>): ImageRow[] {
   const out: ImageRow[] = [];
   for (const img of images) {
     if (!isUsableStoredProductImageUrl(img.url)) continue;
+    if (urlHostIsBlocked(img.url, blockedHosts)) continue;
     const url = normalizeStorefrontProductImageUrl(img.url);
     if (!url) continue;
     out.push({ ...img, url, alt: img.alt });
@@ -34,7 +39,10 @@ export async function attachShopifyFallbackImages<
   T extends { slug: string; images: ImageRow[] },
 >(products: T[]): Promise<T[]> {
   if (products.length === 0) return products;
-  const mapped = products.map((p) => ({ ...p, images: usableImages(p.images) }));
+  const blockedHosts = await collectBlockedBlobHosts(
+    products.flatMap((p) => p.images.map((img) => img.url)),
+  );
+  const mapped = products.map((p) => ({ ...p, images: usableImages(p.images, blockedHosts) }));
   if (mapped.every((p) => p.images.length > 0)) return mapped;
 
   const index = await shopifyIndexForCurrentShop();

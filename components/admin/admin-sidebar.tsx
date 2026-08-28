@@ -188,6 +188,7 @@ export function AdminSidebar({
   termineEnabled = true,
   shopName,
   adminLogoSrc,
+  adminLogoInvert = false,
   mobileOpen = false,
   onNavigate,
   className = "",
@@ -201,6 +202,7 @@ export function AdminSidebar({
   termineEnabled?: boolean;
   shopName: string;
   adminLogoSrc: string;
+  adminLogoInvert?: boolean;
   /** Off-canvas auf Viewports &lt; lg */
   mobileOpen?: boolean;
   onNavigate?: () => void;
@@ -273,7 +275,7 @@ export function AdminSidebar({
               alt={shopName}
               width={72}
               height={72}
-              className="h-9 w-auto max-w-[2.75rem] object-contain"
+              className={`h-9 w-auto max-w-[2.75rem] object-contain ${adminLogoInvert ? "brightness-0 invert" : ""}`}
               unoptimized
             />
           </div>
@@ -284,7 +286,7 @@ export function AdminSidebar({
                 src={adminLogoSrc}
                 alt={shopName}
                 fill
-                className="object-contain object-left"
+                className={`object-contain object-left ${adminLogoInvert ? "brightness-0 invert" : ""}`}
                 sizes="120px"
                 unoptimized
               />

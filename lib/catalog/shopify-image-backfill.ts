@@ -4,6 +4,10 @@ import { getPrisma } from "@/lib/db/prisma";
 import { getShopifyPublicImageIndex } from "@/lib/catalog/shopify-public-product-images";
 import { resolveShopifyPublicOrigin } from "@/lib/catalog/shopify-public-origin";
 import { isUsableStoredProductImageUrl } from "@/lib/catalog/usable-product-image-url";
+import {
+  collectBlockedBlobHosts,
+  urlHostIsBlocked,
+} from "@/lib/catalog/blob-host-reachability";
 import { getShopSettings } from "@/lib/shop/shop-settings";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 
@@ -46,8 +50,14 @@ export async function backfillMissingProductImagesFromShopify(): Promise<Shopify
 
   let filled = 0;
   const prisma = getPrisma();
+  const blockedHosts = await collectBlockedBlobHosts(
+    products.flatMap((p) => p.images.map((img) => img.url)),
+  );
   for (const product of products) {
-    const usable = product.images.filter((img) => isUsableStoredProductImageUrl(img.url));
+    const usable = product.images.filter(
+      (img) =>
+        isUsableStoredProductImageUrl(img.url) && !urlHostIsBlocked(img.url, blockedHosts),
+    );
     if (usable.length > 0) continue;
     const fallback = index[product.slug] ?? [];
     if (fallback.length === 0) continue;

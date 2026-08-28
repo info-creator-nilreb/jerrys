@@ -103,7 +103,7 @@ Typische Lücken in Shopify-CSVs (wie `products_export.csv`):
 **Bilder:** Beim Apply optional Download → **Vercel Blob** (wenn `BLOB_READ_WRITE_TOKEN`).
 Auf Vercel kein Schreiben nach `public/` (read-only) — ohne Blob bleiben **Shopify-CDN-URLs** in der DB (Storefront: `cdn.shopify.com` in `remotePatterns`). HEIC wird übersprungen.
 
-Wenn Blob beim Import fehlt, können URLs als `/media/product-uploads/…` in der DB stehen. Diese Dateien existieren auf Vercel nicht (ephemeres Dateisystem) — die meisten Produktkarten bleiben dann leer, während nachträglich per Admin+Blob gespeicherte Bilder sichtbar sind.
+Wenn Blob beim Import fehlt, können URLs als `/media/product-uploads/…` in der DB stehen. Diese Dateien existieren auf Vercel nicht (ephemeres Dateisystem). Blockierte Blob-Stores (HTTP 403 „Your store is blocked“) gelten ebenfalls als unbrauchbar — inkl. Branding-Logos, die dann vom Shopify-Header übernommen werden.
 
 Die Storefront lädt Shopify-CDN deshalb **ohne** `next/image`-Optimizer (`StorefrontImage`, `unoptimized`) und zieht fehlende/unbrauchbare Bilder zur Laufzeit aus der öffentlichen JSON-API (`/products.json`, Match über `slug` = Handle). Optional:
 
