@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { StorefrontImage } from "@/components/storefront/storefront-image";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -114,7 +114,7 @@ export function CheckoutSummaryAside({
                 <div className="relative h-16 w-16 shrink-0">
                   <div className="relative h-full w-full overflow-hidden rounded-md border border-(--surface-muted) bg-white">
                     {img ? (
-                      <Image src={img.url} alt={img.alt} fill className="object-cover" sizes="64px" />
+                      <StorefrontImage src={img.url} alt={img.alt} fill className="object-cover" sizes="64px" />
                     ) : null}
                   </div>
                   <span

@@ -1,3 +1,4 @@
+import { attachShopifyFallbackImages } from "@/lib/catalog/attach-shopify-fallback-images";
 import { getPrisma } from "@/lib/db/prisma";
 
 export const cartVariantSelect = {
@@ -34,7 +35,7 @@ export async function getCartLineCountSum(cartId: string): Promise<number> {
 }
 
 export async function getCartWithLines(cartId: string) {
-  return getPrisma().cart.findUnique({
+  const cart = await getPrisma().cart.findUnique({
     where: { id: cartId },
     include: {
       lines: {
@@ -46,6 +47,15 @@ export async function getCartWithLines(cartId: string) {
       },
     },
   });
+  if (!cart || cart.lines.length === 0) return cart;
+  const enriched = await attachShopifyFallbackImages(cart.lines.map((line) => line.product));
+  return {
+    ...cart,
+    lines: cart.lines.map((line, i) => ({
+      ...line,
+      product: { ...line.product, images: enriched[i]?.images ?? line.product.images },
+    })),
+  };
 }
 
 export type CartLineWithVariant = NonNullable<

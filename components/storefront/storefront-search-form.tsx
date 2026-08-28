@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -319,13 +319,12 @@ export function StorefrontSearchForm({
                       >
                         <span className="relative size-11 shrink-0 overflow-hidden rounded-md bg-(--surface-muted)">
                           {item.imageUrl ? (
-                            <Image
+                            <StorefrontImage
                               src={item.imageUrl}
                               alt={item.imageAlt || item.title}
                               fill
                               className="object-cover"
                               sizes="44px"
-                              unoptimized={item.imageUrl.startsWith("/")}
                             />
                           ) : (
                             <span className="flex h-full items-center justify-center text-xs text-(--foreground-muted)">

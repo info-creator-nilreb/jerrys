@@ -18,6 +18,7 @@ import {
 import { getPrisma } from "@/lib/db/prisma";
 import { getInstagramConnectionPublic } from "@/lib/instagram/connection";
 import { syncInstagramMediaFeed } from "@/lib/instagram/sync-media";
+import { backfillMissingProductImagesFromShopify } from "@/lib/catalog/shopify-image-backfill";
 import { reconcilePendingPayPalPayments } from "@/lib/orders/reconcile-pending-paypal-payments";
 
 function bearerToken(req: NextRequest): string | null {
@@ -140,13 +141,20 @@ async function runCommerceMaintenance(mode: CommerceMaintenanceMode) {
       outbox: { skipped: true as const, reason: "critical_mode" },
       instagram: { skipped: true as const, reason: "critical_mode" },
       zettle: { skipped: true as const, reason: "critical_mode" },
+      shopifyImages: { skipped: true as const, reason: "critical_mode" },
     };
   }
 
-  const [outbox, instagram, zettle] = await Promise.all([
+  const [outbox, instagram, zettle, shopifyImages] = await Promise.all([
     publishIntegrationOutboxBatch(prisma),
     runInstagramSyncIfConnected(),
     runZettleSyncIfConnected(),
+    backfillMissingProductImagesFromShopify().catch((e) => ({
+      skipped: true as const,
+      reason: e instanceof Error ? e.message : "shopify_image_backfill_failed",
+      scanned: 0,
+      filled: 0,
+    })),
   ]);
 
   return {
@@ -156,6 +164,7 @@ async function runCommerceMaintenance(mode: CommerceMaintenanceMode) {
     outboxBacklog: await getIntegrationOutboxBacklogStats(prisma),
     instagram,
     zettle,
+    shopifyImages,
   };
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { useCallback, useEffect, useId, useState, useSyncExternalStore, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
@@ -161,13 +161,12 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
                   <li key={line.lineId} className="flex gap-3 border-b border-(--surface-muted) pb-4 last:border-0 last:pb-0">
                     <div className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-(--surface-muted)">
                       {line.imageUrl ? (
-                        <Image
+                        <StorefrontImage
                           src={line.imageUrl}
                           alt={line.imageAlt || line.title}
                           fill
                           className="object-cover"
                           sizes="64px"
-                          unoptimized={line.imageUrl.startsWith("/")}
                         />
                       ) : (
                         <span className="flex h-full items-center justify-center text-xs text-(--foreground-muted)">

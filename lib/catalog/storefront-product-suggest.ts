@@ -1,5 +1,6 @@
 import "server-only";
 
+import { attachShopifyFallbackImages } from "@/lib/catalog/attach-shopify-fallback-images";
 import { getPrisma } from "@/lib/db/prisma";
 import { prismaDefaultVariantInclude } from "@/lib/catalog/default-variant-storefront";
 import { parseStorefrontSearchQuery } from "@/lib/catalog/storefront-product-search";
@@ -52,7 +53,8 @@ export async function listStorefrontProductSuggestions(
     },
   });
 
-  return products.map((p) => {
+  const withImages = await attachShopifyFallbackImages(products);
+  return withImages.map((p) => {
     const image = p.images[0] ?? null;
     const variant = p.variants[0] ?? null;
     return {

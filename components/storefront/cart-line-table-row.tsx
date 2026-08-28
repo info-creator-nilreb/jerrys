@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { StorefrontImage } from "@/components/storefront/storefront-image";
 import Link from "next/link";
 import { Trash2 } from "lucide-react";
 import {
@@ -92,7 +92,7 @@ export function CartLineMobileCard({ line }: { line: CartLineWithVariant }) {
       <div className="flex gap-4">
         <div className="relative size-20 shrink-0 overflow-hidden rounded-md border border-(--surface-muted) bg-(--surface-muted)">
           {img ? (
-            <Image src={img.url} alt={img.alt} fill className="object-cover" sizes="80px" />
+            <StorefrontImage src={img.url} alt={img.alt} fill className="object-cover" sizes="80px" />
           ) : (
             <div className="flex size-full items-center justify-center text-sm text-(--foreground-muted)">—</div>
           )}
@@ -165,7 +165,7 @@ export function CartLineTableRow({ line }: { line: CartLineWithVariant }) {
         <div className="flex gap-4">
           <div className="relative size-20 shrink-0 overflow-hidden rounded-md border border-(--surface-muted) bg-(--surface-muted)">
             {img ? (
-              <Image src={img.url} alt={img.alt} fill className="object-cover" sizes="80px" />
+              <StorefrontImage src={img.url} alt={img.alt} fill className="object-cover" sizes="80px" />
             ) : (
               <div className="flex size-full items-center justify-center text-sm text-(--foreground-muted)">—</div>
             )}

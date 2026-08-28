@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import Image from "next/image";
 import { AddToCartForm } from "@/components/storefront/add-to-cart-form";
+import { StorefrontImage } from "@/components/storefront/storefront-image";
 import type { ProductQuantityRules } from "@/lib/cart/quantity";
 
 /**
@@ -62,7 +62,7 @@ export function ProductPdpStickyAtcBar({
       <div className="mx-auto flex min-h-[3.25rem] max-w-6xl items-center gap-3 px-4 py-2.5">
         {imageUrl ? (
           <div className="relative size-10 shrink-0 overflow-hidden rounded-md border border-(--surface-muted) bg-(--surface-soft)">
-            <Image src={imageUrl} alt={imageAlt} fill className="object-cover" sizes="40px" />
+            <StorefrontImage src={imageUrl} alt={imageAlt} fill className="object-cover" sizes="40px" />
           </div>
         ) : (
           <div

@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { StorefrontImage } from "@/components/storefront/storefront-image";
 
 /** Einzelbild auf der Produktkarte — serverseitig, festes Seitenverhältnis (CLS). */
 export function ProductCardImage({
@@ -12,7 +12,7 @@ export function ProductCardImage({
 }) {
   return (
     <div className="relative aspect-square bg-(--surface-muted)">
-      <Image
+      <StorefrontImage
         src={url}
         alt={alt || productTitle}
         fill
