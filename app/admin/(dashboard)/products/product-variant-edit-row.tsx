@@ -211,26 +211,10 @@ export function ProductVariantEditRow({
               </div>
               <div className="flex flex-col gap-1">
                 <label
-                  htmlFor={`edit-available-${variant.id}`}
-                  className="text-xs font-medium text-[#6b7280]"
-                >
-                  Verfügbar (Shop)
-                </label>
-                <input
-                  id={`edit-available-${variant.id}`}
-                  name="availableQuantity"
-                  type="number"
-                  min={0}
-                  defaultValue={variant.availableQuantity}
-                  className="rounded-md border border-[#e3e4e8] bg-white px-3 py-2 text-sm"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label
                   htmlFor={`edit-stock-${variant.id}`}
                   className="text-xs font-medium text-[#6b7280]"
                 >
-                  Lagerbestand
+                  Lagerbestand (physikalisch)
                 </label>
                 <input
                   id={`edit-stock-${variant.id}`}
@@ -240,6 +224,9 @@ export function ProductVariantEditRow({
                   defaultValue={variant.stockQuantity}
                   className="rounded-md border border-[#e3e4e8] bg-white px-3 py-2 text-sm"
                 />
+                <p className="text-[11px] text-[#9ca3af]">
+                  Verfügbar (Shop): {variant.availableQuantity} — wird mit dem Lagerbestand gekoppelt.
+                </p>
               </div>
               <div className="flex items-center gap-2 sm:col-span-2">
                 <input

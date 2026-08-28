@@ -9,6 +9,8 @@ import {
   loadZettleProductsAction,
   retryZettlePurchaseSyncAction,
   runZettleDiscrepancyAction,
+  adoptAllZettleStockAction,
+  adoptZettleStockAction,
   saveZettleApiKeyAction,
   saveZettleMappingAction,
   syncZettlePurchasesAction,
@@ -133,6 +135,14 @@ export function ZettleSettingsPanel(props: Props) {
     runZettleDiscrepancyAction,
     null as ZettleAdminActionState,
   );
+  const [adoptState, adoptAction, adoptPending] = useActionState(
+    adoptZettleStockAction,
+    null as ZettleAdminActionState,
+  );
+  const [adoptAllState, adoptAllAction, adoptAllPending] = useActionState(
+    adoptAllZettleStockAction,
+    null as ZettleAdminActionState,
+  );
   const [disconnectState, disconnectAction, disconnectPending] = useActionState(
     disconnectZettleAction,
     null as ZettleAdminActionState,
@@ -147,6 +157,9 @@ export function ZettleSettingsPanel(props: Props) {
       syncState?.ok ||
       retryState?.ok ||
       webhookState?.ok ||
+      discState?.ok ||
+      adoptState?.ok ||
+      adoptAllState?.ok ||
       disconnectState?.ok
     ) {
       router.refresh();
@@ -159,6 +172,9 @@ export function ZettleSettingsPanel(props: Props) {
     syncState?.ok,
     retryState?.ok,
     webhookState?.ok,
+    discState?.ok,
+    adoptState?.ok,
+    adoptAllState?.ok,
     disconnectState?.ok,
     router,
   ]);
@@ -172,6 +188,8 @@ export function ZettleSettingsPanel(props: Props) {
     retryState?.error ||
     webhookState?.error ||
     discState?.error ||
+    adoptState?.error ||
+    adoptAllState?.error ||
     disconnectState?.error;
   const message =
     saveState?.message ||
@@ -182,7 +200,12 @@ export function ZettleSettingsPanel(props: Props) {
     retryState?.message ||
     webhookState?.message ||
     discState?.message ||
+    adoptState?.message ||
+    adoptAllState?.message ||
     disconnectState?.message;
+
+  const activeDiscrepancy =
+    adoptState?.discrepancy ?? adoptAllState?.discrepancy ?? discState?.discrepancy;
 
   const variantOptions = useMemo(() => {
     const products: ZettleProductOption[] = loadState?.products ?? saveState?.products ?? [];
@@ -401,18 +424,36 @@ export function ZettleSettingsPanel(props: Props) {
             ) : null}
           </div>
 
-          {discState?.discrepancy ? (
+          {activeDiscrepancy ? (
             <div className="rounded-md border border-[#e8eaed] bg-[#fafbfc] p-3">
-              <h3 className="text-sm font-semibold text-[#1f2937]">Discrepancy-Report</h3>
-              <p className="mt-1 text-xs text-[#6b7280]">
-                Shop verfügbar vs. Zettle STORE — der Shop bleibt Quelle der Wahrheit;
-                Abweichungen nur als Hinweis.
-              </p>
-              {discState.discrepancy.rows.length === 0 ? (
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-[#1f2937]">Discrepancy-Report</h3>
+                  <p className="mt-1 text-xs text-[#6b7280]">
+                    Shop verfügbar vs. Zettle STORE. Der Shop bleibt normalerweise Quelle der Wahrheit;
+                    optional kannst du Zettle-Bestände übernehmen (verfügbar = Zettle, physisch folgt per
+                    Delta — reservierte Online-Bestellungen bleiben berücksichtigt).
+                  </p>
+                </div>
+                {activeDiscrepancy.mismatches > 0 ? (
+                  <form action={adoptAllAction}>
+                    <button
+                      type="submit"
+                      disabled={adoptAllPending}
+                      className="inline-flex min-h-9 items-center justify-center rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-950 hover:bg-amber-100 disabled:opacity-60"
+                    >
+                      {adoptAllPending
+                        ? "Übernehme…"
+                        : `Alle ${activeDiscrepancy.mismatches} Abweichungen übernehmen`}
+                    </button>
+                  </form>
+                ) : null}
+              </div>
+              {activeDiscrepancy.rows.length === 0 ? (
                 <p className="mt-2 text-sm text-[#6b7280]">Keine gemappten Varianten.</p>
               ) : (
                 <ul className="mt-3 max-h-64 space-y-2 overflow-y-auto text-xs">
-                  {discState.discrepancy.rows.map((r) => (
+                  {activeDiscrepancy.rows.map((r) => (
                     <li
                       key={r.productVariantId}
                       className={
@@ -421,17 +462,33 @@ export function ZettleSettingsPanel(props: Props) {
                           : "rounded border border-[#e8eaed] bg-white px-2 py-1.5 text-[#374151]"
                       }
                     >
-                      <span className="font-medium">
-                        {r.productTitle}
-                        {r.variantTitle ? ` — ${r.variantTitle}` : ""}
-                      </span>
-                      <span className="text-[#6b7280]">
-                        {" · "}verf. {r.shopAvailable}
-                        {" · "}Lager {r.shopStock}
-                        {" · "}Zettle{" "}
-                        {r.zettleTracked ? r.zettleBalance : "nicht getrackt"}
-                        {r.delta != null ? ` · Δ ${r.delta > 0 ? "+" : ""}${r.delta}` : ""}
-                      </span>
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <span>
+                          <span className="font-medium">
+                            {r.productTitle}
+                            {r.variantTitle ? ` — ${r.variantTitle}` : ""}
+                          </span>
+                          <span className="text-[#6b7280]">
+                            {" · "}verf. {r.shopAvailable}
+                            {" · "}Lager {r.shopStock}
+                            {" · "}Zettle{" "}
+                            {r.zettleTracked ? r.zettleBalance : "nicht getrackt"}
+                            {r.delta != null ? ` · Δ ${r.delta > 0 ? "+" : ""}${r.delta}` : ""}
+                          </span>
+                        </span>
+                        {r.delta != null && r.delta !== 0 && r.zettleTracked ? (
+                          <form action={adoptAction} className="shrink-0">
+                            <input type="hidden" name="productVariantId" value={r.productVariantId} />
+                            <button
+                              type="submit"
+                              disabled={adoptPending}
+                              className="inline-flex min-h-8 items-center rounded-md bg-primary px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-(--primary-hover) disabled:opacity-60"
+                            >
+                              Zettle übernehmen
+                            </button>
+                          </form>
+                        ) : null}
+                      </div>
                     </li>
                   ))}
                 </ul>

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  adoptZettleDiscrepancyStock,
   autoMapUnmappedZettleVariants,
   buildZettleDiscrepancyReport,
   createZettleClientFromConnection,
@@ -349,5 +350,71 @@ export async function runZettleDiscrepancyAction(
       untracked: report.untracked,
       rows: report.rows.slice(0, 40),
     },
+  };
+}
+
+function discrepancyPayloadFromReport(
+  report: Awaited<ReturnType<typeof buildZettleDiscrepancyReport>>,
+) {
+  return {
+    compared: report.compared,
+    mismatches: report.mismatches,
+    untracked: report.untracked,
+    rows: report.rows.slice(0, 40),
+  };
+}
+
+export async function adoptZettleStockAction(
+  _prev: ZettleAdminActionState,
+  formData: FormData,
+): Promise<ZettleAdminActionState> {
+  await requireAdmin();
+  const productVariantId = String(formData.get("productVariantId") ?? "").trim();
+  if (!productVariantId) return { error: "Variante fehlt." };
+
+  const result = await adoptZettleDiscrepancyStock({ productVariantIds: [productVariantId] });
+  revalidatePath("/admin/einstellungen/integrationen");
+
+  const report = await buildZettleDiscrepancyReport();
+  if (!result.ok && result.adopted === 0) {
+    return {
+      error: result.errors[0] ?? "Zettle-Bestand konnte nicht übernommen werden.",
+      discrepancy: report.ok ? discrepancyPayloadFromReport(report) : undefined,
+    };
+  }
+
+  const reportMsg = report.ok
+    ? ` · Verglichen: ${report.compared} · Abweichungen: ${report.mismatches}`
+    : "";
+  return {
+    ok: true,
+    message: `Zettle-Bestand übernommen: ${result.adopted} Variante(n)${result.errors.length ? ` · ${result.errors.length} Hinweis(e)` : ""}${reportMsg}`,
+    discrepancy: report.ok ? discrepancyPayloadFromReport(report) : undefined,
+  };
+}
+
+export async function adoptAllZettleStockAction(
+  _prev: ZettleAdminActionState,
+  _formData: FormData,
+): Promise<ZettleAdminActionState> {
+  await requireAdmin();
+  const result = await adoptZettleDiscrepancyStock({ adoptAllMismatches: true });
+  revalidatePath("/admin/einstellungen/integrationen");
+
+  const report = await buildZettleDiscrepancyReport();
+  if (!result.ok && result.adopted === 0) {
+    return {
+      error: result.errors[0] ?? "Keine Abweichungen übernommen.",
+      discrepancy: report.ok ? discrepancyPayloadFromReport(report) : undefined,
+    };
+  }
+
+  const reportMsg = report.ok
+    ? ` · Verglichen: ${report.compared} · Abweichungen: ${report.mismatches}`
+    : "";
+  return {
+    ok: true,
+    message: `Zettle-Bestände übernommen: ${result.adopted} Variante(n), ${result.skipped} übersprungen${reportMsg}`,
+    discrepancy: report.ok ? discrepancyPayloadFromReport(report) : undefined,
   };
 }

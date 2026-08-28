@@ -6,6 +6,10 @@ import { getAdminSession } from "@/lib/auth/admin-session";
 import { parseEuroInputToCents } from "@/lib/catalog/format";
 import { netCentsFromGross } from "@/lib/catalog/pricing";
 import { updateStorefrontCatalogCacheTag } from "@/lib/catalog/storefront-catalog-cache";
+import {
+  coupledStockAfterPhysicalEdit,
+  initialCoupledStock,
+} from "@/features/inventory";
 import { getPrisma } from "@/lib/db/prisma";
 import { nonEmptyString } from "@/lib/validation/form";
 
@@ -52,7 +56,6 @@ const addVariantSchema = z.object({
     .nullable()
     .optional(),
   priceGrossEuro: nonEmptyString,
-  availableQuantity: z.coerce.number().int().min(0),
   stockQuantity: z.coerce.number().int().min(0),
 });
 
@@ -70,7 +73,6 @@ export async function createProductVariant(
     sku: formData.get("sku"),
     title: formData.get("title") ?? "",
     priceGrossEuro: formData.get("priceGrossEuro"),
-    availableQuantity: formData.get("availableQuantity"),
     stockQuantity: formData.get("stockQuantity"),
   });
   if (!parsed.success) {
@@ -117,6 +119,7 @@ export async function createProductVariant(
     _max: { sortOrder: true },
   });
   const sortOrder = (maxSort._max.sortOrder ?? -1) + 1;
+  const coupledStock = initialCoupledStock(d.stockQuantity);
 
   try {
     await getPrisma().productVariant.create({
@@ -127,8 +130,8 @@ export async function createProductVariant(
         priceGrossCents: gross,
         priceNetCents: net,
         taxRatePercent: template.taxRatePercent,
-        stockQuantity: d.stockQuantity,
-        availableQuantity: d.availableQuantity,
+        stockQuantity: coupledStock.stockQuantity,
+        availableQuantity: coupledStock.availableQuantity,
         deliveryTimeKey: template.deliveryTimeKey,
         restockDays: template.restockDays,
         minOrderQty: template.minOrderQty,
@@ -160,7 +163,6 @@ const updateVariantSchema = z.object({
     .nullable()
     .optional(),
   priceGrossEuro: nonEmptyString,
-  availableQuantity: z.coerce.number().int().min(0),
   stockQuantity: z.coerce.number().int().min(0),
   isActive: z
     .union([z.literal("on"), z.literal("true"), z.literal("1")])
@@ -182,7 +184,6 @@ export async function updateProductVariant(
     sku: formData.get("sku"),
     title: formData.get("title") ?? "",
     priceGrossEuro: formData.get("priceGrossEuro"),
-    availableQuantity: formData.get("availableQuantity"),
     stockQuantity: formData.get("stockQuantity"),
     isActive: formData.get("isActive") ?? undefined,
   });
@@ -202,6 +203,8 @@ export async function updateProductVariant(
       id: true,
       isDefault: true,
       taxRatePercent: true,
+      stockQuantity: true,
+      availableQuantity: true,
       product: { select: { id: true, slug: true } },
     },
   });
@@ -216,6 +219,14 @@ export async function updateProductVariant(
   }
 
   const net = netCentsFromGross(gross, variant.taxRatePercent);
+  const coupledResult = coupledStockAfterPhysicalEdit({
+    previousStock: variant.stockQuantity,
+    previousAvailable: variant.availableQuantity,
+    nextStock: d.stockQuantity,
+  });
+  if (!coupledResult.ok) {
+    return { fieldErrors: { stockQuantity: coupledResult.error } };
+  }
 
   try {
     await getPrisma().productVariant.update({
@@ -225,8 +236,8 @@ export async function updateProductVariant(
         title: d.title ?? null,
         priceGrossCents: gross,
         priceNetCents: net,
-        stockQuantity: d.stockQuantity,
-        availableQuantity: d.availableQuantity,
+        stockQuantity: coupledResult.quantities.stockQuantity,
+        availableQuantity: coupledResult.quantities.availableQuantity,
         isActive: d.isActive ?? false,
       },
     });

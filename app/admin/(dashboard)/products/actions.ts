@@ -17,6 +17,10 @@ import {
   syncDefaultVariantFromProduct,
 } from "@/features/catalog/server";
 import { getObjectStorage } from "@/features/integrations";
+import {
+  coupledStockAfterPhysicalEdit,
+  initialCoupledStock,
+} from "@/features/inventory";
 import { parseEuroInputToCents } from "@/lib/catalog/format";
 import {
   createProductFormSchema,
@@ -140,7 +144,6 @@ export async function createProduct(
     lowest30GrossEuro: formData.get("lowest30GrossEuro") ?? "",
     lowest30NetEuro: formData.get("lowest30NetEuro") ?? "",
     stockQuantity: formData.get("stockQuantity"),
-    availableQuantity: formData.get("availableQuantity"),
     deliveryTimeKey: formData.get("deliveryTimeKey"),
     restockDays: formData.get("restockDays"),
     minOrderQty: formData.get("minOrderQty"),
@@ -182,6 +185,8 @@ export async function createProduct(
   const description = sanitizeProductDescriptionHtml(d.descriptionHtml);
   const amazon = amazonFieldsForPrisma(d);
 
+  const coupledStock = initialCoupledStock(d.stockQuantity);
+
   const variantMirror = {
     taxRatePercent: d.taxRatePercent,
     priceGrossCents: mainGross,
@@ -190,8 +195,8 @@ export async function createProduct(
     listPriceNetCents: listNet,
     lowestPrice30dGrossCents: lowGross,
     lowestPrice30dNetCents: lowNet,
-    stockQuantity: d.stockQuantity,
-    availableQuantity: d.availableQuantity,
+    stockQuantity: coupledStock.stockQuantity,
+    availableQuantity: coupledStock.availableQuantity,
     deliveryTimeKey: d.deliveryTimeKey,
     restockDays: d.restockDays,
     minOrderQty: d.minOrderQty,
@@ -291,7 +296,6 @@ export async function updateProduct(
     lowest30GrossEuro: formData.get("lowest30GrossEuro") ?? "",
     lowest30NetEuro: formData.get("lowest30NetEuro") ?? "",
     stockQuantity: formData.get("stockQuantity"),
-    availableQuantity: formData.get("availableQuantity"),
     deliveryTimeKey: formData.get("deliveryTimeKey"),
     restockDays: formData.get("restockDays"),
     minOrderQty: formData.get("minOrderQty"),
@@ -347,6 +351,20 @@ export async function updateProduct(
     previousSlugForUpdate = null;
   }
 
+  const defaultVariant = await getPrisma().productVariant.findFirst({
+    where: { productId: d.id, isDefault: true },
+    select: { stockQuantity: true, availableQuantity: true },
+  });
+  const coupledResult = coupledStockAfterPhysicalEdit({
+    previousStock: defaultVariant?.stockQuantity ?? 0,
+    previousAvailable: defaultVariant?.availableQuantity ?? 0,
+    nextStock: d.stockQuantity,
+  });
+  if (!coupledResult.ok) {
+    return { fieldErrors: { stockQuantity: coupledResult.error } };
+  }
+  const coupledStock = coupledResult.quantities;
+
   const variantMirror = {
     taxRatePercent: d.taxRatePercent,
     priceGrossCents: mainGross,
@@ -355,8 +373,8 @@ export async function updateProduct(
     listPriceNetCents: listNet,
     lowestPrice30dGrossCents: lowGross,
     lowestPrice30dNetCents: lowNet,
-    stockQuantity: d.stockQuantity,
-    availableQuantity: d.availableQuantity,
+    stockQuantity: coupledStock.stockQuantity,
+    availableQuantity: coupledStock.availableQuantity,
     deliveryTimeKey: d.deliveryTimeKey,
     restockDays: d.restockDays,
     minOrderQty: d.minOrderQty,
