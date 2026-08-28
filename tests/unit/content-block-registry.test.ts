@@ -66,7 +66,9 @@ describe("parseContentBlockData", () => {
     if (r.ok) {
       expect(r.data).toMatchObject({
         socialSource: "auto",
-        socialLimit: 12,
+        socialDesktopColumns: 4,
+        socialDesktopRows: 2,
+        socialLimit: 8,
       });
     }
   });

@@ -18,6 +18,14 @@ import {
   type HeroSlide,
 } from "@/lib/content/blocks/hero";
 import {
+  SOCIAL_DESKTOP_COLUMNS_MAX,
+  SOCIAL_DESKTOP_COLUMNS_MIN,
+  SOCIAL_DESKTOP_ROWS_MAX,
+  SOCIAL_DESKTOP_ROWS_MIN,
+  resolveSocialReviewsLayout,
+  socialFeedDisplayLimit,
+} from "@/lib/content/blocks/social-reviews";
+import {
   HERO_CTA_CUSTOM_VALUE,
   HERO_CTA_TARGET_PRESETS,
   resolveHeroCtaSelectValue,
@@ -763,6 +771,28 @@ export function ContentBlockFields({
   }
 
   if (type === "socialReviews") {
+    const socialLayout = resolveSocialReviewsLayout(data);
+    const setSocialLayout = (next: {
+      socialDesktopColumns: number;
+      socialDesktopRows: number;
+    }) =>
+      onChange({
+        ...data,
+        socialDesktopColumns: next.socialDesktopColumns,
+        socialDesktopRows: next.socialDesktopRows,
+        socialLimit: socialFeedDisplayLimit(
+          next.socialDesktopColumns,
+          next.socialDesktopRows,
+        ),
+      });
+    const columnOptions = Array.from(
+      { length: SOCIAL_DESKTOP_COLUMNS_MAX - SOCIAL_DESKTOP_COLUMNS_MIN + 1 },
+      (_, i) => SOCIAL_DESKTOP_COLUMNS_MIN + i,
+    );
+    const rowOptions = Array.from(
+      { length: SOCIAL_DESKTOP_ROWS_MAX - SOCIAL_DESKTOP_ROWS_MIN + 1 },
+      (_, i) => SOCIAL_DESKTOP_ROWS_MIN + i,
+    );
     return (
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="flex items-center gap-2 text-sm text-[#2d2e32]">
@@ -807,7 +837,7 @@ export function ContentBlockFields({
             onChange={(e) => set("introSocial", e.target.value)}
           />
         </label>
-        <label className="text-sm text-[#5c5f66]">
+        <label className="text-sm text-[#5c5f66] sm:col-span-2">
           Bildquelle
           <select
             className={fieldClass}
@@ -820,16 +850,48 @@ export function ContentBlockFields({
           </select>
         </label>
         <label className="text-sm text-[#5c5f66]">
-          Anzahl Bilder
-          <input
-            type="number"
-            min={1}
-            max={24}
+          Spalten (Desktop)
+          <select
             className={fieldClass}
-            value={num(data, "socialLimit", 12)}
-            onChange={(e) => set("socialLimit", Number(e.target.value) || 12)}
-          />
+            value={socialLayout.socialDesktopColumns}
+            onChange={(e) =>
+              setSocialLayout({
+                socialDesktopColumns: Number(e.target.value),
+                socialDesktopRows: socialLayout.socialDesktopRows,
+              })
+            }
+          >
+            {columnOptions.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
         </label>
+        <label className="text-sm text-[#5c5f66]">
+          Zeilen
+          <select
+            className={fieldClass}
+            value={socialLayout.socialDesktopRows}
+            onChange={(e) =>
+              setSocialLayout({
+                socialDesktopColumns: socialLayout.socialDesktopColumns,
+                socialDesktopRows: Number(e.target.value),
+              })
+            }
+          >
+            {rowOptions.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </label>
+        <p className="text-xs text-[#6b7280] sm:col-span-2">
+          Zeigt {socialLayout.socialLimit} Bilder ({socialLayout.socialDesktopColumns} ×{" "}
+          {socialLayout.socialDesktopRows} auf dem Desktop). Smartphone: immer 2 Spalten,
+          dieselben Bilder. Kein Karussell.
+        </p>
         <div className="rounded-md border border-[#e8eaed] bg-[#f7f8fa] px-3 py-2 text-xs text-[#6b7280] sm:col-span-2">
           <p className="font-medium text-[#374151]">Instagram-Feed</p>
           <p className="mt-1">
@@ -840,7 +902,8 @@ export function ContentBlockFields({
             >
               Inhalte → Marketing
             </Link>
-            . Darstellung wie bisheriges Social-Carousel (Desktop/Mobile). Zunächst nur Bilder.
+            . Raster aus dem Instagram-Cache oder kuratierten Marketing-Bildern. Zunächst nur
+            Bilder.
           </p>
         </div>
       </div>

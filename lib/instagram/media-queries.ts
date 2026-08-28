@@ -39,13 +39,13 @@ export async function listActiveInstagramMediaCache(
 }
 
 /**
- * Storefront-Quelle für den Social-Carousel: Instagram-Cache und/oder kuratierte Bilder.
+ * Storefront-Quelle für das Social-Raster: Instagram-Cache und/oder kuratierte Bilder.
  */
 export async function listSocialFeedSlides(input: {
   source: SocialFeedSource;
   limit?: number;
 }): Promise<SocialFeedSlide[]> {
-  const limit = input.limit ?? 12;
+  const limit = input.limit ?? 8;
 
   if (input.source === "curated") {
     const curated = await listActiveHomepageSocialImages();

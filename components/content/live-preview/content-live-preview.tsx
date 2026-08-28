@@ -11,6 +11,7 @@ import {
   type HeroMotionEffect,
   type HeroSlideDurationSec,
 } from "@/lib/content/blocks/hero";
+import { resolveSocialReviewsLayout } from "@/lib/content/blocks/social-reviews";
 import { isContentBlockType, type ContentBlockType } from "@/lib/content/block-types";
 import { sanitizeContentRichTextHtml } from "@/lib/content/sanitize-content-html";
 
@@ -293,6 +294,8 @@ function PreviewBlock({
   }
 
   if (type === "socialReviews") {
+    const socialLayout = resolveSocialReviewsLayout(data);
+    const placeholders = Array.from({ length: socialLayout.socialLimit }, (_, i) => i);
     return (
       <section className="space-y-6 px-4 py-8">
         {bool(data, "showReviews", true) ? (
@@ -306,15 +309,30 @@ function PreviewBlock({
           </div>
         ) : null}
         {bool(data, "showSocial", true) ? (
-          <div className="rounded-md border border-dashed border-[#d1d5db] bg-white p-4 text-center">
-            <p className="text-sm font-semibold text-[#1f2937]">
+          <div className="rounded-md border border-dashed border-[#d1d5db] bg-white p-4">
+            <p className="text-center text-sm font-semibold text-[#1f2937]">
               {str(data, "titleSocial") || "Social"}
             </p>
             {str(data, "introSocial") ? (
-              <p className="mt-1 text-[11px] text-[#6b7280]">{str(data, "introSocial")}</p>
+              <p className="mt-1 text-center text-[11px] text-[#6b7280]">{str(data, "introSocial")}</p>
             ) : null}
-            <p className="mt-1 text-[11px] text-[#9ca3af]">
-              Live-Bilder aus Social-Medien-Pflege.
+            <ul
+              className="mt-3 grid gap-1.5"
+              style={{
+                gridTemplateColumns: `repeat(${socialLayout.socialDesktopColumns}, minmax(0, 1fr))`,
+              }}
+              aria-hidden
+            >
+              {placeholders.map((i) => (
+                <li
+                  key={i}
+                  className="aspect-[4/5] rounded-md bg-(--surface-soft) ring-1 ring-(--surface-muted)"
+                />
+              ))}
+            </ul>
+            <p className="mt-2 text-center text-[11px] text-[#9ca3af]">
+              {socialLayout.socialLimit} Bilder · Desktop {socialLayout.socialDesktopColumns}×
+              {socialLayout.socialDesktopRows} · Mobil 2 Spalten
             </p>
           </div>
         ) : null}

@@ -157,6 +157,10 @@ function homepageBlocks(): Array<{
         titleSocial: "Momente von Instagram",
         introSocial:
           "Einblicke in Stubentiger und jerry's – folgt uns gerne auf Instagram.",
+        socialSource: "auto",
+        socialDesktopColumns: 4,
+        socialDesktopRows: 2,
+        socialLimit: 8,
       },
     },
   ];
