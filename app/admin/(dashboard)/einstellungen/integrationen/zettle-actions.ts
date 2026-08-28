@@ -3,19 +3,20 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  autoMapUnmappedZettleVariants,
   buildZettleDiscrepancyReport,
   createZettleClientFromConnection,
   disconnectZettleConnection,
   deleteZettleProductMapping,
   ensureZettlePurchaseWebhook,
   exchangeZettleApiKeyForToken,
+  formatZettleAutoMapActionMessage,
   parseZettleApiKeyClaims,
   removeZettlePurchaseWebhook,
   retryFailedZettlePurchaseSyncs,
   saveZettleApiKeyConnection,
   syncZettlePurchases,
   upsertZettleProductMapping,
-  type ZettleCatalogProduct,
   type ZettleDiscrepancyRow,
 } from "@/features/inventory";
 import { getAdminSession } from "@/lib/auth/admin-session";
@@ -29,7 +30,16 @@ export type ZettleAdminActionState =
       products?: Array<{
         uuid: string;
         name: string;
-        variants: Array<{ uuid: string; name: string | null; sku: string | null }>;
+        variants: Array<{
+          uuid: string;
+          name: string | null;
+          sku: string | null;
+          barcode: string | null;
+        }>;
+      }>;
+      ambiguousHints?: Array<{
+        productVariantId: string;
+        candidateValues: string[];
       }>;
       discrepancy?: {
         compared: number;
@@ -119,12 +129,24 @@ export async function saveZettleApiKeyAction(
   }
 
   const webhook = await ensureZettlePurchaseWebhook();
+  const autoMap = await autoMapUnmappedZettleVariants().catch(() => null);
   revalidatePath("/admin/einstellungen/integrationen");
+
+  const connectMsg = webhook.ok
+    ? "Zettle verbunden."
+    : `Zettle verbunden. Webhook: ${webhook.message}`;
+  if (!autoMap || !autoMap.ok) {
+    return {
+      ok: true,
+      message: `${connectMsg} Als Nächstes Katalog abgleichen — eindeutige Varianten werden automatisch zugeordnet.`,
+    };
+  }
+
   return {
     ok: true,
-    message: webhook.ok
-      ? `Zettle verbunden. ${webhook.message} Als Nächstes Varianten mappen.`
-      : `Zettle verbunden. Webhook: ${webhook.message} Als Nächstes Varianten mappen.`,
+    message: `${connectMsg} ${formatZettleAutoMapActionMessage(autoMap)}`,
+    products: autoMap.products.map(toProductPayload),
+    ambiguousHints: toAmbiguousHints(autoMap.ambiguousHints),
   };
 }
 
@@ -151,22 +173,59 @@ export async function loadZettleProductsAction(
 ): Promise<ZettleAdminActionState> {
   await requireAdmin();
   try {
-    const client = await createZettleClientFromConnection();
-    if (!client) return { error: "Zuerst Zettle verbinden." };
-    const products: ZettleCatalogProduct[] = await client.listProducts();
+    const result = await autoMapUnmappedZettleVariants();
+    if (!result.ok) return { error: result.error };
+    revalidatePath("/admin/einstellungen/integrationen");
     return {
       ok: true,
-      message: `${products.length} Zettle-Produkte geladen.`,
-      products: products.map((p) => ({
-        uuid: p.uuid,
-        name: p.name,
-        variants: p.variants,
-      })),
+      message: formatZettleAutoMapActionMessage(result),
+      products: result.products.map(toProductPayload),
+      ambiguousHints: toAmbiguousHints(result.ambiguousHints),
     };
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Produkte laden fehlgeschlagen.";
+    const msg = e instanceof Error ? e.message : "Katalog abgleichen fehlgeschlagen.";
     return { error: msg };
   }
+}
+
+function toProductPayload(product: {
+  uuid: string;
+  name: string;
+  variants: Array<{ uuid: string; name: string | null; sku: string | null; barcode: string | null }>;
+}) {
+  return {
+    uuid: product.uuid,
+    name: product.name,
+    variants: product.variants,
+  };
+}
+
+function zettleSelectionValue(
+  productUuid: string,
+  variantUuid: string,
+  productName: string,
+  variantName: string | null,
+): string {
+  return `${productUuid}::${variantUuid}::${productName.replaceAll("::", " ")}::${(variantName ?? "").replaceAll("::", " ")}`;
+}
+
+function toAmbiguousHints(
+  hints: Array<{
+    productVariantId: string;
+    candidates: Array<{
+      productUuid: string;
+      variantUuid: string;
+      productName: string;
+      variantName: string | null;
+    }>;
+  }>,
+) {
+  return hints.map((hint) => ({
+    productVariantId: hint.productVariantId,
+    candidateValues: hint.candidates.map((c) =>
+      zettleSelectionValue(c.productUuid, c.variantUuid, c.productName, c.variantName),
+    ),
+  }));
 }
 
 const mappingSchema = z.object({

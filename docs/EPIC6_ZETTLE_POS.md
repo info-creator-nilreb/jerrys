@@ -12,7 +12,7 @@ Der Shop bleibt **Source of Truth** für Bestand. Zettle ist ein **POS-Kanal mit
 | Shop → Zettle | Online-Zahlung (`paid`) | Zettle STORE→SOLD für gemappte Varianten |
 | Shop → Zettle | Storno (nach Zahlung) / Retoure | Zettle SOLD→STORE |
 
-Varianten werden manuell gemappt. Sync-/Push-Fehler sind im Admin sichtbar und über den Maintenance-Cron erneut anstoßbar. Zettle setzt den Shop-Bestand **nie absolut** (kein Overwrite).
+Varianten werden automatisch gemappt, wenn eine eindeutige Zuordnung über SKU, Barcode (Shop-SKU vs. Zettle-Barcode) oder Namen möglich ist. Mehrdeutige oder fehlende Treffer bleiben ungemappt und werden im Admin manuell zugeordnet. Sync-/Push-Fehler sind im Admin sichtbar und über den Maintenance-Cron erneut anstoßbar. Zettle setzt den Shop-Bestand **nie absolut** (kein Overwrite).
 
 ## Abgrenzung
 
@@ -33,7 +33,7 @@ Varianten werden manuell gemappt. Sync-/Push-Fehler sind im Admin sichtbar und �
 
 ## Vorgeschlagene Slices
 
-1. **Verbindung + Mapping + Pull-Sync:** `ZettleConnection`, Produkt-Mapping, Admin-Panel unter Integrationen, manueller Kauf-Sync mit Idempotenz und `pos_sale`/`pos_refund`-Movements. **Status:** umgesetzt.
+1. **Verbindung + Mapping + Pull-Sync:** `ZettleConnection`, Produkt-Mapping (eindeutige SKU/Barcode/Name-Treffer automatisch, Rest manuell), Admin-Panel unter Integrationen, manueller Kauf-Sync mit Idempotenz und `pos_sale`/`pos_refund`-Movements. **Status:** umgesetzt.
 2. **Maintenance-Cron:** periodischer Purchase-Pull in `commerce-maintenance`. **Status:** umgesetzt.
 3. **Pusher/Webhooks:** Near-realtime `PurchaseCreated` + Inbox-Idempotenz (`/api/webhooks/zettle`). **Status:** umgesetzt.
 4. **Discrepancy-Report:** Admin-Button „Bestands-Abweichungen prüfen“ (Shop `available` vs. Zettle STORE). **Status:** umgesetzt.

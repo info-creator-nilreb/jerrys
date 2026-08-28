@@ -23,6 +23,7 @@ export type ZettleCatalogVariant = {
   uuid: string;
   name: string | null;
   sku: string | null;
+  barcode: string | null;
 };
 
 export type ZettleCatalogProduct = {
@@ -135,15 +136,19 @@ export class ZettleClient {
         const p = raw as {
           uuid?: string;
           name?: string;
-          variants?: Array<{ uuid?: string; name?: string; sku?: string }>;
+          variants?: Array<{ uuid?: string; name?: string; sku?: string; barcode?: string }>;
         };
         if (!p.uuid || !p.name) return null;
         const variants = (p.variants ?? [])
-          .filter((v): v is { uuid: string; name?: string; sku?: string } => Boolean(v.uuid))
+          .filter(
+            (v): v is { uuid: string; name?: string; sku?: string; barcode?: string } =>
+              Boolean(v.uuid),
+          )
           .map((v) => ({
             uuid: v.uuid,
             name: v.name ?? null,
             sku: v.sku ?? null,
+            barcode: v.barcode ?? null,
           }));
         return { uuid: p.uuid, name: p.name, variants } satisfies ZettleCatalogProduct;
       })

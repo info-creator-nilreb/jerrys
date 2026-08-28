@@ -50,7 +50,7 @@ type PushRow = {
 type ZettleProductOption = {
   uuid: string;
   name: string;
-  variants: Array<{ uuid: string; name: string | null; sku: string | null }>;
+  variants: Array<{ uuid: string; name: string | null; sku: string | null; barcode?: string | null }>;
 };
 
 type Props = {
@@ -141,6 +141,7 @@ export function ZettleSettingsPanel(props: Props) {
   useEffect(() => {
     if (
       saveState?.ok ||
+      loadState?.ok ||
       mapState?.ok ||
       unmapState?.ok ||
       syncState?.ok ||
@@ -152,6 +153,7 @@ export function ZettleSettingsPanel(props: Props) {
     }
   }, [
     saveState?.ok,
+    loadState?.ok,
     mapState?.ok,
     unmapState?.ok,
     syncState?.ok,
@@ -183,23 +185,44 @@ export function ZettleSettingsPanel(props: Props) {
     disconnectState?.message;
 
   const variantOptions = useMemo(() => {
-    const products: ZettleProductOption[] = loadState?.products ?? [];
+    const products: ZettleProductOption[] = loadState?.products ?? saveState?.products ?? [];
     const opts: Array<{ value: string; label: string }> = [];
     for (const p of products) {
       for (const v of p.variants) {
         const productName = p.name.replaceAll("::", " ");
         const variantName = (v.name ?? "").replaceAll("::", " ");
+        const skuLabel = v.sku ? ` (${v.sku})` : "";
+        const barcodeLabel =
+          v.barcode && v.barcode !== v.sku ? ` · EAN ${v.barcode}` : "";
         opts.push({
           value: `${p.uuid}::${v.uuid}::${productName}::${variantName}`,
-          label: `${p.name}${v.name ? ` — ${v.name}` : ""}${v.sku ? ` (${v.sku})` : ""}`,
+          label: `${p.name}${v.name ? ` — ${v.name}` : ""}${skuLabel}${barcodeLabel}`,
         });
       }
     }
     return opts;
-  }, [loadState?.products]);
+  }, [loadState?.products, saveState?.products]);
+
+  const ambiguousHints = useMemo(() => {
+    const hints = loadState?.ambiguousHints ?? saveState?.ambiguousHints ?? [];
+    return new Map(hints.map((h) => [h.productVariantId, h.candidateValues]));
+  }, [loadState?.ambiguousHints, saveState?.ambiguousHints]);
+
+  const sortedMappings = useMemo(() => {
+    return [...props.mappings].sort((a, b) => {
+      const aMapped = a.zettleVariantUuid ? 1 : 0;
+      const bMapped = b.zettleVariantUuid ? 1 : 0;
+      if (aMapped !== bMapped) return aMapped - bMapped;
+      const aAmbiguous = ambiguousHints.has(a.productVariantId) ? 0 : 1;
+      const bAmbiguous = ambiguousHints.has(b.productVariantId) ? 0 : 1;
+      if (aAmbiguous !== bAmbiguous) return aAmbiguous - bAmbiguous;
+      return 0;
+    });
+  }, [props.mappings, ambiguousHints]);
 
   const mappedCount = props.mappings.filter((m) => m.zettleVariantUuid).length;
   const failedSyncs = props.recentSyncs.filter((s) => s.status === "failed").length;
+  const catalogLoaded = variantOptions.length > 0;
 
   return (
     <section className="rounded-xl border border-[#e8eaed] bg-white p-6 shadow-sm">
@@ -207,7 +230,9 @@ export function ZettleSettingsPanel(props: Props) {
       <p className="mt-2 text-sm text-[#6b7280]">
         Private Integration per API-Key (Assertion Grant). Der Shop bleibt Bestands-Quelle.
         Verkäufe passen Bestände in beide Richtungen an: POS → Shop und Online-Zahlung/Storno/Retoure
-        → Zettle STORE. Kein absolutes Überschreiben aus Zettle.
+        → Zettle STORE. Kein absolutes Überschreiben aus Zettle. Varianten werden automatisch
+        zugeordnet, wenn SKU, Barcode oder Name eindeutig passen — nur Mehrdeutigkeiten brauchst du
+        manuell.
       </p>
 
       <div aria-live="polite" className="mt-4 space-y-2">
@@ -329,7 +354,7 @@ export function ZettleSettingsPanel(props: Props) {
                 disabled={loadPending}
                 className="inline-flex min-h-11 items-center justify-center rounded-md border border-[#e5e7eb] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb] disabled:opacity-60"
               >
-                {loadPending ? "Lade Katalog…" : "Zettle-Produkte laden"}
+                {loadPending ? "Gleiche ab…" : "Katalog laden & eindeutig zuordnen"}
               </button>
             </form>
             <form action={syncAction}>
@@ -417,18 +442,38 @@ export function ZettleSettingsPanel(props: Props) {
           <div>
             <h3 className="text-sm font-semibold text-[#1f2937]">Varianten-Mapping</h3>
             <p className="mt-1 text-xs text-[#6b7280]">
-              Shop-Variante einer Zettle-Variante zuordnen. Unmapped POS-Zeilen werden nicht
-              abgebucht (Alert statt stillem Überschreiben).
+              „Katalog laden & eindeutig zuordnen“ speichert 1:1-Treffer (SKU, sonst Barcode, sonst
+              Name). Mehrdeutige und fehlende Treffer bleiben ungemappt, bis du sie hier zuordnest.
+              Unmapped POS-Zeilen werden nicht abgebucht (Alert statt stillem Überschreiben).
             </p>
 
             {props.mappings.length === 0 ? (
               <p className="mt-3 text-sm text-[#6b7280]">Keine aktiven Shop-Varianten.</p>
             ) : (
               <ul className="mt-4 space-y-3">
-                {props.mappings.map((row) => (
+                {sortedMappings.map((row) => {
+                  const candidateValues = ambiguousHints.get(row.productVariantId) ?? [];
+                  const candidateSet = new Set(candidateValues);
+                  const rowOptions =
+                    candidateValues.length > 0
+                      ? [
+                          ...variantOptions
+                            .filter((o) => candidateSet.has(o.value))
+                            .map((o) => ({ ...o, label: `Vorschlag: ${o.label}` })),
+                          ...variantOptions.filter((o) => !candidateSet.has(o.value)),
+                        ]
+                      : variantOptions;
+                  const needsManual = !row.zettleVariantUuid;
+                  const isAmbiguous = needsManual && candidateValues.length > 0;
+
+                  return (
                   <li
                     key={row.productVariantId}
-                    className="rounded-md border border-[#e8eaed] bg-[#fafbfc] p-3"
+                    className={
+                      isAmbiguous
+                        ? "rounded-md border border-amber-200 bg-amber-50/60 p-3"
+                        : "rounded-md border border-[#e8eaed] bg-[#fafbfc] p-3"
+                    }
                   >
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
                       <p className="text-sm font-medium text-[#1f2937]">
@@ -445,11 +490,19 @@ export function ZettleSettingsPanel(props: Props) {
                         {row.zettleVariantName ? ` / ${row.zettleVariantName}` : ""}{" "}
                         <code className="text-[10px] text-[#6b7280]">{row.zettleVariantUuid}</code>
                       </p>
+                    ) : isAmbiguous ? (
+                      <p className="mt-1 text-xs text-amber-900">
+                        Mehrere mögliche Treffer – bitte manuell wählen
+                      </p>
+                    ) : catalogLoaded ? (
+                      <p className="mt-1 text-xs text-amber-800">
+                        Kein eindeutiger Treffer – bitte manuell zuordnen
+                      </p>
                     ) : (
                       <p className="mt-1 text-xs text-amber-800">Noch nicht gemappt</p>
                     )}
                     <div className="mt-2 flex flex-wrap items-end gap-2">
-                      {variantOptions.length > 0 ? (
+                      {catalogLoaded ? (
                         <form action={mapAction} className="flex min-w-[16rem] flex-1 flex-wrap items-end gap-2">
                           <input type="hidden" name="productVariantId" value={row.productVariantId} />
                           <div className="min-w-[12rem] flex-1">
@@ -467,9 +520,9 @@ export function ZettleSettingsPanel(props: Props) {
                               defaultValue=""
                             >
                               <option value="" disabled>
-                                Produkt wählen…
+                                {isAmbiguous ? "Vorschlag wählen…" : "Produkt wählen…"}
                               </option>
-                              {variantOptions.map((o) => (
+                              {rowOptions.map((o) => (
                                 <option key={o.value} value={o.value}>
                                   {o.label}
                                 </option>
@@ -484,11 +537,11 @@ export function ZettleSettingsPanel(props: Props) {
                             Zuordnen
                           </button>
                         </form>
-                      ) : (
+                      ) : needsManual ? (
                         <p className="text-xs text-[#6b7280]">
-                          Zuerst „Zettle-Produkte laden“, um per Auswahl zu mappen.
+                          Zuerst „Katalog laden & eindeutig zuordnen“, um per Auswahl zu mappen.
                         </p>
-                      )}
+                      ) : null}
                       {row.zettleVariantUuid ? (
                         <form action={unmapAction}>
                           <input type="hidden" name="productVariantId" value={row.productVariantId} />
@@ -503,7 +556,8 @@ export function ZettleSettingsPanel(props: Props) {
                       ) : null}
                     </div>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             )}
           </div>
