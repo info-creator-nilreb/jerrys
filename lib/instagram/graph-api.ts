@@ -1,7 +1,9 @@
 import type { InstagramAppConfig } from "@/lib/instagram/config";
 import {
+  INSTAGRAM_GRAPH_MEDIA_FIELDS,
   instagramMediaPageSize,
   paginateInstagramGraphMedia,
+  parseInstagramMediaRow,
 } from "@/lib/instagram/media-fetch";
 
 export type InstagramShortLivedToken = {
@@ -147,13 +149,23 @@ export async function fetchInstagramMedia(
   mediaTypes?: ReadonlySet<string>,
 ): Promise<InstagramMediaItem[]> {
   const url = new URL("https://graph.instagram.com/me/media");
-  url.searchParams.set(
-    "fields",
-    "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp",
-  );
+  url.searchParams.set("fields", INSTAGRAM_GRAPH_MEDIA_FIELDS);
   url.searchParams.set("limit", String(instagramMediaPageSize(limit)));
   url.searchParams.set("access_token", accessToken);
   return paginateInstagramGraphMedia(url.toString(), { limit, mediaTypes });
+}
+
+export async function fetchInstagramMediaById(
+  accessToken: string,
+  mediaId: string,
+): Promise<InstagramMediaItem | null> {
+  const url = new URL(`https://graph.instagram.com/${encodeURIComponent(mediaId)}`);
+  url.searchParams.set("fields", INSTAGRAM_GRAPH_MEDIA_FIELDS);
+  url.searchParams.set("access_token", accessToken);
+  const res = await fetch(url);
+  const json: unknown = await res.json().catch(() => null);
+  if (!res.ok) return null;
+  return parseInstagramMediaRow(json, { requirePermalink: false });
 }
 
 /** Scope-String für Authorize-URL (kommagetrennt laut Meta). */

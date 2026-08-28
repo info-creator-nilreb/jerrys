@@ -59,7 +59,7 @@ export function InstagramConnectPanel(props: Props) {
       <p className="mt-2 text-xs leading-relaxed text-[#6b7280]">
         OAuth mit einem Instagram Professional-Account (Business/Creator). Der Feed wird
         periodisch synchronisiert; der CMS-Block „Social / Reviews“ zeigt die Bilder im
-        bestehenden Carousel (Desktop &amp; Mobile). Zunächst nur Standbilder/Carousel-Cover,
+        Raster (Desktop-Spalten aus dem CMS, Mobil 2 Spalten). Zunächst nur Standbilder/Carousel-Cover,
         keine Reels.
       </p>
 

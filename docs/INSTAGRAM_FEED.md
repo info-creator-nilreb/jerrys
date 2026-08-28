@@ -8,7 +8,7 @@ Umsetzung des Live-Feeds für den CMS-Block **Social / Reviews** (Bilder zuerst)
 2. OAuth (Instagram Professional / `instagram_business_basic`)
 3. Long-Lived Token verschlüsselt in `instagram_connections`
 4. Sync nach `instagram_media_cache` (Cron + manueller Button unter Integrationen); Bilder idealerweise Blob-Spiegel
-5. Storefront: CSS-Raster (`HomepageSocialGrid`) — Desktop-Spalten und Zeilen aus dem CMS, Mobil immer 2 Spalten, dieselben Bilder. Kein Karussell.
+5. Storefront: CSS-Raster (`HomepageSocialGrid`) — Desktop-Spalten und Zeilen aus dem CMS, Mobil immer 2 Spalten, dieselben Bilder. Kein Karussell. **Meta-CDN-URLs** werden nicht direkt im Browser geladen (Hotlink/Expiry), sondern über `GET /api/storefront/instagram-media/[id]` (Shop-Origin, ohne Referer). Blob-URLs bleiben direkt.
 6. Kuratierte Fallback-Bilder und Amazon-Zitate: **Inhalte → Marketing**
 
 ## Env
@@ -74,4 +74,5 @@ Block-Felder `socialSource` (`auto` | `instagram` | `curated`), `socialDesktopCo
 - Sync läuft in `/api/internal/commerce-maintenance` wenn verbunden
 - Sync holt per Pagination **24 Standbilder/Carousel-Cover** (Videos/Reels werden übersprungen, Pagination läuft weiter)
 - Storefront-Raster Default 4×2 (8 Bilder); nach Connect/Deploy ggf. **Jetzt synchronisieren**, damit genug Cache-Bilder für größere Raster da sind
+- Ohne Blob-Spiegel (`BLOB_READ_WRITE_TOKEN`) speichert der Sync kurzlebige `cdninstagram.com`/`fbcdn.net`-URLs. Die Storefront proxied diese über `/api/storefront/instagram-media/[id]`; bei 403/404 holt der Proxy eine frische `media_url` von Graph und aktualisiert den Cache.
 - Trennen löscht Verbindung + Cache

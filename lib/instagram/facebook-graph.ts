@@ -1,8 +1,10 @@
 import type { InstagramAppConfig } from "@/lib/instagram/config";
 import type { InstagramLongLivedToken, InstagramMediaItem } from "@/lib/instagram/graph-api";
 import {
+  INSTAGRAM_GRAPH_MEDIA_FIELDS,
   instagramMediaPageSize,
   paginateInstagramGraphMedia,
+  parseInstagramMediaRow,
 } from "@/lib/instagram/media-fetch";
 
 const GRAPH = "https://graph.facebook.com/v22.0";
@@ -150,11 +152,21 @@ export async function fetchFacebookInstagramMedia(
   mediaTypes?: ReadonlySet<string>,
 ): Promise<InstagramMediaItem[]> {
   const url = new URL(`${GRAPH}/${encodeURIComponent(igUserId)}/media`);
-  url.searchParams.set(
-    "fields",
-    "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp",
-  );
+  url.searchParams.set("fields", INSTAGRAM_GRAPH_MEDIA_FIELDS);
   url.searchParams.set("limit", String(instagramMediaPageSize(limit)));
   url.searchParams.set("access_token", accessToken);
   return paginateInstagramGraphMedia(url.toString(), { limit, mediaTypes });
+}
+
+export async function fetchFacebookInstagramMediaById( // pragma: allowlist secret
+  accessToken: string,
+  mediaId: string,
+): Promise<InstagramMediaItem | null> {
+  const url = new URL(`${GRAPH}/${encodeURIComponent(mediaId)}`);
+  url.searchParams.set("fields", INSTAGRAM_GRAPH_MEDIA_FIELDS);
+  url.searchParams.set("access_token", accessToken);
+  const res = await fetch(url);
+  const json: unknown = await res.json().catch(() => null);
+  if (!res.ok) return null;
+  return parseInstagramMediaRow(json, { requirePermalink: false });
 }
