@@ -26,7 +26,7 @@ vi.mock("@/lib/instagram/facebook-graph", () => ({ // pragma: allowlist secret
 }));
 
 vi.mock("@/lib/instagram/mirror-media", () => ({
-  mirrorInstagramImageUrl: (...args: unknown[]) => mirrorInstagramImageUrl(...args),
+  mirrorInstagramImageUrl: (id: string, url: string) => mirrorInstagramImageUrl(id, url),
 }));
 
 describe("resolveInstagramMediaProxy", () => {

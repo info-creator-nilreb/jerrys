@@ -36,7 +36,7 @@ describe("GET /api/storefront/instagram-media/[id]", () => {
     const req = new NextRequest("http://127.0.0.1/api/storefront/instagram-media/clidmissingrow00000001");
     const res = await GET(req, { params: Promise.resolve({ id: "clidmissingrow00000001" }) });
     expect(res.status).toBe(404);
-    expect(await res.arrayBuffer()).toHaveLength(0);
+    expect((await res.arrayBuffer()).byteLength).toBe(0);
   });
 
   it("rate-limited nach 120 Anfragen derselben IP", async () => {
