@@ -1,5 +1,22 @@
 export type { ReservationLine } from "@/features/inventory/domain/reservation-line";
 export { STOCK_RESERVATION_TTL_MS, reservationExpiresAt } from "@/features/inventory/domain/reservation-ttl";
+export {
+  formatZettleAutoMapMessage,
+  matchZettleVariants,
+  normalizeZettleIdentifier,
+  normalizeZettleMatchKey,
+  normalizeZettleVariantName,
+  zettleCatalogToMatchInputs,
+  zettleCompositeNameKey,
+  zettleNameMatchKey,
+  type AmbiguousZettleCandidate,
+  type AmbiguousZettleMatch,
+  type ShopVariantMatchInput,
+  type UniqueZettleMatch,
+  type ZettleMatchMethod,
+  type ZettleVariantMatchInput,
+  type ZettleVariantMatchResult,
+} from "@/features/inventory/domain/zettle-variant-match";
 export { InsufficientStockError, reserveStockForOrder } from "@/features/inventory/application/reserve-stock-for-order";
 export { commitStockReservationsForOrder } from "@/features/inventory/application/commit-stock-reservations-for-order";
 export { releaseStockReservationsForOrder } from "@/features/inventory/application/release-stock-reservations-for-order";
@@ -34,6 +51,13 @@ export {
   type ZettleDiscrepancyReport,
   type ZettleDiscrepancyRow,
 } from "@/features/inventory/application/build-zettle-discrepancy-report";
+
+export {
+  autoMapUnmappedZettleVariants,
+  formatZettleAutoMapActionMessage,
+  type AutoMapZettleVariantsResult,
+  type ZettleAutoMapAmbiguousHint,
+} from "@/features/inventory/application/auto-map-zettle-variants";
 
 export {
   enqueueZettleShopInventoryPush,
