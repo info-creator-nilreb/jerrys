@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { buildOsmEmbedShippingMapUrl } from "@/lib/maps/osm-embed-shipping-map-url";
 import { buildOsmExternalShippingMapUrl } from "@/lib/maps/osm-external-shipping-map-url";
 import {
+  buildMutedMapTileUrl,
   buildOsmTileUrl,
   buildShippingMapTileLayout,
   shippingMapZoomForSpan,
@@ -28,8 +29,13 @@ describe("buildShippingMapTileLayout", () => {
     expect(layout.tiles.length).toBeGreaterThan(0);
     expect(layout.tileColumns * layout.tileRows).toBe(layout.tiles.length);
     expect(buildOsmTileUrl(layout.zoom, layout.tiles[0]!.x, layout.tiles[0]!.y)).toMatch(
-      /^https:\/\/tile\.openstreetmap\.org\//,
+      /^https:\/\/basemaps\.cartocdn\.com\/light_all\//,
     );
+    expect(buildMutedMapTileUrl(layout.zoom, layout.tiles[0]!.x, layout.tiles[0]!.y)).toBe(
+      buildOsmTileUrl(layout.zoom, layout.tiles[0]!.x, layout.tiles[0]!.y),
+    );
+    expect(layout.pinXPct).toBe(50);
+    expect(layout.pinYPct).toBe(50);
   });
 
   it("zentriert die Koordinate im Viewport (Pin = Kartenmitte)", () => {
@@ -75,8 +81,8 @@ describe("OrderShippingMapSnippet", () => {
     expect(src).toContain("buildShippingMapTileLayout");
     expect(src).toContain("buildOsmExternalShippingMapUrl");
     expect(src).not.toContain("<iframe");
-    expect(src).toContain("buildOsmTileUrl");
-    expect(src).toContain("OpenStreetMap-Mitwirkende");
+    expect(src).toContain("OsmStaticMapCanvas");
+    expect(src).toContain("MapBasemapAttribution");
     expect(src).toContain("Interaktive Karte öffnen");
   });
 });

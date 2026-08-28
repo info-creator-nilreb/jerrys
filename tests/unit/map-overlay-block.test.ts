@@ -5,14 +5,16 @@ import { parseContentBlockData } from "@/lib/content/block-schemas";
 import { defaultDataForContentBlockType } from "@/lib/content/block-defaults";
 import {
   LOCATION_MAP_VIEWPORT,
+  MAP_OVERLAY_PIN_X_RATIO,
   mapOverlayHasCard,
   mapOverlayPinSlot,
   mapOverlaySearchUrl,
   resolveMapOverlayCtaHref,
   type MapOverlayBlockData,
 } from "@/lib/content/blocks/map-overlay";
-import { buildNominatimPlaceQueryUrl } from "@/lib/maps/geocode-place-query";
+import { buildNominatimPlaceQueryUrl, pickNominatimPlaceHit } from "@/lib/maps/geocode-place-query";
 import {
+  buildMutedMapTileUrl,
   buildOsmCenteredTileLayout,
   buildShippingMapTileLayout,
 } from "@/lib/maps/osm-tile-shipping-map-layout";
@@ -118,7 +120,27 @@ describe("geocode place query URL", () => {
     const url = new URL(buildNominatimPlaceQueryUrl("Stargarder Str. 16, Berlin"));
     expect(url.origin).toBe("https://nominatim.openstreetmap.org");
     expect(url.searchParams.get("q")).toBe("Stargarder Str. 16, Berlin");
-    expect(url.searchParams.get("limit")).toBe("1");
+    expect(url.searchParams.get("limit")).toBe("5");
+  });
+});
+
+describe("pickNominatimPlaceHit", () => {
+  it("bevorzugt Hauskoordinaten vor POIs an derselben Adresse", () => {
+    const coords = pickNominatimPlaceHit([
+      {
+        lat: "52.5461465",
+        lon: "13.4187201",
+        addresstype: "shop",
+        class: "shop",
+      },
+      {
+        lat: "52.5461270",
+        lon: "13.4187871",
+        addresstype: "place",
+        class: "place",
+      },
+    ]);
+    expect(coords).toEqual({ lat: 52.546127, lon: 13.4187871 });
   });
 });
 
@@ -145,6 +167,32 @@ describe("location map tile layout", () => {
       halfWidthM: 900,
     });
     expect(layout.tiles.length).toBeGreaterThan(0);
+    expect(layout.pinXPct).toBe(50);
+    expect(layout.pinYPct).toBe(50);
+  });
+
+  it("verschiebt den Ausschnitt, damit die Geokoordinate neben dem Overlay liegt", () => {
+    const lat = 52.546127;
+    const lon = 13.4187871;
+    const pinXRatio = MAP_OVERLAY_PIN_X_RATIO["map-right"];
+    const layout = buildOsmCenteredTileLayout({
+      lat,
+      lon,
+      viewportWidth: LOCATION_MAP_VIEWPORT.width,
+      viewportHeight: LOCATION_MAP_VIEWPORT.height,
+      halfWidthM: 1500,
+      pinXRatio,
+    });
+    expect(layout.pinXPct).toBeCloseTo(pinXRatio * 100);
+
+    const tileSize = 256;
+    const scale = tileSize * 2 ** layout.zoom;
+    const x = ((lon + 180) / 360) * scale;
+    const left = x - layout.viewportWidth * pinXRatio;
+    const startTileX = Math.floor(left / tileSize);
+    const geoX =
+      (startTileX * tileSize - left + (x - startTileX * tileSize)) / layout.viewportWidth;
+    expect(geoX * 100).toBeCloseTo(layout.pinXPct, 5);
   });
 });
 
@@ -164,10 +212,11 @@ describe("MapOverlayBlock", () => {
       "utf8",
     );
     expect(src).toContain("OsmStaticMapCanvas");
-    expect(src).toContain("pinSlot");
+    expect(src).toContain("MAP_OVERLAY_PIN_X_RATIO");
+    expect(src).not.toContain("w-[140%]");
     expect(src).not.toContain("<iframe");
     expect(src).not.toContain("google.com/maps");
-    expect(src).toContain("OpenStreetMap");
+    expect(src).toContain("MapBasemapAttribution");
   });
 
   it("nutzt durchsichtigeres Overlay", () => {
@@ -177,5 +226,16 @@ describe("MapOverlayBlock", () => {
     );
     expect(src).toContain("bg-white/85");
     expect(src).not.toContain("bg-white/95");
+  });
+
+  it("legt den Pin auf die Layout-Koordinate ohne die Karte zu strecken", () => {
+    const src = readFileSync(
+      path.resolve("components/maps/osm-static-map-canvas.tsx"),
+      "utf8",
+    );
+    expect(src).toContain("layout.pinXPct");
+    expect(src).toContain("buildMutedMapTileUrl");
+    expect(src).not.toContain("w-[140%]");
+    expect(src).not.toContain("from \"lucide-react\"");
   });
 });
