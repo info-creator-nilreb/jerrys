@@ -4,6 +4,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { ProductCard, type StorefrontProductCard } from "@/components/storefront/product-card";
+import { ProductCardCell } from "@/components/storefront/product-card-layout";
 import { usePrefersReducedMotion } from "@/components/storefront/use-prefers-reduced-motion";
 
 export type ProductCarouselVariant = "compact" | "featured";
@@ -127,12 +128,14 @@ function ProductCarouselEmbla({
             {products.map((product, slideIndex) => (
               <div
                 key={product.id}
-                className={`flex h-full min-h-0 w-full flex-1 flex-col self-stretch ${slideClass}`}
+                className={`flex min-h-full flex-col self-stretch ${slideClass}`}
                 role="group"
                 aria-roledescription="Folie"
                 aria-label={`Produkt ${slideIndex + 1} von ${products.length}`}
               >
-                <ProductCard product={product} />
+                <ProductCardCell>
+                  <ProductCard product={product} />
+                </ProductCardCell>
               </div>
             ))}
           </div>

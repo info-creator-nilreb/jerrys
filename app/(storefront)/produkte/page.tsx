@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { CollectionCatalogToolbar } from "@/components/storefront/collection-catalog-toolbar";
 import { DatabaseUnavailableNotice } from "@/components/storefront/database-unavailable-notice";
 import { ProductCard } from "@/components/storefront/product-card";
+import { ProductCardCell } from "@/components/storefront/product-card-layout";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import { listActiveCategoriesForNav } from "@/lib/catalog/category-queries";
 import { listActiveCollectionsForStorefront } from "@/lib/catalog/collection-queries";
@@ -256,9 +257,9 @@ export default async function ProduktePage({
           ) : (
             <div className="mt-10 grid items-stretch gap-10 md:grid-cols-2">
               {filteredProducts.map((p) => (
-                <div key={p.id} className="flex h-full min-h-0 w-full flex-1 flex-col self-stretch">
+                <ProductCardCell key={p.id}>
                   <ProductCard product={p} />
-                </div>
+                </ProductCardCell>
               ))}
             </div>
           )}
