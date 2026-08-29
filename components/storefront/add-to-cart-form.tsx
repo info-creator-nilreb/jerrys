@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useId, useState } from "react";
+import { useActionState, useId, useState, type FormEvent, type MouseEvent } from "react";
 import { addToCart, type CartActionState } from "@/lib/cart/actions";
 import {
   defaultAddQuantity,
@@ -87,8 +87,25 @@ export function AddToCartForm({
   const canInc = quantity + quantityRules.purchaseStep <= maxQty;
 
   if (isCarouselIcon) {
+    const stopCarouselEvent = (event: MouseEvent<HTMLElement>) => {
+      event.stopPropagation();
+    };
+
+    const submitCarouselAdd = (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const formData = new FormData(event.currentTarget);
+      formAction(formData);
+    };
+
     return (
-      <form action={formAction} className="inline-flex">
+      <form
+        action={formAction}
+        onSubmit={submitCarouselAdd}
+        onPointerDown={stopCarouselEvent}
+        onClick={stopCarouselEvent}
+        className="inline-flex"
+      >
         <input type="hidden" name="productId" value={productId} />
         {productVariantId ? (
           <input type="hidden" name="productVariantId" value={productVariantId} />
@@ -97,6 +114,8 @@ export function AddToCartForm({
         <button
           type="submit"
           disabled={pending}
+          onPointerDown={stopCarouselEvent}
+          onClick={stopCarouselEvent}
           aria-label={pending ? "Wird hinzugefügt…" : "In den Warenkorb"}
           className="inline-flex size-9 items-center justify-center rounded-full border border-white/35 bg-black/35 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-black/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none disabled:opacity-50"
         >
