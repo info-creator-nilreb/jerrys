@@ -32,6 +32,12 @@ export const LOCATION_MAP_VIEWPORT = {
   height: 560,
 } as const;
 
+/** Seitenverhältnis der gestapelten Mobilkarte — muss zum CSS `aspect-[5/4]` passen. */
+export const LOCATION_MAP_VIEWPORT_MOBILE = {
+  width: 800,
+  height: 640,
+} as const;
+
 function parseOptionalCoord(value: unknown): number | null {
   const v = emptyToNull(value);
   if (v == null) return null;

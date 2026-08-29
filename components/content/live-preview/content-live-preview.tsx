@@ -429,7 +429,7 @@ function PreviewBlock({
 
     return (
       <section className="relative overflow-hidden bg-neutral-100">
-        <div className="relative min-h-40">
+        <div className="relative aspect-[5/4] min-h-0">
           <div
             className={`absolute inset-0 ${grayscale ? MUTED_MAP_FILTER_CLASS : ""}`}
             aria-hidden
