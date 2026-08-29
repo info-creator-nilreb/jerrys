@@ -30,6 +30,7 @@ import {
 import { sanitizeProductDescriptionHtml } from "@/lib/catalog/sanitize-html";
 import {
   mergeAttributesWithStandardForm,
+  migrateLegacySpecsIntoAttributes,
   specTextsFromAttributes,
 } from "@/lib/catalog/standard-product-attributes";
 import { syncProductShopMemberships } from "@/lib/catalog/product-shop-membership";
@@ -52,7 +53,8 @@ function reconcileProductAttributesForSave(
   featureBullets: string[],
 ) {
   const merged = mergeAttributesWithStandardForm(formData, attributes);
-  return reconcileAttributesAndFeatureBullets(merged, featureBullets);
+  const migrated = migrateLegacySpecsIntoAttributes(merged);
+  return reconcileAttributesAndFeatureBullets(migrated, featureBullets);
 }
 
 function legacySpecTextsForPrisma(attributes: ReturnType<typeof reconcileAttributesAndFeatureBullets>["attributes"]) {

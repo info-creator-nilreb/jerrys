@@ -8,7 +8,7 @@ import {
   type ProductAttribute,
 } from "@/features/catalog";
 import { countryDisplayName } from "@/lib/catalog/iso-countries-de";
-import { specTextsFromAttributes } from "@/lib/catalog/standard-product-attributes";
+import { isOriginAttribute, specTextsFromAttributes } from "@/lib/catalog/standard-product-attributes";
 import {
   MAX_PRODUCT_USPS,
   pickDistinctUspIcon,
@@ -163,6 +163,13 @@ function propertiesIconForFamily(family: PdpProductFamily): PdpSpecIcon {
   if (family === "pet") return "paw";
   if (family === "jewelry") return "gem";
   return "sparkles";
+}
+
+function formatAttributeDisplayValue(attr: ProductAttribute): string {
+  if (isOriginAttribute(attr)) {
+    return attr.values.map((v) => countryDisplayName(v)).join(", ");
+  }
+  return attr.values.join(", ");
 }
 
 function normalizeSpecLabel(attr: ProductAttribute): string {
@@ -328,7 +335,7 @@ export function resolvePdpDisplay(product: {
     const spec: PdpResolvedSpec = {
       key: attr.key,
       label,
-      value: attr.values.join(", "),
+      value: formatAttributeDisplayValue(attr),
       icon: iconForAttributeKey(attr.key, label),
     };
     propertySpecs.push(spec);
