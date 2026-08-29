@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ProductCard } from "@/components/storefront/product-card";
+import { ProductCarousel } from "@/components/storefront/product-carousel";
 import type { ProductCategoryPickBlockData } from "@/lib/content/blocks/product-category-pick";
 import {
   resolveProductBlockShowAllHref,
@@ -64,11 +64,11 @@ export async function ProductCategoryPickBlock({
           {data.title}
         </h2>
       ) : null}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
+      <ProductCarousel
+        products={products}
+        variant="compact"
+        ariaLabel={data.title?.trim() || "Produkte"}
+      />
       {showAllHref ? (
         <div className="mt-10 flex justify-center">
           <Link

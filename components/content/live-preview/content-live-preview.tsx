@@ -5,6 +5,7 @@ import { useDeferredValue, useMemo } from "react";
 import { HeroBackgroundCarousel } from "@/components/content/blocks/hero-background-carousel";
 import { MapOverlayCard } from "@/components/content/blocks/map-overlay-card";
 import { MapLocationPin } from "@/components/maps/map-location-pin";
+import { ProductCarouselPreview } from "@/components/storefront/product-carousel";
 import { UspIcon } from "@/components/storefront/usp-icons";
 import {
   HERO_MOTION_EFFECTS,
@@ -268,12 +269,11 @@ function PreviewBlock({
                 : "Keine Produkt-IDs / keine Treffer."}
           </p>
         ) : (
-          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-            {list.map((p) => (
-              <li
-                key={p.id}
-                className="flex items-center gap-3 rounded-md border border-[#e8eaed] bg-white p-2"
-              >
+          <ProductCarouselPreview
+            className="mt-4"
+            items={list}
+            renderItem={(p) => (
+              <div className="flex items-center gap-3 rounded-md border border-[#e8eaed] bg-white p-2">
                 <div className="relative size-12 shrink-0 overflow-hidden rounded bg-[#f3f4f6]">
                   {p.imageUrl ? (
                     <Image
@@ -287,9 +287,9 @@ function PreviewBlock({
                   ) : null}
                 </div>
                 <span className="text-xs font-medium text-[#1f2937]">{p.title}</span>
-              </li>
-            ))}
-          </ul>
+              </div>
+            )}
+          />
         )}
         {showAllCta ? (
           <div className="mt-4 flex justify-center">
