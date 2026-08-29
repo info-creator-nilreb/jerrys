@@ -51,6 +51,12 @@ export function AddToCartForm({
   const [state, formAction, pending] = useActionState(addToCart, initial);
   const qtyFieldId = useId();
   const wasPendingRef = useRef(false);
+  const optimisticDeltaRef = useRef(0);
+  const submitGenerationRef = useRef(0);
+  const slowPendingTimerRef = useRef<number | null>(null);
+  const [slowPendingGeneration, setSlowPendingGeneration] = useState(0);
+  const showSlowPending =
+    pending && slowPendingGeneration === submitGenerationRef.current;
 
   const defaultQty = defaultAddQuantity(quantityRules) ?? quantityRules.minOrderQty;
   const maxQty = maxSelectableQuantity(quantityRules);
@@ -60,14 +66,35 @@ export function AddToCartForm({
   const isCarouselIcon = layout === "carousel-icon";
 
   useEffect(() => {
-    if (wasPendingRef.current && !pending && state?.ok) {
-      notifyStorefrontCartUpdated({
-        quantityDelta: state.addedQuantity,
-        badgeCount: state.badgeCount,
-      });
+    if (wasPendingRef.current && !pending) {
+      if (state?.ok) {
+        notifyStorefrontCartUpdated({ badgeCount: state.badgeCount });
+        optimisticDeltaRef.current = 0;
+      } else if (state?.error && optimisticDeltaRef.current !== 0) {
+        notifyStorefrontCartUpdated({ quantityDelta: -optimisticDeltaRef.current });
+        optimisticDeltaRef.current = 0;
+      }
     }
     wasPendingRef.current = pending;
   }, [pending, state]);
+
+  const submitWithOptimisticBadge = (formData: FormData) => {
+    const qty = Number(formData.get("quantity") ?? quantity);
+    if (Number.isFinite(qty) && qty > 0) {
+      optimisticDeltaRef.current = qty;
+      notifyStorefrontCartUpdated({ quantityDelta: qty });
+    }
+    if (slowPendingTimerRef.current !== null) {
+      window.clearTimeout(slowPendingTimerRef.current);
+    }
+    submitGenerationRef.current += 1;
+    const generation = submitGenerationRef.current;
+    slowPendingTimerRef.current = window.setTimeout(() => {
+      slowPendingTimerRef.current = null;
+      setSlowPendingGeneration(generation);
+    }, 400);
+    formAction(formData);
+  };
 
   if (!canAdd) {
     if (isCarouselIcon) {
@@ -106,8 +133,7 @@ export function AddToCartForm({
     const submitCarouselAdd = (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       event.stopPropagation();
-      const formData = new FormData(event.currentTarget);
-      formAction(formData);
+      submitWithOptimisticBadge(new FormData(event.currentTarget));
     };
 
     return (
@@ -126,11 +152,11 @@ export function AddToCartForm({
         <input type="hidden" name="quantity" value={quantity} />
         <button
           type="submit"
-          disabled={pending}
           onPointerDown={stopCarouselEvent}
           onClick={stopCarouselEvent}
-          aria-label={pending ? "Wird hinzugefügt…" : "In den Warenkorb"}
-          className="inline-flex size-9 items-center justify-center rounded-full border border-white/35 bg-black/35 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-black/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none disabled:opacity-50"
+          aria-busy={pending}
+          aria-label={pending && showSlowPending ? "Wird hinzugefügt…" : "In den Warenkorb"}
+          className="inline-flex size-9 items-center justify-center rounded-full border border-white/35 bg-black/35 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-black/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none aria-busy:opacity-70"
         >
           <CartIcon className="size-4" />
         </button>
@@ -148,9 +174,15 @@ export function AddToCartForm({
     );
   }
 
+  const submitDefaultAdd = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    submitWithOptimisticBadge(new FormData(event.currentTarget));
+  };
+
   return (
     <form
       action={formAction}
+      onSubmit={submitDefaultAdd}
       className={
         isSticky
           ? "flex shrink-0 items-center self-center"
@@ -224,7 +256,7 @@ export function AddToCartForm({
           {!compact && !isSticky && showCartIcon ? (
             <CartIcon className={isPdp ? "size-5 shrink-0" : "shrink-0"} />
           ) : null}
-          {pending ? "Wird hinzugefügt…" : isSticky ? "Warenkorb" : "In den Warenkorb"}
+          {pending && showSlowPending ? "Wird hinzugefügt…" : isSticky ? "Warenkorb" : "In den Warenkorb"}
         </button>
       </div>
       {state?.error && !isSticky ? <p className="text-base text-red-600">{state.error}</p> : null}
