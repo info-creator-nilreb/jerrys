@@ -8,6 +8,7 @@ import {
   DEFAULT_PDP_TRUST_BAR_ITEMS,
   type PdpTrustBarItem,
 } from "@/lib/shop/pdp-trust-settings";
+import { DEFAULT_PICKUP_READY_TEXT } from "@/lib/shop/pickup-settings";
 
 export const SHOP_SETTINGS_DEFAULT_ID = "default" as const;
 
@@ -85,6 +86,10 @@ export type ShopSettingsDefaults = {
   pdpReturnPolicyText: string | null;
   /** Grauer Trust-Banner unter der PDP (genau 3 Einträge). */
   pdpTrustBarItems: PdpTrustBarItem[];
+  /** Abhol-Hinweis PDP; null = „Store in {addressCity}“. */
+  pickupStoreLabel: string | null;
+  pickupReadyText: string | null;
+  pickupInfoUrl: string | null;
 };
 
 export const JERRYS_SHOP_SETTINGS_DEFAULTS: ShopSettingsDefaults = {
@@ -132,6 +137,9 @@ export const JERRYS_SHOP_SETTINGS_DEFAULTS: ShopSettingsDefaults = {
   footerShowLegalVersand: true,
   pdpReturnPolicyText: DEFAULT_PDP_RETURN_POLICY_TEXT,
   pdpTrustBarItems: DEFAULT_PDP_TRUST_BAR_ITEMS.map((item) => ({ ...item })),
+  pickupStoreLabel: null,
+  pickupReadyText: DEFAULT_PICKUP_READY_TEXT,
+  pickupInfoUrl: null,
 };
 
 /** Client-sichere DTO-Form (ohne next/cache / Prisma). */

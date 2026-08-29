@@ -35,6 +35,7 @@ import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadc
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
 import { getShopSettings } from "@/lib/shop/shop-settings";
 import { applePayStoreLabel } from "@/lib/shop/storefront-branding";
+import { resolvePickupDisplayCopy } from "@/lib/shop/pickup-settings";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
 
 export const dynamic = "force-dynamic";
@@ -156,6 +157,7 @@ export default async function ProduktDetailPage({
 
   const coverImage = product.images[0];
   const relatedProducts = await listRelatedProductsForPdp(product.id, collectionSlugs, 4);
+  const pickupCopy = product.pickupAvailable ? resolvePickupDisplayCopy(shopSettings) : null;
 
   return (
     <>
@@ -234,6 +236,7 @@ export default async function ProduktDetailPage({
                 applePayStoreLabel={applePayStoreLabel(shopSettings)}
                 variants={product.variants}
                 returnPolicyText={shopSettings.pdpReturnPolicyText}
+                pickupCopy={pickupCopy}
               />
 
               {hasSpecsPanel ? (

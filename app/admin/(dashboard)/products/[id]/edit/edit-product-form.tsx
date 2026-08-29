@@ -68,6 +68,7 @@ type Product = {
   categoryTag: string | null;
   isBestseller: boolean;
   showWorkshopCalendar: boolean;
+  pickupAvailable: boolean;
   leadText: string | null;
   dimensionsText: string | null;
   weightText: string | null;
@@ -211,6 +212,7 @@ export function EditProductForm({
             categoryTag: product.categoryTag ?? "",
             isBestseller: product.isBestseller,
             showWorkshopCalendar: product.showWorkshopCalendar,
+            pickupAvailable: product.pickupAvailable,
             leadText,
             leadTextKey,
             dimensionsText: product.dimensionsText ?? "",

@@ -6,6 +6,11 @@ import {
   HEADER_NAV_PLACEMENTS,
 } from "@/lib/shop/shop-settings-defaults";
 import { pdpTrustSettingsSchema } from "@/lib/shop/pdp-trust-settings";
+import {
+  parsePickupInfoUrl,
+  parsePickupReadyText,
+  parsePickupStoreLabel,
+} from "@/lib/shop/pickup-settings";
 
 const HEX_COLOR_MSG = "Farbe als #RRGGBB angeben.";
 
@@ -94,6 +99,23 @@ export const shopSettingsValuesSchema = z.object({
     .transform((s) => (s === "" ? null : s))
     .nullable(),
   pdpTrustBarItems: pdpTrustSettingsSchema.shape.pdpTrustBarItems,
+  pickupStoreLabel: z
+    .string()
+    .trim()
+    .max(80)
+    .transform((s) => parsePickupStoreLabel(s))
+    .nullable(),
+  pickupReadyText: z
+    .string()
+    .trim()
+    .max(120)
+    .transform((s) => parsePickupReadyText(s))
+    .nullable(),
+  pickupInfoUrl: z
+    .string()
+    .trim()
+    .transform((s) => parsePickupInfoUrl(s))
+    .nullable(),
 });
 
 export type ShopSettingsValues = z.infer<typeof shopSettingsValuesSchema>;

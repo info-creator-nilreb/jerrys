@@ -161,6 +161,7 @@ export async function createProduct(
     attributes: attributesFromFormData(formData),
     isBestseller: formData.get("isBestseller") === "on",
     showWorkshopCalendar: formData.get("showWorkshopCalendar") === "on",
+    pickupAvailable: formData.get("pickupAvailable") === "on",
     imageUrl: formData.get("imageUrl"),
     imageAlt: formData.get("imageAlt"),
     isActive: parseIsActiveFromFormData(formData),
@@ -218,6 +219,7 @@ export async function createProduct(
           isActive: d.isActive,
           isBestseller: d.isBestseller,
           showWorkshopCalendar: d.showWorkshopCalendar,
+          pickupAvailable: d.pickupAvailable,
           categoryTag: d.categoryTag,
           leadText: d.leadText,
           dimensionsText: d.dimensionsText,
@@ -313,6 +315,7 @@ export async function updateProduct(
     attributes: attributesFromFormData(formData),
     isBestseller: formData.get("isBestseller") === "on",
     showWorkshopCalendar: formData.get("showWorkshopCalendar") === "on",
+    pickupAvailable: formData.get("pickupAvailable") === "on",
     isActive: parseIsActiveFromFormData(formData),
   };
 
@@ -398,6 +401,7 @@ export async function updateProduct(
           isActive: d.isActive,
           isBestseller: d.isBestseller,
           showWorkshopCalendar: d.showWorkshopCalendar,
+          pickupAvailable: d.pickupAvailable,
           categoryTag: d.categoryTag,
           leadText: d.leadText,
           dimensionsText: d.dimensionsText,

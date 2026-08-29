@@ -12,7 +12,9 @@ import {
 import { defaultAddQuantity } from "@/lib/cart/quantity";
 import { AddToCartForm } from "@/components/storefront/add-to-cart-form";
 import { ProductExpressCheckout } from "@/components/storefront/product-express-checkout";
+import { ProductPdpPickupHint } from "@/components/storefront/product-pdp-pickup-hint";
 import { ProductPdpStickyAtcBar } from "@/components/storefront/product-pdp-sticky-atc-bar";
+import type { PickupDisplayCopy } from "@/lib/shop/pickup-settings";
 
 export const PDP_PURCHASE_SENTINEL_ID = "pdp-purchase-sentinel";
 
@@ -29,6 +31,7 @@ export function ProductPdpPurchasePanel({
   applePayStoreLabel,
   variants,
   returnPolicyText,
+  pickupCopy,
 }: {
   productId: string;
   productTitle: string;
@@ -43,6 +46,8 @@ export function ProductPdpPurchasePanel({
   variants: StorefrontVariantCommerce[];
   /** Shop-Einstellung; null = Zeile ausblenden. */
   returnPolicyText?: string | null;
+  /** Abhol-Hinweis; null = ausblenden. */
+  pickupCopy?: PickupDisplayCopy | null;
 }) {
   const initialId = variants.find((v) => v.isDefault)?.id ?? variants[0]?.id ?? "";
   const [selectedId, setSelectedId] = useState(initialId);
@@ -176,6 +181,8 @@ export function ProductPdpPurchasePanel({
           applePayStoreLabel={applePayStoreLabel}
         />
       ) : null}
+
+      {pickupCopy ? <ProductPdpPickupHint pickupCopy={pickupCopy} /> : null}
 
       <p className="text-center text-[0.7rem] leading-snug text-(--foreground-muted)">
         Im Checkout:{" "}

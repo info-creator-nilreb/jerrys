@@ -132,6 +132,7 @@ const sharedProductFields = {
   isActive: z.boolean(),
   isBestseller: z.boolean(),
   showWorkshopCalendar: z.boolean(),
+  pickupAvailable: z.boolean(),
   categoryTag: optionalText,
   leadText: optionalText,
   dimensionsText: optionalText,
