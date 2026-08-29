@@ -10,6 +10,7 @@ import {
   type StorefrontVariantCommerce,
 } from "@/lib/catalog/default-variant-storefront";
 import { defaultAddQuantity } from "@/lib/cart/quantity";
+import { PRODUCT_CARD_COMPACT_ACTION_CLASS } from "@/components/storefront/product-card-layout";
 
 export type StorefrontProductCard = {
   id: string;
@@ -47,7 +48,7 @@ export function ProductCard({ product }: { product: StorefrontProductCard }) {
     product.amazonRatingAverage != null && product.amazonRatingCount != null;
 
   return (
-    <article className="group relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl border border-(--surface-muted) bg-white shadow-sm transition-shadow hover:shadow-md">
+    <article className="group relative flex min-h-full flex-1 flex-col overflow-hidden rounded-xl border border-(--surface-muted) bg-white shadow-sm transition-shadow hover:shadow-md">
       <Link
         href={productHref}
         className="relative flex min-h-0 flex-1 flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
@@ -109,14 +110,16 @@ export function ProductCard({ product }: { product: StorefrontProductCard }) {
           </p>
         </div>
       </Link>
-      <div className="relative z-10 flex shrink-0 flex-col justify-start border-t border-(--surface-muted) bg-white px-6 pt-4 pb-6 md:px-7 md:pb-7">
-        <AddToCartForm
-          productId={product.id}
-          productVariantId={variant.id}
-          canAdd={canAdd}
-          quantityRules={quantityRules!}
-          compact
-        />
+      <div className="relative z-10 shrink-0 border-t border-(--surface-muted) bg-white px-6 pt-4 pb-6 md:px-7 md:pb-7">
+        <div className={PRODUCT_CARD_COMPACT_ACTION_CLASS}>
+          <AddToCartForm
+            productId={product.id}
+            productVariantId={variant.id}
+            canAdd={canAdd}
+            quantityRules={quantityRules!}
+            compact
+          />
+        </div>
       </div>
     </article>
   );

@@ -14,6 +14,7 @@ import {
 import { parseCollectionSort } from "@/lib/catalog/collection-storefront-sort";
 import { DatabaseUnavailableNotice } from "@/components/storefront/database-unavailable-notice";
 import { ProductCard } from "@/components/storefront/product-card";
+import { ProductCardCell } from "@/components/storefront/product-card-layout";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import { getActiveCollectionBySlugForStorefront } from "@/lib/catalog/collection-queries";
 import { filterAndSortCollectionProducts } from "@/lib/catalog/collection-storefront-sort";
@@ -165,9 +166,9 @@ export default async function KollektionDetailPage({
       ) : (
         <div className="mt-10 grid items-stretch gap-10 md:grid-cols-2">
           {products.map((p) => (
-            <div key={p.id} className="flex h-full min-h-0 w-full flex-1 flex-col self-stretch">
+            <ProductCardCell key={p.id}>
               <ProductCard product={p} />
-            </div>
+            </ProductCardCell>
           ))}
         </div>
       )}

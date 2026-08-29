@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { CollectionCatalogToolbar } from "@/components/storefront/collection-catalog-toolbar";
 import { DatabaseUnavailableNotice } from "@/components/storefront/database-unavailable-notice";
 import { ProductCard } from "@/components/storefront/product-card";
+import { ProductCardCell } from "@/components/storefront/product-card-layout";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import { listActiveProductsByCategorySlug } from "@/lib/catalog/category-queries";
 import { categoryListingShouldNotFound, isPublishedCategoryListing } from "@/lib/catalog/category-storefront-visibility";
@@ -167,9 +168,9 @@ export default async function KategorieDetailPage({
       ) : (
         <div className="mt-10 grid items-stretch gap-10 md:grid-cols-2">
           {products.map((p) => (
-            <div key={p.id} className="flex h-full min-h-0 w-full flex-1 flex-col self-stretch">
+            <ProductCardCell key={p.id}>
               <ProductCard product={p} />
-            </div>
+            </ProductCardCell>
           ))}
         </div>
       )}
