@@ -34,6 +34,8 @@ type Props = {
     productNumber: string | null;
     /** SKU der Default-Variante (bearbeitbar). */
     sku: string | null;
+    leadText: string;
+    leadTextKey?: number;
     amazonRatingAverage: string;
     amazonRatingCount: string;
     amazonReviewUrl: string;
@@ -157,6 +159,23 @@ export function ProductGeneralFields({ state, manufacturers, defaults }: Props) 
             className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
           />
           {fe.subtitle ? <p className="text-sm text-red-600">{fe.subtitle}</p> : null}
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label htmlFor="leadText" className="text-xs font-medium text-[#6b7280]">
+            Kurzbeschreibung (optional, SEO & Einleitung)
+          </label>
+          <textarea
+            key={defaults.leadTextKey ?? 0}
+            id="leadText"
+            name="leadText"
+            rows={3}
+            maxLength={500}
+            defaultValue={defaults.leadText}
+            placeholder="2–3 Sätze — erscheint unter dem Titel und in Meta-Beschreibungen."
+            className="resize-y rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
+          />
+          {fe.leadText ? <p className="text-sm text-red-600">{fe.leadText}</p> : null}
         </div>
 
         <div className="flex flex-col gap-1">

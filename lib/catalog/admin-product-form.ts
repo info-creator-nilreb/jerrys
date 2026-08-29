@@ -3,6 +3,7 @@ import {
   normalizeProductAttributes,
   reconcileAttributesAndFeatureBullets,
 } from "@/features/catalog";
+import { migrateLegacySpecsIntoAttributes } from "@/lib/catalog/standard-product-attributes";
 
 type AdminProductRecord = NonNullable<Awaited<ReturnType<typeof getProductByIdForAdmin>>>;
 
@@ -14,7 +15,11 @@ export function adminProductForEditForm(product: AdminProductRecord) {
   }
 
   const reconciled = reconcileAttributesAndFeatureBullets(
-    normalizeProductAttributes(product.attributes),
+    migrateLegacySpecsIntoAttributes(normalizeProductAttributes(product.attributes), {
+      dimensionsText: product.dimensionsText,
+      weightText: product.weightText,
+      materialText: product.materialText,
+    }),
     product.featureBullets,
   );
 
@@ -45,11 +50,10 @@ export function adminProductForEditForm(product: AdminProductRecord) {
     amazonRatingAverage: product.amazonRatingAverage,
     amazonRatingCount: product.amazonRatingCount,
     amazonReviewUrl: product.amazonReviewUrl,
-    categoryTag: product.categoryTag,
-    isBestseller: product.isBestseller,
     showWorkshopCalendar: product.showWorkshopCalendar,
     pickupAvailable: product.pickupAvailable,
     leadText: product.leadText,
+    variantOptionName: product.variantOptionName,
     dimensionsText: product.dimensionsText,
     weightText: product.weightText,
     materialText: product.materialText,

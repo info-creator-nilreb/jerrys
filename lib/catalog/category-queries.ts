@@ -1,4 +1,6 @@
 import { unstable_cache } from "next/cache";
+import { attachShopifyFallbackImages } from "@/lib/catalog/attach-shopify-fallback-images";
+import { attachStorefrontBestsellerFlags } from "@/lib/catalog/bestseller-rank";
 import { getPrisma } from "@/lib/db/prisma";
 import { categoryHasActiveProductViaCollections } from "@/lib/catalog/category-storefront-visibility";
 import { STOREFRONT_CATALOG_CACHE_TAG } from "@/lib/catalog/storefront-catalog-cache-tag";
@@ -268,12 +270,19 @@ export async function listActiveProductsByCategorySlug(slug: string) {
     }
   }
 
+  const withImages = await attachShopifyFallbackImages(products);
+  const flagged = await attachStorefrontBestsellerFlags(withImages);
+  const byId = new Map(flagged.map((p) => [p.id, p]));
+
   return {
     id: category.id,
     slug: category.slug,
     title: category.title,
     description: category.description,
     parent: category.parent,
-    products,
+    products: products.flatMap((p) => {
+      const hit = byId.get(p.id);
+      return hit ? [hit] : [];
+    }),
   };
 }

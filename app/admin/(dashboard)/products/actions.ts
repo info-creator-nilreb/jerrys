@@ -28,6 +28,10 @@ import {
   productImageSchema,
 } from "@/lib/catalog/schemas";
 import { sanitizeProductDescriptionHtml } from "@/lib/catalog/sanitize-html";
+import {
+  mergeAttributesWithStandardForm,
+  specTextsFromAttributes,
+} from "@/lib/catalog/standard-product-attributes";
 import { syncProductShopMemberships } from "@/lib/catalog/product-shop-membership";
 import { getPrisma } from "@/lib/db/prisma";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
@@ -40,6 +44,24 @@ function formIdList(formData: FormData, key: string): string[] {
     .getAll(key)
     .map((v) => String(v).trim())
     .filter(Boolean);
+}
+
+function reconcileProductAttributesForSave(
+  formData: FormData,
+  attributes: ReturnType<typeof attributesFromFormData>,
+  featureBullets: string[],
+) {
+  const merged = mergeAttributesWithStandardForm(formData, attributes);
+  return reconcileAttributesAndFeatureBullets(merged, featureBullets);
+}
+
+function legacySpecTextsForPrisma(attributes: ReturnType<typeof reconcileAttributesAndFeatureBullets>["attributes"]) {
+  const texts = specTextsFromAttributes(attributes);
+  return {
+    dimensionsText: texts.dimensionsText,
+    weightText: texts.weightText,
+    materialText: texts.materialText,
+  };
 }
 
 /** USPs: zeilenweise `featureBullet` (neu) oder Newline-Textarea `featureBullets` (Fallback). */
@@ -152,14 +174,10 @@ export async function createProduct(
     amazonRatingAverage: formData.get("amazonRatingAverage") ?? "",
     amazonRatingCount: formData.get("amazonRatingCount") ?? "",
     amazonReviewUrl: formData.get("amazonReviewUrl") ?? "",
-    categoryTag: String(formData.get("categoryTag") ?? ""),
     leadText: String(formData.get("leadText") ?? ""),
-    dimensionsText: String(formData.get("dimensionsText") ?? ""),
-    weightText: String(formData.get("weightText") ?? ""),
-    materialText: String(formData.get("materialText") ?? ""),
+    variantOptionName: String(formData.get("variantOptionName") ?? ""),
     featureBullets: featureBulletsFromFormData(formData),
     attributes: attributesFromFormData(formData),
-    isBestseller: formData.get("isBestseller") === "on",
     showWorkshopCalendar: formData.get("showWorkshopCalendar") === "on",
     pickupAvailable: formData.get("pickupAvailable") === "on",
     imageUrl: formData.get("imageUrl"),
@@ -176,7 +194,12 @@ export async function createProduct(
   }
 
   const d = parsed.data;
-  const reconciled = reconcileAttributesAndFeatureBullets(d.attributes, d.featureBullets);
+  const reconciled = reconcileProductAttributesForSave(
+    formData,
+    d.attributes,
+    d.featureBullets,
+  );
+  const legacySpecs = legacySpecTextsForPrisma(reconciled.attributes);
   const mainGross = parseEuroInputToCents(d.priceGrossEuro)!;
   const mainNet = parseEuroInputToCents(d.priceNetEuro)!;
   const listGross = d.listPriceGrossEuro.trim() === "" ? null : parseEuroInputToCents(d.listPriceGrossEuro);
@@ -217,14 +240,13 @@ export async function createProduct(
           manufacturerId: d.manufacturerId,
           productNumber: d.productNumber,
           isActive: d.isActive,
-          isBestseller: d.isBestseller,
           showWorkshopCalendar: d.showWorkshopCalendar,
           pickupAvailable: d.pickupAvailable,
-          categoryTag: d.categoryTag,
           leadText: d.leadText,
-          dimensionsText: d.dimensionsText,
-          weightText: d.weightText,
-          materialText: d.materialText,
+          variantOptionName: d.variantOptionName,
+          dimensionsText: legacySpecs.dimensionsText,
+          weightText: legacySpecs.weightText,
+          materialText: legacySpecs.materialText,
           featureBullets: reconciled.featureBullets,
           attributes: reconciled.attributes,
           ...amazon,
@@ -306,14 +328,10 @@ export async function updateProduct(
     amazonRatingAverage: formData.get("amazonRatingAverage") ?? "",
     amazonRatingCount: formData.get("amazonRatingCount") ?? "",
     amazonReviewUrl: formData.get("amazonReviewUrl") ?? "",
-    categoryTag: String(formData.get("categoryTag") ?? ""),
     leadText: String(formData.get("leadText") ?? ""),
-    dimensionsText: String(formData.get("dimensionsText") ?? ""),
-    weightText: String(formData.get("weightText") ?? ""),
-    materialText: String(formData.get("materialText") ?? ""),
+    variantOptionName: String(formData.get("variantOptionName") ?? ""),
     featureBullets: featureBulletsFromFormData(formData),
     attributes: attributesFromFormData(formData),
-    isBestseller: formData.get("isBestseller") === "on",
     showWorkshopCalendar: formData.get("showWorkshopCalendar") === "on",
     pickupAvailable: formData.get("pickupAvailable") === "on",
     isActive: parseIsActiveFromFormData(formData),
@@ -328,7 +346,12 @@ export async function updateProduct(
   }
 
   const d = parsed.data;
-  const reconciled = reconcileAttributesAndFeatureBullets(d.attributes, d.featureBullets);
+  const reconciled = reconcileProductAttributesForSave(
+    formData,
+    d.attributes,
+    d.featureBullets,
+  );
+  const legacySpecs = legacySpecTextsForPrisma(reconciled.attributes);
   const mainGross = parseEuroInputToCents(d.priceGrossEuro)!;
   const mainNet = parseEuroInputToCents(d.priceNetEuro)!;
   const listGross = d.listPriceGrossEuro.trim() === "" ? null : parseEuroInputToCents(d.listPriceGrossEuro);
@@ -399,14 +422,13 @@ export async function updateProduct(
           manufacturerId: d.manufacturerId,
           productNumber: d.productNumber,
           isActive: d.isActive,
-          isBestseller: d.isBestseller,
           showWorkshopCalendar: d.showWorkshopCalendar,
           pickupAvailable: d.pickupAvailable,
-          categoryTag: d.categoryTag,
           leadText: d.leadText,
-          dimensionsText: d.dimensionsText,
-          weightText: d.weightText,
-          materialText: d.materialText,
+          variantOptionName: d.variantOptionName,
+          dimensionsText: legacySpecs.dimensionsText,
+          weightText: legacySpecs.weightText,
+          materialText: legacySpecs.materialText,
           featureBullets: reconciled.featureBullets,
           attributes: reconciled.attributes,
           ...amazon,

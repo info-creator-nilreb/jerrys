@@ -74,20 +74,14 @@ const attributesField = z
 
 function refineStorefrontTextLengths(
   data: {
-    categoryTag: string | null;
     leadText: string | null;
-    dimensionsText: string | null;
-    weightText: string | null;
-    materialText: string | null;
+    variantOptionName: string | null;
   },
   ctx: z.RefinementCtx,
 ) {
   const checks: [keyof typeof data, number][] = [
-    ["categoryTag", 120],
     ["leadText", 500],
-    ["dimensionsText", 500],
-    ["weightText", 500],
-    ["materialText", 500],
+    ["variantOptionName", 80],
   ];
   for (const [key, max] of checks) {
     const v = data[key];
@@ -130,14 +124,10 @@ const sharedProductFields = {
   purchaseStep: z.coerce.number().int().min(1),
   maxOrderQty: z.preprocess(optionalPositiveIntMin1Nullable, z.number().int().min(1).nullable()),
   isActive: z.boolean(),
-  isBestseller: z.boolean(),
   showWorkshopCalendar: z.boolean(),
   pickupAvailable: z.boolean(),
-  categoryTag: optionalText,
   leadText: optionalText,
-  dimensionsText: optionalText,
-  weightText: optionalText,
-  materialText: optionalText,
+  variantOptionName: optionalText,
   featureBullets: featureBulletsField,
   attributes: attributesField,
   /** Rohwerte aus Formular; Validierung in refineAmazonFields */

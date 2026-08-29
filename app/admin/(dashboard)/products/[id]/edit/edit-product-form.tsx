@@ -16,6 +16,7 @@ import { ProductMediaSection } from "@/app/admin/(dashboard)/products/product-me
 import { ProductShopAssignmentFields } from "@/app/admin/(dashboard)/products/product-shop-assignment-fields";
 import { ProductStorefrontDetailFields } from "@/app/admin/(dashboard)/products/product-storefront-detail-fields";
 import { ProductUspFields } from "@/app/admin/(dashboard)/products/product-usp-fields";
+import { ProductVariantOptionFields } from "@/app/admin/(dashboard)/products/product-variant-option-fields";
 import { ProductVariantsSection } from "@/app/admin/(dashboard)/products/product-variants-section";
 import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
 import type { ProductAttribute } from "@/features/catalog";
@@ -65,11 +66,10 @@ type Product = {
   amazonRatingAverage: number | null;
   amazonRatingCount: number | null;
   amazonReviewUrl: string | null;
-  categoryTag: string | null;
-  isBestseller: boolean;
   showWorkshopCalendar: boolean;
   pickupAvailable: boolean;
   leadText: string | null;
+  variantOptionName: string | null;
   dimensionsText: string | null;
   weightText: string | null;
   materialText: string | null;
@@ -203,27 +203,27 @@ export function EditProductForm({
             amazonRatingCount:
               product.amazonRatingCount != null ? String(product.amazonRatingCount) : "",
             amazonReviewUrl: product.amazonReviewUrl ?? "",
+            leadText,
+            leadTextKey,
           }}
         />
 
         <ProductStorefrontDetailFields
           state={state}
           defaults={{
-            categoryTag: product.categoryTag ?? "",
-            isBestseller: product.isBestseller,
             showWorkshopCalendar: product.showWorkshopCalendar,
             pickupAvailable: product.pickupAvailable,
-            leadText,
-            leadTextKey,
-            dimensionsText: product.dimensionsText ?? "",
-            weightText: product.weightText ?? "",
-            materialText: product.materialText ?? "",
           }}
         />
 
         <ProductAttributesFields
           state={state}
           defaults={product.attributes ?? []}
+          legacySpecs={{
+            dimensionsText: product.dimensionsText,
+            weightText: product.weightText,
+            materialText: product.materialText,
+          }}
         />
 
         <ProductUspFields
@@ -236,6 +236,11 @@ export function EditProductForm({
           state={state}
           options={shopAssignment}
           defaults={shopDefaults}
+        />
+
+        <ProductVariantOptionFields
+          state={state}
+          defaults={{ variantOptionName: product.variantOptionName ?? "" }}
         />
 
         <ProductPricesSection
@@ -307,6 +312,7 @@ export function EditProductForm({
         productId={product.id}
         variants={product.variants}
         currency={product.currency}
+        variantOptionName={product.variantOptionName}
       />
 
       <ProductMediaSection productId={product.id} images={product.images} />

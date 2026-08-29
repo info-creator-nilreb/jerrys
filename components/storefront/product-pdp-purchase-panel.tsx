@@ -30,6 +30,7 @@ export function ProductPdpPurchasePanel({
   paypalClientId,
   applePayStoreLabel,
   variants,
+  variantOptionName,
   returnPolicyText,
   pickupCopy,
 }: {
@@ -44,6 +45,8 @@ export function ProductPdpPurchasePanel({
   paypalClientId: string;
   applePayStoreLabel: string;
   variants: StorefrontVariantCommerce[];
+  /** Option-Name (z. B. „Farbe“) — Shopify Option1 Name. */
+  variantOptionName?: string | null;
   /** Shop-Einstellung; null = Zeile ausblenden. */
   returnPolicyText?: string | null;
   /** Abhol-Hinweis; null = ausblenden. */
@@ -74,6 +77,7 @@ export function ProductPdpPurchasePanel({
   });
   const inStock = selected.availableQuantity > 0;
   const showPicker = variants.length > 1;
+  const optionLegend = variantOptionName?.trim() || "Auswahl";
   const expressQty = expressQuantity ?? qtyRules.minOrderQty;
   const expressTotalEstimate = selected.priceGrossCents * expressQty;
 
@@ -83,7 +87,7 @@ export function ProductPdpPurchasePanel({
       <div id={PDP_PURCHASE_SENTINEL_ID} className="h-px w-full" aria-hidden />
       {showPicker ? (
         <fieldset className="space-y-2">
-          <legend className="text-sm font-medium text-(--foreground-heading)">Auswahl</legend>
+          <legend className="text-sm font-medium text-(--foreground-heading)">{optionLegend}</legend>
           <div className="flex flex-col gap-2">
             {variants.map((v) => {
               const id = `variant-${v.id}`;

@@ -22,9 +22,11 @@ function BezeichnungCell({ title }: { title: string | null }) {
 export function ProductVariantEditRow({
   variant,
   currency,
+  valueLabel = "Option-Wert",
 }: {
   variant: AdminProductVariantRow;
   currency: string;
+  valueLabel?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -87,15 +89,15 @@ export function ProductVariantEditRow({
               >
                 <input type="hidden" name="variantId" value={variant.id} />
                 <p className="text-xs text-[#6b7280]">
-                  Hier die Farbe bzw. Option der Standard-SKU eintragen (Shop-Auswahl). SKU, Preis und
-                  Bestand bleiben im Produktformular oben.
+                  {valueLabel} der Standard-SKU (Shop-Auswahl). SKU, Preis und Bestand bleiben im
+                  Produktformular oben.
                 </p>
                 <div className="flex flex-col gap-1">
                   <label
                     htmlFor={`edit-title-${variant.id}`}
                     className="text-xs font-medium text-[#6b7280]"
                   >
-                    Bezeichnung (z. B. Farbe)
+                    {valueLabel}
                   </label>
                   <input
                     id={`edit-title-${variant.id}`}
@@ -182,7 +184,7 @@ export function ProductVariantEditRow({
                   htmlFor={`edit-title-${variant.id}`}
                   className="text-xs font-medium text-[#6b7280]"
                 >
-                  Bezeichnung (z. B. Farbe)
+                  {valueLabel}
                 </label>
                 <input
                   id={`edit-title-${variant.id}`}
