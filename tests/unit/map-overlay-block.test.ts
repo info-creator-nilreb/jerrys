@@ -8,6 +8,7 @@ import {
   LOCATION_MAP_VIEWPORT,
   LOCATION_MAP_VIEWPORT_MOBILE,
   MAP_OVERLAY_PIN_X_RATIO,
+  MAP_OVERLAY_SPAN_METERS,
   mapOverlayHasCard,
   mapOverlayPinSlot,
   mapOverlaySearchUrl,
@@ -178,6 +179,14 @@ describe("location map tile layout", () => {
       5 / 4,
       5,
     );
+  });
+
+  it("zoomt das Viertel näher heran als der frühere Weitwinkel", () => {
+    expect(MAP_OVERLAY_SPAN_METERS.near).toBe(280);
+    expect(MAP_OVERLAY_SPAN_METERS.neighborhood).toBe(550);
+    expect(MAP_OVERLAY_SPAN_METERS.city).toBe(1400);
+    expect(MAP_OVERLAY_SPAN_METERS.near).toBeLessThan(MAP_OVERLAY_SPAN_METERS.neighborhood);
+    expect(MAP_OVERLAY_SPAN_METERS.neighborhood).toBeLessThan(MAP_OVERLAY_SPAN_METERS.city);
   });
 
   it("verschiebt den Ausschnitt, damit die Geokoordinate neben dem Overlay liegt", () => {

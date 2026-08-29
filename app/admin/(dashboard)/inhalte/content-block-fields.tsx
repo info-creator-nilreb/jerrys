@@ -30,6 +30,10 @@ import {
   HERO_CTA_TARGET_PRESETS,
   resolveHeroCtaSelectValue,
 } from "@/lib/content/hero-cta-targets";
+import {
+  MAP_OVERLAY_SPAN_LABELS,
+  MAP_OVERLAY_SPANS,
+} from "@/lib/content/blocks/map-overlay";
 
 export type CmsCollectionOption = {
   slug: string;
@@ -1032,15 +1036,17 @@ export function ContentBlockFields({
           Koordinaten überschreiben die Geocoding-Suche, falls beide gesetzt sind.
         </p>
         <label className="text-sm text-[#5c5f66]">
-          Ausschnitt
+          Kartenausschnitt (Zoom)
           <select
             className={fieldClass}
             value={str(data, "mapSpan") || "neighborhood"}
             onChange={(e) => set("mapSpan", e.target.value)}
           >
-            <option value="near">Nah (Straße)</option>
-            <option value="neighborhood">Viertel</option>
-            <option value="city">Stadt</option>
+            {MAP_OVERLAY_SPANS.map((span) => (
+              <option key={span} value={span}>
+                {MAP_OVERLAY_SPAN_LABELS[span].title} — {MAP_OVERLAY_SPAN_LABELS[span].hint}
+              </option>
+            ))}
           </select>
         </label>
         <label className="text-sm text-[#5c5f66]">
