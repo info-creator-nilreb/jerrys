@@ -26,19 +26,7 @@ export type StorefrontProductCard = {
   variants: StorefrontVariantCommerce[];
 };
 
-type ProductCardLayout = "default" | "carousel";
-
-const CAROUSEL_FOOTER_MIN_H = "min-h-[7.75rem]";
-const CAROUSEL_RATING_MIN_H = "min-h-[3.75rem]";
-
-export function ProductCard({
-  product,
-  layout = "default",
-}: {
-  product: StorefrontProductCard;
-  /** Karussell: einheitliche Kartenhöhe trotz fehlendem Warenkorb-Bereich. */
-  layout?: ProductCardLayout;
-}) {
+export function ProductCard({ product }: { product: StorefrontProductCard }) {
   const variant = pickDefaultVariant(product);
   const quantityRules = variant ? quantityRulesFromVariant(variant) : null;
   const canAdd = quantityRules ? defaultAddQuantity(quantityRules) !== null : false;
@@ -46,9 +34,8 @@ export function ProductCard({
   const listPriceCents = variant?.listPriceGrossCents ?? null;
   const onSale = listPriceCents != null && listPriceCents > displayPriceCents;
   const productHref = `/produkte/${product.slug}`;
-  const isCarousel = layout === "carousel";
 
-  if (!variant && !isCarousel) {
+  if (!variant) {
     return (
       <article className="rounded-xl border border-(--surface-muted) bg-white p-6 text-sm text-(--foreground-muted)">
         {product.title} — derzeit nicht bestellbar.
@@ -58,7 +45,6 @@ export function ProductCard({
 
   const hasAmazonRating =
     product.amazonRatingAverage != null && product.amazonRatingCount != null;
-  const showAmazonSlot = isCarousel || hasAmazonRating;
 
   return (
     <article className="group relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl border border-(--surface-muted) bg-white shadow-sm transition-shadow hover:shadow-md">
@@ -85,78 +71,52 @@ export function ProductCard({
               alt={product.images[0]!.alt}
               productTitle={product.title}
             />
-          ) : product.images.length > 1 ? (
-            <ProductCardImageSlider images={product.images} productTitle={product.title} />
           ) : (
-            <div className="aspect-[4/3] w-full bg-(--surface-soft)" aria-hidden />
+            <ProductCardImageSlider images={product.images} productTitle={product.title} />
           )}
         </div>
-        <div className="flex min-h-0 flex-1 flex-col p-6 md:p-7">
+        <div className="flex flex-col p-6 md:p-7">
           <h3 className="text-xl font-semibold text-(--foreground-heading) md:text-2xl">
             {product.title}
           </h3>
-          {product.subtitle?.trim() || isCarousel ? (
-            <p
-              className={`mt-2 text-base leading-snug text-(--foreground-muted) md:text-[1.05rem] ${
-                isCarousel ? "min-h-[2.75rem] md:min-h-[3rem]" : ""
-              }`}
-            >
-              {product.subtitle?.trim() ? product.subtitle : "\u00a0"}
+          {product.subtitle?.trim() ? (
+            <p className="mt-2 text-base leading-snug text-(--foreground-muted) md:text-[1.05rem]">
+              {product.subtitle}
             </p>
           ) : null}
-          {showAmazonSlot ? (
-            <div
-              className={`mt-3 shrink-0 ${isCarousel ? CAROUSEL_RATING_MIN_H : ""}`}
-            >
-              {hasAmazonRating ? (
-                <AmazonRatingDisplay
-                  compact
-                  className="mt-0"
-                  average={product.amazonRatingAverage!}
-                  count={product.amazonRatingCount!}
-                  reviewUrl={product.amazonReviewUrl}
-                />
-              ) : null}
+          {hasAmazonRating ? (
+            <div className="mt-3 shrink-0">
+              <AmazonRatingDisplay
+                compact
+                className="mt-0"
+                average={product.amazonRatingAverage!}
+                count={product.amazonRatingCount!}
+                reviewUrl={product.amazonReviewUrl}
+              />
             </div>
           ) : null}
-          {variant ? (
-            <p
-              className={`${
-                product.subtitle?.trim() || showAmazonSlot ? "mt-3" : "mt-2"
-              } text-lg font-semibold text-primary md:text-xl`}
-            >
-              {onSale ? (
-                <span className="mr-2 font-normal text-(--foreground-muted) line-through">
-                  {formatPrice(listPriceCents, product.currency)}
-                </span>
-              ) : null}
-              {formatPrice(displayPriceCents, product.currency)}*
-            </p>
-          ) : (
-            <p className="mt-3 text-base text-(--foreground-muted)">
-              Derzeit nicht bestellbar.
-            </p>
-          )}
+          <p
+            className={`${
+              product.subtitle?.trim() || hasAmazonRating ? "mt-3" : "mt-2"
+            } text-lg font-semibold text-primary md:text-xl`}
+          >
+            {onSale ? (
+              <span className="mr-2 font-normal text-(--foreground-muted) line-through">
+                {formatPrice(listPriceCents, product.currency)}
+              </span>
+            ) : null}
+            {formatPrice(displayPriceCents, product.currency)}*
+          </p>
         </div>
       </Link>
-      <div
-        className={`relative z-10 flex shrink-0 flex-col justify-end border-t border-(--surface-muted) bg-white px-6 pt-4 pb-6 md:px-7 md:pb-7 ${
-          isCarousel ? CAROUSEL_FOOTER_MIN_H : ""
-        }`}
-      >
-        {variant && quantityRules ? (
-          <AddToCartForm
-            productId={product.id}
-            productVariantId={variant.id}
-            canAdd={canAdd}
-            quantityRules={quantityRules}
-            compact
-          />
-        ) : (
-          <p className="text-base leading-snug text-(--foreground-muted)">
-            Derzeit nicht bestellbar (Lager oder Mindestabnahme).
-          </p>
-        )}
+      <div className="relative z-10 flex shrink-0 flex-col justify-start border-t border-(--surface-muted) bg-white px-6 pt-4 pb-6 md:px-7 md:pb-7">
+        <AddToCartForm
+          productId={product.id}
+          productVariantId={variant.id}
+          canAdd={canAdd}
+          quantityRules={quantityRules!}
+          compact
+        />
       </div>
     </article>
   );

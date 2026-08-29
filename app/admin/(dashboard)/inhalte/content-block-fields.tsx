@@ -722,8 +722,7 @@ export function ContentBlockFields({
           <span>
             <span className="font-medium">Nicht bestellbare Artikel anzeigen</span>
             <span className="mt-0.5 block text-xs text-[#6b7280]">
-              Deaktiviert = nur bestellbare Produkte im Karussell. Hilft bei einheitlicher
-              Kartenhöhe, wenn Artikel ohne Warenkorb-Bereich ausgeblendet werden sollen.
+              Deaktiviert = nur bestellbare Produkte im Karussell.
             </span>
           </span>
         </label>
