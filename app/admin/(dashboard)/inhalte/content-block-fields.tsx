@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { CmsBlockAiTextAssistant } from "@/app/admin/(dashboard)/inhalte/cms-block-ai-text-assistant";
 import { AdminRichTextEditor } from "@/components/admin/admin-rich-text-editor";
+import { CmsLinkTargetField } from "@/components/admin/cms-link-target-field";
 import { CmsMediaField } from "@/components/admin/cms-media-field";
 import { HeroFocusPicker } from "@/components/admin/hero-focus-picker";
 import type { ContentBlockType } from "@/lib/content/block-types";
@@ -25,11 +26,7 @@ import {
   resolveSocialReviewsLayout,
   socialFeedDisplayLimit,
 } from "@/lib/content/blocks/social-reviews";
-import {
-  HERO_CTA_CUSTOM_VALUE,
-  HERO_CTA_TARGET_PRESETS,
-  resolveHeroCtaSelectValue,
-} from "@/lib/content/hero-cta-targets";
+import type { CmsLinkTargetOption } from "@/lib/content/cms-link-target-options";
 
 export type CmsCollectionOption = {
   slug: string;
@@ -46,6 +43,8 @@ type Props = {
   pageType?: string;
   /** Aktive Kollektionen für Produktblöcke (Slug + Produkt-IDs für Vorschau). */
   collections?: CmsCollectionOption[];
+  /** Seiten, Kollektionen, Kategorien, Produkte für Link-Picker. */
+  linkTargetOptions?: CmsLinkTargetOption[];
 };
 
 function str(data: Record<string, unknown>, key: string): string {
@@ -74,6 +73,7 @@ export function ContentBlockFields({
   pageTitle = "",
   pageType = "content",
   collections = [],
+  linkTargetOptions = [],
 }: Props) {
   const set = (key: string, value: unknown) => onChange({ ...data, [key]: value });
 
@@ -328,46 +328,14 @@ export function ContentBlockFields({
                   maxLength={60}
                 />
               </label>
-              <label className="text-sm text-[#5c5f66]">
-                Zielseite
-                <select
-                  className={fieldClass}
-                  value={resolveHeroCtaSelectValue(str(data, "ctaHref"))}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (v === "") {
-                      set("ctaHref", "");
-                      return;
-                    }
-                    if (v === HERO_CTA_CUSTOM_VALUE) {
-                      const current = str(data, "ctaHref");
-                      const isPreset = HERO_CTA_TARGET_PRESETS.some((p) => p.href === current);
-                      set("ctaHref", isPreset || !current ? "/" : current);
-                      return;
-                    }
-                    set("ctaHref", v);
-                  }}
-                >
-                  <option value="">Keine (ohne Button)</option>
-                  {HERO_CTA_TARGET_PRESETS.map((p) => (
-                    <option key={p.href} value={p.href}>
-                      {p.label}
-                    </option>
-                  ))}
-                  <option value={HERO_CTA_CUSTOM_VALUE}>Eigener Pfad…</option>
-                </select>
-              </label>
-              {resolveHeroCtaSelectValue(str(data, "ctaHref")) === HERO_CTA_CUSTOM_VALUE ? (
-                <label className="text-sm text-[#5c5f66] sm:col-span-2">
-                  Eigener Pfad (intern, mit /)
-                  <input
-                    className={fieldClass}
-                    value={str(data, "ctaHref")}
-                    onChange={(e) => set("ctaHref", e.target.value)}
-                    placeholder="/ueber-uns"
-                  />
-                </label>
-              ) : null}
+              <CmsLinkTargetField
+                label="Zielseite"
+                href={str(data, "ctaHref")}
+                onChange={(href) => set("ctaHref", href)}
+                options={linkTargetOptions}
+                allowEmpty
+                emptyLabel="Keine (ohne Button)"
+              />
             </div>
           </div>
         </div>
@@ -453,6 +421,29 @@ export function ContentBlockFields({
             <option value="right">Rechts</option>
           </select>
         </label>
+        <div className="space-y-3 sm:col-span-2">
+          <p className="text-sm font-medium text-[#374151]">Call-to-Action</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="text-sm text-[#5c5f66]">
+              Button-Label
+              <input
+                className={fieldClass}
+                value={str(data, "ctaLabel")}
+                onChange={(e) => set("ctaLabel", e.target.value)}
+                placeholder="Mehr erfahren"
+                maxLength={60}
+              />
+            </label>
+            <CmsLinkTargetField
+              label="Zielseite"
+              href={str(data, "ctaHref")}
+              onChange={(href) => set("ctaHref", href)}
+              options={linkTargetOptions}
+              allowEmpty
+              emptyLabel="Keine (ohne Button)"
+            />
+          </div>
+        </div>
       </div>
     );
   }
@@ -748,21 +739,21 @@ export function ContentBlockFields({
                   onChange={(e) => set("showAllLabel", e.target.value)}
                 />
               </label>
-              <label className="text-sm text-[#5c5f66]">
-                Ziel-Pfad (optional)
-                <input
-                  className={fieldClass}
-                  value={str(data, "showAllHref")}
-                  placeholder={
-                    usesCollection
-                      ? "/kollektionen/…"
-                      : usesCategory
-                        ? "/kategorien/…"
-                        : "/produkte"
-                  }
-                  onChange={(e) => set("showAllHref", e.target.value)}
-                />
-              </label>
+              <CmsLinkTargetField
+                label="Ziel (optional)"
+                href={str(data, "showAllHref")}
+                onChange={(href) => set("showAllHref", href)}
+                options={linkTargetOptions}
+                allowEmpty
+                emptyLabel="Automatisch (aus Quelle)"
+                customPlaceholder={
+                  usesCollection
+                    ? "/kollektionen/beispiel"
+                    : usesCategory
+                      ? "/kategorien/beispiel"
+                      : "/produkte"
+                }
+              />
             </div>
           ) : null}
         </div>
@@ -1099,15 +1090,16 @@ export function ContentBlockFields({
             placeholder="Der schnellste Weg zu uns"
           />
         </label>
-        <label className="text-sm text-[#5c5f66]">
-          Link-Ziel (optional)
-          <input
-            className={fieldClass}
-            value={str(data, "ctaHref")}
-            onChange={(e) => set("ctaHref", e.target.value)}
-            placeholder="https://… oder /kontakt"
-          />
-        </label>
+        <CmsLinkTargetField
+          label="Link-Ziel (optional)"
+          href={str(data, "ctaHref")}
+          onChange={(href) => set("ctaHref", href)}
+          options={linkTargetOptions}
+          allowEmpty
+          allowExternal
+          emptyLabel="OpenStreetMap (Standard)"
+          customPlaceholder="/kontakt"
+        />
         <p className="text-xs text-[#9ca3af] sm:col-span-2">
           Leer lassen beim Ziel: der Link öffnet OpenStreetMap zur Adresse. HTTPS oder interner
           Pfad ab /.

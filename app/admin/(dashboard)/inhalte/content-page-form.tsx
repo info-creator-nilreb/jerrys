@@ -115,11 +115,13 @@ export function ContentPageForm({
   initial,
   previewProducts = [],
   previewCollections = [],
+  linkTargetOptions = [],
   aiReady = false,
 }: {
   initial?: InitialPage;
   previewProducts?: LivePreviewProduct[];
   previewCollections?: CmsCollectionOption[];
+  linkTargetOptions?: import("@/lib/content/cms-link-target-options").CmsLinkTargetOption[];
   aiReady?: boolean;
 }) {
   const formId = useId();
@@ -532,6 +534,7 @@ export function ContentPageForm({
                       pageTitle={title}
                       pageType={pageType}
                       collections={previewCollections}
+                      linkTargetOptions={linkTargetOptions}
                       onChange={(data) =>
                         setBlocks((prev) =>
                           prev.map((b) =>

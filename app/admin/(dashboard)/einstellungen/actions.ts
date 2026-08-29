@@ -12,6 +12,7 @@ import type { ShopSettingsDTO } from "@/lib/shop/shop-settings-defaults";
 import { getShopSettings } from "@/lib/shop/shop-settings";
 import {
   clearShopBrandingAsset,
+  setShopBrandingAssetFromUrl,
   uploadShopBrandingAsset,
 } from "@/lib/shop/upload-shop-branding-asset";
 import {
@@ -130,4 +131,26 @@ export async function clearShopBrandingAssetAction(
   }
   revalidatePath("/admin/einstellungen");
   return { ok: true, kind: kindRaw };
+}
+
+export async function setShopBrandingAssetFromUrlAction(input: {
+  kind: ShopBrandingAssetKind;
+  url: string;
+}): Promise<BrandingAssetFormState> {
+  await requireAdminSession();
+
+  if (!isShopBrandingAssetKind(input.kind)) {
+    return { error: "Unbekannter Asset-Typ." };
+  }
+
+  const result = await setShopBrandingAssetFromUrl({
+    kind: input.kind,
+    url: input.url,
+  });
+  if (!result.ok) {
+    return { error: result.error, kind: input.kind };
+  }
+  revalidatePath("/admin/einstellungen");
+  revalidatePath("/admin/login");
+  return { ok: true, kind: input.kind };
 }
