@@ -28,3 +28,10 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Alle **UI-Icons** im Anwendungscode nutzen **`lucide-react`** (benannte Komponenten aus `lucide-react`). Keine handgeschriebenen Inline-`<svg>` für Standard-Icons in TSX/JSX.
 - **Ausnahmen:** statische Grafiken unter `public/`; **Logos** und illustrative Bilder über `next/image` oder Rich-Text; **Nationalflaggen** als reine Farbflächen (z. B. DE-Tricolor), wenn die korrekte Darstellung Vorrang vor einem generischen Linien-Icon hat.
 - Neue Icons: auf [lucide.dev/icons](https://lucide.dev/icons) wählen; `className` / `size` / `strokeWidth` an bestehende Verwendung anlehnen; bei Icon-in-Buttons den **Button** mit `aria-label` versehen, das Icon `aria-hidden`, sofern redundant.
+
+## Agent-Testing (Zustimmung erforderlich)
+
+- **Computer Use** (Browser-/Desktop-Interaktion über den `computerUse`-Subagenten) nur nach **expliziter Zustimmung** des Nutzers starten.
+- **Visuelle UI-Prüfung** (Screenshots, Screenrecordings, manuelles Durchklicken im Browser zur Darstellungs- und Verhaltenskontrolle) nur nach **expliziter Zustimmung** des Nutzers.
+- Ohne Zustimmung: terminalbasierte Tests nutzen (Unit-/Integrationstests, Lint, Build, `curl` o. Ä.) und UI-Änderungen textuell beschreiben — nicht visuell demonstrieren.
+- Vor dem Start kurz nachfragen, ob Computer Use oder visuelle Prüfung gewünscht ist — es sei denn, der Nutzer hat es in derselben Anfrage bereits ausdrücklich erlaubt (z. B. „bitte im Browser testen“).
