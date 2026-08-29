@@ -4,6 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getAdminSession } from "@/lib/auth/admin-session";
+import {
+  COLLECTION_MEMBERSHIP_CREATED_WITHIN_DAYS,
+  COLLECTION_MEMBERSHIP_MANUAL,
+  isAutomaticCollectionMembership,
+  normalizeCreatedWithinRuleDays,
+} from "@/lib/catalog/collection-membership";
 import { collectionUpsertSchema } from "@/lib/catalog/collection-schemas";
 import { updateStorefrontCatalogCacheTag } from "@/lib/catalog/storefront-catalog-cache";
 import { getPrisma } from "@/lib/db/prisma";
@@ -42,6 +48,20 @@ function revalidateCollectionPaths(slug: string) {
   revalidatePath("/produkte");
 }
 
+function collectionWriteData(d: z.infer<typeof collectionUpsertSchema>) {
+  const membershipMode = d.membershipMode ?? COLLECTION_MEMBERSHIP_MANUAL;
+  const isAutomatic = isAutomaticCollectionMembership(membershipMode);
+  return {
+    title: d.title.trim(),
+    slug: d.slug,
+    description: d.description ?? null,
+    sortOrder: d.sortOrder,
+    isActive: d.isActive ?? false,
+    membershipMode,
+    ruleDays: isAutomatic ? normalizeCreatedWithinRuleDays(d.ruleDays) : null,
+  };
+}
+
 export async function saveCollection(
   _prev: CollectionFormState,
   formData: FormData,
@@ -58,6 +78,8 @@ export async function saveCollection(
     description: formData.get("description") ?? "",
     sortOrder: formData.get("sortOrder") ?? 0,
     isActive: formData.get("isActive") ?? undefined,
+    membershipMode: formData.get("membershipMode"),
+    ruleDays: formData.get("ruleDays") ?? undefined,
     productIds: formData.getAll("productIds"),
   });
   if (!parsed.success) {
@@ -65,14 +87,18 @@ export async function saveCollection(
   }
 
   const d = parsed.data;
-  const isActive = d.isActive ?? false;
+  const writeData = collectionWriteData(d);
+  const isAutomatic = writeData.membershipMode === COLLECTION_MEMBERSHIP_CREATED_WITHIN_DAYS;
 
-  const existingProducts = await getPrisma().product.findMany({
-    where: { id: { in: d.productIds } },
-    select: { id: true },
-  });
-  const validIds = new Set(existingProducts.map((p) => p.id));
-  const productIds = d.productIds.filter((id) => validIds.has(id));
+  let productIds: string[] = [];
+  if (!isAutomatic) {
+    const existingProducts = await getPrisma().product.findMany({
+      where: { id: { in: d.productIds } },
+      select: { id: true },
+    });
+    const validIds = new Set(existingProducts.map((p) => p.id));
+    productIds = d.productIds.filter((id) => validIds.has(id));
+  }
 
   try {
     if (d.id) {
@@ -87,23 +113,21 @@ export async function saveCollection(
       await getPrisma().$transaction(async (tx) => {
         await tx.collection.update({
           where: { id: d.id },
-          data: {
-            title: d.title.trim(),
-            slug: d.slug,
-            description: d.description ?? null,
-            sortOrder: d.sortOrder,
-            isActive,
-          },
+          data: writeData,
         });
-        await tx.collectionProduct.deleteMany({ where: { collectionId: d.id! } });
-        if (productIds.length > 0) {
-          await tx.collectionProduct.createMany({
-            data: productIds.map((productId, index) => ({
-              collectionId: d.id!,
-              productId,
-              sortOrder: index,
-            })),
-          });
+        if (isAutomatic) {
+          await tx.collectionProduct.deleteMany({ where: { collectionId: d.id! } });
+        } else {
+          await tx.collectionProduct.deleteMany({ where: { collectionId: d.id! } });
+          if (productIds.length > 0) {
+            await tx.collectionProduct.createMany({
+              data: productIds.map((productId, index) => ({
+                collectionId: d.id!,
+                productId,
+                sortOrder: index,
+              })),
+            });
+          }
         }
       });
 
@@ -115,16 +139,8 @@ export async function saveCollection(
     }
 
     const created = await getPrisma().$transaction(async (tx) => {
-      const col = await tx.collection.create({
-        data: {
-          title: d.title.trim(),
-          slug: d.slug,
-          description: d.description ?? null,
-          sortOrder: d.sortOrder,
-          isActive,
-        },
-      });
-      if (productIds.length > 0) {
+      const col = await tx.collection.create({ data: writeData });
+      if (!isAutomatic && productIds.length > 0) {
         await tx.collectionProduct.createMany({
           data: productIds.map((productId, index) => ({
             collectionId: col.id,

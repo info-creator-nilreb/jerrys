@@ -1,11 +1,12 @@
 import type { StorefrontProductCard } from "@/components/storefront/product-card";
 import { pickDefaultVariant } from "@/lib/catalog/default-variant-storefront";
 
-export type CollectionSort = "default" | "title-asc" | "price-asc" | "price-desc";
+export type CollectionSort = "default" | "created-desc" | "title-asc" | "price-asc" | "price-desc";
 
 /** Nur explizite Sortierungen — Default = Katalogreihenfolge ohne URL-Parameter. */
 export const COLLECTION_SORT_OPTIONS: { value: Exclude<CollectionSort, "default">; label: string }[] =
   [
+    { value: "created-desc", label: "Neueste zuerst" },
     { value: "title-asc", label: "Name A–Z" },
     { value: "price-asc", label: "Preis aufsteigend" },
     { value: "price-desc", label: "Preis absteigend" },
@@ -17,7 +18,14 @@ export function collectionSortLabel(sort: CollectionSort): string | null {
 }
 
 export function parseCollectionSort(value: string | undefined): CollectionSort {
-  if (value === "title-asc" || value === "price-asc" || value === "price-desc") return value;
+  if (
+    value === "created-desc" ||
+    value === "title-asc" ||
+    value === "price-asc" ||
+    value === "price-desc"
+  ) {
+    return value;
+  }
   return "default";
 }
 
@@ -40,6 +48,14 @@ export function filterAndSortCollectionProducts(
     list = list.filter(isProductAvailable);
   }
   switch (options.sort) {
+    case "created-desc":
+      list.sort((a, b) => {
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        if (bTime !== aTime) return bTime - aTime;
+        return a.title.localeCompare(b.title, "de");
+      });
+      break;
     case "title-asc":
       list.sort((a, b) => a.title.localeCompare(b.title, "de"));
       break;

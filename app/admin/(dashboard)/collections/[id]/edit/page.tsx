@@ -55,6 +55,8 @@ export default async function AdminEditCollectionPage({ params }: { params: Prom
             sortOrder: collection.sortOrder,
             isActive: collection.isActive,
             productIds: collection.products.map((p) => p.productId),
+            membershipMode: collection.membershipMode,
+            ruleDays: collection.ruleDays,
           }}
         />
         <CollectionLifecycleControls

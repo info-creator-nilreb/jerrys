@@ -3,17 +3,29 @@
  * Produkte einer Kategorie kommen nur über verknüpfte aktive Kollektionen.
  */
 
+import type { Prisma } from "@/app/generated/prisma/client";
+
 /** Mindestens ein aktives Shop-Produkt in einer aktiven verknüpften Kollektion. */
 export const categoryHasActiveProductViaCollections = {
   collections: {
     some: {
       collection: {
-        isActive: true,
-        products: { some: { product: { isActive: true } } },
+        OR: [
+          {
+            isActive: true,
+            membershipMode: "manual",
+            products: { some: { product: { isActive: true } } },
+          },
+          {
+            isActive: true,
+            membershipMode: "created_within_days",
+            ruleDays: { gt: 0 },
+          },
+        ],
       },
     },
   },
-} as const;
+} satisfies Prisma.CategoryWhereInput;
 
 /** @deprecated Alias — gleiche Semantik wie `categoryHasActiveProductViaCollections`. */
 export const categoryHasActiveProductMembership = categoryHasActiveProductViaCollections;

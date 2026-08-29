@@ -271,6 +271,10 @@ model Collection {
   slug        String   @unique
   title       String
   description String?
+  /// `manual` = feste Produktliste; `created_within_days` = automatisch neu eingestellte Produkte.
+  membershipMode String @default("manual") @map("membership_mode")
+  /// Nur bei `created_within_days`: Produkte mit createdAt in den letzten X Tagen.
+  ruleDays       Int?   @map("rule_days")
   isActive    Boolean  @default(true) @map("is_active")
   sortOrder   Int      @default(0) @map("sort_order")
   createdAt   DateTime @default(now()) @map("created_at")

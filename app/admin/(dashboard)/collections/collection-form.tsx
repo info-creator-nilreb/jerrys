@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import {
   saveCollection,
   type CollectionFormState,
@@ -12,6 +12,16 @@ import {
 } from "@/components/admin/admin-form-action-dock";
 import { AdminSlugField } from "@/components/admin/admin-slug-field";
 import { useAutoSlugFromTitle } from "@/components/admin/use-auto-slug-from-title";
+import {
+  COLLECTION_MEMBERSHIP_CREATED_WITHIN_DAYS,
+  COLLECTION_MEMBERSHIP_MANUAL,
+  COLLECTION_MEMBERSHIP_MODE_LABELS,
+  DEFAULT_CREATED_WITHIN_DAYS,
+  MAX_CREATED_WITHIN_DAYS,
+  MIN_CREATED_WITHIN_DAYS,
+  type CollectionMembershipMode,
+  parseCollectionMembershipMode,
+} from "@/lib/catalog/collection-membership";
 
 const initial: CollectionFormState = null;
 
@@ -29,6 +39,8 @@ export function CollectionForm({
     description: string | null;
     sortOrder: number;
     isActive: boolean;
+    membershipMode: string;
+    ruleDays: number | null;
     productIds: string[];
   };
   products: ProductOption[];
@@ -38,6 +50,10 @@ export function CollectionForm({
   const [state, formAction, pending] = useActionState(saveCollection, initial);
   const fe = state?.fieldErrors ?? {};
   const selected = new Set(collection?.productIds ?? []);
+  const [membershipMode, setMembershipMode] = useState<CollectionMembershipMode>(
+    parseCollectionMembershipMode(collection?.membershipMode),
+  );
+  const isAutomatic = membershipMode === COLLECTION_MEMBERSHIP_CREATED_WITHIN_DAYS;
   const {
     title,
     setTitle,
@@ -58,6 +74,7 @@ export function CollectionForm({
   return (
     <form action={formAction} className={`space-y-8 ${ADMIN_FORM_ACTION_DOCK_CONTENT_PADDING}`}>
       {collection ? <input type="hidden" name="id" value={collection.id} /> : null}
+      <input type="hidden" name="membershipMode" value={membershipMode} />
 
       <section className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1 sm:col-span-2">
@@ -84,7 +101,7 @@ export function CollectionForm({
           error={fe.slug}
           hint="Storefront: /kollektionen/[slug]"
           inputClassName="rounded-md border border-[#e3e4e8] px-3 py-2 font-mono text-sm"
-          placeholder="z. B. bestseller"
+          placeholder="z. B. neu"
         />
         <div className="flex flex-col gap-1">
           <label htmlFor="collection-sort" className="text-xs font-medium text-[#6b7280]">
@@ -125,40 +142,109 @@ export function CollectionForm({
         </div>
       </section>
 
-      <section>
-        <h2 className="text-sm font-semibold text-[#374151]">Produkte in dieser Kollektion</h2>
-        <p className="mt-1 text-xs text-[#6b7280]">
-          Reihenfolge entspricht der Auswahl (oben nach unten). Nur aktive Produkte erscheinen in der
-          Storefront. Shop-Navigation bindet Kollektionen über Kategorien — hier ist die
-          Produktzuordnung.
-        </p>
-        {products.length === 0 ? (
-          <p className="mt-4 text-sm text-[#6b7280]">Noch keine Produkte im Katalog.</p>
-        ) : (
-          <ul className="mt-4 max-h-80 space-y-2 overflow-y-auto rounded-lg border border-[#e8eaed] p-3">
-            {products.map((p) => (
-              <li key={p.id}>
-                <label className="flex cursor-pointer items-start gap-2 text-sm text-[#374151]">
-                  <input
-                    type="checkbox"
-                    name="productIds"
-                    value={p.id}
-                    defaultChecked={selected.has(p.id)}
-                    className="mt-0.5 checkbox-primary size-4"
-                  />
-                  <span>
-                    {p.title}
-                    {!p.isActive ? (
-                      <span className="ml-1 text-xs text-[#9ca3af]">(inaktiv)</span>
-                    ) : null}
-                    <span className="ml-1 font-mono text-xs text-[#9ca3af]">{p.slug}</span>
-                  </span>
-                </label>
-              </li>
-            ))}
-          </ul>
-        )}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-sm font-semibold text-[#374151]">Produktregel</h2>
+          <p className="mt-1 text-xs text-[#6b7280]">
+            Manuell: feste Produktliste. Neu (automatisch): alle aktiven Produkte, die in den
+            letzten X Tagen eingestellt wurden.
+          </p>
+        </div>
+        <fieldset className="space-y-3">
+          <legend className="sr-only">Produktregel</legend>
+          {[COLLECTION_MEMBERSHIP_MANUAL, COLLECTION_MEMBERSHIP_CREATED_WITHIN_DAYS].map((mode) => (
+            <label
+              key={mode}
+              className="flex cursor-pointer items-start gap-3 rounded-lg border border-[#e8eaed] p-3 has-checked:border-primary has-checked:bg-[#f0fdf4]"
+            >
+              <input
+                type="radio"
+                name="membershipModeChoice"
+                value={mode}
+                checked={membershipMode === mode}
+                onChange={() => setMembershipMode(mode)}
+                className="mt-0.5 size-4 radio-primary"
+              />
+              <span>
+                <span className="block text-sm font-medium text-[#374151]">
+                  {COLLECTION_MEMBERSHIP_MODE_LABELS[mode]}
+                </span>
+                <span className="mt-0.5 block text-xs text-[#6b7280]">
+                  {mode === COLLECTION_MEMBERSHIP_MANUAL
+                    ? "Produkte einzeln auswählen und sortieren."
+                    : "Produkte werden täglich anhand des Erstellungsdatums ergänzt bzw. entfernt."}
+                </span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+        {fe.membershipMode ? <p className="text-xs text-red-600">{fe.membershipMode}</p> : null}
+        {isAutomatic ? (
+          <div className="flex flex-col gap-1 sm:max-w-xs">
+            <label htmlFor="collection-rule-days" className="text-xs font-medium text-[#6b7280]">
+              Neu in den letzten <span className="text-primary">*</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                id="collection-rule-days"
+                name="ruleDays"
+                type="number"
+                min={MIN_CREATED_WITHIN_DAYS}
+                max={MAX_CREATED_WITHIN_DAYS}
+                required
+                defaultValue={collection?.ruleDays ?? DEFAULT_CREATED_WITHIN_DAYS}
+                className="w-24 rounded-md border border-[#e3e4e8] px-3 py-2 text-sm"
+              />
+              <span className="text-sm text-[#374151]">Tagen</span>
+            </div>
+            {fe.ruleDays ? <p className="text-xs text-red-600">{fe.ruleDays}</p> : null}
+          </div>
+        ) : null}
       </section>
+
+      {!isAutomatic ? (
+        <section>
+          <h2 className="text-sm font-semibold text-[#374151]">Produkte in dieser Kollektion</h2>
+          <p className="mt-1 text-xs text-[#6b7280]">
+            Reihenfolge entspricht der Auswahl (oben nach unten). Nur aktive Produkte erscheinen in
+            der Storefront. Shop-Navigation bindet Kollektionen über Kategorien — hier ist die
+            Produktzuordnung.
+          </p>
+          {products.length === 0 ? (
+            <p className="mt-4 text-sm text-[#6b7280]">Noch keine Produkte im Katalog.</p>
+          ) : (
+            <ul className="mt-4 max-h-80 space-y-2 overflow-y-auto rounded-lg border border-[#e8eaed] p-3">
+              {products.map((p) => (
+                <li key={p.id}>
+                  <label className="flex cursor-pointer items-start gap-2 text-sm text-[#374151]">
+                    <input
+                      type="checkbox"
+                      name="productIds"
+                      value={p.id}
+                      defaultChecked={selected.has(p.id)}
+                      className="mt-0.5 checkbox-primary size-4"
+                    />
+                    <span>
+                      {p.title}
+                      {!p.isActive ? (
+                        <span className="ml-1 text-xs text-[#9ca3af]">(inaktiv)</span>
+                      ) : null}
+                      <span className="ml-1 font-mono text-xs text-[#9ca3af]">{p.slug}</span>
+                    </span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ) : (
+        <section className="rounded-lg border border-[#e8eaed] bg-[#f9fafb] p-4">
+          <p className="text-sm text-[#374151]">
+            Die Produktliste wird automatisch gepflegt. Manuelle Zuordnungen in der Produktmaske sind
+            für diese Kollektion nicht verfügbar.
+          </p>
+        </section>
+      )}
 
       <AdminFormActionDock>
         {state?.ok ? (
