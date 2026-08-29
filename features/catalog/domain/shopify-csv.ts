@@ -119,7 +119,9 @@ function readMetafields(row: Record<string, string>): ShopifyParsedMetafields {
     color: metafieldCell(row, "custom.farbe") || metafieldCell(row, "color-pattern"),
     countryOfOrigin:
       metafieldCell(row, "custom.herstellungsland") ||
-      metafieldCell(row, "herstellungsland"),
+      metafieldCell(row, "herstellungsland") ||
+      metafieldCell(row, "custom.herkunft") ||
+      metafieldCell(row, "herkunft"),
   };
 }
 

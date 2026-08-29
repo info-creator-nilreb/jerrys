@@ -23,6 +23,10 @@ describe("iso-countries-de", () => {
     expect(normalizeCountrySearchText("  Made in Germany! ")).toBe("germany");
   });
 
+  it("mappt zusammengesetzte Herkunfts-Texte", () => {
+    expect(countryCodeFromValue("China, Vietnam")).toBe("CN");
+  });
+
   it("zeigt ISO-Code als deutschen Namen", () => {
     expect(countryDisplayName("DE")).toBe("Deutschland");
   });
@@ -38,11 +42,18 @@ describe("standard-product-attributes Herkunft", () => {
     expect(customAttributesOnly(attrs).some((a) => a.key === "custom.herkunft")).toBe(false);
   });
 
-  it("mappt Label Herkunft ohne Standard-Key", () => {
+  it("mappt Label „Made in“ ohne Standard-Key", () => {
     const specs = readStandardSpecValues([
-      { key: "custom.land", label: "Herkunft", values: ["Made in Germany"] },
+      { key: "custom.made_in", label: "Made in", values: ["Germany"] },
     ]);
     expect(specs.originCountryCode).toBe("DE");
+  });
+
+  it("mappt Herkunfts-Metafeld custom.herkunft (Shopify)", () => {
+    const specs = readStandardSpecValues([
+      { key: "custom.herkunft", label: "Herkunft", values: ["Österreich"] },
+    ]);
+    expect(specs.originCountryCode).toBe("AT");
   });
 
   it("behält bereits gespeicherten ISO-Code", () => {

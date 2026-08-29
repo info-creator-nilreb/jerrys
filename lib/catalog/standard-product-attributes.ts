@@ -30,8 +30,9 @@ export type LegacyProductSpecTexts = {
 };
 
 const ORIGIN_KEY_RE =
-  /(?:^|[._-])(herstellungsland|herkunft|country-of-origin|country_of_origin|origin)(?:[._-]|$)/i;
-const ORIGIN_LABEL_RE = /^(herkunft|herstellungsland|ursprungsland|origin|country)$/i;
+  /(?:^|[._-])(herstellungsland|herkunft|herkunftsland|country-of-origin|country_of_origin|countryoforigin|made-in|made_in|madein|origin|country|land)(?:[._-]|$)/i;
+const ORIGIN_LABEL_RE =
+  /^(herkunft|herstellungsland|herkunftsland|ursprungsland|origin|country|country of origin|made in|hergestellt in)$/i;
 
 function firstValue(attrs: ProductAttribute[], key: string): string {
   const hit = attrs.find((a) => a.key === key);
