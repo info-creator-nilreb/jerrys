@@ -15,6 +15,9 @@ import {
 
 const initial: CartActionState = null;
 
+/** Einheitliche Footer-Höhe in kompakten Produktkarten (Grid + Karussell). */
+const COMPACT_CARD_ACTION_MIN_H = "min-h-[7.25rem] sm:min-h-[4.75rem]";
+
 function clampQty(rules: ProductQuantityRules, value: number): number {
   const maxQty = maxSelectableQuantity(rules);
   const step = Math.max(1, rules.purchaseStep);
@@ -57,16 +60,23 @@ export function AddToCartForm({
   const isSticky = layout === "sticky";
 
   if (!canAdd) {
+    if (compact) {
+      return (
+        <div className={`flex flex-col justify-end ${COMPACT_CARD_ACTION_MIN_H}`}>
+          <p className="text-base leading-snug text-(--foreground-muted)">
+            Derzeit nicht bestellbar (Lager oder Mindestabnahme).
+          </p>
+        </div>
+      );
+    }
     return (
       <p
         className={
           layout === "sticky"
             ? "hidden"
-            : compact
-              ? "text-base leading-snug text-(--foreground-muted)"
-              : isPdp
-                ? "text-base text-(--foreground-muted)"
-                : "mt-8 text-base text-(--foreground-muted)"
+            : isPdp
+              ? "text-base text-(--foreground-muted)"
+              : "mt-8 text-base text-(--foreground-muted)"
         }
       >
         Derzeit nicht bestellbar (Lager oder Mindestabnahme).
@@ -84,7 +94,7 @@ export function AddToCartForm({
         isSticky
           ? "flex shrink-0 items-center self-center"
           : compact
-            ? "flex flex-col gap-3"
+            ? `flex flex-col justify-end gap-3 ${COMPACT_CARD_ACTION_MIN_H}`
             : isPdp
               ? "mt-0 flex w-full max-w-md flex-col gap-3"
               : "mt-8 flex flex-col gap-2"

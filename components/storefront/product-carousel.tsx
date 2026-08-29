@@ -35,7 +35,7 @@ function ProductCarouselStack({
   return (
     <div className={`space-y-6 ${className ?? ""}`.trim()}>
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} layout="carousel" />
+        <ProductCard key={product.id} product={product} />
       ))}
     </div>
   );
@@ -123,16 +123,16 @@ function ProductCarouselEmbla({
             }
           }}
         >
-          <div className="flex touch-pan-y">
+          <div className="flex items-stretch touch-pan-y">
             {products.map((product, slideIndex) => (
               <div
                 key={product.id}
-                className={`flex h-full min-h-0 flex-col self-stretch ${slideClass}`}
+                className={`flex h-full min-h-0 w-full flex-1 flex-col self-stretch ${slideClass}`}
                 role="group"
                 aria-roledescription="Folie"
                 aria-label={`Produkt ${slideIndex + 1} von ${products.length}`}
               >
-                <ProductCard product={product} layout="carousel" />
+                <ProductCard product={product} />
               </div>
             ))}
           </div>
@@ -155,7 +155,7 @@ function ProductCarouselSingle({
 
   return (
     <div className={wrapperClass}>
-      <ProductCard product={product} layout="carousel" />
+      <ProductCard product={product} />
     </div>
   );
 }
