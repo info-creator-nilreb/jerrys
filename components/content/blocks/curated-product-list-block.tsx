@@ -2,6 +2,10 @@ import Link from "next/link";
 import { ProductCarousel } from "@/components/storefront/product-carousel";
 import type { CuratedProductListBlockData } from "@/lib/content/blocks/curated-product-list";
 import {
+  filterProductBlockProducts,
+  productBlockFetchLimit,
+} from "@/lib/content/blocks/product-block-filter";
+import {
   resolveProductBlockShowAllHref,
   resolveProductBlockShowAllLabel,
 } from "@/lib/content/blocks/product-block-show-all";
@@ -18,27 +22,31 @@ export async function CuratedProductListBlock({
   data: CuratedProductListBlockData;
   blockId: string;
 }) {
+  const showNotOrderable = data.showNotOrderable ?? true;
+  const limit = Math.max(1, data.limit);
+  const fetchLimit = productBlockFetchLimit(limit, showNotOrderable);
+
   let products: Awaited<ReturnType<typeof listActiveProductsForStorefront>> = [];
   try {
     if (data.source === "allActive") {
-      products = await listActiveProductsForStorefront({
-        take: Math.max(1, data.limit),
-      });
+      products = await listActiveProductsForStorefront();
     } else if (data.source === "collection" && data.collectionSlug) {
       products = await listActiveProductsByCollectionSlugForStorefront(
         data.collectionSlug,
-        data.limit,
+        fetchLimit,
       );
     } else {
       products = await listActiveProductsByIdsForStorefront(
         data.productIds,
-        data.limit,
+        fetchLimit,
       );
     }
   } catch (e) {
     if (!isDatabaseUnreachable(e)) throw e;
     return null;
   }
+
+  products = filterProductBlockProducts(products, { showNotOrderable, limit });
   if (products.length === 0) return null;
 
   const showAllHref = resolveProductBlockShowAllHref({

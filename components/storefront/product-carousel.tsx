@@ -35,7 +35,7 @@ function ProductCarouselStack({
   return (
     <div className={`space-y-6 ${className ?? ""}`.trim()}>
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCard key={product.id} product={product} layout="carousel" />
       ))}
     </div>
   );
@@ -132,7 +132,7 @@ function ProductCarouselEmbla({
                 aria-roledescription="Folie"
                 aria-label={`Produkt ${slideIndex + 1} von ${products.length}`}
               >
-                <ProductCard product={product} />
+                <ProductCard product={product} layout="carousel" />
               </div>
             ))}
           </div>
@@ -155,7 +155,7 @@ function ProductCarouselSingle({
 
   return (
     <div className={wrapperClass}>
-      <ProductCard product={product} />
+      <ProductCard product={product} layout="carousel" />
     </div>
   );
 }
