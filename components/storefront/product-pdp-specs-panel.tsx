@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import type { PdpResolvedSpec } from "@/lib/catalog/pdp-resolve-display";
+import { PdpSpecIcon } from "@/lib/catalog/pdp-spec-icons";
 
 function FlagDe() {
   return (
@@ -19,7 +21,7 @@ function FlagDe() {
 function SpecValue({ spec }: { spec: PdpResolvedSpec }) {
   if (spec.label === "Herkunft" && /\bdeutschland|germany\b/i.test(spec.value)) {
     return (
-      <span className="inline-flex items-center justify-end gap-1.5">
+      <span className="inline-flex items-center gap-1.5">
         <FlagDe />
         {spec.value}
       </span>
@@ -28,23 +30,54 @@ function SpecValue({ spec }: { spec: PdpResolvedSpec }) {
   return <>{spec.value}</>;
 }
 
-function SpecTable({ specs }: { specs: PdpResolvedSpec[] }) {
+function SpecAccordionItem({
+  spec,
+  expanded,
+  onToggle,
+}: {
+  spec: PdpResolvedSpec;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const panelId = `pdp-spec-panel-${spec.key}`;
+  const buttonId = `pdp-spec-button-${spec.key}`;
+
   return (
-    <dl className="divide-y divide-(--surface-muted)/70">
-      {specs.map((spec) => (
-        <div key={spec.key} className="flex justify-between gap-4 py-2.5 text-sm first:pt-0 last:pb-0">
-          <dt className="shrink-0 text-(--foreground-muted)">{spec.label}</dt>
-          <dd className="min-w-0 text-right leading-snug text-(--foreground-heading)">
-            <SpecValue spec={spec} />
-          </dd>
+    <div className="border-b border-(--surface-muted)/70 last:border-b-0">
+      <button
+        type="button"
+        id={buttonId}
+        className="flex w-full items-center gap-3 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        aria-expanded={expanded}
+        aria-controls={panelId}
+        onClick={onToggle}
+      >
+        <PdpSpecIcon name={spec.icon} />
+        <span className="min-w-0 flex-1 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-(--foreground-heading)">
+          {spec.label}
+        </span>
+        <ChevronDown
+          className={`size-4 shrink-0 text-(--foreground-muted) transition-transform ${expanded ? "rotate-180" : ""}`}
+          aria-hidden
+          strokeWidth={1.75}
+        />
+      </button>
+      {expanded ? (
+        <div
+          id={panelId}
+          role="region"
+          aria-labelledby={buttonId}
+          className="pb-3 pl-8 pr-1 text-sm leading-snug text-(--foreground-muted)"
+        >
+          <SpecValue spec={spec} />
         </div>
-      ))}
-    </dl>
+      ) : null}
+    </div>
   );
 }
 
 /**
- * Kuratierte Produktdetails — flache Label/Wert-Liste ohne Icon-Wand.
+ * Produktdetails als Accordion mit Lucide-Icons pro Merkmal (Material, Größe, …).
  */
 export function ProductPdpSpecsPanel({
   visibleSpecs,
@@ -53,8 +86,19 @@ export function ProductPdpSpecsPanel({
   visibleSpecs: PdpResolvedSpec[];
   extraSpecs: PdpResolvedSpec[];
 }) {
-  const [expanded, setExpanded] = useState(false);
-  if (visibleSpecs.length === 0 && extraSpecs.length === 0) return null;
+  const allSpecs = [...visibleSpecs, ...extraSpecs];
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(() => new Set());
+
+  if (allSpecs.length === 0) return null;
+
+  const toggle = (key: string) => {
+    setExpandedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   return (
     <section
@@ -67,24 +111,16 @@ export function ProductPdpSpecsPanel({
       >
         Produktdetails
       </h2>
-      <div className="mt-3">
-        <SpecTable specs={visibleSpecs} />
-        {extraSpecs.length > 0 && expanded ? (
-          <div className="mt-1 border-t border-(--surface-muted)/70 pt-1">
-            <SpecTable specs={extraSpecs} />
-          </div>
-        ) : null}
+      <div className="mt-1">
+        {allSpecs.map((spec) => (
+          <SpecAccordionItem
+            key={spec.key}
+            spec={spec}
+            expanded={expandedKeys.has(spec.key)}
+            onToggle={() => toggle(spec.key)}
+          />
+        ))}
       </div>
-      {extraSpecs.length > 0 ? (
-        <button
-          type="button"
-          className="mt-2 text-sm font-medium text-primary hover:text-(--primary-hover)"
-          aria-expanded={expanded}
-          onClick={() => setExpanded((v) => !v)}
-        >
-          {expanded ? "Weniger Details" : "+ Alle Details anzeigen"}
-        </button>
-      ) : null}
     </section>
   );
 }
