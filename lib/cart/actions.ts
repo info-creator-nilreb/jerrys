@@ -15,7 +15,7 @@ import { cartLineCommerceRules, cartVariantSelect, getCartWithLines } from "@/li
 import { getPrisma } from "@/lib/db/prisma";
 import { nonEmptyString } from "@/lib/validation/form";
 
-export type CartActionState = { error?: string; ok?: boolean } | null;
+export type CartActionState = { error?: string; ok?: boolean; addedQuantity?: number } | null;
 
 const addSchema = z.object({
   productId: nonEmptyString,
@@ -121,13 +121,15 @@ export async function addToCart(
     });
   }
 
+  const addedQuantity = nextQty - (existing?.quantity ?? 0);
+
   revalidatePath("/warenkorb");
   revalidatePath("/checkout");
   revalidatePath("/produkte");
   revalidatePath(`/produkte/${product.slug}`);
   revalidatePath("/");
   revalidatePath("/", "layout");
-  return { ok: true };
+  return { ok: true, addedQuantity };
 }
 
 export async function addToCartAndRedirectToExpressCart(formData: FormData) {

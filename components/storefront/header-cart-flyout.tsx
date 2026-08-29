@@ -12,6 +12,10 @@ import {
   submitRemoveCartLine,
   type CartFlyoutPreview,
 } from "@/lib/cart/actions";
+import {
+  STOREFRONT_CART_UPDATED,
+  type StorefrontCartUpdatedDetail,
+} from "@/lib/cart/cart-client-events";
 import { CartIcon } from "@/components/storefront/cart-icon";
 import {
   QuantityStepperButton,
@@ -44,8 +48,25 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
   const mounted = useClientMounted();
   const [preview, setPreview] = useState<CartFlyoutPreview | null>(null);
   const [loading, setLoading] = useState(false);
+  const [displayBadgeCount, setDisplayBadgeCount] = useState(cartBadgeCount);
   const { controlClassName } = useStorefrontHeaderUi();
   useStorefrontHeaderOverlayLock("cart", open);
+
+  useEffect(() => {
+    setDisplayBadgeCount(cartBadgeCount);
+  }, [cartBadgeCount]);
+
+  useEffect(() => {
+    const onCartUpdated = (event: Event) => {
+      const detail = (event as CustomEvent<StorefrontCartUpdatedDetail>).detail;
+      const delta = detail?.quantityDelta;
+      if (typeof delta === "number" && delta > 0) {
+        setDisplayBadgeCount((count) => count + delta);
+      }
+    };
+    window.addEventListener(STOREFRONT_CART_UPDATED, onCartUpdated);
+    return () => window.removeEventListener(STOREFRONT_CART_UPDATED, onCartUpdated);
+  }, []);
 
   const isNavigating = isPending || (navTarget !== null && pathname !== navTarget);
 
@@ -268,7 +289,7 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
       <button
         type="button"
         className={`relative z-[500001] inline-flex min-h-11 min-w-11 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${controlClassName}`}
-        aria-label={`Warenkorb${cartBadgeCount > 0 ? `, ${cartBadgeCount} Artikel` : ""}`}
+        aria-label={`Warenkorb${displayBadgeCount > 0 ? `, ${displayBadgeCount} Artikel` : ""}`}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
         onClick={() => {
@@ -278,9 +299,9 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
       >
         <span className="relative inline-flex">
           <CartIcon className="size-7" />
-          {cartBadgeCount > 0 ? (
+          {displayBadgeCount > 0 ? (
             <span className="absolute -top-0.5 -right-0.5 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white">
-              {cartBadgeCount > 99 ? "99+" : cartBadgeCount}
+              {displayBadgeCount > 99 ? "99+" : displayBadgeCount}
             </span>
           ) : null}
         </span>
