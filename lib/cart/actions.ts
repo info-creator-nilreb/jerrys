@@ -6,7 +6,6 @@ import { z } from "zod";
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import {
   clampToValidQuantity,
-  defaultAddQuantity,
   isValidCartQuantity,
   nextQuantityStep,
   previousQuantityStep,

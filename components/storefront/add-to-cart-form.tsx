@@ -52,16 +52,11 @@ export function AddToCartForm({
   const qtyFieldId = useId();
   const wasPendingRef = useRef(false);
   const optimisticDeltaRef = useRef(0);
-  const [showSlowPending, setShowSlowPending] = useState(false);
-
-  useEffect(() => {
-    if (!pending) {
-      setShowSlowPending(false);
-      return;
-    }
-    const timer = window.setTimeout(() => setShowSlowPending(true), 400);
-    return () => window.clearTimeout(timer);
-  }, [pending]);
+  const submitGenerationRef = useRef(0);
+  const slowPendingTimerRef = useRef<number | null>(null);
+  const [slowPendingGeneration, setSlowPendingGeneration] = useState(0);
+  const showSlowPending =
+    pending && slowPendingGeneration === submitGenerationRef.current;
 
   const defaultQty = defaultAddQuantity(quantityRules) ?? quantityRules.minOrderQty;
   const maxQty = maxSelectableQuantity(quantityRules);
@@ -89,6 +84,15 @@ export function AddToCartForm({
       optimisticDeltaRef.current = qty;
       notifyStorefrontCartUpdated({ quantityDelta: qty });
     }
+    if (slowPendingTimerRef.current !== null) {
+      window.clearTimeout(slowPendingTimerRef.current);
+    }
+    submitGenerationRef.current += 1;
+    const generation = submitGenerationRef.current;
+    slowPendingTimerRef.current = window.setTimeout(() => {
+      slowPendingTimerRef.current = null;
+      setSlowPendingGeneration(generation);
+    }, 400);
     formAction(formData);
   };
 
