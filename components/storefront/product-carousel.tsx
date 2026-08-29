@@ -5,6 +5,7 @@ import { type ReactNode } from "react";
 import { ProductCarouselCard } from "@/components/storefront/product-carousel-card";
 import type { StorefrontProductCard } from "@/components/storefront/product-card";
 import { usePrefersReducedMotion } from "@/components/storefront/use-prefers-reduced-motion";
+import { emblaInteractiveDragOptions } from "@/lib/storefront/embla-interactive-drag";
 
 export type ProductCarouselVariant = "compact" | "featured";
 
@@ -50,6 +51,7 @@ function ProductCarouselEmbla({
     duration: 22,
     align: "start",
     containScroll: "trimSnaps",
+    ...emblaInteractiveDragOptions,
   });
 
   const slideClass = slideClassByVariant[variant];
@@ -155,6 +157,7 @@ export function ProductCarouselPreview<T extends { id: string }>({
     loop: false,
     align: "start",
     containScroll: "trimSnaps",
+    ...emblaInteractiveDragOptions,
   });
 
   if (items.length === 0) return null;
