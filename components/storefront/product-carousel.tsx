@@ -76,7 +76,7 @@ function ProductCarouselEmbla({
           }
         }}
       >
-        <div className="flex items-stretch touch-pan-y">
+        <div className="flex items-stretch">
           {products.map((product, slideIndex) => (
             <div
               key={product.id}

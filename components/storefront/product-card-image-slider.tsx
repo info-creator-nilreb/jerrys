@@ -36,19 +36,23 @@ export function ProductCardImageSlider({
     [last, n],
   );
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0]?.clientX ?? null;
-  };
+  const onTouchStart = swipeOnly
+    ? undefined
+    : (e: React.TouchEvent) => {
+        touchStartX.current = e.touches[0]?.clientX ?? null;
+      };
 
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null || n <= 1) return;
-    const endX = e.changedTouches[0]?.clientX;
-    if (endX === undefined) return;
-    const dx = endX - touchStartX.current;
-    if (dx > 48) go(-1);
-    else if (dx < -48) go(1);
-    touchStartX.current = null;
-  };
+  const onTouchEnd = swipeOnly
+    ? undefined
+    : (e: React.TouchEvent) => {
+        if (touchStartX.current === null || n <= 1) return;
+        const endX = e.changedTouches[0]?.clientX;
+        if (endX === undefined) return;
+        const dx = endX - touchStartX.current;
+        if (dx > 48) go(-1);
+        else if (dx < -48) go(1);
+        touchStartX.current = null;
+      };
 
   if (n === 0) {
     return (
