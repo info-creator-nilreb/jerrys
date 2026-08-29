@@ -20,8 +20,8 @@ export const MAP_OVERLAY_SPAN_LABELS: Record<
 
 export const MAP_OVERLAY_SPAN_METERS: Record<MapOverlaySpan, number> = {
   near: 380,
-  neighborhood: 900,
-  city: 2200,
+  neighborhood: 1500,
+  city: 2800,
 };
 
 export const MAP_OVERLAY_POSITIONS = ["left", "right"] as const;
@@ -98,6 +98,27 @@ export function mapOverlayHasCard(
 
 export function mapOverlayHeadingId(blockId: string): string {
   return `map-overlay-${blockId}`;
+}
+
+/**
+ * Sichtbare Pin-Lage im Kartenausschnitt, wenn ein Overlay die Mitte verdeckt.
+ * `map-right` = Pin rechts neben linker Karte; `map-left` = links neben rechter Karte.
+ */
+export type MapOverlayPinSlot = "center" | "map-left" | "map-right";
+
+/** Horizontaler Pin-Anteil im sichtbaren Ausschnitt (ohne die Karte zu strecken). */
+export const MAP_OVERLAY_PIN_X_RATIO: Record<MapOverlayPinSlot, number> = {
+  center: 0.5,
+  "map-right": 0.68,
+  "map-left": 0.32,
+};
+
+export function mapOverlayPinSlot(
+  hasCard: boolean,
+  overlayPosition: MapOverlayPosition,
+): MapOverlayPinSlot {
+  if (!hasCard) return "center";
+  return overlayPosition === "right" ? "map-left" : "map-right";
 }
 
 export function mapOverlaySearchUrl(query: string): string {

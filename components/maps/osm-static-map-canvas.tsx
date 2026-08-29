@@ -1,6 +1,7 @@
-import { MapPin } from "lucide-react";
+import { MapLocationPin } from "@/components/maps/map-location-pin";
 import {
-  buildOsmTileUrl,
+  buildMutedMapTileUrl,
+  MUTED_MAP_FILTER_CLASS,
   type ShippingMapTileLayout,
 } from "@/lib/maps/osm-tile-shipping-map-layout";
 
@@ -8,15 +9,17 @@ export function OsmStaticMapCanvas({
   layout,
   grayscale = true,
   showMarker = true,
+  pinClassName,
 }: {
   layout: ShippingMapTileLayout;
   grayscale?: boolean;
   showMarker?: boolean;
+  pinClassName?: string;
 }) {
   return (
-    <div className="absolute inset-0 overflow-hidden bg-neutral-200" aria-hidden>
+    <div className="absolute inset-0 overflow-hidden bg-neutral-100" aria-hidden>
       <div
-        className={grayscale ? "absolute grayscale contrast-[1.03]" : "absolute"}
+        className={grayscale ? `absolute ${MUTED_MAP_FILTER_CLASS}` : "absolute"}
         style={{
           left: `${layout.gridLeftPct}%`,
           top: `${layout.gridTopPct}%`,
@@ -28,26 +31,26 @@ export function OsmStaticMapCanvas({
         }}
       >
         {layout.tiles.map((tile) => (
-          // OSM-Kacheln: kein next/image (Tile-Nutzungsbedingungen, gleiches Muster wie Lieferkarte).
-          // eslint-disable-next-line @next/next/no-img-element -- OSM-Tiles, analog OrderShippingMapSnippet
+          // Rasterkacheln: kein next/image (Tile-Nutzungsbedingungen).
+          // eslint-disable-next-line @next/next/no-img-element -- OSM-Tiles
           <img
             key={`${layout.zoom}-${tile.x}-${tile.y}`}
-            src={buildOsmTileUrl(layout.zoom, tile.x, tile.y)}
+            src={buildMutedMapTileUrl(layout.zoom, tile.x, tile.y)}
             alt=""
             loading="lazy"
             decoding="async"
             draggable={false}
-            className="block h-full w-full object-cover"
+            className="block h-full w-full"
           />
         ))}
       </div>
+      {grayscale ? (
+        <div className="pointer-events-none absolute inset-0 bg-white/20" />
+      ) : null}
       {showMarker ? (
-        <MapPin
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/2 z-10 size-14 -translate-x-1/2 -translate-y-full text-primary drop-shadow-md"
-          fill="currentColor"
-          stroke="white"
-          strokeWidth={1.5}
+        <MapLocationPin
+          className={pinClassName}
+          style={{ left: `${layout.pinXPct}%`, top: `${layout.pinYPct}%` }}
         />
       ) : null}
     </div>
