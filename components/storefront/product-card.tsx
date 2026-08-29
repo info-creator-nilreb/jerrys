@@ -16,6 +16,7 @@ export type StorefrontProductCard = {
   slug: string;
   title: string;
   subtitle: string | null;
+  createdAt?: Date | string;
   isBestseller: boolean;
   currency: string;
   amazonRatingAverage: number | null;

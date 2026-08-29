@@ -1,6 +1,9 @@
 import "server-only";
 
 import type { Prisma } from "@/app/generated/prisma/client";
+import {
+  COLLECTION_MEMBERSHIP_CREATED_WITHIN_DAYS,
+} from "@/lib/catalog/collection-membership";
 import type { AdminShopAssignmentOption } from "@/lib/catalog/product-shop-assignment";
 import { getPrisma } from "@/lib/db/prisma";
 
@@ -129,7 +132,10 @@ export async function syncProductShopMemberships(
   }
 
   const campaignCollections = await tx.collection.findMany({
-    where: { categoryLinks: { none: {} } },
+    where: {
+      categoryLinks: { none: {} },
+      membershipMode: { not: COLLECTION_MEMBERSHIP_CREATED_WITHIN_DAYS },
+    },
     select: { id: true },
   });
   const campaignIdSet = new Set(campaignCollections.map((c) => c.id));
@@ -190,7 +196,10 @@ export async function listShopAssignmentOptionsForAdmin(): Promise<AdminShopAssi
       },
     }),
     prisma.collection.findMany({
-      where: { categoryLinks: { none: {} } },
+      where: {
+        categoryLinks: { none: {} },
+        membershipMode: { not: COLLECTION_MEMBERSHIP_CREATED_WITHIN_DAYS },
+      },
       orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
       select: { id: true, title: true, slug: true },
     }),

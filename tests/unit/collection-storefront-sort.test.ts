@@ -50,6 +50,7 @@ describe("collectionSortLabel", () => {
 
 describe("parseCollectionSort", () => {
   it("accepts known sort values", () => {
+    expect(parseCollectionSort("created-desc")).toBe("created-desc");
     expect(parseCollectionSort("title-asc")).toBe("title-asc");
     expect(parseCollectionSort("price-asc")).toBe("price-asc");
     expect(parseCollectionSort("price-desc")).toBe("price-desc");
@@ -104,6 +105,18 @@ describe("filterAndSortCollectionProducts", () => {
       onlyAvailable: false,
     });
     expect(out.map((p) => p.title)).toEqual(["Apfel", "Banane", "Ölbaum"]);
+  });
+
+  it("sorts by createdAt descending", () => {
+    const products = [
+      card({ id: "a", title: "A", createdAt: "2026-01-01T00:00:00.000Z" }),
+      card({ id: "b", title: "B", createdAt: "2026-06-01T00:00:00.000Z" }),
+    ];
+    const out = filterAndSortCollectionProducts(products, {
+      sort: "created-desc",
+      onlyAvailable: false,
+    });
+    expect(out.map((p) => p.id)).toEqual(["b", "a"]);
   });
 
   it("keeps catalog order for default sort", () => {

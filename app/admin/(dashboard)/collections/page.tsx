@@ -1,4 +1,8 @@
 import Link from "next/link";
+import {
+  collectionMembershipModeLabel,
+  isAutomaticCollectionMembership,
+} from "@/lib/catalog/collection-membership";
 import { listCollectionsForAdmin } from "@/lib/catalog/collection-queries";
 
 export const dynamic = "force-dynamic";
@@ -62,7 +66,10 @@ export default async function AdminCollectionsPage() {
                   )}
                 </div>
                 <p className="mt-2 text-xs text-[#6b7280]">
-                  {c._count.products} {c._count.products === 1 ? "Produkt" : "Produkte"}
+                  {c.productCount} {c.productCount === 1 ? "Produkt" : "Produkte"}
+                  {isAutomaticCollectionMembership(c.membershipMode)
+                    ? ` · ${collectionMembershipModeLabel(c.membershipMode)} (${c.ruleDays} Tage)`
+                    : null}
                 </p>
                 <Link
                   href={`/admin/collections/${c.id}/edit`}
@@ -80,6 +87,7 @@ export default async function AdminCollectionsPage() {
                 <tr>
                   <th className="px-4 py-3 font-medium">Titel</th>
                   <th className="px-4 py-3 font-medium">Slug</th>
+                  <th className="px-4 py-3 font-medium">Regel</th>
                   <th className="px-4 py-3 font-medium">Produkte</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium text-right">Aktionen</th>
@@ -90,7 +98,13 @@ export default async function AdminCollectionsPage() {
                   <tr key={c.id} className="bg-white">
                     <td className="px-4 py-3 font-medium text-[#1f2937]">{c.title}</td>
                     <td className="px-4 py-3 font-mono text-xs text-[#6b7280]">{c.slug}</td>
-                    <td className="px-4 py-3 tabular-nums text-[#374151]">{c._count.products}</td>
+                    <td className="px-4 py-3 text-[#374151]">
+                      {collectionMembershipModeLabel(c.membershipMode)}
+                      {isAutomaticCollectionMembership(c.membershipMode) && c.ruleDays
+                        ? ` (${c.ruleDays} T.)`
+                        : null}
+                    </td>
+                    <td className="px-4 py-3 tabular-nums text-[#374151]">{c.productCount}</td>
                     <td className="px-4 py-3">
                       {c.isActive ? (
                         <span className="text-emerald-700">Aktiv</span>

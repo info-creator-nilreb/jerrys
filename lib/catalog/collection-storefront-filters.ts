@@ -1,5 +1,6 @@
 import type { StorefrontProductCard } from "@/components/storefront/product-card";
 import { pickPrimaryCategoryRef } from "@/lib/catalog/category-membership";
+import type { CollectionSort } from "@/lib/catalog/collection-storefront-sort";
 import { pickDefaultVariant } from "@/lib/catalog/default-variant-storefront";
 
 export type StorefrontCatalogProduct = StorefrontProductCard & {
@@ -95,7 +96,7 @@ export function parseCatalogListingFilters(sp: {
 
 export function catalogListingFiltersActive(
   filters: CatalogListingFilters,
-  sort: "default" | "title-asc" | "price-asc" | "price-desc",
+  sort: CollectionSort,
 ): boolean {
   return (
     filters.onlyAvailable ||

@@ -1,6 +1,8 @@
 import { unstable_cache } from "next/cache";
+import type { Prisma } from "@/app/generated/prisma/client";
 import { attachShopifyFallbackImages } from "@/lib/catalog/attach-shopify-fallback-images";
 import { attachStorefrontBestsellerFlags } from "@/lib/catalog/bestseller-rank";
+import { listActiveProductsForLinkedCollection } from "@/lib/catalog/collection-queries";
 import { getPrisma } from "@/lib/db/prisma";
 import { categoryHasActiveProductViaCollections } from "@/lib/catalog/category-storefront-visibility";
 import { STOREFRONT_CATALOG_CACHE_TAG } from "@/lib/catalog/storefront-catalog-cache-tag";
@@ -85,9 +87,19 @@ export async function listCollectionsForCategoryPicker() {
 }
 
 const activeProductInLinkedCollection = {
-  isActive: true,
-  products: { some: { product: { isActive: true } } },
-} as const;
+  OR: [
+    {
+      isActive: true,
+      membershipMode: "manual",
+      products: { some: { product: { isActive: true } } },
+    },
+    {
+      isActive: true,
+      membershipMode: "created_within_days",
+      ruleDays: { gt: 0 },
+    },
+  ],
+} satisfies Prisma.CollectionWhereInput;
 
 /** Aktive Root-Kategorien für Navigation. */
 async function loadActiveCategoriesForNav() {
@@ -242,6 +254,9 @@ export async function listActiveProductsByCategorySlug(slug: string) {
         select: {
           collection: {
             select: {
+              id: true,
+              membershipMode: true,
+              ruleDays: true,
               products: {
                 where: { product: { isActive: true } },
                 orderBy: [{ sortOrder: "asc" }, { product: { title: "asc" } }],
@@ -263,10 +278,11 @@ export async function listActiveProductsByCategorySlug(slug: string) {
   const products: Array<(typeof category.collections)[number]["collection"]["products"][number]["product"]> =
     [];
   for (const link of category.collections) {
-    for (const row of link.collection.products) {
-      if (seen.has(row.product.id)) continue;
-      seen.add(row.product.id);
-      products.push(row.product);
+    const collectionProducts = await listActiveProductsForLinkedCollection(link.collection);
+    for (const product of collectionProducts) {
+      if (seen.has(product.id)) continue;
+      seen.add(product.id);
+      products.push(product);
     }
   }
 

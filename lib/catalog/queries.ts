@@ -14,6 +14,7 @@ export const storefrontProductCardSelect = {
   slug: true,
   title: true,
   subtitle: true,
+  createdAt: true,
   currency: true,
   amazonRatingAverage: true,
   amazonRatingCount: true,
