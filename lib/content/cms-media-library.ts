@@ -92,6 +92,11 @@ export async function listCmsMediaLibrary(limitUploads = 48): Promise<CmsMediaLi
       { id: "branding_logo_light", url: settings.logoLightUrl, label: "Logo (hell)" },
       { id: "branding_logo_dark", url: settings.logoDarkUrl, label: "Logo (dunkel)" },
       { id: "branding_og", url: settings.ogImageUrl, label: "OG-/Titelbild" },
+      {
+        id: "branding_admin_login_hero",
+        url: settings.adminLoginHeroUrl,
+        label: "Admin-Login Hintergrund",
+      },
     ];
     for (const b of branding) {
       if (b.url?.trim()) {

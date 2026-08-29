@@ -1,15 +1,19 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import {
   clearShopBrandingAssetAction,
+  setShopBrandingAssetFromUrlAction,
   uploadShopBrandingAssetAction,
   type BrandingAssetFormState,
 } from "@/app/admin/(dashboard)/einstellungen/actions";
+import { listCmsMediaLibraryAction } from "@/app/admin/(dashboard)/inhalte/media-actions";
+import { CmsMediaLibraryModal } from "@/components/admin/cms-media-library-modal";
 import { resolveShopBrandingAssetUrl } from "@/lib/shop/branding-asset-fallbacks";
 import type { ShopBrandingAssetKind } from "@/lib/shop/branding-asset-kinds";
 import type { ShopSettingsDTO } from "@/lib/shop/shop-settings-defaults";
+import type { CmsMediaLibraryItem } from "@/lib/content/cms-media-library";
 
 const initial: BrandingAssetFormState = null;
 
@@ -219,6 +223,72 @@ export function CoverImageSection({ settings }: { settings: ShopSettingsDTO }) {
 }
 
 export function AdminLoginHeroSection({ settings }: { settings: ShopSettingsDTO }) {
+  const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [library, setLibrary] = useState<CmsMediaLibraryItem[]>([]);
+  const [libraryError, setLibraryError] = useState<string | null>(null);
+  const [selectError, setSelectError] = useState<string | null>(null);
+  const [selectOk, setSelectOk] = useState(false);
+  const [loadingLibrary, startLibraryTransition] = useTransition();
+  const [selectPending, startSelectTransition] = useTransition();
+  const [uploadState, uploadAction, uploadPending] = useActionState(
+    uploadShopBrandingAssetAction,
+    initial,
+  );
+  const [clearState, clearAction, clearPending] = useActionState(
+    clearShopBrandingAssetAction,
+    initial,
+  );
+
+  const meta = ADMIN_LOGIN_HERO_ASSET;
+  const url = resolveShopBrandingAssetUrl(settings, meta.kind);
+  const custom = hasCustomUrl(settings, meta.kind);
+  const pending = uploadPending || clearPending || selectPending;
+  const error =
+    selectError ??
+    (uploadState?.kind === meta.kind ? uploadState.error : undefined) ??
+    (clearState?.kind === meta.kind ? clearState.error : undefined);
+  const ok =
+    selectOk ||
+    (uploadState?.kind === meta.kind && uploadState.ok) ||
+    (clearState?.kind === meta.kind && clearState.ok);
+
+  useEffect(() => {
+    if (uploadState?.ok || clearState?.ok) router.refresh();
+  }, [uploadState?.ok, clearState?.ok, router]);
+
+  function openPicker() {
+    setPickerOpen(true);
+    setLibraryError(null);
+    setSelectError(null);
+    startLibraryTransition(async () => {
+      try {
+        setLibrary(await listCmsMediaLibraryAction());
+      } catch {
+        setLibraryError("Medienbibliothek konnte nicht geladen werden.");
+      }
+    });
+  }
+
+  function selectFromLibrary(selectedUrl: string) {
+    setSelectError(null);
+    setSelectOk(false);
+    startSelectTransition(async () => {
+      const result = await setShopBrandingAssetFromUrlAction({
+        kind: meta.kind,
+        url: selectedUrl,
+      });
+      if (result?.ok) {
+        setSelectOk(true);
+        setPickerOpen(false);
+        router.refresh();
+      } else {
+        setSelectError(result?.error ?? "Auswahl fehlgeschlagen.");
+      }
+    });
+  }
+
   return (
     <section className="rounded-xl border border-[#e8eaed] bg-white p-5 shadow-sm sm:p-6">
       <h2 className="text-base font-semibold text-[#1f2937]">Admin-Anmeldung</h2>
@@ -227,9 +297,85 @@ export function AdminLoginHeroSection({ settings }: { settings: ShopSettingsDTO 
         Titelbild (OG) genutzt — sonst ein neutraler Verlauf. Untertitel: Kurzbeschreibung des
         Shops.
       </p>
-      <div className="mt-5">
-        <AssetBlock meta={ADMIN_LOGIN_HERO_ASSET} settings={settings} />
+      <div className="mt-5 space-y-3">
+        <div>
+          <h3 className="text-sm font-semibold text-[#1f2937]">{meta.title}</h3>
+          <p className="mt-1 text-sm text-[#6b7280]">{meta.description}</p>
+        </div>
+
+        <div className={previewShellClass(meta.variant)}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- Branding-Vorschau inkl. Blob */}
+          <img src={url} alt="" className="h-full w-full object-cover" />
+        </div>
+
+        <div className="flex overflow-hidden rounded-lg border border-[#d2d5d9] bg-white">
+          <form action={uploadAction} className="min-w-0 flex-1">
+            <input type="hidden" name="kind" value={meta.kind} />
+            <input
+              ref={fileRef}
+              type="file"
+              name="file"
+              accept={meta.accept}
+              className="sr-only"
+              disabled={pending}
+              onChange={(e) => {
+                const form = e.currentTarget.form;
+                if (form && e.currentTarget.files?.length) form.requestSubmit();
+              }}
+            />
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => fileRef.current?.click()}
+              className="flex min-h-11 w-full items-center justify-center border-r border-[#d2d5d9] px-3 text-sm font-medium text-[#1f2937] transition-colors hover:bg-[#f7f8fa] disabled:opacity-50"
+            >
+              {uploadPending ? "Lädt …" : "Hochladen"}
+            </button>
+          </form>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={openPicker}
+            className="min-w-0 flex-1 border-r border-[#d2d5d9] px-3 text-sm font-medium text-[#1f2937] transition-colors hover:bg-[#f7f8fa] disabled:opacity-50"
+          >
+            Aus Medien wählen
+          </button>
+          <form action={clearAction} className="min-w-0 flex-1">
+            <input type="hidden" name="kind" value={meta.kind} />
+            <button
+              type="submit"
+              disabled={pending || !custom}
+              className="flex min-h-11 w-full items-center justify-center px-3 text-sm font-medium text-[#1f2937] transition-colors hover:bg-[#f7f8fa] disabled:cursor-not-allowed disabled:text-[#9ca3af] disabled:hover:bg-white"
+            >
+              Entfernen
+            </button>
+          </form>
+        </div>
+
+        <p className="text-xs text-[#6b7280]">{meta.hint}</p>
+        {!custom ? <p className="text-xs text-[#9ca3af]">Aktuell: Static-Fallback</p> : null}
+
+        {error ? (
+          <p className="text-sm text-[#b42318]" role="alert">
+            {error}
+          </p>
+        ) : null}
+        {ok && !error ? (
+          <p className="text-sm font-medium text-primary" role="status">
+            Aktualisiert.
+          </p>
+        ) : null}
       </div>
+
+      <CmsMediaLibraryModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        library={library}
+        loading={loadingLibrary}
+        error={libraryError}
+        onSelect={selectFromLibrary}
+        title="Hintergrundbild wählen"
+      />
     </section>
   );
 }

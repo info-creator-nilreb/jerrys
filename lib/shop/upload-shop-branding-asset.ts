@@ -4,6 +4,8 @@ import {
   getObjectStorage,
   ObjectStorageNotConfiguredError,
 } from "@/features/integrations";
+import { mediaUrlSchema } from "@/lib/content/block-data-helpers";
+import { listCmsMediaLibrary } from "@/lib/content/cms-media-library";
 import { getPrisma } from "@/lib/db/prisma";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 import { isManagedBlobUrl } from "@/lib/shop/branding-asset-fallbacks";
@@ -144,6 +146,54 @@ export async function uploadShopBrandingAsset(input: {
 export type ClearShopBrandingAssetResult =
   | { ok: true; settings: ShopSettingsDTO }
   | { ok: false; error: string };
+
+async function isAllowedBrandingLibraryUrl(url: string): Promise<boolean> {
+  const parsed = mediaUrlSchema.safeParse(url.trim());
+  if (!parsed.success) return false;
+  const library = await listCmsMediaLibrary();
+  return library.some((item) => item.url.trim() === parsed.data);
+}
+
+export type SetShopBrandingAssetFromUrlResult =
+  | { ok: true; settings: ShopSettingsDTO }
+  | { ok: false; error: string };
+
+/** Setzt Branding-URL aus Medienbibliothek ohne erneuten Upload. */
+export async function setShopBrandingAssetFromUrl(input: {
+  kind: ShopBrandingAssetKind;
+  url: string;
+}): Promise<SetShopBrandingAssetFromUrlResult> {
+  const field = shopSettingsUrlFieldForAsset(input.kind);
+  const url = input.url.trim();
+  if (!(await isAllowedBrandingLibraryUrl(url))) {
+    return { ok: false, error: "URL ist nicht in der Medienbibliothek verfügbar." };
+  }
+
+  const prisma = getPrisma();
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.shopSettings.upsert({
+        where: { id: SHOP_SETTINGS_DEFAULT_ID },
+        create: { ...shopSettingsCreateDefaults(), [field]: url },
+        update: { [field]: url },
+      });
+      await appendIntegrationOutbox(tx, {
+        aggregateType: "shop_settings",
+        aggregateId: SHOP_SETTINGS_DEFAULT_ID,
+        eventType: "shop_settings.branding_asset_selected",
+        payload: { kind: input.kind, url },
+      });
+    });
+
+    updateShopSettingsCacheTag();
+    revalidateShopSettingsCache();
+    revalidateStorefrontBranding();
+    return { ok: true, settings: await getShopSettings() };
+  } catch (e) {
+    log.error("branding_asset_select_failed", { kind: input.kind, ...errorMeta(e) });
+    return { ok: false, error: "Bild konnte nicht übernommen werden." };
+  }
+}
 
 /** Entfernt die gespeicherte URL (Fallback auf Static); löscht Blob best-effort. */
 export async function clearShopBrandingAsset(

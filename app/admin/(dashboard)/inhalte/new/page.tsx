@@ -3,6 +3,7 @@ import { ContentPageForm } from "@/app/admin/(dashboard)/inhalte/content-page-fo
 import { getAiContentSettingsPublic } from "@/features/integrations";
 import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
 import { listCollectionsForCmsAdmin } from "@/lib/content/cms-admin-catalog-options";
+import { listCmsLinkTargetOptionsForAdmin } from "@/lib/content/cms-admin-link-target-options";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 
 export const dynamic = "force-dynamic";
@@ -19,10 +20,13 @@ export default async function AdminInhalteNewPage() {
   }> = [];
   let previewCollections: Awaited<ReturnType<typeof listCollectionsForCmsAdmin>> =
     [];
+  let linkTargetOptions: Awaited<ReturnType<typeof listCmsLinkTargetOptionsForAdmin>> =
+    [];
   try {
-    const [products, collections] = await Promise.all([
+    const [products, collections, linkTargets] = await Promise.all([
       listActiveProductsForStorefront(),
       listCollectionsForCmsAdmin(),
+      listCmsLinkTargetOptionsForAdmin(),
     ]);
     previewProducts = products.map((p) => ({
       id: p.id,
@@ -30,6 +34,7 @@ export default async function AdminInhalteNewPage() {
       imageUrl: p.images[0]?.url ?? null,
     }));
     previewCollections = collections;
+    linkTargetOptions = linkTargets;
   } catch (e) {
     if (!isDatabaseUnreachable(e)) throw e;
   }
@@ -55,6 +60,7 @@ export default async function AdminInhalteNewPage() {
       <ContentPageForm
         previewProducts={previewProducts}
         previewCollections={previewCollections}
+        linkTargetOptions={linkTargetOptions}
         aiReady={aiSettings.ready}
       />
     </div>

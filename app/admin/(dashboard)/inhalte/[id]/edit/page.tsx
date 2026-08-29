@@ -5,6 +5,7 @@ import { ContentPageLifecycle } from "@/app/admin/(dashboard)/inhalte/content-pa
 import { getAiContentSettingsPublic } from "@/features/integrations";
 import { listActiveProductsForStorefront } from "@/lib/catalog/queries";
 import { listCollectionsForCmsAdmin } from "@/lib/content/cms-admin-catalog-options";
+import { listCmsLinkTargetOptionsForAdmin } from "@/lib/content/cms-admin-link-target-options";
 import { getContentPageById } from "@/lib/content/content-pages";
 import { contentPreviewAbsoluteUrl } from "@/lib/content/preview-token";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
@@ -41,10 +42,13 @@ export default async function AdminInhalteEditPage({
   }> = [];
   let previewCollections: Awaited<ReturnType<typeof listCollectionsForCmsAdmin>> =
     [];
+  let linkTargetOptions: Awaited<ReturnType<typeof listCmsLinkTargetOptionsForAdmin>> =
+    [];
   try {
-    const [products, collections] = await Promise.all([
+    const [products, collections, linkTargets] = await Promise.all([
       listActiveProductsForStorefront(),
       listCollectionsForCmsAdmin(),
+      listCmsLinkTargetOptionsForAdmin(),
     ]);
     previewProducts = products.map((p) => ({
       id: p.id,
@@ -52,6 +56,7 @@ export default async function AdminInhalteEditPage({
       imageUrl: p.images[0]?.url ?? null,
     }));
     previewCollections = collections;
+    linkTargetOptions = linkTargets;
   } catch (e) {
     if (!isDatabaseUnreachable(e)) throw e;
   }
@@ -100,6 +105,7 @@ export default async function AdminInhalteEditPage({
         key={page.updatedAt.toISOString()}
         previewProducts={previewProducts}
         previewCollections={previewCollections}
+        linkTargetOptions={linkTargetOptions}
         aiReady={aiSettings.ready}
         initial={{
           id: page.id,
