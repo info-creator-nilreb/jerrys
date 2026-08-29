@@ -59,9 +59,10 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
   useEffect(() => {
     const onCartUpdated = (event: Event) => {
       const detail = (event as CustomEvent<StorefrontCartUpdatedDetail>).detail;
-      const delta = detail?.quantityDelta;
-      if (typeof delta === "number" && delta > 0) {
-        setDisplayBadgeCount((count) => count + delta);
+      if (typeof detail?.badgeCount === "number") {
+        setDisplayBadgeCount(detail.badgeCount);
+      } else if (typeof detail?.quantityDelta === "number" && detail.quantityDelta > 0) {
+        setDisplayBadgeCount((count) => count + detail.quantityDelta!);
       }
     };
     window.addEventListener(STOREFRONT_CART_UPDATED, onCartUpdated);
@@ -104,7 +105,7 @@ export function HeaderCartFlyout({ cartBadgeCount }: Props) {
   useEffect(() => {
     if (!open) return;
     void loadPreview();
-  }, [open, loadPreview, cartBadgeCount]);
+  }, [displayBadgeCount, loadPreview, open]);
 
   useEffect(() => {
     if (!open) return;

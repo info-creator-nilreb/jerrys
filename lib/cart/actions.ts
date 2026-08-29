@@ -11,11 +11,18 @@ import {
   nextQuantityStep,
   previousQuantityStep,
 } from "@/lib/cart/quantity";
+import { resolveAddToCartNextQuantity } from "@/lib/cart/add-to-cart-quantity";
+import { getStorefrontCartBadgeCount } from "@/lib/cart/badge";
 import { cartLineCommerceRules, cartVariantSelect, getCartWithLines } from "@/lib/cart/cart-queries";
 import { getPrisma } from "@/lib/db/prisma";
 import { nonEmptyString } from "@/lib/validation/form";
 
-export type CartActionState = { error?: string; ok?: boolean; addedQuantity?: number } | null;
+export type CartActionState = {
+  error?: string;
+  ok?: boolean;
+  addedQuantity?: number;
+  badgeCount?: number;
+} | null;
 
 const addSchema = z.object({
   productId: nonEmptyString,
@@ -83,27 +90,18 @@ export async function addToCart(
 
   const rawQtyField = formData.get("quantity");
   const rawQtyTrimmed = rawQtyField !== null ? String(rawQtyField).trim() : "";
-  const hasExplicitQuantity = rawQtyTrimmed !== "";
+  const explicitQuantity = rawQtyTrimmed !== "" ? Number(rawQtyTrimmed) : null;
 
-  let nextQty: number | null;
-  if (hasExplicitQuantity) {
-    const n = Number(rawQtyTrimmed);
-    if (!Number.isFinite(n) || !Number.isInteger(n)) {
-      return { error: "Bitte eine gültige Menge eingeben." };
-    }
-    nextQty = clampToValidQuantity(rules, n);
-    if (nextQty === null || !isValidCartQuantity(rules, nextQty)) {
-      return { error: "Diese Menge ist nicht möglich (Mindestabnahme, Staffelung, Lager)." };
-    }
-  } else if (existing) {
-    nextQty = nextQuantityStep(rules, existing.quantity);
-  } else {
-    nextQty = defaultAddQuantity(rules);
+  const resolved = resolveAddToCartNextQuantity(
+    rules,
+    existing?.quantity ?? null,
+    explicitQuantity,
+  );
+  if (!resolved.ok) {
+    return { error: resolved.error };
   }
 
-  if (nextQty === null) {
-    return { error: "Diese Menge ist nicht möglich (Lager oder Staffelung)." };
-  }
+  const { nextQty, addedQuantity } = resolved;
 
   if (existing) {
     await getPrisma().cartLine.update({
@@ -121,15 +119,12 @@ export async function addToCart(
     });
   }
 
-  const addedQuantity = nextQty - (existing?.quantity ?? 0);
+  const badgeCount = await getStorefrontCartBadgeCount();
 
   revalidatePath("/warenkorb");
   revalidatePath("/checkout");
-  revalidatePath("/produkte");
-  revalidatePath(`/produkte/${product.slug}`);
-  revalidatePath("/");
   revalidatePath("/", "layout");
-  return { ok: true, addedQuantity };
+  return { ok: true, addedQuantity, badgeCount };
 }
 
 export async function addToCartAndRedirectToExpressCart(formData: FormData) {
