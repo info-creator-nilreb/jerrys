@@ -3,6 +3,7 @@ import { MapBasemapAttribution } from "@/components/maps/map-basemap-attribution
 import { OsmStaticMapCanvas } from "@/components/maps/osm-static-map-canvas";
 import {
   LOCATION_MAP_VIEWPORT,
+  LOCATION_MAP_VIEWPORT_MOBILE,
   MAP_OVERLAY_PIN_X_RATIO,
   MAP_OVERLAY_SPAN_METERS,
   mapOverlayHasCard,
@@ -29,12 +30,13 @@ function overlayTileLayout(
   coords: { lat: number; lon: number },
   mapSpan: MapOverlayBlockData["mapSpan"],
   pinSlot: MapOverlayPinSlot,
+  viewport: { width: number; height: number },
 ) {
   return buildOsmCenteredTileLayout({
     lat: coords.lat,
     lon: coords.lon,
-    viewportWidth: LOCATION_MAP_VIEWPORT.width,
-    viewportHeight: LOCATION_MAP_VIEWPORT.height,
+    viewportWidth: viewport.width,
+    viewportHeight: viewport.height,
     halfWidthM: MAP_OVERLAY_SPAN_METERS[mapSpan],
     pinXRatio: MAP_OVERLAY_PIN_X_RATIO[pinSlot],
   });
@@ -51,27 +53,22 @@ export async function MapOverlayBlock({
   const hasCard = mapOverlayHasCard(data);
   const pinSlot = mapOverlayPinSlot(hasCard, data.overlayPosition);
   const layoutDesktop = coords
-    ? overlayTileLayout(coords, data.mapSpan, pinSlot)
+    ? overlayTileLayout(coords, data.mapSpan, pinSlot, LOCATION_MAP_VIEWPORT)
     : null;
-  const layoutMobile =
-    coords && pinSlot !== "center"
-      ? overlayTileLayout(coords, data.mapSpan, "center")
-      : layoutDesktop;
+  const layoutMobile = coords
+    ? overlayTileLayout(coords, data.mapSpan, "center", LOCATION_MAP_VIEWPORT_MOBILE)
+    : null;
   const ctaHref = resolveMapOverlayCtaHref(data, coords);
   const labelledBy = data.headline ? mapOverlayHeadingId(blockId) : undefined;
   const overlayOnRight = data.overlayPosition === "right";
-  const splitLayouts = Boolean(
-    layoutMobile && layoutDesktop && pinSlot !== "center",
-  );
-
   return (
     <section
       aria-labelledby={labelledBy}
       aria-label={labelledBy ? undefined : (data.query ?? "Standortkarte")}
       className="relative w-full overflow-hidden bg-neutral-100 md:min-h-[28rem] lg:min-h-[32rem]"
     >
-      <div className="relative min-h-[18rem] md:absolute md:inset-0 md:min-h-0">
-        {splitLayouts && layoutMobile && layoutDesktop ? (
+      <div className="relative aspect-[5/4] md:absolute md:inset-0 md:aspect-auto">
+        {layoutMobile && layoutDesktop ? (
           <>
             <div className="absolute inset-0 md:hidden">
               <OsmStaticMapCanvas layout={layoutMobile} grayscale={data.grayscale} />
@@ -80,8 +77,6 @@ export async function MapOverlayBlock({
               <OsmStaticMapCanvas layout={layoutDesktop} grayscale={data.grayscale} />
             </div>
           </>
-        ) : layoutDesktop ? (
-          <OsmStaticMapCanvas layout={layoutDesktop} grayscale={data.grayscale} />
         ) : (
           <div className="absolute inset-0 bg-neutral-100" aria-hidden />
         )}

@@ -1,10 +1,12 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { mapCanvasCoverFrameStyle } from "@/components/maps/osm-static-map-canvas";
 import { parseContentBlockData } from "@/lib/content/block-schemas";
 import { defaultDataForContentBlockType } from "@/lib/content/block-defaults";
 import {
   LOCATION_MAP_VIEWPORT,
+  LOCATION_MAP_VIEWPORT_MOBILE,
   MAP_OVERLAY_PIN_X_RATIO,
   mapOverlayHasCard,
   mapOverlayPinSlot,
@@ -14,7 +16,6 @@ import {
 } from "@/lib/content/blocks/map-overlay";
 import { buildNominatimPlaceQueryUrl, pickNominatimPlaceHit } from "@/lib/maps/geocode-place-query";
 import {
-  buildMutedMapTileUrl,
   buildOsmCenteredTileLayout,
   buildShippingMapTileLayout,
 } from "@/lib/maps/osm-tile-shipping-map-layout";
@@ -171,6 +172,14 @@ describe("location map tile layout", () => {
     expect(layout.pinYPct).toBe(50);
   });
 
+  it("nutzt ein Mobil-Viewport im gleichen Verhältnis wie aspect-[5/4]", () => {
+    expect(LOCATION_MAP_VIEWPORT_MOBILE).toEqual({ width: 800, height: 640 });
+    expect(LOCATION_MAP_VIEWPORT_MOBILE.width / LOCATION_MAP_VIEWPORT_MOBILE.height).toBeCloseTo(
+      5 / 4,
+      5,
+    );
+  });
+
   it("verschiebt den Ausschnitt, damit die Geokoordinate neben dem Overlay liegt", () => {
     const lat = 52.546127;
     const lon = 13.4187871;
@@ -213,6 +222,8 @@ describe("MapOverlayBlock", () => {
     );
     expect(src).toContain("OsmStaticMapCanvas");
     expect(src).toContain("MAP_OVERLAY_PIN_X_RATIO");
+    expect(src).toContain("LOCATION_MAP_VIEWPORT_MOBILE");
+    expect(src).toContain("aspect-[5/4]");
     expect(src).not.toContain("w-[140%]");
     expect(src).not.toContain("<iframe");
     expect(src).not.toContain("google.com/maps");
@@ -236,7 +247,23 @@ describe("MapOverlayBlock", () => {
     expect(src).toContain("layout.pinXPct");
     expect(src).toContain("buildMutedMapTileUrl");
     expect(src).toContain("bg-white/20");
+    expect(src).toContain("[container-type:size]");
+    expect(src).toContain("mapCanvasCoverFrameStyle");
     expect(src).not.toContain("w-[140%]");
     expect(src).not.toContain("from \"lucide-react\"");
+  });
+
+  it("skaliert den Kartenrahmen deckend ohne das Kachelverhältnis zu ändern", () => {
+    const layout = buildOsmCenteredTileLayout({
+      lat: 52.54,
+      lon: 13.42,
+      viewportWidth: LOCATION_MAP_VIEWPORT_MOBILE.width,
+      viewportHeight: LOCATION_MAP_VIEWPORT_MOBILE.height,
+      halfWidthM: 1500,
+    });
+    const style = mapCanvasCoverFrameStyle(layout);
+    expect(style.aspectRatio).toBe("800 / 640");
+    expect(String(style.width)).toContain("100cqw");
+    expect(String(style.height)).toContain("100cqh");
   });
 });
