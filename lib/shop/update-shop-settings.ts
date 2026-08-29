@@ -97,6 +97,9 @@ export function shopSettingsInputFromFormData(formData: FormData): Record<string
     footerShowLegalVersand: formCheckbox(formData, "footerShowLegalVersand"),
     pdpReturnPolicyText: str("pdpReturnPolicyText"),
     pdpTrustBarItems: pdpTrustBarItemsFromFormData(formData),
+    pickupStoreLabel: str("pickupStoreLabel"),
+    pickupReadyText: str("pickupReadyText"),
+    pickupInfoUrl: str("pickupInfoUrl"),
   };
 }
 
@@ -141,6 +144,9 @@ function createDefaultsRow(values: ShopSettingsValues) {
     footerShowLegalVersand: values.footerShowLegalVersand,
     pdpReturnPolicyText: values.pdpReturnPolicyText,
     pdpTrustBarItems: values.pdpTrustBarItems,
+    pickupStoreLabel: values.pickupStoreLabel,
+    pickupReadyText: values.pickupReadyText,
+    pickupInfoUrl: values.pickupInfoUrl,
   };
 }
 
@@ -199,6 +205,9 @@ export async function updateShopSettingsFromInput(
           footerShowLegalVersand: values.footerShowLegalVersand,
           pdpReturnPolicyText: values.pdpReturnPolicyText,
           pdpTrustBarItems: values.pdpTrustBarItems,
+          pickupStoreLabel: values.pickupStoreLabel,
+          pickupReadyText: values.pickupReadyText,
+          pickupInfoUrl: values.pickupInfoUrl,
         },
       });
       await appendIntegrationOutbox(tx, {

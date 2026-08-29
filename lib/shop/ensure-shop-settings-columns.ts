@@ -50,6 +50,22 @@ export async function ensureShopSettingsColumns(): Promise<void> {
           ALTER TABLE "shop_settings"
             ADD COLUMN IF NOT EXISTS "footer_bg_color" TEXT NOT NULL DEFAULT '#182d4d'
         `);
+        await prisma.$executeRawUnsafe(`
+          ALTER TABLE "shop_settings"
+            ADD COLUMN IF NOT EXISTS "pickup_store_label" TEXT
+        `);
+        await prisma.$executeRawUnsafe(`
+          ALTER TABLE "shop_settings"
+            ADD COLUMN IF NOT EXISTS "pickup_ready_text" TEXT
+        `);
+        await prisma.$executeRawUnsafe(`
+          ALTER TABLE "shop_settings"
+            ADD COLUMN IF NOT EXISTS "pickup_info_url" TEXT
+        `);
+        await prisma.$executeRawUnsafe(`
+          ALTER TABLE "products"
+            ADD COLUMN IF NOT EXISTS "pickup_available" BOOLEAN NOT NULL DEFAULT false
+        `);
       } catch (e) {
         // DDL schlägt z. B. am Supabase-Pooler fehl — kein harter Abbruch;
         // `findUnique` liefert P2022, `getShopSettings` fällt auf Defaults zurück.

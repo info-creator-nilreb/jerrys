@@ -48,6 +48,7 @@ export function adminProductForEditForm(product: AdminProductRecord) {
     categoryTag: product.categoryTag,
     isBestseller: product.isBestseller,
     showWorkshopCalendar: product.showWorkshopCalendar,
+    pickupAvailable: product.pickupAvailable,
     leadText: product.leadText,
     dimensionsText: product.dimensionsText,
     weightText: product.weightText,

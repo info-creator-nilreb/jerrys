@@ -209,6 +209,7 @@ export function CheckoutForm({
   paypalVaultedCards = [],
   sepaAvailable = false,
   applePayStoreLabel,
+  pickupAvailable = true,
 }: {
   idempotencyKey: string;
   lines: CheckoutSummaryLine[];
@@ -240,6 +241,8 @@ export function CheckoutForm({
   sepaAvailable?: boolean;
   /** Apple Pay Händlerlabel (aus ShopSettings, ASCII). */
   applePayStoreLabel: string;
+  /** false = Abholung im Checkout ausblenden (gemischter Warenkorb). */
+  pickupAvailable?: boolean;
 }) {
   const [cartState, cartFormAction, cartPending] = useActionState(submitCheckout, initial);
   const [workshopState, workshopFormAction, workshopPending] = useActionState(
@@ -282,6 +285,12 @@ export function CheckoutForm({
   const [phone, setPhone] = useState("");
   const [shippingCountry, setShippingCountry] = useState(prefillCountry);
   const [deliveryMethod, setDeliveryMethod] = useState<CheckoutDeliveryMethod>("shipping");
+
+  useEffect(() => {
+    if (!pickupAvailable && deliveryMethod === "pickup") {
+      setDeliveryMethod("shipping");
+    }
+  }, [pickupAvailable, deliveryMethod]);
   const [billingCountry, setBillingCountry] = useState(
     addressPrefill?.billingCountry ?? prefillCountry,
   );
@@ -934,7 +943,11 @@ export function CheckoutForm({
 
         <section className="mt-12">
           <h2 className="text-lg font-semibold text-[#1f2937]">Lieferung</h2>
-          <CheckoutDeliveryMethodToggle value={deliveryMethod} onChange={setDeliveryMethod} />
+          <CheckoutDeliveryMethodToggle
+            value={deliveryMethod}
+            onChange={setDeliveryMethod}
+            pickupAvailable={pickupAvailable}
+          />
 
           <div className="mt-8 space-y-4">
             {savedShippingAddresses.length > 0 ? (

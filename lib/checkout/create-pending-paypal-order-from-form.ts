@@ -2,6 +2,7 @@ import { InsufficientStockError, reserveStockForOrder } from "@/features/invento
 import { revalidatePath } from "next/cache";
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { getCartWithLines, cartLineCommerceRules } from "@/lib/cart/cart-queries";
+import { cartAllowsPickup } from "@/lib/checkout/cart-pickup-eligibility";
 import { checkoutFormSchema, type CheckoutFormInput } from "@/lib/checkout/schemas";
 import { generateOrderNumber } from "@/lib/checkout/order-number";
 import { netCentsFromGross } from "@/lib/catalog/pricing";
@@ -324,6 +325,17 @@ async function createPendingPayPalOrderFromParsedRaw(
   const activeLines = cart.lines.filter((l) => l.product.isActive);
   if (!activeLines.length) {
     return { ok: false, error: "Keine bestellbaren Artikel im Warenkorb." };
+  }
+
+  if (d.deliveryMethod === "pickup" && !cartAllowsPickup(activeLines)) {
+    return {
+      ok: false,
+      error: "Bitte Eingaben prüfen.",
+      fieldErrors: {
+        deliveryMethod:
+          "Abholung ist für mindestens einen Artikel im Warenkorb nicht möglich. Bitte Versand wählen.",
+      },
+    };
   }
 
   const shopShip = await getShopShippingSettings();
