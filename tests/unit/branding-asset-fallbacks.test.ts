@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  EDELWEISS_STATIC_BRANDING_ASSET_FALLBACKS,
   isManagedBlobUrl,
   resolveShopBrandingAssetUrl,
   STATIC_BRANDING_ASSET_FALLBACKS,
@@ -8,6 +9,7 @@ import { JERRYS_SHOP_SETTINGS_DEFAULTS } from "@/lib/shop/shop-settings-defaults
 
 describe("resolveShopBrandingAssetUrl", () => {
   const base = {
+    shopName: JERRYS_SHOP_SETTINGS_DEFAULTS.shopName,
     logoLightUrl: JERRYS_SHOP_SETTINGS_DEFAULTS.logoLightUrl,
     logoDarkUrl: JERRYS_SHOP_SETTINGS_DEFAULTS.logoDarkUrl,
     faviconUrl: JERRYS_SHOP_SETTINGS_DEFAULTS.faviconUrl,
@@ -22,6 +24,12 @@ describe("resolveShopBrandingAssetUrl", () => {
     expect(resolveShopBrandingAssetUrl(base, "favicon")).toBe(
       STATIC_BRANDING_ASSET_FALLBACKS.favicon,
     );
+  });
+
+  it("nutzt Edel-weiss-Favicon wenn Shopname passt", () => {
+    expect(
+      resolveShopBrandingAssetUrl({ ...base, shopName: "edel weiss" }, "favicon"),
+    ).toBe(EDELWEISS_STATIC_BRANDING_ASSET_FALLBACKS.favicon);
   });
 
   it("nutzt gespeicherte HTTPS-Blob-URL", () => {

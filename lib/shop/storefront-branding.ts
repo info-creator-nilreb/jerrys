@@ -1,6 +1,9 @@
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
-import { resolveShopBrandingAssetUrl } from "@/lib/shop/branding-asset-fallbacks";
+import {
+  brandingAssetMimeType,
+  resolveShopBrandingAssetUrl,
+} from "@/lib/shop/branding-asset-fallbacks";
 import { JERRYS_SHOP_SETTINGS_DEFAULTS } from "@/lib/shop/shop-settings-defaults";
 import type { ShopSettingsDTO } from "@/lib/shop/shop-settings-defaults";
 import { absoluteUrl, canonicalSiteOrigin } from "@/lib/site/canonical-origin";
@@ -29,7 +32,9 @@ export function buildShopMetadata(settings: ShopSettingsDTO): Metadata {
   const description =
     settings.shortDescription?.trim() ||
     JERRYS_SHOP_SETTINGS_DEFAULTS.shortDescription;
-  const favicon = absoluteUrl(resolveShopBrandingAssetUrl(settings, "favicon"));
+  const faviconPath = resolveShopBrandingAssetUrl(settings, "favicon");
+  const favicon = absoluteUrl(faviconPath);
+  const faviconType = brandingAssetMimeType(faviconPath);
   const ogImage = absoluteUrl(resolveShopBrandingAssetUrl(settings, "ogImage"));
   const defaultTitle = shopDefaultTitle(shopName);
 
@@ -41,7 +46,7 @@ export function buildShopMetadata(settings: ShopSettingsDTO): Metadata {
     },
     description,
     icons: {
-      icon: [{ url: favicon, type: "image/x-icon" }],
+      icon: [{ url: favicon, type: faviconType }],
       shortcut: favicon,
     },
     openGraph: {
