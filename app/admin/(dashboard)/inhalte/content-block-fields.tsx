@@ -317,8 +317,8 @@ export function ContentBlockFields({
               Optionaler Button unter der Überschrift. Erscheint nur, wenn Label und Zielseite
               gesetzt sind.
             </p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="text-sm text-[#5c5f66]">
+            <div className="grid items-start gap-3 sm:grid-cols-2">
+              <label className="block text-sm text-[#5c5f66]">
                 Button-Label
                 <input
                   className={fieldClass}
@@ -423,8 +423,8 @@ export function ContentBlockFields({
         </label>
         <div className="space-y-3 sm:col-span-2">
           <p className="text-sm font-medium text-[#374151]">Call-to-Action</p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="text-sm text-[#5c5f66]">
+          <div className="grid items-start gap-3 sm:grid-cols-2">
+            <label className="block text-sm text-[#5c5f66]">
               Button-Label
               <input
                 className={fieldClass}
@@ -729,8 +729,8 @@ export function ContentBlockFields({
             </span>
           </label>
           {showAllCta ? (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="text-sm text-[#5c5f66]">
+            <div className="grid items-start gap-3 sm:grid-cols-2">
+              <label className="block text-sm text-[#5c5f66]">
                 Button-Text
                 <input
                   className={fieldClass}
