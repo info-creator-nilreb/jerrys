@@ -19,6 +19,7 @@ import {
   parsePickupReadyText,
   parsePickupStoreLabel,
 } from "@/lib/shop/pickup-settings";
+import { parseAdminLoginHeroUrl } from "@/lib/shop/admin-login-branding";
 import {
   JERRYS_SHOP_SETTINGS_DEFAULTS,
   parseDesktopShopNavMode,
@@ -80,6 +81,7 @@ function toDto(
     pickupStoreLabel: string | null;
     pickupReadyText: string | null;
     pickupInfoUrl: string | null;
+    adminLoginHeroUrl: string | null;
     updatedAt: Date;
   } | null,
 ): ShopSettingsDTO {
@@ -134,6 +136,7 @@ function toDto(
     pickupStoreLabel: parsePickupStoreLabel(row.pickupStoreLabel),
     pickupReadyText: parsePickupReadyText(row.pickupReadyText),
     pickupInfoUrl: parsePickupInfoUrl(row.pickupInfoUrl),
+    adminLoginHeroUrl: parseAdminLoginHeroUrl(row.adminLoginHeroUrl),
     updatedAt: row.updatedAt,
   };
 }
@@ -185,6 +188,7 @@ const createDefaults = () => ({
   pickupStoreLabel: JERRYS_SHOP_SETTINGS_DEFAULTS.pickupStoreLabel,
   pickupReadyText: JERRYS_SHOP_SETTINGS_DEFAULTS.pickupReadyText,
   pickupInfoUrl: JERRYS_SHOP_SETTINGS_DEFAULTS.pickupInfoUrl,
+  adminLoginHeroUrl: JERRYS_SHOP_SETTINGS_DEFAULTS.adminLoginHeroUrl,
 });
 
 async function loadShopSettingsFromDb(): Promise<ShopSettingsCached> {

@@ -58,6 +58,15 @@ const COVER_ASSET: AssetMeta = {
   variant: "cover",
 };
 
+const ADMIN_LOGIN_HERO_ASSET: AssetMeta = {
+  kind: "adminLoginHero",
+  title: "Admin-Login Hintergrund",
+  description: "Großes Stimmungsbild links auf der Anmeldeseite (shop-spezifisch)",
+  hint: "WEBP, PNG oder JPG. Empfohlen: Querformat, mindestens 1200×630 Pixel.",
+  accept: "image/png,image/jpeg,image/webp",
+  variant: "cover",
+};
+
 function hasCustomUrl(settings: ShopSettingsDTO, kind: ShopBrandingAssetKind): boolean {
   switch (kind) {
     case "logoLight":
@@ -68,6 +77,8 @@ function hasCustomUrl(settings: ShopSettingsDTO, kind: ShopBrandingAssetKind): b
       return Boolean(settings.faviconUrl);
     case "ogImage":
       return Boolean(settings.ogImageUrl);
+    case "adminLoginHero":
+      return Boolean(settings.adminLoginHeroUrl);
   }
 }
 
@@ -203,6 +214,22 @@ export function CoverImageSection({ settings }: { settings: ShopSettingsDTO }) {
   return (
     <section className="rounded-xl border border-[#e8eaed] bg-white p-5 shadow-sm sm:p-6">
       <AssetBlock meta={COVER_ASSET} settings={settings} />
+    </section>
+  );
+}
+
+export function AdminLoginHeroSection({ settings }: { settings: ShopSettingsDTO }) {
+  return (
+    <section className="rounded-xl border border-[#e8eaed] bg-white p-5 shadow-sm sm:p-6">
+      <h2 className="text-base font-semibold text-[#1f2937]">Admin-Anmeldung</h2>
+      <p className="mt-1 text-sm text-[#6b7280]">
+        Hintergrundbild auf <code className="text-xs">/admin/login</code>. Ohne Upload wird das
+        Titelbild (OG) genutzt — sonst ein neutraler Verlauf. Untertitel: Kurzbeschreibung des
+        Shops.
+      </p>
+      <div className="mt-5">
+        <AssetBlock meta={ADMIN_LOGIN_HERO_ASSET} settings={settings} />
+      </div>
     </section>
   );
 }

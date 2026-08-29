@@ -3,6 +3,7 @@ export const SHOP_BRANDING_ASSET_KINDS = [
   "logoDark",
   "favicon",
   "ogImage",
+  "adminLoginHero",
 ] as const;
 
 export type ShopBrandingAssetKind = (typeof SHOP_BRANDING_ASSET_KINDS)[number];
@@ -14,7 +15,7 @@ export function isShopBrandingAssetKind(value: string): value is ShopBrandingAss
 /** Prisma-/DTO-Feldname für die öffentliche URL. */
 export function shopSettingsUrlFieldForAsset(
   kind: ShopBrandingAssetKind,
-): "logoLightUrl" | "logoDarkUrl" | "faviconUrl" | "ogImageUrl" {
+): "logoLightUrl" | "logoDarkUrl" | "faviconUrl" | "ogImageUrl" | "adminLoginHeroUrl" {
   switch (kind) {
     case "logoLight":
       return "logoLightUrl";
@@ -24,6 +25,8 @@ export function shopSettingsUrlFieldForAsset(
       return "faviconUrl";
     case "ogImage":
       return "ogImageUrl";
+    case "adminLoginHero":
+      return "adminLoginHeroUrl";
   }
 }
 
@@ -38,5 +41,7 @@ export function brandingAssetPathSegment(kind: ShopBrandingAssetKind): string {
       return "favicon";
     case "ogImage":
       return "og-image";
+    case "adminLoginHero":
+      return "admin-login-hero";
   }
 }

@@ -1204,6 +1204,9 @@ model ShopSettings {
   /// Link „Ladeninformationen anzeigen“ (interner Pfad oder HTTPS).
   pickupInfoUrl String? @map("pickup_info_url")
 
+  /// Hero-Bild Admin-Login (Blob oder Pfad); null = OG/Titelbild oder neutraler Verlauf.
+  adminLoginHeroUrl String? @map("admin_login_hero_url")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

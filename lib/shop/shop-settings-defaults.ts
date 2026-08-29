@@ -90,6 +90,7 @@ export type ShopSettingsDefaults = {
   pickupStoreLabel: string | null;
   pickupReadyText: string | null;
   pickupInfoUrl: string | null;
+  adminLoginHeroUrl: string | null;
 };
 
 export const JERRYS_SHOP_SETTINGS_DEFAULTS: ShopSettingsDefaults = {
@@ -140,6 +141,7 @@ export const JERRYS_SHOP_SETTINGS_DEFAULTS: ShopSettingsDefaults = {
   pickupStoreLabel: null,
   pickupReadyText: DEFAULT_PICKUP_READY_TEXT,
   pickupInfoUrl: null,
+  adminLoginHeroUrl: "/media/hero-mood.jpg",
 };
 
 /** Client-sichere DTO-Form (ohne next/cache / Prisma). */

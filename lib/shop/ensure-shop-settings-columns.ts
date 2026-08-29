@@ -66,6 +66,10 @@ export async function ensureShopSettingsColumns(): Promise<void> {
           ALTER TABLE "products"
             ADD COLUMN IF NOT EXISTS "pickup_available" BOOLEAN NOT NULL DEFAULT false
         `);
+        await prisma.$executeRawUnsafe(`
+          ALTER TABLE "shop_settings"
+            ADD COLUMN IF NOT EXISTS "admin_login_hero_url" TEXT
+        `);
       } catch (e) {
         // DDL schlägt z. B. am Supabase-Pooler fehl — kein harter Abbruch;
         // `findUnique` liefert P2022, `getShopSettings` fällt auf Defaults zurück.

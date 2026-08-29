@@ -8,6 +8,7 @@ import {
   type ShopSettingsFormState,
 } from "@/app/admin/(dashboard)/einstellungen/actions";
 import {
+  AdminLoginHeroSection,
   CoverImageSection,
   LogosSection,
 } from "@/app/admin/(dashboard)/einstellungen/branding-assets-section";
@@ -156,6 +157,7 @@ export function ShopSettingsForm({ defaults }: Props) {
     <div className="space-y-4 sm:space-y-5">
       <LogosSection settings={defaults} />
       <CoverImageSection settings={defaults} />
+      <AdminLoginHeroSection settings={defaults} />
 
       <form
         action={formAction}
