@@ -17,7 +17,7 @@ export function resolveShopBrandingAssetUrl(
   >,
   kind: ShopBrandingAssetKind,
 ): string {
-  const stored =
+  const stored = (
     kind === "logoLight"
       ? settings.logoLightUrl
       : kind === "logoDark"
@@ -26,7 +26,8 @@ export function resolveShopBrandingAssetUrl(
           ? settings.faviconUrl
           : kind === "ogImage"
             ? settings.ogImageUrl
-            : settings.adminLoginHeroUrl;
+            : settings.adminLoginHeroUrl
+  )?.trim();
 
   if (stored && /^https:\/\//i.test(stored)) {
     return stored;
