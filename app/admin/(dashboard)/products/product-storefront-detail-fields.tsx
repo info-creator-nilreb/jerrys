@@ -6,6 +6,7 @@ type Defaults = {
   categoryTag: string;
   isBestseller: boolean;
   showWorkshopCalendar: boolean;
+  pickupAvailable: boolean;
   leadText: string;
   leadTextKey?: number;
   dimensionsText: string;
@@ -65,6 +66,26 @@ export function ProductStorefrontDetailFields({ state, defaults }: Props) {
         </label>
         {fe.showWorkshopCalendar ? (
           <p className="text-sm text-red-600">{fe.showWorkshopCalendar}</p>
+        ) : null}
+
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            name="pickupAvailable"
+            value="on"
+            defaultChecked={defaults.pickupAvailable}
+            className="mt-1 size-4 checkbox-primary"
+          />
+          <span>
+            <span className="text-sm font-medium text-[#1f2937]">Abholung möglich</span>
+            <span className="mt-0.5 block text-xs text-[#6b7280]">
+              Zeigt einen Abhol-Hinweis auf der Produktseite und aktiviert Abholung im Checkout für
+              dieses Produkt (nur wenn alle Warenkorb-Artikel Abholung erlauben).
+            </span>
+          </span>
+        </label>
+        {fe.pickupAvailable ? (
+          <p className="text-sm text-red-600">{fe.pickupAvailable}</p>
         ) : null}
 
         <div className="flex flex-col gap-1">

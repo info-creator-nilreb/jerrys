@@ -4,17 +4,21 @@ import { getAdminAuthState } from "@/lib/auth/admin-auth-state";
 import { AdminDevClientNotice } from "@/components/admin/admin-dev-client-notice";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { formatAppVersionLabel, getAppVersion } from "@/lib/app-version";
+import { resolveAdminMetadataTitleTemplate } from "@/lib/shop/admin-login-branding";
 import { resolveStorefrontHeaderLogos } from "@/lib/shop/resolve-storefront-header-logos";
 import { getShopSettings } from "@/lib/shop/shop-settings";
 import { isTermineFeatureEnabled } from "@/lib/shop/termine-feature";
 
-export const metadata: Metadata = {
-  title: {
-    template: "%s | Admin | jerry's",
-    default: "Administration",
-  },
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const shopSettings = await getShopSettings();
+  return {
+    title: {
+      template: resolveAdminMetadataTitleTemplate(shopSettings),
+      default: "Administration",
+    },
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function AdminDashboardLayout({
   children,

@@ -22,7 +22,12 @@ export type StorefrontHeaderLogos = {
 export async function resolveStorefrontHeaderLogos(
   settings: Pick<
     ShopSettingsDTO,
-    "shopName" | "logoLightUrl" | "logoDarkUrl" | "faviconUrl" | "ogImageUrl"
+    | "shopName"
+    | "logoLightUrl"
+    | "logoDarkUrl"
+    | "faviconUrl"
+    | "ogImageUrl"
+    | "adminLoginHeroUrl"
   >,
 ): Promise<StorefrontHeaderLogos> {
   const storedLight = resolveShopBrandingAssetUrl(settings, "logoLight");

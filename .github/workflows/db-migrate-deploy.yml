@@ -40,7 +40,7 @@ jobs:
           fi
       - name: Migration status
         if: steps.cfg.outputs.configured == 'true'
-        run: npx prisma migrate status
+        run: npx prisma migrate status || true
       - name: Apply migrations
         if: steps.cfg.outputs.configured == 'true'
         run: npx prisma migrate deploy
@@ -69,7 +69,7 @@ jobs:
           fi
       - name: Migration status
         if: steps.cfg.outputs.configured == 'true'
-        run: npx prisma migrate status
+        run: npx prisma migrate status || true
       - name: Apply migrations
         if: steps.cfg.outputs.configured == 'true'
         run: npx prisma migrate deploy

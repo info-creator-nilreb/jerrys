@@ -15,6 +15,12 @@ import {
   parsePdpTrustBarItems,
 } from "@/lib/shop/pdp-trust-settings";
 import {
+  parsePickupInfoUrl,
+  parsePickupReadyText,
+  parsePickupStoreLabel,
+} from "@/lib/shop/pickup-settings";
+import { parseAdminLoginHeroUrl } from "@/lib/shop/admin-login-branding";
+import {
   JERRYS_SHOP_SETTINGS_DEFAULTS,
   parseDesktopShopNavMode,
   parseHeaderNavPlacement,
@@ -72,6 +78,10 @@ function toDto(
     footerShowLegalVersand: boolean;
     pdpReturnPolicyText: string | null;
     pdpTrustBarItems: unknown;
+    pickupStoreLabel: string | null;
+    pickupReadyText: string | null;
+    pickupInfoUrl: string | null;
+    adminLoginHeroUrl: string | null;
     updatedAt: Date;
   } | null,
 ): ShopSettingsDTO {
@@ -123,6 +133,10 @@ function toDto(
     footerShowLegalVersand: row.footerShowLegalVersand,
     pdpReturnPolicyText: parsePdpReturnPolicyText(row.pdpReturnPolicyText),
     pdpTrustBarItems: parsePdpTrustBarItems(row.pdpTrustBarItems),
+    pickupStoreLabel: parsePickupStoreLabel(row.pickupStoreLabel),
+    pickupReadyText: parsePickupReadyText(row.pickupReadyText),
+    pickupInfoUrl: parsePickupInfoUrl(row.pickupInfoUrl),
+    adminLoginHeroUrl: parseAdminLoginHeroUrl(row.adminLoginHeroUrl),
     updatedAt: row.updatedAt,
   };
 }
@@ -171,6 +185,10 @@ const createDefaults = () => ({
   footerShowLegalVersand: JERRYS_SHOP_SETTINGS_DEFAULTS.footerShowLegalVersand,
   pdpReturnPolicyText: JERRYS_SHOP_SETTINGS_DEFAULTS.pdpReturnPolicyText,
   pdpTrustBarItems: JERRYS_SHOP_SETTINGS_DEFAULTS.pdpTrustBarItems,
+  pickupStoreLabel: JERRYS_SHOP_SETTINGS_DEFAULTS.pickupStoreLabel,
+  pickupReadyText: JERRYS_SHOP_SETTINGS_DEFAULTS.pickupReadyText,
+  pickupInfoUrl: JERRYS_SHOP_SETTINGS_DEFAULTS.pickupInfoUrl,
+  adminLoginHeroUrl: JERRYS_SHOP_SETTINGS_DEFAULTS.adminLoginHeroUrl,
 });
 
 async function loadShopSettingsFromDb(): Promise<ShopSettingsCached> {

@@ -50,6 +50,7 @@ function shopSettingsCreateDefaults() {
     logoDarkUrl: d.logoDarkUrl,
     faviconUrl: d.faviconUrl,
     ogImageUrl: d.ogImageUrl,
+    adminLoginHeroUrl: d.adminLoginHeroUrl,
   };
 }
 

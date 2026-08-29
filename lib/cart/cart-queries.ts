@@ -18,6 +18,7 @@ const lineProductSelect = {
   title: true,
   currency: true,
   isActive: true,
+  pickupAvailable: true,
   manufacturer: { select: { name: true } },
   images: {
     orderBy: [{ isCover: "desc" as const }, { sortOrder: "asc" as const }],

@@ -8,6 +8,7 @@ import {
   type ShopSettingsFormState,
 } from "@/app/admin/(dashboard)/einstellungen/actions";
 import {
+  AdminLoginHeroSection,
   CoverImageSection,
   LogosSection,
 } from "@/app/admin/(dashboard)/einstellungen/branding-assets-section";
@@ -156,6 +157,7 @@ export function ShopSettingsForm({ defaults }: Props) {
     <div className="space-y-4 sm:space-y-5">
       <LogosSection settings={defaults} />
       <CoverImageSection settings={defaults} />
+      <AdminLoginHeroSection settings={defaults} />
 
       <form
         action={formAction}
@@ -409,6 +411,53 @@ export function ShopSettingsForm({ defaults }: Props) {
                 Leer lassen, um die Zeile auf der Produktseite auszublenden.
               </p>
               <FieldError message={fe.pdpReturnPolicyText} />
+            </div>
+
+            <div className="space-y-4 rounded-lg border border-[#e8eaed] bg-[#fafbfc] p-4">
+              <p className="text-sm font-semibold text-[#1f2937]">Abhol-Hinweis (PDP)</p>
+              <p className="text-xs text-[#6b7280]">
+                Wird auf Produkten mit aktivierter Abholung in der Kaufbox angezeigt. Standort-Default:
+                „Store in [Stadt]“ aus der Shop-Adresse.
+              </p>
+              <div>
+                <label htmlFor="pickupStoreLabel" className="text-sm font-medium text-[#374151]">
+                  Standort-Bezeichnung (optional)
+                </label>
+                <input
+                  id="pickupStoreLabel"
+                  name="pickupStoreLabel"
+                  defaultValue={defaults.pickupStoreLabel ?? ""}
+                  placeholder="z. B. Store in Berlin"
+                  className={`${inputClass} mt-1.5`}
+                />
+                <FieldError message={fe.pickupStoreLabel} />
+              </div>
+              <div>
+                <label htmlFor="pickupReadyText" className="text-sm font-medium text-[#374151]">
+                  Fertigstellungs-Hinweis (optional)
+                </label>
+                <input
+                  id="pickupReadyText"
+                  name="pickupReadyText"
+                  defaultValue={defaults.pickupReadyText ?? ""}
+                  placeholder="z. B. Gewöhnlich fertig in 24 Stunden"
+                  className={`${inputClass} mt-1.5`}
+                />
+                <FieldError message={fe.pickupReadyText} />
+              </div>
+              <div>
+                <label htmlFor="pickupInfoUrl" className="text-sm font-medium text-[#374151]">
+                  Link „Ladeninformationen anzeigen“ (optional)
+                </label>
+                <input
+                  id="pickupInfoUrl"
+                  name="pickupInfoUrl"
+                  defaultValue={defaults.pickupInfoUrl ?? ""}
+                  placeholder="/kontakt oder https://…"
+                  className={`${inputClass} mt-1.5`}
+                />
+                <FieldError message={fe.pickupInfoUrl} />
+              </div>
             </div>
 
             <div className="space-y-4">

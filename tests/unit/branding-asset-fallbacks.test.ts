@@ -12,6 +12,7 @@ describe("resolveShopBrandingAssetUrl", () => {
     logoDarkUrl: JERRYS_SHOP_SETTINGS_DEFAULTS.logoDarkUrl,
     faviconUrl: JERRYS_SHOP_SETTINGS_DEFAULTS.faviconUrl,
     ogImageUrl: JERRYS_SHOP_SETTINGS_DEFAULTS.ogImageUrl,
+    adminLoginHeroUrl: JERRYS_SHOP_SETTINGS_DEFAULTS.adminLoginHeroUrl,
   };
 
   it("fällt auf Static-Branding zurück wenn URL fehlt", () => {

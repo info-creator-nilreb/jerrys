@@ -7,12 +7,13 @@ export const STATIC_BRANDING_ASSET_FALLBACKS: Record<ShopBrandingAssetKind, stri
   logoDark: "/branding/jerrys-logo-white.png",
   favicon: "/branding/favicon.ico",
   ogImage: "/branding/jerrys-wordmark.jpg",
+  adminLoginHero: "/media/hero-mood.jpg",
 };
 
 export function resolveShopBrandingAssetUrl(
   settings: Pick<
     ShopSettingsDTO,
-    "logoLightUrl" | "logoDarkUrl" | "faviconUrl" | "ogImageUrl"
+    "logoLightUrl" | "logoDarkUrl" | "faviconUrl" | "ogImageUrl" | "adminLoginHeroUrl"
   >,
   kind: ShopBrandingAssetKind,
 ): string {
@@ -23,7 +24,9 @@ export function resolveShopBrandingAssetUrl(
         ? settings.logoDarkUrl
         : kind === "favicon"
           ? settings.faviconUrl
-          : settings.ogImageUrl;
+          : kind === "ogImage"
+            ? settings.ogImageUrl
+            : settings.adminLoginHeroUrl;
 
   if (stored && /^https:\/\//i.test(stored)) {
     return stored;

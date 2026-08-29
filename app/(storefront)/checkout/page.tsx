@@ -11,6 +11,7 @@ import {
 import { getCustomerSession } from "@/lib/auth/customer-session";
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { cartLineCommerceRules, getCartWithLines } from "@/lib/cart/cart-queries";
+import { cartAllowsPickup } from "@/lib/checkout/cart-pickup-eligibility";
 import { getShippingCountriesForStorefront } from "@/lib/shop/shipping-countries-for-storefront";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
 import { getShopSettings } from "@/lib/shop/shop-settings";
@@ -61,6 +62,7 @@ export default async function CheckoutPage({
 
   const currency = activeLines[0]!.product.currency;
   const idempotencyKey = randomUUID();
+  const pickupAvailable = cartAllowsPickup(activeLines);
 
   const summaryLines: CheckoutSummaryLine[] = activeLines.map((l) => {
     const commerce = cartLineCommerceRules(l);
@@ -151,6 +153,7 @@ export default async function CheckoutPage({
           paypalVaultedCards={paypalVault.cards}
           sepaAvailable={isPayPalSepaDebitEnabled()}
           applePayStoreLabel={walletStoreLabel}
+          pickupAvailable={pickupAvailable}
         />
       </div>
     </div>

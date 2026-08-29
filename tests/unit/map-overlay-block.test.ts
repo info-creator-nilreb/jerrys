@@ -1,16 +1,20 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { mapCanvasCoverFrameStyle } from "@/components/maps/osm-static-map-canvas";
 import { parseContentBlockData } from "@/lib/content/block-schemas";
 import { defaultDataForContentBlockType } from "@/lib/content/block-defaults";
 import {
   LOCATION_MAP_VIEWPORT,
+  LOCATION_MAP_VIEWPORT_MOBILE,
+  MAP_OVERLAY_PIN_X_RATIO,
   mapOverlayHasCard,
+  mapOverlayPinSlot,
   mapOverlaySearchUrl,
   resolveMapOverlayCtaHref,
   type MapOverlayBlockData,
 } from "@/lib/content/blocks/map-overlay";
-import { buildNominatimPlaceQueryUrl } from "@/lib/maps/geocode-place-query";
+import { buildNominatimPlaceQueryUrl, pickNominatimPlaceHit } from "@/lib/maps/geocode-place-query";
 import {
   buildOsmCenteredTileLayout,
   buildShippingMapTileLayout,
@@ -117,7 +121,27 @@ describe("geocode place query URL", () => {
     const url = new URL(buildNominatimPlaceQueryUrl("Stargarder Str. 16, Berlin"));
     expect(url.origin).toBe("https://nominatim.openstreetmap.org");
     expect(url.searchParams.get("q")).toBe("Stargarder Str. 16, Berlin");
-    expect(url.searchParams.get("limit")).toBe("1");
+    expect(url.searchParams.get("limit")).toBe("5");
+  });
+});
+
+describe("pickNominatimPlaceHit", () => {
+  it("bevorzugt Hauskoordinaten vor POIs an derselben Adresse", () => {
+    const coords = pickNominatimPlaceHit([
+      {
+        lat: "52.5461465",
+        lon: "13.4187201",
+        addresstype: "shop",
+        class: "shop",
+      },
+      {
+        lat: "52.5461270",
+        lon: "13.4187871",
+        addresstype: "place",
+        class: "place",
+      },
+    ]);
+    expect(coords).toEqual({ lat: 52.546127, lon: 13.4187871 });
   });
 });
 
@@ -144,6 +168,49 @@ describe("location map tile layout", () => {
       halfWidthM: 900,
     });
     expect(layout.tiles.length).toBeGreaterThan(0);
+    expect(layout.pinXPct).toBe(50);
+    expect(layout.pinYPct).toBe(50);
+  });
+
+  it("nutzt ein Mobil-Viewport im gleichen Verhältnis wie aspect-[5/4]", () => {
+    expect(LOCATION_MAP_VIEWPORT_MOBILE).toEqual({ width: 800, height: 640 });
+    expect(LOCATION_MAP_VIEWPORT_MOBILE.width / LOCATION_MAP_VIEWPORT_MOBILE.height).toBeCloseTo(
+      5 / 4,
+      5,
+    );
+  });
+
+  it("verschiebt den Ausschnitt, damit die Geokoordinate neben dem Overlay liegt", () => {
+    const lat = 52.546127;
+    const lon = 13.4187871;
+    const pinXRatio = MAP_OVERLAY_PIN_X_RATIO["map-right"];
+    const layout = buildOsmCenteredTileLayout({
+      lat,
+      lon,
+      viewportWidth: LOCATION_MAP_VIEWPORT.width,
+      viewportHeight: LOCATION_MAP_VIEWPORT.height,
+      halfWidthM: 1500,
+      pinXRatio,
+    });
+    expect(layout.pinXPct).toBeCloseTo(pinXRatio * 100);
+
+    const tileSize = 256;
+    const scale = tileSize * 2 ** layout.zoom;
+    const x = ((lon + 180) / 360) * scale;
+    const left = x - layout.viewportWidth * pinXRatio;
+    const startTileX = Math.floor(left / tileSize);
+    const geoX =
+      (startTileX * tileSize - left + (x - startTileX * tileSize)) / layout.viewportWidth;
+    expect(geoX * 100).toBeCloseTo(layout.pinXPct, 5);
+  });
+});
+
+describe("mapOverlayPinSlot", () => {
+  it("legt den Pin neben das Overlay, sonst in die Mitte", () => {
+    expect(mapOverlayPinSlot(false, "left")).toBe("center");
+    expect(mapOverlayPinSlot(false, "right")).toBe("center");
+    expect(mapOverlayPinSlot(true, "left")).toBe("map-right");
+    expect(mapOverlayPinSlot(true, "right")).toBe("map-left");
   });
 });
 
@@ -154,8 +221,49 @@ describe("MapOverlayBlock", () => {
       "utf8",
     );
     expect(src).toContain("OsmStaticMapCanvas");
+    expect(src).toContain("MAP_OVERLAY_PIN_X_RATIO");
+    expect(src).toContain("LOCATION_MAP_VIEWPORT_MOBILE");
+    expect(src).toContain("aspect-[5/4]");
+    expect(src).not.toContain("w-[140%]");
     expect(src).not.toContain("<iframe");
     expect(src).not.toContain("google.com/maps");
-    expect(src).toContain("OpenStreetMap");
+    expect(src).toContain("MapBasemapAttribution");
+  });
+
+  it("nutzt durchsichtigeres Overlay", () => {
+    const src = readFileSync(
+      path.resolve("components/content/blocks/map-overlay-card.tsx"),
+      "utf8",
+    );
+    expect(src).toContain("bg-white/85");
+    expect(src).not.toContain("bg-white/95");
+  });
+
+  it("legt den Pin auf die Layout-Koordinate ohne die Karte zu strecken", () => {
+    const src = readFileSync(
+      path.resolve("components/maps/osm-static-map-canvas.tsx"),
+      "utf8",
+    );
+    expect(src).toContain("layout.pinXPct");
+    expect(src).toContain("buildMutedMapTileUrl");
+    expect(src).toContain("bg-white/20");
+    expect(src).toContain("[container-type:size]");
+    expect(src).toContain("mapCanvasCoverFrameStyle");
+    expect(src).not.toContain("w-[140%]");
+    expect(src).not.toContain("from \"lucide-react\"");
+  });
+
+  it("skaliert den Kartenrahmen deckend ohne das Kachelverhältnis zu ändern", () => {
+    const layout = buildOsmCenteredTileLayout({
+      lat: 52.54,
+      lon: 13.42,
+      viewportWidth: LOCATION_MAP_VIEWPORT_MOBILE.width,
+      viewportHeight: LOCATION_MAP_VIEWPORT_MOBILE.height,
+      halfWidthM: 1500,
+    });
+    const style = mapCanvasCoverFrameStyle(layout);
+    expect(style.aspectRatio).toBe("800 / 640");
+    expect(String(style.width)).toContain("100cqw");
+    expect(String(style.height)).toContain("100cqh");
   });
 });

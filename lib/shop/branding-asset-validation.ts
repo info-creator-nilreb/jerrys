@@ -46,6 +46,8 @@ export function brandingAssetLimits(kind: ShopBrandingAssetKind): BrandingAssetL
       return FAVICON_LIMITS;
     case "ogImage":
       return OG_LIMITS;
+    case "adminLoginHero":
+      return OG_LIMITS;
   }
 }
 
@@ -260,7 +262,7 @@ export function validateBrandingAssetUpload(
     if (limits.maxHeight && dimensions.height > limits.maxHeight) {
       return { ok: false, error: `Bildhöhe maximal ${limits.maxHeight}px.` };
     }
-  } else if (format !== "svg" && kind === "ogImage") {
+  } else if (format !== "svg" && (kind === "ogImage" || kind === "adminLoginHero")) {
     return { ok: false, error: "Bildmaße konnten nicht gelesen werden." };
   }
 
