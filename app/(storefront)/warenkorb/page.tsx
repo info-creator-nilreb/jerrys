@@ -6,7 +6,7 @@ import {
   CartLineTableRow,
 } from "@/components/storefront/cart-line-table-row";
 import { PriceEUR } from "@/components/storefront/price-eur";
-import { updateCartCustomerNote } from "@/lib/cart/actions";
+import { CartCustomerNoteForm } from "@/components/storefront/cart-customer-note-form";
 import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import { cartLineCommerceRules, getCartWithLines } from "@/lib/cart/cart-queries";
 import { resolveCartPromotionTotals } from "@/lib/checkout/cart-promotion-totals";
@@ -127,27 +127,7 @@ export default async function WarenkorbPage({
 
           <div className="mt-12 border-t border-[#e5e7eb] pt-10">
             <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)] lg:gap-x-10 lg:gap-y-4">
-              <form action={updateCartCustomerNote} className="contents">
-                <label htmlFor="cart-note" className="text-sm font-medium text-[#1f2937] lg:col-start-1 lg:row-start-1">
-                  Fügen deiner Bestellung eine Notiz hinzu
-                </label>
-                <textarea
-                  id="cart-note"
-                  name="note"
-                  rows={5}
-                  defaultValue={cart?.customerNote ?? ""}
-                  placeholder="Wie können wir dir helfen?"
-                  className="min-h-[8.5rem] w-full resize-y rounded-md border border-[#d2d5d9] bg-white px-3 py-2.5 text-sm text-[#1f2937] outline-none ring-primary placeholder:text-[#9ca3af] focus:border-primary focus:ring-1 lg:col-start-1 lg:row-start-2"
-                />
-                <div className="flex flex-col gap-2 lg:col-start-1 lg:row-start-3">
-                  <button
-                    type="submit"
-                    className="self-start text-sm font-medium text-primary underline-offset-2 hover:underline"
-                  >
-                    Notiz speichern
-                  </button>
-                </div>
-              </form>
+              <CartCustomerNoteForm defaultNote={cart?.customerNote ?? ""} />
 
               <div className="lg:col-start-2 lg:row-start-1 lg:self-start lg:text-right">
                 <p className="text-base font-semibold text-[#1f2937]">

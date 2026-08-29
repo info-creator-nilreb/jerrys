@@ -52,6 +52,7 @@ export async function listOrdersForAdmin(opts?: { skip?: number; take?: number }
       totalGrossCents: true,
       currency: true,
       createdAt: true,
+      customerNote: true,
       idempotencyKey: true,
       invoiceNumber: true,
       _count: { select: { items: true } },
