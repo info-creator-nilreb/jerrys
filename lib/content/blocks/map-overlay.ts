@@ -13,15 +13,16 @@ export const MAP_OVERLAY_SPAN_LABELS: Record<
   MapOverlaySpan,
   { title: string; hint: string }
 > = {
-  near: { title: "Nah", hint: "Straßenabschnitt" },
-  neighborhood: { title: "Viertel", hint: "Umgebung / Kiez" },
+  near: { title: "Nah", hint: "Straßenabschnitt, stark herangezoomt" },
+  neighborhood: { title: "Viertel", hint: "Kiez / Vorlage, etwa 1 km Breite" },
   city: { title: "Stadt", hint: "weiterer Ausschnitt" },
 };
 
+/** Halbe sichtbare Breite in Metern. Kleiner = näher (größerer Zoom). */
 export const MAP_OVERLAY_SPAN_METERS: Record<MapOverlaySpan, number> = {
-  near: 380,
-  neighborhood: 1500,
-  city: 2800,
+  near: 280,
+  neighborhood: 550,
+  city: 1400,
 };
 
 export const MAP_OVERLAY_POSITIONS = ["left", "right"] as const;
