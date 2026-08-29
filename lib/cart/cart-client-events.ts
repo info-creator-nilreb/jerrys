@@ -2,7 +2,9 @@ export const STOREFRONT_CART_UPDATED = "storefront:cart-updated";
 
 export type StorefrontCartUpdatedDetail = {
   /** Stückzahl, die gerade hinzugefügt bzw. erhöht wurde. */
-  quantityDelta: number;
+  quantityDelta?: number;
+  /** Autoritativer Badge-Stand nach Server-Mutation. */
+  badgeCount?: number;
 };
 
 export function notifyStorefrontCartUpdated(detail: StorefrontCartUpdatedDetail) {
