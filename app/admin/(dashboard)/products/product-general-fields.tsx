@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleQuestionMark } from "lucide-react";
+import { ChevronDown, CircleQuestionMark } from "lucide-react";
 import { ProductDescriptionEditor } from "@/app/admin/(dashboard)/products/description-editor";
 import type { ProductFormState } from "@/app/admin/(dashboard)/products/actions";
 import { AdminSlugField } from "@/components/admin/admin-slug-field";
@@ -15,6 +15,17 @@ function InfoIcon({ title }: { title: string }) {
     <span title={title} className="inline-flex text-primary" aria-label={title}>
       <CircleQuestionMark width={16} height={16} aria-hidden strokeWidth={2} />
     </span>
+  );
+}
+
+function hasAmazonFormContent(defaults: Props["defaults"], fe: Record<string, string>): boolean {
+  return Boolean(
+    defaults.amazonRatingAverage.trim() ||
+      defaults.amazonRatingCount.trim() ||
+      defaults.amazonReviewUrl.trim() ||
+      fe.amazonRatingAverage ||
+      fe.amazonRatingCount ||
+      fe.amazonReviewUrl,
   );
 }
 
@@ -44,6 +55,7 @@ type Props = {
 
 export function ProductGeneralFields({ state, manufacturers, defaults }: Props) {
   const fe = state?.fieldErrors ?? {};
+  const amazonExpanded = hasAmazonFormContent(defaults, fe);
   const {
     title,
     setTitle,
@@ -188,13 +200,27 @@ export function ProductGeneralFields({ state, manufacturers, defaults }: Props) 
           />
         </div>
 
-        <div className="rounded-lg border border-dashed border-[#e5e7eb] bg-[#fafafa] p-4">
-          <p className="text-xs font-medium text-[#374151]">Amazon-Bewertung (optional)</p>
-          <p className="mt-1 text-xs text-[#6b7280]">
-            Sterne und Anzahl gemeinsam eintragen oder beide leer lassen. Werte werden nicht automatisch von Amazon
-            geladen.
-          </p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <details
+          open={amazonExpanded}
+          className="group rounded-lg border border-dashed border-[#e5e7eb] bg-[#fafafa]"
+        >
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:content-none [&::-webkit-details-marker]:hidden">
+            <div>
+              <p className="text-xs font-medium text-[#374151]">Amazon-Bewertung (optional)</p>
+              <p className="mt-0.5 text-xs text-[#6b7280]">
+                Manuell gepflegte Sterne — wird nicht automatisch von Amazon geladen.
+              </p>
+            </div>
+            <ChevronDown
+              className="size-4 shrink-0 text-[#6b7280] transition-transform group-open:rotate-180"
+              aria-hidden
+            />
+          </summary>
+          <div className="border-t border-[#e8eaed] px-4 pb-4 pt-3">
+            <p className="text-xs text-[#6b7280]">
+              Sterne und Anzahl gemeinsam eintragen oder beide leer lassen.
+            </p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1">
               <label htmlFor="amazonRatingAverage" className="text-xs font-medium text-[#6b7280]">
                 Durchschnitt (0–5)
@@ -242,7 +268,8 @@ export function ProductGeneralFields({ state, manufacturers, defaults }: Props) 
             />
             {fe.amazonReviewUrl ? <p className="text-sm text-red-600">{fe.amazonReviewUrl}</p> : null}
           </div>
-        </div>
+          </div>
+        </details>
       </div>
     </section>
   );

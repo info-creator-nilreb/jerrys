@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { STATIC_BRANDING_ASSET_FALLBACKS } from "@/lib/shop/branding-asset-fallbacks";
 import { JERRYS_SHOP_SETTINGS_DEFAULTS } from "@/lib/shop/shop-settings-defaults";
 import type { ShopSettingsDTO } from "@/lib/shop/shop-settings-defaults";
+import { absoluteUrl } from "@/lib/site/canonical-origin";
 import {
   buildShopMetadata,
   shopFooterTagline,
@@ -42,11 +43,14 @@ describe("buildShopMetadata", () => {
       template: "%s | Test Shop",
     });
     expect(meta.description).toBe("Kurztext für SEO.");
-    expect(meta.icons).toEqual({ icon: STATIC_BRANDING_ASSET_FALLBACKS.favicon });
+    expect(meta.icons).toEqual({
+      icon: [{ url: absoluteUrl(STATIC_BRANDING_ASSET_FALLBACKS.favicon), type: "image/x-icon" }],
+      shortcut: absoluteUrl(STATIC_BRANDING_ASSET_FALLBACKS.favicon),
+    });
     expect(meta.openGraph).toMatchObject({
       siteName: "Test Shop",
       description: "Kurztext für SEO.",
-      images: [{ url: STATIC_BRANDING_ASSET_FALLBACKS.ogImage, alt: "Test Shop" }],
+      images: [{ url: absoluteUrl(STATIC_BRANDING_ASSET_FALLBACKS.ogImage), alt: "Test Shop" }],
     });
   });
 
@@ -56,7 +60,10 @@ describe("buildShopMetadata", () => {
     const meta = buildShopMetadata(
       settings({ faviconUrl: favicon, ogImageUrl: og }),
     );
-    expect(meta.icons).toEqual({ icon: favicon });
+    expect(meta.icons).toEqual({
+      icon: [{ url: favicon, type: "image/x-icon" }],
+      shortcut: favicon,
+    });
     expect(meta.openGraph).toMatchObject({
       images: [{ url: og, alt: "jerry's" }],
     });
