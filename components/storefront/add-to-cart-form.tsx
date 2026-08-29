@@ -45,7 +45,7 @@ export function AddToCartForm({
   /** Warenkorb-Icon im Button (Produktdetailseite). */
   showCartIcon?: boolean;
   /** Stärkerer Kauf-CTA und vertikale Klarheit auf der PDP. */
-  layout?: "default" | "pdp" | "sticky";
+  layout?: "default" | "pdp" | "sticky" | "carousel-icon";
 }) {
   const [state, formAction, pending] = useActionState(addToCart, initial);
   const qtyFieldId = useId();
@@ -55,8 +55,12 @@ export function AddToCartForm({
   const [quantity, setQuantity] = useState(() => clampQty(quantityRules, defaultQty));
   const isPdp = !compact && layout === "pdp";
   const isSticky = layout === "sticky";
+  const isCarouselIcon = layout === "carousel-icon";
 
   if (!canAdd) {
+    if (isCarouselIcon) {
+      return null;
+    }
     if (compact) {
       return (
         <p className="text-base leading-snug text-(--foreground-muted)">
@@ -81,6 +85,36 @@ export function AddToCartForm({
 
   const canDec = quantity - quantityRules.purchaseStep >= quantityRules.minOrderQty;
   const canInc = quantity + quantityRules.purchaseStep <= maxQty;
+
+  if (isCarouselIcon) {
+    return (
+      <form action={formAction} className="inline-flex">
+        <input type="hidden" name="productId" value={productId} />
+        {productVariantId ? (
+          <input type="hidden" name="productVariantId" value={productVariantId} />
+        ) : null}
+        <input type="hidden" name="quantity" value={quantity} />
+        <button
+          type="submit"
+          disabled={pending}
+          aria-label={pending ? "Wird hinzugefügt…" : "In den Warenkorb"}
+          className="inline-flex size-9 items-center justify-center rounded-full border border-white/35 bg-black/35 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-black/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none disabled:opacity-50"
+        >
+          <CartIcon className="size-4" />
+        </button>
+        {state?.error ? (
+          <p className="sr-only" role="alert">
+            {state.error}
+          </p>
+        ) : null}
+        {state?.ok ? (
+          <p className="sr-only" role="status">
+            Zum Warenkorb hinzugefügt.
+          </p>
+        ) : null}
+      </form>
+    );
+  }
 
   return (
     <form

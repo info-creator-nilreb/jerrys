@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { ProductCarousel } from "@/components/storefront/product-carousel";
+import { ProductBlockShowAllLink } from "@/components/storefront/product-block-show-all-link";
 import type { ProductCategoryPickBlockData } from "@/lib/content/blocks/product-category-pick";
 import {
   filterProductBlockProducts,
@@ -68,9 +68,9 @@ export async function ProductCategoryPickBlock({
   const showAllLabel = resolveProductBlockShowAllLabel(data.showAllLabel);
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-14 md:py-16">
+    <section className="mx-auto max-w-6xl px-4 py-12 md:py-14">
       {data.title ? (
-        <h2 className="mb-10 text-center text-2xl font-semibold text-(--foreground-heading) md:text-3xl">
+        <h2 className="mb-6 text-center text-xl font-semibold text-(--foreground-heading) md:mb-8 md:text-2xl">
           {data.title}
         </h2>
       ) : null}
@@ -80,14 +80,11 @@ export async function ProductCategoryPickBlock({
         ariaLabel={data.title?.trim() || "Produkte"}
       />
       {showAllHref ? (
-        <div className="mt-10 flex justify-center">
-          <Link
-            href={showAllHref}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-(--primary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-          >
-            {showAllLabel}
-          </Link>
-        </div>
+        <ProductBlockShowAllLink
+          href={showAllHref}
+          label={showAllLabel}
+          className="mt-8 md:flex md:justify-center"
+        />
       ) : null}
     </section>
   );

@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { ProductCarousel } from "@/components/storefront/product-carousel";
+import { ProductBlockShowAllLink } from "@/components/storefront/product-block-show-all-link";
 import type { CuratedProductListBlockData } from "@/lib/content/blocks/curated-product-list";
 import {
   filterProductBlockProducts,
@@ -60,11 +60,11 @@ export async function CuratedProductListBlock({
   return (
     <section
       id="produkte"
-      className="scroll-mt-20 bg-(--surface-soft) px-4 py-16 md:py-20"
+      className="scroll-mt-20 bg-(--surface-soft) px-4 py-12 md:py-16"
     >
       <div className="mx-auto max-w-6xl">
         {data.title ? (
-          <h2 className="text-center text-2xl font-semibold text-(--foreground-heading) md:text-3xl">
+          <h2 className="text-center text-xl font-semibold text-(--foreground-heading) md:text-2xl">
             {data.title}
           </h2>
         ) : null}
@@ -72,17 +72,14 @@ export async function CuratedProductListBlock({
           products={products}
           variant="featured"
           ariaLabel={data.title?.trim() || "Kuratierte Produkte"}
-          className="mt-10 w-full"
+          className="mt-6 w-full"
         />
         {showAllHref ? (
-          <div className="mt-10 flex justify-center">
-            <Link
-              href={showAllHref}
-              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-(--primary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            >
-              {showAllLabel}
-            </Link>
-          </div>
+          <ProductBlockShowAllLink
+            href={showAllHref}
+            label={showAllLabel}
+            className="mt-8 md:flex md:justify-center"
+          />
         ) : null}
       </div>
     </section>

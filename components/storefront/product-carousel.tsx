@@ -2,8 +2,8 @@
 
 import useEmblaCarousel from "embla-carousel-react";
 import { type ReactNode } from "react";
-import { ProductCard, type StorefrontProductCard } from "@/components/storefront/product-card";
-import { ProductCardCell } from "@/components/storefront/product-card-layout";
+import { ProductCarouselCard } from "@/components/storefront/product-carousel-card";
+import type { StorefrontProductCard } from "@/components/storefront/product-card";
 import { usePrefersReducedMotion } from "@/components/storefront/use-prefers-reduced-motion";
 
 export type ProductCarouselVariant = "compact" | "featured";
@@ -17,9 +17,9 @@ type ProductCarouselProps = {
 
 const slideClassByVariant: Record<ProductCarouselVariant, string> = {
   compact:
-    "min-w-0 shrink-0 grow-0 basis-full pl-0 sm:basis-[calc(50%-0.75rem)] sm:pl-3 lg:basis-[calc(33.333%-1rem)] lg:pl-4",
+    "min-w-0 shrink-0 grow-0 basis-[68%] pr-3 sm:basis-[calc(50%-0.375rem)] sm:pr-4 md:basis-[calc(42%-0.5rem)] lg:basis-[calc(32%-0.625rem)] lg:pr-4",
   featured:
-    "mx-auto min-w-0 max-w-lg shrink-0 grow-0 basis-full pl-0 md:mx-0 md:basis-[calc(50%-1.25rem)] md:pl-5",
+    "min-w-0 shrink-0 grow-0 basis-[68%] pr-3 sm:basis-[calc(50%-0.375rem)] sm:pr-4 md:basis-[calc(42%-0.5rem)] lg:basis-[calc(36%-0.625rem)] lg:pr-4",
 };
 
 function ProductCarouselStack({
@@ -30,9 +30,9 @@ function ProductCarouselStack({
   className?: string;
 }) {
   return (
-    <div className={`space-y-6 ${className ?? ""}`.trim()}>
+    <div className={`space-y-8 ${className ?? ""}`.trim()}>
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCarouselCard key={product.id} product={product} />
       ))}
     </div>
   );
@@ -83,9 +83,7 @@ function ProductCarouselEmbla({
               aria-roledescription="Folie"
               aria-label={`Produkt ${slideIndex + 1} von ${products.length}`}
             >
-              <ProductCardCell>
-                <ProductCard product={product} />
-              </ProductCardCell>
+              <ProductCarouselCard product={product} />
             </div>
           ))}
         </div>
@@ -101,13 +99,11 @@ function ProductCarouselSingle({
   product: StorefrontProductCard;
   className?: string;
 }) {
-  const wrapperClass =
-    className ??
-    "mx-auto flex w-full max-w-lg justify-center";
+  const wrapperClass = className ?? "mx-auto flex w-full max-w-xs justify-center";
 
   return (
     <div className={wrapperClass}>
-      <ProductCard product={product} />
+      <ProductCarouselCard product={product} />
     </div>
   );
 }
@@ -126,7 +122,7 @@ export function ProductCarousel({
     return (
       <ProductCarouselSingle
         product={products[0]!}
-        className={variant === "featured" ? "mx-auto flex w-full max-w-lg justify-center" : className}
+        className={variant === "featured" ? "mx-auto flex w-full max-w-xs justify-center" : className}
       />
     );
   }
@@ -174,7 +170,7 @@ export function ProductCarouselPreview<T extends { id: string }>({
           {items.map((item, index) => (
             <div
               key={item.id}
-              className="min-w-0 shrink-0 grow-0 basis-[min(100%,14rem)] pl-0 sm:basis-[calc(50%-0.375rem)] sm:pl-1.5"
+              className="min-w-0 shrink-0 grow-0 basis-[68%] pr-3 sm:basis-[calc(50%-0.375rem)] sm:pr-4"
             >
               {renderItem(item, index)}
             </div>
