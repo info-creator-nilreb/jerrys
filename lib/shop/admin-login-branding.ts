@@ -21,13 +21,33 @@ export function resolveAdminLoginHeroImageUrl(
   );
 }
 
+function resolveShopDisplayName(
+  settings: Pick<ShopSettingsDTO, "shopName">,
+): string {
+  return settings.shopName.trim() || JERRYS_SHOP_SETTINGS_DEFAULTS.shopName;
+}
+
 /** Untertitel unter „Willkommen zurück.“ — Kurzbeschreibung oder Shopname. */
 export function resolveAdminLoginTagline(
   settings: Pick<ShopSettingsDTO, "shopName" | "shortDescription">,
 ): string {
   const desc = settings.shortDescription?.trim();
   if (desc) return desc;
-  return settings.shopName.trim() || JERRYS_SHOP_SETTINGS_DEFAULTS.shopName;
+  return resolveShopDisplayName(settings);
+}
+
+/** Untertitel auf der Admin-Startseite nach dem Login. */
+export function resolveAdminDashboardWelcomeSubtitle(
+  settings: Pick<ShopSettingsDTO, "shopName">,
+): string {
+  return `Hier steuerst du Katalog und Shop von ${resolveShopDisplayName(settings)}.`;
+}
+
+/** Browser-Titel-Vorlage für eingeloggtes Admin (z. B. „Produkte | Admin | edel weiss“). */
+export function resolveAdminMetadataTitleTemplate(
+  settings: Pick<ShopSettingsDTO, "shopName">,
+): string {
+  return `%s | Admin | ${resolveShopDisplayName(settings)}`;
 }
 
 export function parseAdminLoginHeroUrl(raw: string | null | undefined): string | null {
