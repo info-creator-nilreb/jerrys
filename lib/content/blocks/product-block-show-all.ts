@@ -4,8 +4,10 @@ import {
   optionalInternalPathSchema,
 } from "@/lib/content/block-data-helpers";
 
-/** Gemeinsame „Alle anzeigen“-Felder für CMS-Produktblöcke. */
+/** Gemeinsame Anzeige- und CTA-Felder für CMS-Produktblöcke. */
 export const productBlockShowAllFieldsSchema = z.object({
+  /** false = nur bestellbare Produkte im Block (Karussell/Liste). */
+  showNotOrderable: z.boolean().default(true),
   showAllCta: z.boolean().default(false),
   /** Leer → Renderer nutzt „Alle anzeigen“. */
   showAllLabel: optionalBlockText(60),

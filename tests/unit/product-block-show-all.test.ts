@@ -93,6 +93,7 @@ describe("product CMS blocks parse", () => {
       expect(r.data).toMatchObject({
         mode: "collection",
         showAllCta: false,
+        showNotOrderable: true,
         limit: 6,
       });
     }

@@ -712,6 +712,21 @@ export function ContentBlockFields({
             onChange={(e) => set("limit", Number(e.target.value) || 12)}
           />
         </label>
+        <label className="flex cursor-pointer items-start gap-2.5 text-sm text-[#374151] sm:col-span-2">
+          <input
+            type="checkbox"
+            className="checkbox-primary mt-0.5 size-4"
+            checked={bool(data, "showNotOrderable", true)}
+            onChange={(e) => set("showNotOrderable", e.target.checked)}
+          />
+          <span>
+            <span className="font-medium">Nicht bestellbare Artikel anzeigen</span>
+            <span className="mt-0.5 block text-xs text-[#6b7280]">
+              Deaktiviert = nur bestellbare Produkte im Karussell. Hilft bei einheitlicher
+              Kartenhöhe, wenn Artikel ohne Warenkorb-Bereich ausgeblendet werden sollen.
+            </span>
+          </span>
+        </label>
         <div className="sm:col-span-2 space-y-3 rounded-lg border border-[#e8eaed] bg-[#fafafa] p-3">
           <label className="flex cursor-pointer items-start gap-2.5 text-sm text-[#374151]">
             <input
