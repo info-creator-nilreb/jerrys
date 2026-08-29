@@ -1,7 +1,9 @@
 "use client";
 
-import { useActionState, useId, useState, type FormEvent, type MouseEvent } from "react";
+import { useActionState, useEffect, useId, useRef, useState, type FormEvent, type MouseEvent } from "react";
+import { useRouter } from "next/navigation";
 import { addToCart, type CartActionState } from "@/lib/cart/actions";
+import { notifyStorefrontCartUpdated } from "@/lib/cart/cart-client-events";
 import {
   defaultAddQuantity,
   maxSelectableQuantity,
@@ -49,6 +51,8 @@ export function AddToCartForm({
 }) {
   const [state, formAction, pending] = useActionState(addToCart, initial);
   const qtyFieldId = useId();
+  const router = useRouter();
+  const wasPendingRef = useRef(false);
 
   const defaultQty = defaultAddQuantity(quantityRules) ?? quantityRules.minOrderQty;
   const maxQty = maxSelectableQuantity(quantityRules);
@@ -56,6 +60,15 @@ export function AddToCartForm({
   const isPdp = !compact && layout === "pdp";
   const isSticky = layout === "sticky";
   const isCarouselIcon = layout === "carousel-icon";
+
+  useEffect(() => {
+    if (wasPendingRef.current && !pending && state?.ok) {
+      const delta = state.addedQuantity ?? 1;
+      notifyStorefrontCartUpdated({ quantityDelta: delta });
+      router.refresh();
+    }
+    wasPendingRef.current = pending;
+  }, [pending, router, state]);
 
   if (!canAdd) {
     if (isCarouselIcon) {
