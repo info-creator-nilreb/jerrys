@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, ShoppingCart, Sparkles } from "lucide-react";
+import { StorefrontImage } from "@/components/storefront/storefront-image";
 
 export type GalleryImage = { id: string; url: string; alt: string };
 
@@ -58,7 +58,7 @@ export function ProductDetailGallery({
             {galleryBadgeLabel.trim()}
           </span>
         ) : null}
-        <Image
+        <StorefrontImage
           src={current.url}
           alt={current.alt || productTitle}
           fill
@@ -101,7 +101,7 @@ export function ProductDetailGallery({
                 i === safeIndex ? "border-primary" : "border-transparent ring-1 ring-(--surface-muted)"
               }`}
             >
-              <Image src={img.url} alt={img.alt} fill className="object-cover" sizes="64px" />
+              <StorefrontImage src={img.url} alt={img.alt} fill className="object-cover" sizes="64px" />
             </button>
           ))}
         </div>

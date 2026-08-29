@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { attachShopifyFallbackImages, attachShopifyFallbackImagesToProduct } from "@/lib/catalog/attach-shopify-fallback-images";
 import { getPrisma } from "@/lib/db/prisma";
 import { prismaDefaultVariantInclude, prismaStorefrontActiveVariantsInclude } from "@/lib/catalog/default-variant-storefront";
 import { STOREFRONT_CATALOG_CACHE_TAG } from "@/lib/catalog/storefront-catalog-cache-tag";
@@ -70,10 +71,8 @@ export async function listActiveProductsForStorefront(options?: { take?: number 
   const take = options?.take;
   /** Immer den getaggten Cache nutzen — `take` nur als Slice (Homepage-Kuratierung). */
   const all = await getCachedActiveProductsForStorefront();
-  if (take != null && take > 0) {
-    return all.slice(0, take);
-  }
-  return all;
+  const sliced = take != null && take > 0 ? all.slice(0, take) : all;
+  return attachShopifyFallbackImages(sliced);
 }
 
 /** Aktive Produkte in ID-Reihenfolge (CMS kuratierte Listen). */
@@ -91,7 +90,8 @@ export async function listActiveProductsByIdsForStorefront(
     },
   });
   const byId = new Map(rows.map((r) => [r.id, r]));
-  return ids.map((id) => byId.get(id)).filter((r): r is NonNullable<typeof r> => r != null);
+  const ordered = ids.map((id) => byId.get(id)).filter((r): r is NonNullable<typeof r> => r != null);
+  return attachShopifyFallbackImages(ordered);
 }
 
 export async function listActiveProductsByCategorySlugForStorefront(
@@ -118,11 +118,11 @@ export async function listActiveProductsByCategorySlugForStorefront(
       ...storefrontProductCardSelect,
       ...storefrontCategoryViaCollectionsSelect,
     },
-  });
+  }).then((rows) => attachShopifyFallbackImages(rows));
 }
 
 export async function getActiveProductBySlug(slug: string) {
-  return getPrisma().product.findFirst({
+  const product = await getPrisma().product.findFirst({
     where: { slug, isActive: true },
     include: {
       images: { orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }] },
@@ -154,6 +154,7 @@ export async function getActiveProductBySlug(slug: string) {
       },
     },
   });
+  return attachShopifyFallbackImagesToProduct(product);
 }
 
 /**
@@ -187,7 +188,7 @@ export async function listRelatedProductsForPdp(
       ...storefrontProductCardSelect,
       ...storefrontCategoryViaCollectionsSelect,
     },
-  });
+  }).then((rows) => attachShopifyFallbackImages(rows));
 }
 
 /** Aktives Produkt, dessen `previousSlug` dem Pfad entspricht (301-Ziel). */

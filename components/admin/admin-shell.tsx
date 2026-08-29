@@ -14,6 +14,7 @@ export function AdminShell({
   termineEnabled = true,
   shopName,
   adminLogoSrc,
+  adminLogoInvert = false,
 }: {
   children: ReactNode;
   appVersion: string;
@@ -24,6 +25,7 @@ export function AdminShell({
   shopName: string;
   /** Logo für dunkle Sidebar (ShopSettings logoDark). */
   adminLogoSrc: string;
+  adminLogoInvert?: boolean;
 }) {
   const { collapsed, toggle } = useSidebarCollapsed();
   const pathname = usePathname();
@@ -78,6 +80,7 @@ export function AdminShell({
         termineEnabled={termineEnabled}
         shopName={shopName}
         adminLogoSrc={adminLogoSrc}
+        adminLogoInvert={adminLogoInvert}
         mobileOpen={mobileNavOpen}
         onNavigate={() => setMobileNavOpenForPath(null)}
         className={`fixed inset-y-0 left-0 z-50 w-[min(100%,18rem)] transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-auto lg:translate-x-0 ${

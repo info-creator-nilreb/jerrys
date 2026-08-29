@@ -1,8 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
 import { formatPrice } from "@/lib/catalog/format";
 import { pickDefaultVariant } from "@/lib/catalog/default-variant-storefront";
 import type { StorefrontProductCard } from "@/components/storefront/product-card";
+import { StorefrontImage } from "@/components/storefront/storefront-image";
 
 /**
  * Kompakte Produktempfehlungen unterhalb der PDP-Beschreibung.
@@ -41,7 +41,7 @@ export function ProductPdpCrossSell({
               >
                 <div className="relative aspect-square bg-(--surface-soft)">
                   {image ? (
-                    <Image
+                    <StorefrontImage
                       src={image.url}
                       alt={image.alt || product.title}
                       fill

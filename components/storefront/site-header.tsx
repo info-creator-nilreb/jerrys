@@ -4,7 +4,7 @@ import { SiteHeaderShell } from "@/components/storefront/site-header-shell";
 import { StorefrontHeaderSearch } from "@/components/storefront/storefront-header-search";
 import { listActiveCategoriesForNav } from "@/lib/catalog/category-queries";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
-import { resolveShopBrandingAssetUrl } from "@/lib/shop/branding-asset-fallbacks";
+import { resolveStorefrontHeaderLogos } from "@/lib/shop/resolve-storefront-header-logos";
 import {
   infoBannerIsVisible,
   resolveInfoBannerBgColor,
@@ -29,8 +29,7 @@ export async function SiteHeader() {
     navOptions,
   );
 
-  const logoLightSrc = resolveShopBrandingAssetUrl(settings, "logoLight");
-  const logoDarkSrc = resolveShopBrandingAssetUrl(settings, "logoDark");
+  const logos = await resolveStorefrontHeaderLogos(settings);
   const shopName = settings.shopName;
   const showBanner = infoBannerIsVisible({
     active: settings.infoBannerActive,
@@ -40,8 +39,9 @@ export async function SiteHeader() {
   return (
     <SiteHeaderShell
       shopName={shopName}
-      logoLightSrc={logoLightSrc}
-      logoDarkSrc={logoDarkSrc}
+      logoLightSrc={logos.logoLightSrc}
+      logoDarkSrc={logos.logoDarkSrc}
+      invertLogoOnTransparent={logos.invertLogoOnTransparent}
       shopNavLinks={shopNavLinks}
       desktopMode={settings.desktopShopNavMode}
       navPlacement={settings.headerNavPlacement}

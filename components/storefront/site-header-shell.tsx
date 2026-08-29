@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   StorefrontHeaderUiProvider,
   useStorefrontHeaderUi,
@@ -26,6 +26,7 @@ function SiteHeaderChrome({
   shopName,
   logoLightSrc,
   logoDarkSrc,
+  invertLogoOnTransparent,
   shopNavLinks,
   desktopMode,
   navPlacement,
@@ -35,6 +36,7 @@ function SiteHeaderChrome({
   shopName: string;
   logoLightSrc: string;
   logoDarkSrc: string;
+  invertLogoOnTransparent?: boolean;
   shopNavLinks: StorefrontShopNavLink[];
   desktopMode: DesktopShopNavMode;
   navPlacement: HeaderNavPlacement;
@@ -49,6 +51,8 @@ function SiteHeaderChrome({
   const { tone, setHovered } = useStorefrontHeaderUi();
   const transparent = tone === "transparent";
   const logoSrc = transparent ? logoDarkSrc : logoLightSrc;
+  const invert = Boolean(transparent && invertLogoOnTransparent);
+  const [logoFailed, setLogoFailed] = useState(false);
   const navUnderLogo = desktopMode === "inline" && navPlacement === "under";
   /** Unter dem Logo: links nur Mobil-Burger; Desktop-Links in der zweiten Zeile. */
   const leftNavMode: DesktopShopNavMode = navUnderLogo ? "hidden" : desktopMode;
@@ -60,17 +64,28 @@ function SiteHeaderChrome({
 
   const logo = (
     <Link href="/" className="shrink-0" aria-label={shopName}>
-      <Image
-        key={logoSrc}
-        src={logoSrc}
-        alt={shopName}
-        width={LOGO_W}
-        height={LOGO_H}
-        className="h-9 w-auto sm:h-10 md:h-11"
-        sizes="(max-width:768px) 180px, 220px"
-        priority
-        unoptimized
-      />
+      {logoFailed ? (
+        <span
+          className={`text-sm font-semibold tracking-tight sm:text-base ${
+            transparent ? "text-white" : "text-(--foreground-heading)"
+          }`}
+        >
+          {shopName}
+        </span>
+      ) : (
+        <Image
+          key={logoSrc}
+          src={logoSrc}
+          alt={shopName}
+          width={LOGO_W}
+          height={LOGO_H}
+          className={`h-9 w-auto sm:h-10 md:h-11 ${invert ? "brightness-0 invert" : ""}`}
+          sizes="(max-width:768px) 180px, 220px"
+          priority
+          unoptimized
+          onError={() => setLogoFailed(true)}
+        />
+      )}
     </Link>
   );
 
@@ -119,6 +134,7 @@ export function SiteHeaderShell({
   shopName,
   logoLightSrc,
   logoDarkSrc,
+  invertLogoOnTransparent = false,
   shopNavLinks,
   desktopMode,
   navPlacement = "beside",
@@ -128,6 +144,7 @@ export function SiteHeaderShell({
   shopName: string;
   logoLightSrc: string;
   logoDarkSrc: string;
+  invertLogoOnTransparent?: boolean;
   shopNavLinks: StorefrontShopNavLink[];
   desktopMode: DesktopShopNavMode;
   navPlacement?: HeaderNavPlacement;
@@ -145,6 +162,7 @@ export function SiteHeaderShell({
         shopName={shopName}
         logoLightSrc={logoLightSrc}
         logoDarkSrc={logoDarkSrc}
+        invertLogoOnTransparent={invertLogoOnTransparent}
         shopNavLinks={shopNavLinks}
         desktopMode={desktopMode}
         navPlacement={navPlacement}

@@ -1,8 +1,8 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import Image from "next/image";
 import { useCallback, useRef, useState } from "react";
+import { StorefrontImage } from "@/components/storefront/storefront-image";
 
 type Slide = { url: string; alt: string };
 
@@ -67,7 +67,7 @@ export function ProductCardImageSlider({
       onTouchEnd={onTouchEnd}
     >
       {images.map((img, i) => (
-        <Image
+        <StorefrontImage
           key={`${img.url}-${i}`}
           src={img.url}
           alt={img.alt || productTitle}
