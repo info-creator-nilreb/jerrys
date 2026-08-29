@@ -9,10 +9,13 @@ type Slide = { url: string; alt: string };
 export function ProductCardImageSlider({
   images,
   productTitle,
+  /** Nur Wischen — keine Pfeile/Punkte (Karussell-Karten). */
+  swipeOnly = false,
 }: {
   images: Slide[];
   /** Für Barrierefreiheit (Karussell-Beschriftung). */
   productTitle: string;
+  swipeOnly?: boolean;
 }) {
   const [index, setIndex] = useState(0);
   const touchStartX = useRef<number | null>(null);
@@ -59,7 +62,7 @@ export function ProductCardImageSlider({
 
   return (
     <div
-      className="relative aspect-square bg-(--surface-muted)"
+      className={`relative bg-(--surface-muted) ${swipeOnly ? "aspect-[4/5]" : "aspect-square"}`}
       role="region"
       aria-roledescription="Karussell"
       aria-label={label}
@@ -75,12 +78,12 @@ export function ProductCardImageSlider({
           className={`object-cover transition-opacity duration-300 ease-out ${
             i === index ? "z-10 opacity-100" : "pointer-events-none z-0 opacity-0"
           }`}
-          sizes="(min-width:768px) 50vw, 100vw"
+          sizes={swipeOnly ? "(min-width: 1024px) 28vw, (min-width: 768px) 40vw, 72vw" : "(min-width:768px) 50vw, 100vw"}
           priority={i === 0}
         />
       ))}
 
-      {n > 1 ? (
+      {n > 1 && !swipeOnly ? (
         <>
           <div className="pointer-events-none absolute inset-x-0 top-1/2 z-20 flex -translate-y-1/2 justify-between px-1.5">
             <button
