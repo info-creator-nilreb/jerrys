@@ -111,12 +111,16 @@ function SiteHeaderChrome({
             bgColor={infoBanner.bgColor}
           />
         ) : null}
-        <div className="flex w-full items-center gap-2 px-4 py-3 md:gap-3 md:px-6 md:py-3.5 lg:px-8 xl:px-10">
-          <div className="flex min-w-0 flex-1 items-center">
+        <div className="relative flex w-full items-center gap-2 px-4 py-3 md:gap-3 md:px-6 md:py-3.5 lg:px-8 xl:px-10">
+          <div className="relative z-[500002] flex min-w-11 flex-1 items-center">
             <StorefrontShopNav links={shopNavLinks} desktopMode={leftNavMode} />
           </div>
-          {logo}
-          <div className="flex min-w-0 flex-1 items-center justify-end gap-0.5 sm:gap-1">
+          <div className="pointer-events-none absolute inset-x-4 flex justify-center md:inset-x-6 lg:inset-x-8 xl:inset-x-10">
+            <div className="pointer-events-auto max-w-[min(100%,11rem)] sm:max-w-[min(100%,13rem)]">
+              {logo}
+            </div>
+          </div>
+          <div className="relative z-[500002] flex shrink-0 items-center justify-end gap-0.5 sm:gap-1">
             {trailing}
           </div>
         </div>
