@@ -7,6 +7,7 @@ import { getAiContentSettingsPublic } from "@/features/integrations";
 import { adminProductForEditForm } from "@/lib/catalog/admin-product-form";
 import { listShopAssignmentOptionsForAdmin } from "@/lib/catalog/product-shop-membership";
 import { getProductByIdForAdmin, listManufacturersForAdmin } from "@/lib/catalog/queries";
+import { listPickupStoresForAdmin } from "@/lib/shop/pickup-stores";
 
 export const dynamic = "force-dynamic";
 
@@ -39,11 +40,12 @@ export default async function AdminEditProductPage({
   const sp = await searchParams;
   const isNewDraft = sp.neu === "1";
 
-  const [product, manufacturers, aiSettings, shopAssignment] = await Promise.all([
+  const [product, manufacturers, aiSettings, shopAssignment, pickupStores] = await Promise.all([
     getProductByIdForAdmin(id),
     listManufacturersForAdmin(),
     getAiContentSettingsPublic(),
     listShopAssignmentOptionsForAdmin(),
+    listPickupStoresForAdmin(),
   ]);
   if (!product) notFound();
   const formProduct = adminProductForEditForm(product);
@@ -88,6 +90,7 @@ export default async function AdminEditProductPage({
           product={formProduct}
           manufacturers={manufacturers}
           shopAssignment={shopAssignment}
+          pickupStores={pickupStores}
           aiReady={aiSettings.ready}
           isNewDraft={isNewDraft}
         />

@@ -37,6 +37,8 @@ describe("shopSettingsInputFromFormData", () => {
     fd.set("footerShowLegalWiderruf", "true");
     fd.set("footerShowLegalRueckgabe", "false");
     fd.set("footerShowLegalVersand", "true");
+    fd.set("footerBgColor", JERRYS_SHOP_SETTINGS_DEFAULTS.footerBgColor);
+    fd.set("pdpReturnPolicyText", JERRYS_SHOP_SETTINGS_DEFAULTS.pdpReturnPolicyText ?? "");
 
     const input = shopSettingsInputFromFormData(fd);
     expect(input.shopName).toBe("jerry's");
@@ -52,10 +54,11 @@ describe("shopSettingsInputFromFormData", () => {
     expect(input.footerShowLegalRueckgabe).toBe(false);
 
     const parsed = parseShopSettingsUpdate({
+      ...JERRYS_SHOP_SETTINGS_DEFAULTS,
       ...input,
       addressCountry: "DE",
     });
-    expect(parsed.success).toBe(true);
+    expect(parsed.success, parsed.success ? "" : JSON.stringify(parsed.error.issues)).toBe(true);
     if (!parsed.success) return;
     expect(parsed.data.shopName).toBe("jerry's");
     expect(parsed.data.supportEmail).toBeNull();
@@ -89,10 +92,15 @@ describe("shopSettingsInputFromFormData", () => {
       instagramUrl: d.instagramUrl,
       facebookUrl: d.facebookUrl ?? "",
       emailFromName: d.emailFromName,
+      footerBgColor: d.footerBgColor,
+      pdpReturnPolicyText: d.pdpReturnPolicyText ?? "",
     })) {
       fd.set(key, value);
     }
-    const parsed = parseShopSettingsUpdate(shopSettingsInputFromFormData(fd));
+    const parsed = parseShopSettingsUpdate({
+      ...d,
+      ...shopSettingsInputFromFormData(fd),
+    });
     expect(parsed.success).toBe(true);
   });
 });

@@ -38,6 +38,10 @@ import { getPrisma } from "@/lib/db/prisma";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 import { ALLOWED_IMAGE_TYPES, MAX_UPLOAD_BYTES } from "@/lib/admin/upload-image";
 import { isManagedBlobUrl } from "@/lib/shop/branding-asset-fallbacks";
+import {
+  DEFAULT_PICKUP_READY_HOURS,
+  getPickupStoreById,
+} from "@/lib/shop/pickup-stores";
 import { nonEmptyString } from "@/lib/validation/form";
 
 function formIdList(formData: FormData, key: string): string[] {
@@ -45,6 +49,34 @@ function formIdList(formData: FormData, key: string): string[] {
     .getAll(key)
     .map((v) => String(v).trim())
     .filter(Boolean);
+}
+
+async function resolveProductPickupFields(
+  pickupStoreId: string | null,
+  pickupReadyHours: number | null,
+): Promise<
+  | {
+      pickupStoreId: string | null;
+      pickupReadyHours: number | null;
+      pickupAvailable: boolean;
+    }
+  | { fieldErrors: Record<string, string> }
+> {
+  if (!pickupStoreId) {
+    return { pickupStoreId: null, pickupReadyHours: null, pickupAvailable: false };
+  }
+  const store = await getPickupStoreById(pickupStoreId);
+  if (!store) {
+    return { fieldErrors: { pickupStoreId: "Abholort nicht gefunden." } };
+  }
+  if (!store.isActive) {
+    return { fieldErrors: { pickupStoreId: "Abholort ist inaktiv — bitte anderen Store wählen." } };
+  }
+  return {
+    pickupStoreId,
+    pickupReadyHours: pickupReadyHours ?? DEFAULT_PICKUP_READY_HOURS,
+    pickupAvailable: true,
+  };
 }
 
 function reconcileProductAttributesForSave(
@@ -181,7 +213,8 @@ export async function createProduct(
     featureBullets: featureBulletsFromFormData(formData),
     attributes: attributesFromFormData(formData),
     showWorkshopCalendar: formData.get("showWorkshopCalendar") === "on",
-    pickupAvailable: formData.get("pickupAvailable") === "on",
+    pickupStoreId: String(formData.get("pickupStoreId") ?? ""),
+    pickupReadyHours: formData.get("pickupReadyHours"),
     imageUrl: formData.get("imageUrl"),
     imageAlt: formData.get("imageAlt"),
     isActive: parseIsActiveFromFormData(formData),
@@ -196,6 +229,10 @@ export async function createProduct(
   }
 
   const d = parsed.data;
+  const pickupFields = await resolveProductPickupFields(d.pickupStoreId, d.pickupReadyHours);
+  if ("fieldErrors" in pickupFields) {
+    return { fieldErrors: pickupFields.fieldErrors };
+  }
   const reconciled = reconcileProductAttributesForSave(
     formData,
     d.attributes,
@@ -243,7 +280,9 @@ export async function createProduct(
           productNumber: d.productNumber,
           isActive: d.isActive,
           showWorkshopCalendar: d.showWorkshopCalendar,
-          pickupAvailable: d.pickupAvailable,
+          pickupAvailable: pickupFields.pickupAvailable,
+          pickupStoreId: pickupFields.pickupStoreId,
+          pickupReadyHours: pickupFields.pickupReadyHours,
           leadText: d.leadText,
           variantOptionName: d.variantOptionName,
           dimensionsText: legacySpecs.dimensionsText,
@@ -335,7 +374,8 @@ export async function updateProduct(
     featureBullets: featureBulletsFromFormData(formData),
     attributes: attributesFromFormData(formData),
     showWorkshopCalendar: formData.get("showWorkshopCalendar") === "on",
-    pickupAvailable: formData.get("pickupAvailable") === "on",
+    pickupStoreId: String(formData.get("pickupStoreId") ?? ""),
+    pickupReadyHours: formData.get("pickupReadyHours"),
     isActive: parseIsActiveFromFormData(formData),
   };
 
@@ -348,6 +388,10 @@ export async function updateProduct(
   }
 
   const d = parsed.data;
+  const pickupFields = await resolveProductPickupFields(d.pickupStoreId, d.pickupReadyHours);
+  if ("fieldErrors" in pickupFields) {
+    return { fieldErrors: pickupFields.fieldErrors };
+  }
   const reconciled = reconcileProductAttributesForSave(
     formData,
     d.attributes,
@@ -425,7 +469,9 @@ export async function updateProduct(
           productNumber: d.productNumber,
           isActive: d.isActive,
           showWorkshopCalendar: d.showWorkshopCalendar,
-          pickupAvailable: d.pickupAvailable,
+          pickupAvailable: pickupFields.pickupAvailable,
+          pickupStoreId: pickupFields.pickupStoreId,
+          pickupReadyHours: pickupFields.pickupReadyHours,
           leadText: d.leadText,
           variantOptionName: d.variantOptionName,
           dimensionsText: legacySpecs.dimensionsText,

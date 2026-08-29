@@ -17,8 +17,9 @@ export default async function AdminVersandPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-[#1f2937]">Versand</h1>
         <p className="mt-2 text-sm text-[#6b7280]">
-          Lieferländer und Versandkosten gelten shopweit — nicht mehr pro Produkt. Änderungen wirken
-          sofort im Checkout. Internetmarke-Zugangsdaten und Porto-Produkt verwaltest du unter{" "}
+          Lieferländer, Versandkosten und zentral gepflegte Abholorte gelten shopweit — nicht mehr pro
+          Produkt. Änderungen wirken sofort im Checkout. Internetmarke-Zugangsdaten und Porto-Produkt
+          verwaltest du unter{" "}
           <Link
             href="/admin/einstellungen/integrationen"
             className="font-medium text-primary hover:underline"

@@ -16,6 +16,7 @@ import {
 } from "@/lib/shop/upload-shop-branding-asset";
 import {
   shopSettingsInputFromFormData,
+  mergeLegacyPickupShopSettings,
   updateShopSettingsFromInput,
 } from "@/lib/shop/update-shop-settings";
 
@@ -52,7 +53,10 @@ export async function saveShopSettingsAction(
 ): Promise<ShopSettingsFormState> {
   await requireAdminSession();
 
-  const result = await updateShopSettingsFromInput(shopSettingsInputFromFormData(formData));
+  const existing = await getShopSettings();
+  const result = await updateShopSettingsFromInput(
+    mergeLegacyPickupShopSettings(shopSettingsInputFromFormData(formData), existing),
+  );
   if (!result.ok) {
     const fieldErrors = result.fieldErrors;
     const firstFieldError = fieldErrors

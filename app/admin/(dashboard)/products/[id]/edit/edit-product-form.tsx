@@ -20,6 +20,7 @@ import { ProductVariantOptionFields } from "@/app/admin/(dashboard)/products/pro
 import { ProductVariantsSection } from "@/app/admin/(dashboard)/products/product-variants-section";
 import { AdminFormActionDock } from "@/components/admin/admin-form-action-dock";
 import type { ProductAttribute } from "@/features/catalog";
+import type { PickupStoreRecord } from "@/lib/shop/pickup-store-shared";
 import {
   resolveSelectedShopAssignment,
   type AdminShopAssignmentOption,
@@ -67,6 +68,8 @@ type Product = {
   amazonRatingCount: number | null;
   amazonReviewUrl: string | null;
   showWorkshopCalendar: boolean;
+  pickupStoreId: string | null;
+  pickupReadyHours: number | null;
   pickupAvailable: boolean;
   leadText: string | null;
   variantOptionName: string | null;
@@ -101,12 +104,14 @@ export function EditProductForm({
   product,
   manufacturers,
   shopAssignment,
+  pickupStores,
   aiReady = false,
   isNewDraft = false,
 }: {
   product: Product;
   manufacturers: Manufacturer[];
   shopAssignment: AdminShopAssignmentOption;
+  pickupStores: PickupStoreRecord[];
   aiReady?: boolean;
   /** Aus „Neues Produkt“ — Button-Label angepasst. */
   isNewDraft?: boolean;
@@ -210,9 +215,11 @@ export function EditProductForm({
 
         <ProductStorefrontDetailFields
           state={state}
+          pickupStores={pickupStores}
           defaults={{
             showWorkshopCalendar: product.showWorkshopCalendar,
-            pickupAvailable: product.pickupAvailable,
+            pickupStoreId: product.pickupStoreId,
+            pickupReadyHours: product.pickupReadyHours,
           }}
         />
 
