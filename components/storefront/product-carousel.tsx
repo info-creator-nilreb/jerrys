@@ -1,8 +1,7 @@
 "use client";
 
 import useEmblaCarousel from "embla-carousel-react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { ProductCard, type StorefrontProductCard } from "@/components/storefront/product-card";
 import { ProductCardCell } from "@/components/storefront/product-card-layout";
 import { usePrefersReducedMotion } from "@/components/storefront/use-prefers-reduced-motion";
@@ -22,9 +21,6 @@ const slideClassByVariant: Record<ProductCarouselVariant, string> = {
   featured:
     "mx-auto min-w-0 max-w-lg shrink-0 grow-0 basis-full pl-0 md:mx-0 md:basis-[calc(50%-1.25rem)] md:pl-5",
 };
-
-const navBtnClass =
-  "absolute top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-(--surface-muted) bg-white/95 text-(--foreground-heading) shadow-sm transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-40";
 
 function ProductCarouselStack({
   products,
@@ -55,90 +51,43 @@ function ProductCarouselEmbla({
     align: "start",
     containScroll: "trimSnaps",
   });
-  const [canPrev, setCanPrev] = useState(false);
-  const [canNext, setCanNext] = useState(false);
-
-  const onSelect = useCallback(() => {
-    if (!emblaApi) return;
-    setCanPrev(emblaApi.canScrollPrev());
-    setCanNext(emblaApi.canScrollNext());
-  }, [emblaApi]);
-
-  useEffect(() => {
-    if (!emblaApi) return;
-    const raf = requestAnimationFrame(() => {
-      onSelect();
-    });
-    emblaApi.on("reInit", onSelect);
-    emblaApi.on("select", onSelect);
-    return () => {
-      cancelAnimationFrame(raf);
-      emblaApi.off("reInit", onSelect);
-      emblaApi.off("select", onSelect);
-    };
-  }, [emblaApi, onSelect]);
 
   const slideClass = slideClassByVariant[variant];
-  const showNav = products.length > 1;
 
   return (
     <div className={className}>
-      <div className="relative">
-        {showNav ? (
-          <>
-            <button
-              type="button"
-              className={`${navBtnClass} left-0 sm:left-1`}
-              onClick={() => emblaApi?.scrollPrev()}
-              disabled={!canPrev}
-              aria-label="Vorheriges Produkt"
+      <div
+        ref={emblaRef}
+        className="overflow-hidden outline-none ring-primary focus-visible:ring-2"
+        tabIndex={0}
+        role="region"
+        aria-roledescription="Karussell"
+        aria-label={ariaLabel}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            emblaApi?.scrollPrev();
+          }
+          if (e.key === "ArrowRight") {
+            e.preventDefault();
+            emblaApi?.scrollNext();
+          }
+        }}
+      >
+        <div className="flex items-stretch touch-pan-y">
+          {products.map((product, slideIndex) => (
+            <div
+              key={product.id}
+              className={`flex min-h-full flex-col self-stretch ${slideClass}`}
+              role="group"
+              aria-roledescription="Folie"
+              aria-label={`Produkt ${slideIndex + 1} von ${products.length}`}
             >
-              <ChevronLeft width={18} height={18} aria-hidden strokeWidth={2} />
-            </button>
-            <button
-              type="button"
-              className={`${navBtnClass} right-0 sm:right-1`}
-              onClick={() => emblaApi?.scrollNext()}
-              disabled={!canNext}
-              aria-label="Nächstes Produkt"
-            >
-              <ChevronRight width={18} height={18} aria-hidden strokeWidth={2} />
-            </button>
-          </>
-        ) : null}
-        <div
-          ref={emblaRef}
-          className="overflow-hidden outline-none ring-primary focus-visible:ring-2"
-          tabIndex={0}
-          role="region"
-          aria-roledescription="Karussell"
-          aria-label={ariaLabel}
-          onKeyDown={(e) => {
-            if (e.key === "ArrowLeft") {
-              e.preventDefault();
-              emblaApi?.scrollPrev();
-            }
-            if (e.key === "ArrowRight") {
-              e.preventDefault();
-              emblaApi?.scrollNext();
-            }
-          }}
-        >
-          <div className="flex items-stretch touch-pan-y">
-            {products.map((product, slideIndex) => (
-              <div
-                key={product.id}
-                className={`flex min-h-full flex-col self-stretch ${slideClass}`}
-                role="group"
-                aria-roledescription="Folie"
-                aria-label={`Produkt ${slideIndex + 1} von ${products.length}`}
-              >
-                <ProductCardCell>
-                  <ProductCard product={product} />
-                </ProductCardCell>
-              </div>
-            ))}
-          </div>
+              <ProductCardCell>
+                <ProductCard product={product} />
+              </ProductCardCell>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -206,31 +155,11 @@ export function ProductCarouselPreview<T extends { id: string }>({
   renderItem: (item: T, index: number) => ReactNode;
   className?: string;
 }) {
-  const [emblaRef, emblaApi] = useEmblaCarousel({
+  const [emblaRef] = useEmblaCarousel({
     loop: false,
     align: "start",
     containScroll: "trimSnaps",
   });
-  const [canPrev, setCanPrev] = useState(false);
-  const [canNext, setCanNext] = useState(false);
-
-  const onSelect = useCallback(() => {
-    if (!emblaApi) return;
-    setCanPrev(emblaApi.canScrollPrev());
-    setCanNext(emblaApi.canScrollNext());
-  }, [emblaApi]);
-
-  useEffect(() => {
-    if (!emblaApi) return;
-    const raf = requestAnimationFrame(onSelect);
-    emblaApi.on("reInit", onSelect);
-    emblaApi.on("select", onSelect);
-    return () => {
-      cancelAnimationFrame(raf);
-      emblaApi.off("reInit", onSelect);
-      emblaApi.off("select", onSelect);
-    };
-  }, [emblaApi, onSelect]);
 
   if (items.length === 0) return null;
 
@@ -239,26 +168,8 @@ export function ProductCarouselPreview<T extends { id: string }>({
   }
 
   return (
-    <div className={`relative ${className ?? ""}`.trim()}>
-      <button
-        type="button"
-        className={`${navBtnClass} left-0 h-8 w-8`}
-        onClick={() => emblaApi?.scrollPrev()}
-        disabled={!canPrev}
-        aria-label="Zurück"
-      >
-        <ChevronLeft width={16} height={16} aria-hidden strokeWidth={2} />
-      </button>
-      <button
-        type="button"
-        className={`${navBtnClass} right-0 h-8 w-8`}
-        onClick={() => emblaApi?.scrollNext()}
-        disabled={!canNext}
-        aria-label="Weiter"
-      >
-        <ChevronRight width={16} height={16} aria-hidden strokeWidth={2} />
-      </button>
-      <div ref={emblaRef} className="overflow-hidden px-8">
+    <div className={className}>
+      <div ref={emblaRef} className="overflow-hidden">
         <div className="flex">
           {items.map((item, index) => (
             <div
