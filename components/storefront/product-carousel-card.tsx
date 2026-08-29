@@ -71,7 +71,10 @@ export function ProductCarouselCard({ product }: { product: StorefrontProductCar
           )}
         </Link>
         {canAdd ? (
-          <div className="pointer-events-auto absolute bottom-2 right-2 z-20">
+          <div
+            className="pointer-events-auto absolute bottom-2 right-2 z-20"
+            data-carousel-control
+          >
             <AddToCartForm
               productId={product.id}
               productVariantId={variant.id}

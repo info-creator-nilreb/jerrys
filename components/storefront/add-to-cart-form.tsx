@@ -105,6 +105,7 @@ export function AddToCartForm({
         onPointerDown={stopCarouselEvent}
         onClick={stopCarouselEvent}
         className="inline-flex"
+        data-carousel-control
       >
         <input type="hidden" name="productId" value={productId} />
         {productVariantId ? (
