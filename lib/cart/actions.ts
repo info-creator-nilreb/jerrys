@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { getCartIdFromCookie, ensureCartIdAndCookie } from "@/lib/cart/cart-cookie";
+import { getCartIdFromCookie } from "@/lib/cart/cart-cookie";
 import {
   clampToValidQuantity,
   defaultAddQuantity,
@@ -11,8 +11,10 @@ import {
   nextQuantityStep,
   previousQuantityStep,
 } from "@/lib/cart/quantity";
-import { resolveAddToCartNextQuantity } from "@/lib/cart/add-to-cart-quantity";
-import { getStorefrontCartBadgeCount } from "@/lib/cart/badge";
+import {
+  AddToCartMutationError,
+  executeAddToCartMutation,
+} from "@/lib/cart/add-to-cart-mutation";
 import { cartLineCommerceRules, cartVariantSelect, getCartWithLines } from "@/lib/cart/cart-queries";
 import { getPrisma } from "@/lib/db/prisma";
 import { nonEmptyString } from "@/lib/validation/form";
@@ -49,82 +51,23 @@ export async function addToCart(
     return { error: "Ungültiges Produkt." };
   }
 
-  const product = await getPrisma().product.findFirst({
-    where: { id: parsed.data.productId, isActive: true },
-    select: { id: true, slug: true },
-  });
-  if (!product) {
-    return { error: "Produkt nicht verfügbar." };
-  }
-
-  const variant = parsed.data.productVariantId
-    ? await getPrisma().productVariant.findFirst({
-        where: {
-          id: parsed.data.productVariantId,
-          productId: product.id,
-          isActive: true,
-        },
-      })
-    : await getPrisma().productVariant.findFirst({
-        where: { productId: product.id, isDefault: true, isActive: true },
-      });
-
-  if (!variant) {
-    return { error: "Produkt nicht verfügbar." };
-  }
-
-  const rules = {
-    availableQuantity: variant.availableQuantity,
-    minOrderQty: variant.minOrderQty,
-    purchaseStep: variant.purchaseStep,
-    maxOrderQty: variant.maxOrderQty,
-  };
-
-  const cartId = await ensureCartIdAndCookie();
-
-  const existing = await getPrisma().cartLine.findUnique({
-    where: {
-      cartId_productVariantId: { cartId, productVariantId: variant.id },
-    },
-  });
-
   const rawQtyField = formData.get("quantity");
   const rawQtyTrimmed = rawQtyField !== null ? String(rawQtyField).trim() : "";
   const explicitQuantity = rawQtyTrimmed !== "" ? Number(rawQtyTrimmed) : null;
 
-  const resolved = resolveAddToCartNextQuantity(
-    rules,
-    existing?.quantity ?? null,
-    explicitQuantity,
-  );
-  if (!resolved.ok) {
-    return { error: resolved.error };
-  }
-
-  const { nextQty, addedQuantity } = resolved;
-
-  if (existing) {
-    await getPrisma().cartLine.update({
-      where: { id: existing.id },
-      data: { quantity: nextQty },
+  try {
+    const { addedQuantity, badgeCount } = await executeAddToCartMutation({
+      productId: parsed.data.productId,
+      productVariantId: parsed.data.productVariantId,
+      explicitQuantity,
     });
-  } else {
-    await getPrisma().cartLine.create({
-      data: {
-        cartId,
-        productId: product.id,
-        productVariantId: variant.id,
-        quantity: nextQty,
-      },
-    });
+    return { ok: true, addedQuantity, badgeCount };
+  } catch (error) {
+    if (error instanceof AddToCartMutationError) {
+      return { error: error.message };
+    }
+    throw error;
   }
-
-  const badgeCount = await getStorefrontCartBadgeCount();
-
-  revalidatePath("/warenkorb");
-  revalidatePath("/checkout");
-  revalidatePath("/", "layout");
-  return { ok: true, addedQuantity, badgeCount };
 }
 
 export async function addToCartAndRedirectToExpressCart(formData: FormData) {
