@@ -5,6 +5,7 @@ import { resolveAdminListPagination } from "@/lib/admin/list-pagination-page";
 import { countOrdersForAdmin, listOrdersForAdmin } from "@/lib/orders/admin-queries";
 import { formatOrderCreatedAt } from "@/lib/orders/format-order-created-at";
 import { deriveTripleFromOrder } from "@/lib/orders/order-admin-triple";
+import { orderCustomerNotePreview } from "@/lib/orders/order-customer-note-preview";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,7 @@ export default async function AdminOrdersPage({
               currency: o.currency,
               triple: deriveTripleFromOrder(o),
               deletable: orderAdminDeleteBlocker(o) == null,
+              customerNotePreview: orderCustomerNotePreview(o.customerNote),
             }))}
           />
           <AdminListPagination

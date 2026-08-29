@@ -20,6 +20,7 @@ export type OrdersAdminListItem = {
   currency: string;
   triple: AdminTriple;
   deletable: boolean;
+  customerNotePreview: string | null;
 };
 
 export function OrdersAdminList({ orders }: { orders: OrdersAdminListItem[] }) {
@@ -148,6 +149,14 @@ export function OrdersAdminList({ orders }: { orders: OrdersAdminListItem[] }) {
               <p className="mt-2 text-xs text-[#6b7280]">
                 {o.itemCount} {o.itemCount === 1 ? "Position" : "Positionen"}
               </p>
+              {o.customerNotePreview ? (
+                <p
+                  className="mt-2 line-clamp-2 text-xs text-[#374151]"
+                  title={o.customerNotePreview}
+                >
+                  <span className="font-medium text-[#6b7280]">Notiz:</span> {o.customerNotePreview}
+                </p>
+              ) : null}
               <div className="mt-3 flex flex-wrap gap-2">
                 <OrderTriplePill triple={o.triple} dim="payment" />
                 <OrderTriplePill triple={o.triple} dim="shipping" />
@@ -199,6 +208,9 @@ export function OrdersAdminList({ orders }: { orders: OrdersAdminListItem[] }) {
                 Bestellung
               </th>
               <th scope="col" className="px-4 py-3 font-medium">
+                Kundennotiz
+              </th>
+              <th scope="col" className="px-4 py-3 font-medium">
                 Summe
               </th>
               <th scope="col" className="px-4 py-3 text-right font-medium">
@@ -243,6 +255,15 @@ export function OrdersAdminList({ orders }: { orders: OrdersAdminListItem[] }) {
                 </td>
                 <td className="px-4 py-3">
                   <OrderTriplePill triple={o.triple} dim="order" />
+                </td>
+                <td className="max-w-[12rem] px-4 py-3 text-[#6b7280]">
+                  {o.customerNotePreview ? (
+                    <span className="line-clamp-2 text-xs" title={o.customerNotePreview}>
+                      {o.customerNotePreview}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-[#9ca3af]">—</span>
+                  )}
                 </td>
                 <td className="px-4 py-3 font-medium text-[#1f2937]">
                   {formatPrice(o.totalGrossCents, o.currency)}

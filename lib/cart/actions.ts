@@ -22,6 +22,11 @@ export type CartActionState = {
   badgeCount?: number;
 } | null;
 
+export type CartNoteActionState =
+  | { ok: true }
+  | { ok: false; error: string }
+  | null;
+
 const lineSchema = z.object({
   lineId: nonEmptyString,
 });
@@ -129,20 +134,30 @@ export async function submitUpdateCartLineQuantity(formData: FormData) {
   await updateCartLineQuantity(null, formData);
 }
 
-export async function updateCartCustomerNote(formData: FormData) {
+export async function updateCartCustomerNote(
+  _prev: CartNoteActionState,
+  formData: FormData,
+): Promise<CartNoteActionState> {
   const cartId = await getCartIdFromCookie();
-  if (!cartId) return;
+  if (!cartId) {
+    return { ok: false, error: "Warenkorb nicht gefunden. Bitte Seite neu laden." };
+  }
 
   const raw = String(formData.get("note") ?? "");
   const note = raw.trim() === "" ? null : raw.trim().slice(0, 5000);
 
-  await getPrisma().cart.update({
-    where: { id: cartId },
-    data: { customerNote: note },
-  });
+  try {
+    await getPrisma().cart.update({
+      where: { id: cartId },
+      data: { customerNote: note },
+    });
+  } catch {
+    return { ok: false, error: "Notiz konnte nicht gespeichert werden. Bitte erneut versuchen." };
+  }
 
   revalidatePath("/warenkorb");
   revalidatePath("/checkout");
+  return { ok: true };
 }
 
 export async function incrementCartLineQuantity(formData: FormData) {
