@@ -135,6 +135,20 @@ export async function getActiveProductBySlug(slug: string) {
   const product = await getPrisma().product.findFirst({
     where: { slug, isActive: true },
     include: {
+      pickupStore: {
+        select: {
+          id: true,
+          name: true,
+          line1: true,
+          line2: true,
+          zip: true,
+          city: true,
+          country: true,
+          infoUrl: true,
+          isActive: true,
+          sortOrder: true,
+        },
+      },
       images: { orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }] },
       variants: prismaStorefrontActiveVariantsInclude,
       collectionMemberships: {

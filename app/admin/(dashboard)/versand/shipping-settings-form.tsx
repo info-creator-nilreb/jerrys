@@ -12,6 +12,7 @@ import {
 } from "@/components/admin/admin-form-action-dock";
 import { centsToPriceInputString } from "@/lib/catalog/format";
 import { SHOP_SHIPPING_COUNTRY_OPTIONS } from "@/lib/catalog/shipping-countries-catalog";
+import { PickupStoresSection } from "@/app/admin/(dashboard)/versand/pickup-stores-section";
 
 const initial: ShippingSettingsFormState = null;
 
@@ -128,6 +129,8 @@ export function ShippingSettingsForm({ defaults }: Props) {
           ) : null}
         </div>
       </section>
+
+      <PickupStoresSection defaults={defaults.pickupStores} fieldErrors={fe} />
 
       <AdminFormActionDock>
         {state?.ok ? (

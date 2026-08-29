@@ -14,7 +14,7 @@ import { AddToCartForm } from "@/components/storefront/add-to-cart-form";
 import { ProductExpressCheckout } from "@/components/storefront/product-express-checkout";
 import { ProductPdpPickupHint } from "@/components/storefront/product-pdp-pickup-hint";
 import { ProductPdpStickyAtcBar } from "@/components/storefront/product-pdp-sticky-atc-bar";
-import type { PickupDisplayCopy } from "@/lib/shop/pickup-settings";
+import type { PickupDisplayCopy } from "@/lib/shop/pickup-store-shared";
 
 export const PDP_PURCHASE_SENTINEL_ID = "pdp-purchase-sentinel";
 

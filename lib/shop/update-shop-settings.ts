@@ -3,11 +3,8 @@ import { getPrisma } from "@/lib/db/prisma";
 import { isMissingSchemaError } from "@/lib/db/prisma-error";
 import { createLogger, errorMeta } from "@/lib/logging/logger";
 import { ensureShopSettingsColumns } from "@/lib/shop/ensure-shop-settings-columns";
-import {
-  getShopSettings,
-  SHOP_SETTINGS_DEFAULT_ID,
-  type ShopSettingsDTO,
-} from "@/lib/shop/shop-settings";
+import { getShopSettings, SHOP_SETTINGS_DEFAULT_ID } from "@/lib/shop/shop-settings";
+import type { ShopSettingsDTO } from "@/lib/shop/shop-settings-defaults";
 import {
   JERRYS_SHOP_SETTINGS_DEFAULTS,
   parseDesktopShopNavMode,
@@ -97,9 +94,22 @@ export function shopSettingsInputFromFormData(formData: FormData): Record<string
     footerShowLegalVersand: formCheckbox(formData, "footerShowLegalVersand"),
     pdpReturnPolicyText: str("pdpReturnPolicyText"),
     pdpTrustBarItems: pdpTrustBarItemsFromFormData(formData),
-    pickupStoreLabel: str("pickupStoreLabel"),
-    pickupReadyText: str("pickupReadyText"),
-    pickupInfoUrl: str("pickupInfoUrl"),
+  };
+}
+
+/** Ergänzt Legacy-Abhol-Felder aus bestehenden Settings (nicht mehr im Formular). */
+export function mergeLegacyPickupShopSettings(
+  input: Record<string, unknown>,
+  existing: Pick<
+    ShopSettingsDTO,
+    "pickupStoreLabel" | "pickupReadyText" | "pickupInfoUrl"
+  >,
+): Record<string, unknown> {
+  return {
+    ...input,
+    pickupStoreLabel: existing.pickupStoreLabel ?? "",
+    pickupReadyText: existing.pickupReadyText ?? "",
+    pickupInfoUrl: existing.pickupInfoUrl ?? "",
   };
 }
 

@@ -8,6 +8,8 @@ import { parseEuroInputToCents } from "@/lib/catalog/format";
 import { isShopShippingCountryCode } from "@/lib/catalog/shipping-countries-catalog";
 import { getPrisma } from "@/lib/db/prisma";
 import { parseShippingRatesFromJson } from "@/lib/shop/shipping-settings";
+import { listPickupStoresForAdmin, type PickupStoreRecord } from "@/lib/shop/pickup-stores";
+import { syncPickupStoresFromFormData } from "@/lib/shop/sync-pickup-stores";
 
 const SETTINGS_ID = "default";
 
@@ -42,6 +44,11 @@ export async function saveShopShippingSettings(
   formData: FormData,
 ): Promise<ShippingSettingsFormState> {
   await requireAdminSession();
+
+  const pickupResult = await syncPickupStoresFromFormData(formData);
+  if (pickupResult?.fieldErrors) {
+    return { fieldErrors: pickupResult.fieldErrors };
+  }
 
   const rawCodes = formData.getAll("shippingCountryCodes").map((v) => String(v).trim().toUpperCase());
   const uniqueCodes = [...new Set(rawCodes.filter((c) => c.length === 2))];
@@ -146,6 +153,8 @@ export async function saveShopShippingSettings(
   revalidatePath("/warenkorb");
   revalidatePath("/");
   revalidatePath("/admin/versand");
+  revalidatePath("/produkte");
+  revalidatePath("/");
   return { ok: true };
 }
 
@@ -153,16 +162,21 @@ export type ShopShippingSettingsForAdminForm = {
   shippingCountryCodes: string[];
   shippingRatesCentsByCountry: Record<string, number>;
   freeShippingFromSubtotalGrossCents: number | null;
+  pickupStores: PickupStoreRecord[];
 };
 
 export async function getShopShippingSettingsForAdminForm(): Promise<ShopShippingSettingsForAdminForm> {
   await requireAdminSession();
-  const row = await getPrisma().shopShippingSettings.findUnique({ where: { id: SETTINGS_ID } });
+  const [row, pickupStores] = await Promise.all([
+    getPrisma().shopShippingSettings.findUnique({ where: { id: SETTINGS_ID } }),
+    listPickupStoresForAdmin(),
+  ]);
   if (!row) {
     return {
       shippingCountryCodes: ["DE"],
       shippingRatesCentsByCountry: {},
       freeShippingFromSubtotalGrossCents: null,
+      pickupStores,
     };
   }
   const codes = (row.shippingCountryCodes ?? [])
@@ -173,5 +187,6 @@ export async function getShopShippingSettingsForAdminForm(): Promise<ShopShippin
     shippingCountryCodes: sorted.length ? sorted : ["DE"],
     shippingRatesCentsByCountry: parseShippingRatesFromJson(row.shippingRatesCentsByCountry),
     freeShippingFromSubtotalGrossCents: row.freeShippingFromSubtotalGrossCents,
+    pickupStores,
   };
 }

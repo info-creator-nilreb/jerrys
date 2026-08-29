@@ -51,6 +51,8 @@ export function adminProductForEditForm(product: AdminProductRecord) {
     amazonRatingCount: product.amazonRatingCount,
     amazonReviewUrl: product.amazonReviewUrl,
     showWorkshopCalendar: product.showWorkshopCalendar,
+    pickupStoreId: product.pickupStoreId,
+    pickupReadyHours: product.pickupReadyHours,
     pickupAvailable: product.pickupAvailable,
     leadText: product.leadText,
     variantOptionName: product.variantOptionName,

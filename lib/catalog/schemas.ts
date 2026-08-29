@@ -125,7 +125,22 @@ const sharedProductFields = {
   maxOrderQty: z.preprocess(optionalPositiveIntMin1Nullable, z.number().int().min(1).nullable()),
   isActive: z.boolean(),
   showWorkshopCalendar: z.boolean(),
-  pickupAvailable: z.boolean(),
+  pickupStoreId: z
+    .string()
+    .trim()
+    .transform((s) => (s === "" ? null : s))
+    .nullable(),
+  pickupReadyHours: z.preprocess(
+    (v) => {
+      if (v === undefined || v === null) return null;
+      const s = String(v).trim();
+      if (s === "") return null;
+      const n = Number(s);
+      if (!Number.isFinite(n) || !Number.isInteger(n) || n < 1 || n > 168) return null;
+      return n;
+    },
+    z.number().int().min(1).max(168).nullable(),
+  ),
   leadText: optionalText,
   variantOptionName: optionalText,
   featureBullets: featureBulletsField,
