@@ -1,12 +1,13 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
-import { useId, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import type { ProductFormState } from "@/app/admin/(dashboard)/products/actions";
 import type { ProductAttribute } from "@/features/catalog";
-import { listIsoCountryOptions } from "@/lib/catalog/iso-countries-de";
+import { countryDisplayName, listIsoCountryOptions } from "@/lib/catalog/iso-countries-de";
 import {
   customAttributesOnly,
+  findOriginRawValue,
   migrateLegacySpecsIntoAttributes,
   readStandardSpecValues,
   STANDARD_SPEC_LABELS,
@@ -42,11 +43,30 @@ function toCustomRows(attrs: ProductAttribute[]): Row[] {
 export function ProductAttributesFields({ state, defaults, legacySpecs }: Props) {
   const baseId = useId();
   const fe = state?.fieldErrors ?? {};
-  const mergedDefaults = migrateLegacySpecsIntoAttributes(defaults, legacySpecs);
-  const initialSpecs = readStandardSpecValues(mergedDefaults);
+  const mergedDefaults = useMemo(
+    () => migrateLegacySpecsIntoAttributes(defaults, legacySpecs),
+    [defaults, legacySpecs],
+  );
+  const initialSpecs = useMemo(
+    () => readStandardSpecValues(mergedDefaults, legacySpecs),
+    [mergedDefaults, legacySpecs],
+  );
+  const originRaw = useMemo(() => findOriginRawValue(mergedDefaults), [mergedDefaults]);
   const [specs, setSpecs] = useState<StandardSpecValues>(initialSpecs);
   const [rows, setRows] = useState<Row[]>(() => toCustomRows(mergedDefaults));
-  const countryOptions = listIsoCountryOptions();
+  const countryOptions = useMemo(() => {
+    const base = listIsoCountryOptions();
+    const code = initialSpecs.originCountryCode;
+    if (code && !base.some((c) => c.code === code)) {
+      return [{ code, name: countryDisplayName(code) }, ...base];
+    }
+    return base;
+  }, [initialSpecs.originCountryCode]);
+
+  useEffect(() => {
+    setSpecs(initialSpecs);
+    setRows(toCustomRows(mergedDefaults));
+  }, [initialSpecs, mergedDefaults]);
 
   function updateRow(clientId: string, patch: Partial<Omit<Row, "clientId">>) {
     setRows((prev) =>
@@ -156,6 +176,11 @@ export function ProductAttributesFields({ state, defaults, legacySpecs }: Props)
               </option>
             ))}
           </select>
+          {originRaw && !specs.originCountryCode ? (
+            <p className="text-xs text-amber-800" role="status">
+              Bestandswert „{originRaw}“ konnte keinem Land zugeordnet werden — bitte manuell wählen.
+            </p>
+          ) : null}
         </div>
       </div>
 

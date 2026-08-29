@@ -68,7 +68,7 @@ export function listIsoCountryOptions(): IsoCountryOption[] {
     "ST", "SA", "SE", "CH", "SN", "RS", "SC", "SL", "ZW", "SG", "SK", "SI", "SO", "ES", "LK", "KN",
     "LC", "VC", "ZA", "SD", "SS", "SR", "SY", "TJ", "TZ", "TH", "TL", "TG", "TO", "TT", "TD", "CZ",
     "TN", "TR", "TM", "TV", "UG", "UA", "HU", "UY", "UZ", "VU", "VA", "VE", "AE", "US", "GB", "VN",
-    "CF", "CY",
+    "CF", "CY", "HK", "MO",
   ];
 
   const seen = new Set<string>();
@@ -168,13 +168,27 @@ export function countryCodeFromValue(raw: string): string | null {
   if (!t) return null;
   if (/^[A-Za-z]{2}$/.test(t)) return t.toUpperCase();
 
-  const norm = normalizeCountrySearchText(t);
+  const direct = lookupCountryCode(normalizeCountrySearchText(t));
+  if (direct) return direct;
+
+  // „China / Taiwan“, „Germany, EU“ — einzelne Segmente probieren
+  for (const part of t.split(/[,;/]|\bund\b|\bor\b/i)) {
+    const segment = part.trim();
+    if (!segment) continue;
+    if (/^[A-Za-z]{2}$/.test(segment)) return segment.toUpperCase();
+    const hit = lookupCountryCode(normalizeCountrySearchText(segment));
+    if (hit) return hit;
+  }
+
+  return null;
+}
+
+function lookupCountryCode(norm: string): string | null {
   if (!norm) return null;
 
   const direct = NAME_TO_CODE.get(norm);
   if (direct) return direct;
 
-  // „deutschland (eu)“ o. ä.
   const compact = norm.replace(/\s+/g, "");
   const compactHit = NAME_TO_CODE.get(compact);
   if (compactHit) return compactHit;

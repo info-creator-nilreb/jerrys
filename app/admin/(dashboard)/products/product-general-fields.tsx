@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { ChevronDown, CircleQuestionMark } from "lucide-react";
 import { ProductDescriptionEditor } from "@/app/admin/(dashboard)/products/description-editor";
 import type { ProductFormState } from "@/app/admin/(dashboard)/products/actions";
@@ -18,15 +19,8 @@ function InfoIcon({ title }: { title: string }) {
   );
 }
 
-function hasAmazonFormContent(defaults: Props["defaults"], fe: Record<string, string>): boolean {
-  return Boolean(
-    defaults.amazonRatingAverage.trim() ||
-      defaults.amazonRatingCount.trim() ||
-      defaults.amazonReviewUrl.trim() ||
-      fe.amazonRatingAverage ||
-      fe.amazonRatingCount ||
-      fe.amazonReviewUrl,
-  );
+function hasAmazonFieldErrors(fe: Record<string, string>): boolean {
+  return Boolean(fe.amazonRatingAverage || fe.amazonRatingCount || fe.amazonReviewUrl);
 }
 
 type Mfr = { id: string; name: string };
@@ -55,7 +49,12 @@ type Props = {
 
 export function ProductGeneralFields({ state, manufacturers, defaults }: Props) {
   const fe = state?.fieldErrors ?? {};
-  const amazonExpanded = hasAmazonFormContent(defaults, fe);
+  const hasAmazonErrors = hasAmazonFieldErrors(fe);
+  const [amazonOpen, setAmazonOpen] = useState(false);
+
+  useEffect(() => {
+    if (hasAmazonErrors) setAmazonOpen(true);
+  }, [hasAmazonErrors]);
   const {
     title,
     setTitle,
@@ -201,7 +200,8 @@ export function ProductGeneralFields({ state, manufacturers, defaults }: Props) 
         </div>
 
         <details
-          open={amazonExpanded}
+          open={amazonOpen}
+          onToggle={(e) => setAmazonOpen(e.currentTarget.open)}
           className="group rounded-lg border border-dashed border-[#e5e7eb] bg-[#fafafa]"
         >
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:content-none [&::-webkit-details-marker]:hidden">
