@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useId, useRef, useState, type FormEvent, type MouseEvent } from "react";
+import { useActionState, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { addToCart, type CartActionState } from "@/lib/cart/actions";
 import { notifyStorefrontCartUpdated } from "@/lib/cart/cart-client-events";
 import {
@@ -46,24 +46,22 @@ export function AddToCartForm({
   /** Warenkorb-Icon im Button (Produktdetailseite). */
   showCartIcon?: boolean;
   /** Stärkerer Kauf-CTA und vertikale Klarheit auf der PDP. */
-  layout?: "default" | "pdp" | "sticky" | "carousel-icon";
+  layout?: "default" | "pdp" | "sticky";
 }) {
   const [state, formAction, pending] = useActionState(addToCart, initial);
   const qtyFieldId = useId();
   const wasPendingRef = useRef(false);
   const optimisticDeltaRef = useRef(0);
-  const submitGenerationRef = useRef(0);
+  const [submitGeneration, setSubmitGeneration] = useState(0);
   const slowPendingTimerRef = useRef<number | null>(null);
   const [slowPendingGeneration, setSlowPendingGeneration] = useState(0);
-  const showSlowPending =
-    pending && slowPendingGeneration === submitGenerationRef.current;
+  const showSlowPending = pending && slowPendingGeneration === submitGeneration;
 
   const defaultQty = defaultAddQuantity(quantityRules) ?? quantityRules.minOrderQty;
   const maxQty = maxSelectableQuantity(quantityRules);
   const [quantity, setQuantity] = useState(() => clampQty(quantityRules, defaultQty));
   const isPdp = !compact && layout === "pdp";
   const isSticky = layout === "sticky";
-  const isCarouselIcon = layout === "carousel-icon";
 
   useEffect(() => {
     if (wasPendingRef.current && !pending) {
@@ -87,19 +85,18 @@ export function AddToCartForm({
     if (slowPendingTimerRef.current !== null) {
       window.clearTimeout(slowPendingTimerRef.current);
     }
-    submitGenerationRef.current += 1;
-    const generation = submitGenerationRef.current;
-    slowPendingTimerRef.current = window.setTimeout(() => {
-      slowPendingTimerRef.current = null;
-      setSlowPendingGeneration(generation);
-    }, 400);
+    setSubmitGeneration((prev) => {
+      const generation = prev + 1;
+      slowPendingTimerRef.current = window.setTimeout(() => {
+        slowPendingTimerRef.current = null;
+        setSlowPendingGeneration(generation);
+      }, 400);
+      return generation;
+    });
     formAction(formData);
   };
 
   if (!canAdd) {
-    if (isCarouselIcon) {
-      return null;
-    }
     if (compact) {
       return (
         <p className="text-base leading-snug text-(--foreground-muted)">
@@ -124,55 +121,6 @@ export function AddToCartForm({
 
   const canDec = quantity - quantityRules.purchaseStep >= quantityRules.minOrderQty;
   const canInc = quantity + quantityRules.purchaseStep <= maxQty;
-
-  if (isCarouselIcon) {
-    const stopCarouselEvent = (event: MouseEvent<HTMLElement>) => {
-      event.stopPropagation();
-    };
-
-    const submitCarouselAdd = (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      event.stopPropagation();
-      submitWithOptimisticBadge(new FormData(event.currentTarget));
-    };
-
-    return (
-      <form
-        action={formAction}
-        onSubmit={submitCarouselAdd}
-        onPointerDown={stopCarouselEvent}
-        onClick={stopCarouselEvent}
-        className="inline-flex"
-        data-carousel-control
-      >
-        <input type="hidden" name="productId" value={productId} />
-        {productVariantId ? (
-          <input type="hidden" name="productVariantId" value={productVariantId} />
-        ) : null}
-        <input type="hidden" name="quantity" value={quantity} />
-        <button
-          type="submit"
-          onPointerDown={stopCarouselEvent}
-          onClick={stopCarouselEvent}
-          aria-busy={pending}
-          aria-label={pending && showSlowPending ? "Wird hinzugefügt…" : "In den Warenkorb"}
-          className="inline-flex size-9 items-center justify-center rounded-full border border-white/35 bg-black/35 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-black/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none aria-busy:opacity-70"
-        >
-          <CartIcon className="size-4" />
-        </button>
-        {state?.error ? (
-          <p className="sr-only" role="alert">
-            {state.error}
-          </p>
-        ) : null}
-        {state?.ok ? (
-          <p className="sr-only" role="status">
-            Zum Warenkorb hinzugefügt.
-          </p>
-        ) : null}
-      </form>
-    );
-  }
 
   const submitDefaultAdd = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

@@ -10,10 +10,7 @@ import {
   nextQuantityStep,
   previousQuantityStep,
 } from "@/lib/cart/quantity";
-import {
-  AddToCartMutationError,
-  executeAddToCartMutation,
-} from "@/lib/cart/add-to-cart-mutation";
+import { addToCartFromFormData } from "@/lib/cart/add-to-cart-from-form-data";
 import { cartLineCommerceRules, cartVariantSelect, getCartWithLines } from "@/lib/cart/cart-queries";
 import { getPrisma } from "@/lib/db/prisma";
 import { nonEmptyString } from "@/lib/validation/form";
@@ -24,11 +21,6 @@ export type CartActionState = {
   addedQuantity?: number;
   badgeCount?: number;
 } | null;
-
-const addSchema = z.object({
-  productId: nonEmptyString,
-  productVariantId: z.string().optional(),
-});
 
 const lineSchema = z.object({
   lineId: nonEmptyString,
@@ -42,31 +34,7 @@ export async function addToCart(
   _prev: CartActionState,
   formData: FormData,
 ): Promise<CartActionState> {
-  const parsed = addSchema.safeParse({
-    productId: formData.get("productId"),
-    productVariantId: formData.get("productVariantId") ?? undefined,
-  });
-  if (!parsed.success) {
-    return { error: "Ungültiges Produkt." };
-  }
-
-  const rawQtyField = formData.get("quantity");
-  const rawQtyTrimmed = rawQtyField !== null ? String(rawQtyField).trim() : "";
-  const explicitQuantity = rawQtyTrimmed !== "" ? Number(rawQtyTrimmed) : null;
-
-  try {
-    const { addedQuantity, badgeCount } = await executeAddToCartMutation({
-      productId: parsed.data.productId,
-      productVariantId: parsed.data.productVariantId,
-      explicitQuantity,
-    });
-    return { ok: true, addedQuantity, badgeCount };
-  } catch (error) {
-    if (error instanceof AddToCartMutationError) {
-      return { error: error.message };
-    }
-    throw error;
-  }
+  return addToCartFromFormData(formData);
 }
 
 export async function addToCartAndRedirectToExpressCart(formData: FormData) {
