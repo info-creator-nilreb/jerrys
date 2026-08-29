@@ -140,7 +140,6 @@ export function ProductPdpPurchasePanel({
         ) : null}
         <p className="text-2xl font-semibold tracking-tight text-primary md:text-[1.7rem]">
           {formatPrice(selected.priceGrossCents, currency)}
-          <span className="text-base font-normal text-(--foreground-muted)">*</span>
         </p>
         <p className="mt-1 text-sm text-(--foreground-muted)">inkl. MwSt., zzgl. Versand</p>
       </div>
@@ -188,14 +187,10 @@ export function ProductPdpPurchasePanel({
 
       {pickupCopy ? <ProductPdpPickupHint pickupCopy={pickupCopy} /> : null}
 
-      <p className="text-center text-[0.7rem] leading-snug text-(--foreground-muted)">
+      <p className="border-t border-(--surface-muted) pt-4 text-center text-[0.7rem] leading-snug text-(--foreground-muted)">
         Im Checkout:{" "}
         <span className="text-(--foreground-heading)">PayPal, Debit- oder Kreditkarte</span> und
         weitere sichere Zahlungsarten.
-      </p>
-
-      <p className="border-t border-(--surface-muted) pt-4 text-[0.68rem] leading-relaxed text-(--foreground-muted)">
-        * inkl. MwSt., zzgl. Versand. Nach dem Warenkorb folgen Warenkorb und Checkout.
       </p>
     </div>
 
