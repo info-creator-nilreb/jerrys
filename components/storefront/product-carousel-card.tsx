@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formatPrice } from "@/lib/catalog/format";
-import { AddToCartForm } from "@/components/storefront/add-to-cart-form";
+import { CarouselAddToCartButton } from "@/components/storefront/carousel-add-to-cart-button";
 import { ProductCardImageSlider } from "@/components/storefront/product-card-image-slider";
 import { ProductCardImage } from "@/components/storefront/product-card-image";
 import {
@@ -75,12 +75,10 @@ export function ProductCarouselCard({ product }: { product: StorefrontProductCar
             className="pointer-events-auto absolute bottom-2 right-2 z-20"
             data-carousel-control
           >
-            <AddToCartForm
+            <CarouselAddToCartButton
               productId={product.id}
               productVariantId={variant.id}
-              canAdd={canAdd}
               quantityRules={quantityRules!}
-              layout="carousel-icon"
             />
           </div>
         ) : null}
