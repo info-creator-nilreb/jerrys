@@ -5,6 +5,8 @@ import { getAdminSession } from "@/lib/auth/admin-session";
 import { formatPrice } from "@/lib/catalog/format";
 import { getAdminDashboardOrdersSnapshot } from "@/lib/orders/admin-queries";
 import { deriveTripleFromOrder } from "@/lib/orders/order-admin-triple";
+import { resolveAdminDashboardWelcomeSubtitle } from "@/lib/shop/admin-login-branding";
+import { getShopSettings } from "@/lib/shop/shop-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -37,8 +39,8 @@ export default async function AdminHomePage() {
   const name = session?.user?.name ?? "";
   const first = firstNameFromSession(name, email);
 
-  const { totalCount, pendingPaymentCount, revenueEurCents, recent } =
-    await getAdminDashboardOrdersSnapshot();
+  const [shopSettings, { totalCount, pendingPaymentCount, revenueEurCents, recent }] =
+    await Promise.all([getShopSettings(), getAdminDashboardOrdersSnapshot()]);
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
@@ -47,7 +49,7 @@ export default async function AdminHomePage() {
           {timeGreeting()}, {first}.
         </h1>
         <p className="mt-2 text-[0.9375rem] text-[#6b7280]">
-          Hier steuerst du Katalog und Shop von jerry&apos;s.
+          {resolveAdminDashboardWelcomeSubtitle(shopSettings)}
         </p>
       </div>
 

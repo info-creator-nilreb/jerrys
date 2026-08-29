@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  resolveAdminDashboardWelcomeSubtitle,
   resolveAdminLoginHeroImageUrl,
   resolveAdminLoginTagline,
+  resolveAdminMetadataTitleTemplate,
 } from "@/lib/shop/admin-login-branding";
 import { JERRYS_SHOP_SETTINGS_DEFAULTS } from "@/lib/shop/shop-settings-defaults";
 
@@ -59,5 +61,25 @@ describe("resolveAdminLoginTagline", () => {
         shortDescription: "",
       }),
     ).toBe("edel weiss");
+  });
+});
+
+describe("resolveAdminDashboardWelcomeSubtitle", () => {
+  it("nutzt den konfigurierten Shopnamen", () => {
+    expect(
+      resolveAdminDashboardWelcomeSubtitle({
+        shopName: "edel weiss",
+      }),
+    ).toBe("Hier steuerst du Katalog und Shop von edel weiss.");
+  });
+});
+
+describe("resolveAdminMetadataTitleTemplate", () => {
+  it("nutzt den konfigurierten Shopnamen", () => {
+    expect(
+      resolveAdminMetadataTitleTemplate({
+        shopName: "edel weiss",
+      }),
+    ).toBe("%s | Admin | edel weiss");
   });
 });
