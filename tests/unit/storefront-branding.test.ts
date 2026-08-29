@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { STATIC_BRANDING_ASSET_FALLBACKS } from "@/lib/shop/branding-asset-fallbacks";
+import {
+  EDELWEISS_STATIC_BRANDING_ASSET_FALLBACKS,
+  STATIC_BRANDING_ASSET_FALLBACKS,
+} from "@/lib/shop/branding-asset-fallbacks";
 import { JERRYS_SHOP_SETTINGS_DEFAULTS } from "@/lib/shop/shop-settings-defaults";
 import type { ShopSettingsDTO } from "@/lib/shop/shop-settings-defaults";
 import { absoluteUrl } from "@/lib/site/canonical-origin";
@@ -51,6 +54,24 @@ describe("buildShopMetadata", () => {
       siteName: "Test Shop",
       description: "Kurztext für SEO.",
       images: [{ url: absoluteUrl(STATIC_BRANDING_ASSET_FALLBACKS.ogImage), alt: "Test Shop" }],
+    });
+  });
+
+  it("nutzt Edel-weiss-Favicon-Fallback", () => {
+    const meta = buildShopMetadata(
+      settings({
+        shopName: "edel weiss",
+        shortDescription: "Schmuck aus Berlin.",
+      }),
+    );
+    expect(meta.icons).toEqual({
+      icon: [
+        {
+          url: absoluteUrl(EDELWEISS_STATIC_BRANDING_ASSET_FALLBACKS.favicon),
+          type: "image/png",
+        },
+      ],
+      shortcut: absoluteUrl(EDELWEISS_STATIC_BRANDING_ASSET_FALLBACKS.favicon),
     });
   });
 
