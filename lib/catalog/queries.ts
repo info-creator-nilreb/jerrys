@@ -1,5 +1,9 @@
 import { unstable_cache } from "next/cache";
 import { attachShopifyFallbackImages, attachShopifyFallbackImagesToProduct } from "@/lib/catalog/attach-shopify-fallback-images";
+import {
+  getBestsellerProductIdSet,
+  withBestsellerFlags,
+} from "@/lib/catalog/bestseller-rank";
 import { getPrisma } from "@/lib/db/prisma";
 import { prismaDefaultVariantInclude, prismaStorefrontActiveVariantsInclude } from "@/lib/catalog/default-variant-storefront";
 import { STOREFRONT_CATALOG_CACHE_TAG } from "@/lib/catalog/storefront-catalog-cache-tag";
@@ -10,7 +14,6 @@ export const storefrontProductCardSelect = {
   slug: true,
   title: true,
   subtitle: true,
-  isBestseller: true,
   currency: true,
   amazonRatingAverage: true,
   amazonRatingCount: true,
@@ -72,7 +75,9 @@ export async function listActiveProductsForStorefront(options?: { take?: number 
   /** Immer den getaggten Cache nutzen — `take` nur als Slice (Homepage-Kuratierung). */
   const all = await getCachedActiveProductsForStorefront();
   const sliced = take != null && take > 0 ? all.slice(0, take) : all;
-  return attachShopifyFallbackImages(sliced);
+  const withImages = await attachShopifyFallbackImages(sliced);
+  const bestsellerIds = await getBestsellerProductIdSet();
+  return withBestsellerFlags(withImages, bestsellerIds);
 }
 
 /** Aktive Produkte in ID-Reihenfolge (CMS kuratierte Listen). */
@@ -91,14 +96,16 @@ export async function listActiveProductsByIdsForStorefront(
   });
   const byId = new Map(rows.map((r) => [r.id, r]));
   const ordered = ids.map((id) => byId.get(id)).filter((r): r is NonNullable<typeof r> => r != null);
-  return attachShopifyFallbackImages(ordered);
+  const withImages = await attachShopifyFallbackImages(ordered);
+  const bestsellerIds = await getBestsellerProductIdSet();
+  return withBestsellerFlags(withImages, bestsellerIds);
 }
 
 export async function listActiveProductsByCategorySlugForStorefront(
   categorySlug: string,
   limit = 12,
 ) {
-  return getPrisma().product.findMany({
+  const rows = await getPrisma().product.findMany({
     where: {
       isActive: true,
       collectionMemberships: {
@@ -118,7 +125,10 @@ export async function listActiveProductsByCategorySlugForStorefront(
       ...storefrontProductCardSelect,
       ...storefrontCategoryViaCollectionsSelect,
     },
-  }).then((rows) => attachShopifyFallbackImages(rows));
+  });
+  const withImages = await attachShopifyFallbackImages(rows);
+  const bestsellerIds = await getBestsellerProductIdSet();
+  return withBestsellerFlags(withImages, bestsellerIds);
 }
 
 export async function getActiveProductBySlug(slug: string) {
@@ -154,12 +164,16 @@ export async function getActiveProductBySlug(slug: string) {
       },
     },
   });
-  return attachShopifyFallbackImagesToProduct(product);
+  if (!product) return null;
+  const withImages = await attachShopifyFallbackImagesToProduct(product);
+  if (!withImages) return null;
+  const bestsellerIds = await getBestsellerProductIdSet();
+  return withBestsellerFlags([withImages], bestsellerIds)[0] ?? null;
 }
 
 /**
  * Verwandte Produkte für PDP-Cross-Sell: gleiche Kollektion(en), ohne aktuelles Produkt.
- * Sortierung: Bestseller zuerst, dann Katalog-sortOrder — kein Zufall, derzeit nicht admin-konfigurierbar.
+ * Sortierung: automatische Bestseller zuerst, dann Katalog-sortOrder.
  */
 export async function listRelatedProductsForPdp(
   productId: string,
@@ -169,7 +183,7 @@ export async function listRelatedProductsForPdp(
   const slugs = [...new Set(collectionSlugs.map((s) => s.trim()).filter(Boolean))];
   if (slugs.length === 0) return [];
 
-  return getPrisma().product.findMany({
+  const rows = await getPrisma().product.findMany({
     where: {
       isActive: true,
       id: { not: productId },
@@ -182,13 +196,21 @@ export async function listRelatedProductsForPdp(
         },
       },
     },
-    orderBy: [{ isBestseller: "desc" }, { sortOrder: "asc" }, { title: "asc" }],
-    take: Math.max(1, limit),
+    orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
+    take: Math.max(1, limit * 3),
     select: {
       ...storefrontProductCardSelect,
       ...storefrontCategoryViaCollectionsSelect,
     },
-  }).then((rows) => attachShopifyFallbackImages(rows));
+  });
+
+  const withImages = await attachShopifyFallbackImages(rows);
+  const bestsellerIds = await getBestsellerProductIdSet();
+  const ranked = withBestsellerFlags(withImages, bestsellerIds).sort((a, b) => {
+    if (a.isBestseller !== b.isBestseller) return a.isBestseller ? -1 : 1;
+    return 0;
+  });
+  return ranked.slice(0, Math.max(1, limit));
 }
 
 /** Aktives Produkt, dessen `previousSlug` dem Pfad entspricht (301-Ziel). */

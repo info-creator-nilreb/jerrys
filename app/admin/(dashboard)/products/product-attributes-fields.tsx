@@ -4,6 +4,14 @@ import { Plus, Trash2 } from "lucide-react";
 import { useId, useState } from "react";
 import type { ProductFormState } from "@/app/admin/(dashboard)/products/actions";
 import type { ProductAttribute } from "@/features/catalog";
+import { listIsoCountryOptions } from "@/lib/catalog/iso-countries-de";
+import {
+  customAttributesOnly,
+  migrateLegacySpecsIntoAttributes,
+  readStandardSpecValues,
+  STANDARD_SPEC_LABELS,
+  type StandardSpecValues,
+} from "@/lib/catalog/standard-product-attributes";
 
 type Row = {
   clientId: string;
@@ -15,11 +23,15 @@ type Row = {
 type Props = {
   state: ProductFormState;
   defaults: ProductAttribute[];
+  legacySpecs?: {
+    dimensionsText?: string | null;
+    weightText?: string | null;
+    materialText?: string | null;
+  };
 };
 
-function toRows(attrs: ProductAttribute[]): Row[] {
-  if (attrs.length === 0) return [];
-  return attrs.map((a, i) => ({
+function toCustomRows(attrs: ProductAttribute[]): Row[] {
+  return customAttributesOnly(attrs).map((a, i) => ({
     clientId: `attr-${i}-${a.key}`,
     key: a.key,
     label: a.label,
@@ -27,14 +39,14 @@ function toRows(attrs: ProductAttribute[]): Row[] {
   }));
 }
 
-/**
- * Merkmale als einzelne Zeilen: sichtbares Label + Wert(e).
- * Shopify-/Import-Key bleibt im Hidden-Field für stabile Re-Imports.
- */
-export function ProductAttributesFields({ state, defaults }: Props) {
+export function ProductAttributesFields({ state, defaults, legacySpecs }: Props) {
   const baseId = useId();
   const fe = state?.fieldErrors ?? {};
-  const [rows, setRows] = useState<Row[]>(() => toRows(defaults));
+  const mergedDefaults = migrateLegacySpecsIntoAttributes(defaults, legacySpecs);
+  const initialSpecs = readStandardSpecValues(mergedDefaults);
+  const [specs, setSpecs] = useState<StandardSpecValues>(initialSpecs);
+  const [rows, setRows] = useState<Row[]>(() => toCustomRows(mergedDefaults));
+  const countryOptions = listIsoCountryOptions();
 
   function updateRow(clientId: string, patch: Partial<Omit<Row, "clientId">>) {
     setRows((prev) =>
@@ -64,8 +76,8 @@ export function ProductAttributesFields({ state, defaults }: Props) {
         <div>
           <h2 className="text-base font-semibold text-[#1f2937]">Merkmale</h2>
           <p className="mt-1 text-sm text-[#6b7280]">
-            Fakten als Label + Wert für die Produktdetails (z.&nbsp;B. Herkunft → Deutschland, Farbe →
-            beige). Keine Werbe-Claims — die gehören zeilenweise unter Verkaufsargumente (USPs).
+            Standard-Fakten (Maße, Gewicht, Material, Herstellungsland) sind immer sichtbar. Weitere
+            Merkmale optional ergänzen — Werbe-Claims gehören unter Verkaufsargumente.
           </p>
         </div>
         <button
@@ -80,14 +92,77 @@ export function ProductAttributesFields({ state, defaults }: Props) {
 
       <div className="mt-6 h-px bg-[#e8eaed]" />
 
-      {rows.length === 0 ? (
-        <p className="mt-6 text-sm text-[#6b7280]">
-          Noch keine Merkmale. Beim Shopify-Import werden sie automatisch übernommen.
-        </p>
-      ) : (
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <div className="flex flex-col gap-1">
+          <label htmlFor={`${baseId}-dimensions`} className="text-xs font-medium text-[#6b7280]">
+            {STANDARD_SPEC_LABELS.dimensions}
+          </label>
+          <input
+            id={`${baseId}-dimensions`}
+            name="standardDimensions"
+            type="text"
+            maxLength={500}
+            value={specs.dimensions}
+            onChange={(e) => setSpecs((s) => ({ ...s, dimensions: e.target.value }))}
+            placeholder="z. B. ca. 50 × 40 × 35 cm"
+            className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor={`${baseId}-weight`} className="text-xs font-medium text-[#6b7280]">
+            {STANDARD_SPEC_LABELS.weight}
+          </label>
+          <input
+            id={`${baseId}-weight`}
+            name="standardWeight"
+            type="text"
+            maxLength={500}
+            value={specs.weight}
+            onChange={(e) => setSpecs((s) => ({ ...s, weight: e.target.value }))}
+            placeholder="z. B. ca. 2,1 kg"
+            className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
+          />
+        </div>
+        <div className="flex flex-col gap-1 md:col-span-2">
+          <label htmlFor={`${baseId}-material`} className="text-xs font-medium text-[#6b7280]">
+            {STANDARD_SPEC_LABELS.material}
+          </label>
+          <input
+            id={`${baseId}-material`}
+            name="standardMaterial"
+            type="text"
+            maxLength={500}
+            value={specs.material}
+            onChange={(e) => setSpecs((s) => ({ ...s, material: e.target.value }))}
+            placeholder="z. B. Resin, Edelstahl"
+            className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
+          />
+        </div>
+        <div className="flex flex-col gap-1 md:col-span-2">
+          <label htmlFor={`${baseId}-origin`} className="text-xs font-medium text-[#6b7280]">
+            {STANDARD_SPEC_LABELS.origin}
+          </label>
+          <select
+            id={`${baseId}-origin`}
+            name="standardOriginCountry"
+            value={specs.originCountryCode}
+            onChange={(e) => setSpecs((s) => ({ ...s, originCountryCode: e.target.value }))}
+            className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
+          >
+            <option value="">— nicht angegeben —</option>
+            {countryOptions.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {rows.length > 0 ? (
         <ul className="mt-6 flex flex-col gap-3">
           <li className="hidden gap-3 px-1 text-xs font-medium text-[#6b7280] sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto]">
-            <span>Label</span>
+            <span>Weiteres Merkmal</span>
             <span>Wert(e)</span>
             <span className="sr-only">Entfernen</span>
           </li>
@@ -127,7 +202,7 @@ export function ProductAttributesFields({ state, defaults }: Props) {
                     maxLength={500}
                     value={row.valuesText}
                     onChange={(e) => updateRow(row.clientId, { valuesText: e.target.value })}
-                    placeholder="z. B. beige, schwarz, gold"
+                    placeholder="z. B. beige, schwarz"
                     className="rounded-md border border-[#e5e7eb] bg-white px-3 py-2 text-sm"
                     aria-label={`Merkmal ${index + 1} Werte`}
                   />
@@ -144,11 +219,15 @@ export function ProductAttributesFields({ state, defaults }: Props) {
             );
           })}
         </ul>
+      ) : (
+        <p className="mt-6 text-sm text-[#6b7280]">
+          Keine zusätzlichen Merkmale. Beim Shopify-Import werden sie automatisch übernommen.
+        </p>
       )}
 
       {fe.attributes ? <p className="mt-3 text-sm text-red-600">{fe.attributes}</p> : null}
       <p className="mt-4 text-xs text-[#6b7280]">
-        Mehrere Werte kommagetrennt. Maximal 40 Merkmale.
+        Zusätzliche Merkmale: Werte kommagetrennt. Maximal 40 Merkmale gesamt.
       </p>
     </section>
   );

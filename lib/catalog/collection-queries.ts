@@ -1,4 +1,6 @@
 import { unstable_cache } from "next/cache";
+import { attachShopifyFallbackImages } from "@/lib/catalog/attach-shopify-fallback-images";
+import { attachStorefrontBestsellerFlags } from "@/lib/catalog/bestseller-rank";
 import { getPrisma } from "@/lib/db/prisma";
 import { STOREFRONT_CATALOG_CACHE_TAG } from "@/lib/catalog/storefront-catalog-cache-tag";
 import {
@@ -59,7 +61,7 @@ export async function listActiveCollectionsForStorefront() {
 }
 
 export async function getActiveCollectionBySlugForStorefront(slug: string) {
-  return getPrisma().collection.findFirst({
+  const collection = await getPrisma().collection.findFirst({
     where: { slug, isActive: true },
     select: {
       id: true,
@@ -80,6 +82,20 @@ export async function getActiveCollectionBySlugForStorefront(slug: string) {
       },
     },
   });
+  if (!collection) return null;
+
+  const rawProducts = collection.products.map((row) => row.product);
+  const withImages = await attachShopifyFallbackImages(rawProducts);
+  const flagged = await attachStorefrontBestsellerFlags(withImages);
+  const byId = new Map(flagged.map((p) => [p.id, p]));
+
+  return {
+    ...collection,
+    products: collection.products.flatMap((row) => {
+      const product = byId.get(row.product.id);
+      return product ? [{ ...row, product }] : [];
+    }),
+  };
 }
 
 /** Aktive Produkte einer Kollektion in Sortierreihenfolge (CMS-Produktblöcke). */
@@ -90,5 +106,7 @@ export async function listActiveProductsByCollectionSlugForStorefront(
   const collection = await getActiveCollectionBySlugForStorefront(collectionSlug);
   if (!collection) return [];
   const take = Math.max(1, limit);
-  return collection.products.slice(0, take).map((row) => row.product);
+  const products = collection.products.slice(0, take).map((row) => row.product);
+  const withImages = await attachShopifyFallbackImages(products);
+  return attachStorefrontBestsellerFlags(withImages);
 }

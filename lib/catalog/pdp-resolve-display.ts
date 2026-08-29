@@ -7,6 +7,8 @@ import {
   reconcileAttributesAndFeatureBullets,
   type ProductAttribute,
 } from "@/features/catalog";
+import { countryDisplayName } from "@/lib/catalog/iso-countries-de";
+import { specTextsFromAttributes } from "@/lib/catalog/standard-product-attributes";
 import {
   MAX_PRODUCT_USPS,
   pickDistinctUspIcon,
@@ -148,7 +150,8 @@ export function iconForAttributeKey(key: string, label: string): PdpSpecIcon {
 
 function isGermanyOrigin(raw: string | null | undefined): boolean {
   if (!raw) return false;
-  return /\b(deutschland|germany|de)\b/i.test(raw);
+  const display = countryDisplayName(raw);
+  return /\b(deutschland|germany|de)\b/i.test(display) || /\b(deutschland|germany|de)\b/i.test(raw);
 }
 
 function isHiddenPdpAttribute(attr: ProductAttribute): boolean {
@@ -246,10 +249,15 @@ export function resolvePdpDisplay(product: {
 
   const galleryBadgeLabel = attrValues(attributes, "theme.label")?.trim() || null;
 
-  const dimensionsText = product.dimensionsText?.trim() || null;
-  const weightText = product.weightText?.trim() || null;
+  const specTexts = specTextsFromAttributes(attributes, {
+    dimensionsText: product.dimensionsText,
+    weightText: product.weightText,
+    materialText: product.materialText,
+  });
+  const dimensionsText = specTexts.dimensionsText;
+  const weightText = specTexts.weightText;
   const mergedMaterial =
-    product.materialText?.trim() ||
+    specTexts.materialText ||
     mergeAttributeValues(attributes, MATERIAL_ATTR_SUFFIXES) ||
     null;
   const mergedColor = mergeAttributeValues(attributes, COLOR_ATTR_SUFFIXES);
@@ -330,6 +338,7 @@ export function resolvePdpDisplay(product: {
   }
 
   const origin =
+    specTexts.originDisplay ||
     attrValues(attributes, "custom.herstellungsland", "herstellungsland") ||
     propertySpecs.find((s) => s.key.includes("herstellungsland") || s.label === "Herkunft")?.value ||
     null;

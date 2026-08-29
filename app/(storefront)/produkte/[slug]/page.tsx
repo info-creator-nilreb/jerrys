@@ -193,9 +193,9 @@ export default async function ProduktDetailPage({
 
           <div className="min-w-0 lg:row-span-1">
             <article className="rounded-xl border border-(--surface-muted) bg-white p-6 shadow-md md:p-7 lg:p-8">
-              {product.categoryTag?.trim() ? (
+              {primaryCategory ? (
                 <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-primary">
-                  {product.categoryTag.trim()}
+                  {primaryCategory.title}
                 </p>
               ) : null}
               <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-(--foreground-heading) md:text-[1.65rem] lg:text-3xl">
@@ -235,6 +235,7 @@ export default async function ProduktDetailPage({
                 paypalClientId={process.env.PAYPAL_CLIENT_ID?.trim() ?? ""}
                 applePayStoreLabel={applePayStoreLabel(shopSettings)}
                 variants={product.variants}
+                variantOptionName={product.variantOptionName}
                 returnPolicyText={shopSettings.pdpReturnPolicyText}
                 pickupCopy={pickupCopy}
               />

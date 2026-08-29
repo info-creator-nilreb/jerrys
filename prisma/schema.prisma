@@ -177,6 +177,8 @@ model Product {
   showWorkshopCalendar Boolean @default(false) @map("show_workshop_calendar")
   /// Abholung vor Ort im Checkout erlauben (pro Produkt).
   pickupAvailable Boolean @default(false) @map("pickup_available")
+  /// Option-Name für Varianten (z. B. „Farbe“, „Größe“) — Shopify Option1 Name.
+  variantOptionName String? @map("variant_option_name")
 
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
