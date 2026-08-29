@@ -148,7 +148,7 @@ export function StorefrontShopNav({
       <div className={burgerWrapperClass}>
         <button
           type="button"
-          className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${controlClassName}`}
+          className={`relative z-[500001] inline-flex min-h-11 min-w-11 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${controlClassName}`}
           aria-expanded={drawerOpen}
           aria-controls={menuId}
           aria-label={drawerOpen ? "Menü schließen" : "Menü öffnen"}
