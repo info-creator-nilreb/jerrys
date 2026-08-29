@@ -186,12 +186,6 @@ export function ProductPdpPurchasePanel({
       ) : null}
 
       {pickupCopy ? <ProductPdpPickupHint pickupCopy={pickupCopy} /> : null}
-
-      <p className="border-t border-(--surface-muted) pt-4 text-center text-[0.7rem] leading-snug text-(--foreground-muted)">
-        Im Checkout:{" "}
-        <span className="text-(--foreground-heading)">PayPal, Debit- oder Kreditkarte</span> und
-        weitere sichere Zahlungsarten.
-      </p>
     </div>
 
       <ProductPdpStickyAtcBar
