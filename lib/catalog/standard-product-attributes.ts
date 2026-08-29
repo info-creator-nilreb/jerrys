@@ -29,6 +29,10 @@ export type LegacyProductSpecTexts = {
   materialText?: string | null;
 };
 
+const ORIGIN_KEY_RE =
+  /(?:^|[._-])(herstellungsland|herkunft|country-of-origin|country_of_origin|origin)(?:[._-]|$)/i;
+const ORIGIN_LABEL_RE = /^(herkunft|herstellungsland|ursprungsland|origin|country)$/i;
+
 function firstValue(attrs: ProductAttribute[], key: string): string {
   const hit = attrs.find((a) => a.key === key);
   return hit?.values[0]?.trim() ?? "";
@@ -49,16 +53,43 @@ function upsertSingleValue(
   ]);
 }
 
+/** Erkennt Herkunfts-Merkmale unabhängig vom Shopify-/Manuell-Key (z. B. custom.herkunft). */
+export function isOriginAttribute(attr: ProductAttribute): boolean {
+  if (attr.key === STANDARD_SPEC_KEYS.origin) return true;
+  if (ORIGIN_KEY_RE.test(attr.key)) return true;
+  if (ORIGIN_LABEL_RE.test(attr.label.trim())) return true;
+  return false;
+}
+
+/** Liest den Rohwert für Herkunft aus allen bekannten Merkmal-Varianten. */
+export function findOriginRawValue(attributes: ProductAttribute[]): string {
+  const normalized = normalizeProductAttributes(attributes);
+
+  const std = firstValue(normalized, STANDARD_SPEC_KEYS.origin);
+  if (std) return std;
+
+  for (const attr of normalized) {
+    if (ORIGIN_KEY_RE.test(attr.key) && attr.values[0]?.trim()) {
+      return attr.values[0].trim();
+    }
+  }
+
+  for (const attr of normalized) {
+    if (ORIGIN_LABEL_RE.test(attr.label.trim()) && attr.values[0]?.trim()) {
+      return attr.values[0].trim();
+    }
+  }
+
+  return "";
+}
+
 /** Liest Standard-Merkmale; Legacy-Textfelder dienen nur als Fallback. */
 export function readStandardSpecValues(
   attributes: ProductAttribute[],
   legacy?: LegacyProductSpecTexts,
 ): StandardSpecValues {
   const normalized = normalizeProductAttributes(attributes);
-  const originRaw =
-    firstValue(normalized, STANDARD_SPEC_KEYS.origin) ||
-    normalized.find((a) => a.key.includes("herstellungsland"))?.values[0]?.trim() ||
-    "";
+  const originRaw = findOriginRawValue(normalized);
 
   return {
     dimensions: firstValue(normalized, STANDARD_SPEC_KEYS.dimensions) || legacy?.dimensionsText?.trim() || "",
@@ -68,7 +99,7 @@ export function readStandardSpecValues(
   };
 }
 
-/** Überführt Legacy-Textfelder einmalig in Merkmale (Admin-Laden / Import). */
+/** Überführt Legacy-Textfelder und alte Herkunfts-Merkmale in Standard-Keys (ISO). */
 export function migrateLegacySpecsIntoAttributes(
   attributes: ProductAttribute[],
   legacy?: LegacyProductSpecTexts,
@@ -109,6 +140,9 @@ export function migrateLegacySpecsIntoAttributes(
     );
   }
 
+  // Alte Herkunfts-Doppelungen (custom.herkunft, Label „Herkunft“) entfernen.
+  merged = merged.filter((a) => !isOriginAttribute(a) || a.key === STANDARD_SPEC_KEYS.origin);
+
   return merged;
 }
 
@@ -117,9 +151,7 @@ export function applyStandardSpecsToAttributes(
   attributes: ProductAttribute[],
   specs: StandardSpecValues,
 ): ProductAttribute[] {
-  const custom = normalizeProductAttributes(attributes).filter(
-    (a) => !Object.values(STANDARD_SPEC_KEYS).includes(a.key as (typeof STANDARD_SPEC_KEYS)[keyof typeof STANDARD_SPEC_KEYS]),
-  );
+  const custom = customAttributesOnly(attributes);
 
   let out = custom;
   out = upsertSingleValue(out, STANDARD_SPEC_KEYS.dimensions, STANDARD_SPEC_LABELS.dimensions, specs.dimensions);
@@ -146,9 +178,11 @@ export function specTextsFromAttributes(
   originDisplay: string | null;
 } {
   const specs = readStandardSpecValues(attributes, legacy);
-  const originDisplay = specs.originCountryCode
-    ? countryDisplayName(specs.originCountryCode)
-    : null;
+  const originRaw = findOriginRawValue(normalizeProductAttributes(attributes));
+  const originDisplay =
+    (specs.originCountryCode ? countryDisplayName(specs.originCountryCode) : null) ||
+    (originRaw.trim() ? countryDisplayName(originRaw) : null) ||
+    (originRaw.trim() || null);
 
   return {
     dimensionsText: specs.dimensions || null,
@@ -158,10 +192,12 @@ export function specTextsFromAttributes(
   };
 }
 
-/** Entfernt doppelte Standard-Merkmale aus der freien Merkmal-Liste. */
+/** Entfernt Standard- und Herkunfts-Merkmale aus der freien Merkmal-Liste. */
 export function customAttributesOnly(attributes: ProductAttribute[]): ProductAttribute[] {
   const standardKeys = new Set<string>(Object.values(STANDARD_SPEC_KEYS));
-  return normalizeProductAttributes(attributes).filter((a) => !standardKeys.has(a.key));
+  return normalizeProductAttributes(attributes).filter(
+    (a) => !standardKeys.has(a.key) && !isOriginAttribute(a),
+  );
 }
 
 export function standardSpecsFromFormData(formData: FormData): StandardSpecValues {
