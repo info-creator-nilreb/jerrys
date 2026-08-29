@@ -72,24 +72,29 @@ export function ProductCard({ product }: { product: StorefrontProductCard }) {
             <ProductCardImageSlider images={product.images} productTitle={product.title} />
           )}
         </div>
-        <div className="flex min-h-0 flex-1 flex-col p-6 md:p-7">
-          <div className="min-h-0 flex-1">
-            <h3 className="text-xl font-semibold text-(--foreground-heading) md:text-2xl">{product.title}</h3>
-            <p className="mt-2 min-h-[2.75rem] text-base leading-snug text-(--foreground-muted) md:min-h-[3rem] md:text-[1.05rem]">
-              {product.subtitle?.trim() ? product.subtitle : "\u00a0"}
+        <div className="flex flex-col p-6 md:p-7">
+          <h3 className="text-xl font-semibold text-(--foreground-heading) md:text-2xl">
+            {product.title}
+          </h3>
+          {product.subtitle?.trim() ? (
+            <p className="mt-2 text-base leading-snug text-(--foreground-muted) md:text-[1.05rem]">
+              {product.subtitle}
             </p>
-            <div className="mt-3 shrink-0 md:min-h-[3.75rem]">
-              {product.amazonRatingAverage != null && product.amazonRatingCount != null ? (
-                <AmazonRatingDisplay
-                  compact
-                  className="mt-0"
-                  average={product.amazonRatingAverage}
-                  count={product.amazonRatingCount}
-                  reviewUrl={product.amazonReviewUrl}
-                />
-              ) : null}
+          ) : null}
+          {product.amazonRatingAverage != null && product.amazonRatingCount != null ? (
+            <div className="mt-3 shrink-0">
+              <AmazonRatingDisplay
+                compact
+                className="mt-0"
+                average={product.amazonRatingAverage}
+                count={product.amazonRatingCount}
+                reviewUrl={product.amazonReviewUrl}
+              />
             </div>
-            <p className="mt-4 text-lg font-semibold text-primary md:text-xl">
+          ) : null}
+          <p
+            className={`${product.subtitle?.trim() || (product.amazonRatingAverage != null && product.amazonRatingCount != null) ? "mt-3" : "mt-2"} text-lg font-semibold text-primary md:text-xl`}
+          >
               {onSale ? (
                 <span className="mr-2 font-normal text-(--foreground-muted) line-through">
                   {formatPrice(listPriceCents, product.currency)}
@@ -97,10 +102,9 @@ export function ProductCard({ product }: { product: StorefrontProductCard }) {
               ) : null}
               {formatPrice(displayPriceCents, product.currency)}*
             </p>
-          </div>
         </div>
       </Link>
-      <div className="relative z-10 flex shrink-0 flex-col justify-start border-t border-(--surface-muted) bg-white px-6 pt-4 pb-6 md:min-h-[8.5rem] md:px-7 md:pb-7">
+      <div className="relative z-10 flex shrink-0 flex-col justify-start border-t border-(--surface-muted) bg-white px-6 pt-4 pb-6 md:px-7 md:pb-7">
         <AddToCartForm
           productId={product.id}
           productVariantId={variant.id}
