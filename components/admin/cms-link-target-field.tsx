@@ -38,8 +38,8 @@ export function CmsLinkTargetField({
   const grouped = groupedCmsLinkTargetOptions(options);
 
   return (
-    <div className="space-y-2">
-      <label className="text-sm text-[#5c5f66]">
+    <div className="contents">
+      <label className="block text-sm text-[#5c5f66]">
         {label}
         <select
           className={fieldClass}
@@ -82,7 +82,7 @@ export function CmsLinkTargetField({
       </label>
 
       {selectValue === CMS_LINK_TARGET_CUSTOM_VALUE ? (
-        <label className="block text-sm text-[#5c5f66]">
+        <label className="block text-sm text-[#5c5f66] sm:col-span-2">
           Eigener Pfad (intern, mit /)
           <input
             className={fieldClass}
@@ -94,7 +94,7 @@ export function CmsLinkTargetField({
       ) : null}
 
       {allowExternal && selectValue === CMS_LINK_TARGET_EXTERNAL_VALUE ? (
-        <label className="block text-sm text-[#5c5f66]">
+        <label className="block text-sm text-[#5c5f66] sm:col-span-2">
           Externe URL (HTTPS)
           <input
             className={fieldClass}
