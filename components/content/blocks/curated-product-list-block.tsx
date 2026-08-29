@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ProductCard } from "@/components/storefront/product-card";
+import { ProductCarousel } from "@/components/storefront/product-carousel";
 import type { CuratedProductListBlockData } from "@/lib/content/blocks/curated-product-list";
 import {
   resolveProductBlockShowAllHref,
@@ -60,16 +60,12 @@ export async function CuratedProductListBlock({
             {data.title}
           </h2>
         ) : null}
-        <div className="mt-10 grid w-full items-stretch justify-items-center gap-10 md:grid-cols-2">
-          {products.map((product) => (
-            <div
-              key={product.id}
-              className="flex h-full min-h-0 w-full max-w-lg flex-1 flex-col self-stretch"
-            >
-              <ProductCard product={product} />
-            </div>
-          ))}
-        </div>
+        <ProductCarousel
+          products={products}
+          variant="featured"
+          ariaLabel={data.title?.trim() || "Kuratierte Produkte"}
+          className="mt-10 w-full"
+        />
         {showAllHref ? (
           <div className="mt-10 flex justify-center">
             <Link
