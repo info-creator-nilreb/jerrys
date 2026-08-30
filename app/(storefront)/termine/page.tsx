@@ -27,11 +27,7 @@ export default async function StorefrontWorkshopSessionsPage() {
           <h1 className="text-3xl font-semibold tracking-tight text-(--foreground-heading)">
             Termine & Workshops
           </h1>
-          <p className="mt-3 text-base text-(--foreground-muted)">
-            Live-Termine mit begrenzter Kapazität. Die Anzeige „ausgebucht“ oder „Mindestteilnehmer noch offen“
-            kommt direkt vom Server — nicht aus dem Browser geraten.
-          </p>
-          <p className="mt-2 text-sm text-(--foreground-muted)">
+          <p className="mt-3 text-sm text-(--foreground-muted)">
             Kein passender Slot? <WorkshopDateRequestTrigger />{" · "}
             Bereits gebucht?{" "}
             <Link href="/konto/termine" className="font-medium text-primary hover:underline">
