@@ -9,7 +9,7 @@ const EXPRESS_DISABLE_FUNDING =
 export function paypalExpressSdkSrc(clientId: string, currency: string): string {
   const p = new URLSearchParams({
     "client-id": clientId,
-    components: "buttons,applepay",
+    components: "buttons,applepay,messages",
     intent: "capture",
     currency: currency.trim().toUpperCase(),
     locale: "de_DE",
@@ -26,7 +26,7 @@ export function paypalExpressSdkSrc(clientId: string, currency: string): string 
 export function paypalExpressButtonsOnlySdkSrc(clientId: string, currency: string): string {
   const p = new URLSearchParams({
     "client-id": clientId,
-    components: "buttons",
+    components: "buttons,messages",
     intent: "capture",
     currency: currency.trim().toUpperCase(),
     locale: "de_DE",
@@ -58,6 +58,18 @@ export function paypalCheckoutApplePaySdkSrc(clientId: string, currency: string)
     currency: currency.trim().toUpperCase(),
     locale: "de_DE",
     "enable-funding": "applepay",
+  });
+  return `https://www.paypal.com/sdk/js?${p.toString()}`;
+}
+
+/** PayPal JS SDK nur für „Später bezahlen“-Banner (Messages-Komponente). */
+export function paypalPayLaterMessagesSdkSrc(clientId: string, currency: string): string {
+  const p = new URLSearchParams({
+    "client-id": clientId,
+    components: "messages",
+    intent: "capture",
+    currency: currency.trim().toUpperCase(),
+    locale: "de_DE",
   });
   return `https://www.paypal.com/sdk/js?${p.toString()}`;
 }

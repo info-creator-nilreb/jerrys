@@ -37,6 +37,7 @@ import {
 import { SmartAddressFields } from "@/components/storefront/smart-address-fields";
 import { CheckoutDeliveryMethodToggle } from "@/components/storefront/checkout-delivery-method-toggle";
 import { CheckoutPageExpress } from "@/components/storefront/checkout-page-express";
+import { PayPalPayLaterMessage } from "@/components/storefront/paypal-pay-later-message";
 import {
   CheckoutRegularWallets,
   type CheckoutWalletReady,
@@ -1322,6 +1323,15 @@ export function CheckoutForm({
 
         <section id="checkout-section-zahlung" className="mt-12 scroll-mt-24">
           <h2 className="text-lg font-semibold text-[#1f2937]">Zahlung</h2>
+          {payPalConfigured && !(workshopMpa && displayTotals.totalCents === 0) ? (
+            <PayPalPayLaterMessage
+              paypalClientId={paypalClientId}
+              currency={currency}
+              amountGrossCents={displayTotals.totalCents}
+              pageType="checkout"
+              className="mt-3 w-full"
+            />
+          ) : null}
           {payPalConfigured && !(workshopMpa && displayTotals.totalCents === 0) ? (
             <CheckoutPaymentMethods
               value={payPalSurface}

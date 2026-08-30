@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CheckoutExpressPayPalOnly } from "@/components/storefront/checkout-express-paypal";
+import { PayPalPayLaterMessage } from "@/components/storefront/paypal-pay-later-message";
 import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import {
   CartLineMobileCard,
@@ -49,6 +50,9 @@ export default async function WarenkorbPage({
   const expressTotals = expressQuote?.ok ? expressQuote.totals : null;
   const shopSettings = await getShopSettings();
   const walletStoreLabel = applePayStoreLabel(shopSettings);
+  const payPalConfigured = isPayPalConfigured();
+  const paypalClientId = process.env.PAYPAL_CLIENT_ID?.trim() ?? "";
+  const messageAmountCents = expressTotals?.totalCents ?? subtotalCents;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-24 md:py-28">
@@ -135,6 +139,15 @@ export default async function WarenkorbPage({
                   <PriceEUR cents={subtotalCents} className="inline font-semibold" /> {currency}
                 </p>
                 <p className="mt-1 text-xs text-[#6b7280]">Inklusive MwSt., zzgl. Versandkosten</p>
+                {payPalConfigured && messageAmountCents > 0 ? (
+                  <PayPalPayLaterMessage
+                    paypalClientId={paypalClientId}
+                    currency={currency}
+                    amountGrossCents={messageAmountCents}
+                    pageType="cart"
+                    className="mt-2 w-full lg:ml-auto lg:max-w-sm"
+                  />
+                ) : null}
               </div>
 
               <div className="flex flex-col justify-end gap-4 lg:col-start-2 lg:row-start-2 lg:min-h-0">
@@ -152,8 +165,8 @@ export default async function WarenkorbPage({
                 <p className="text-center text-xs text-[#9ca3af] lg:text-right">Express Checkout</p>
                 <div className="mt-3 flex flex-col gap-2 sm:items-end lg:items-end">
                   <CheckoutExpressPayPalOnly
-                    payPalConfigured={isPayPalConfigured()}
-                    paypalClientId={process.env.PAYPAL_CLIENT_ID?.trim() ?? ""}
+                    payPalConfigured={payPalConfigured}
+                    paypalClientId={paypalClientId}
                     currency={currency}
                     totalGrossCents={expressTotals?.totalCents ?? subtotalCents}
                     applePayStoreLabel={walletStoreLabel}

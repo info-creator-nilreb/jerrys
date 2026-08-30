@@ -8,6 +8,7 @@ import {
   paypalCheckoutWalletSdkSrc,
   paypalExpressButtonsOnlySdkSrc,
   paypalExpressSdkSrc,
+  paypalPayLaterMessagesSdkSrc,
 } from "@/lib/payments/paypal-express-sdk";
 
 describe("paypalExpressSdkSrc", () => {
@@ -16,7 +17,7 @@ describe("paypalExpressSdkSrc", () => {
     const url = new URL(src);
     expect(url.origin + url.pathname).toBe("https://www.paypal.com/sdk/js");
     expect(url.searchParams.get("client-id")).toBe("test-client");
-    expect(url.searchParams.get("components")).toBe("buttons,applepay");
+    expect(url.searchParams.get("components")).toBe("buttons,applepay,messages");
     expect(url.searchParams.get("enable-funding")).toBe("applepay,paylater");
     expect(url.searchParams.get("components")).not.toContain("googlepay");
     expect(url.searchParams.get("enable-funding")).not.toContain("googlepay");
@@ -30,7 +31,7 @@ describe("paypalExpressButtonsOnlySdkSrc", () => {
   it("lädt nur Buttons als Fallback ohne Apple-Pay-Komponente", () => {
     const src = paypalExpressButtonsOnlySdkSrc("test-client", "eur");
     const url = new URL(src);
-    expect(url.searchParams.get("components")).toBe("buttons");
+    expect(url.searchParams.get("components")).toBe("buttons,messages");
     expect(url.searchParams.get("enable-funding")).toBe("paylater");
     expect(url.searchParams.get("disable-funding")).not.toContain("paylater");
   });
@@ -51,6 +52,17 @@ describe("paypalCheckoutApplePaySdkSrc", () => {
     const url = new URL(src);
     expect(url.searchParams.get("components")).toBe("applepay");
     expect(url.searchParams.get("enable-funding")).toBe("applepay");
+  });
+});
+
+describe("paypalPayLaterMessagesSdkSrc", () => {
+  it("lädt nur die Messages-Komponente für Später-bezahlen-Banner", () => {
+    const src = paypalPayLaterMessagesSdkSrc("test-client", "eur");
+    const url = new URL(src);
+    expect(url.searchParams.get("components")).toBe("messages");
+    expect(url.searchParams.get("client-id")).toBe("test-client");
+    expect(url.searchParams.get("currency")).toBe("EUR");
+    expect(url.searchParams.get("locale")).toBe("de_DE");
   });
 });
 
