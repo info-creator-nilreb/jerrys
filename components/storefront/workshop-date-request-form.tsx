@@ -5,6 +5,11 @@ import {
   submitWorkshopDateRequestAction,
   type WorkshopDateRequestActionState,
 } from "@/app/(storefront)/termine/wunschtermin/actions";
+import {
+  WORKSHOP_DATE_REQUEST_MAX_SEATS,
+  WORKSHOP_DATE_REQUEST_SEAT_COUNT_HINT,
+  WORKSHOP_DATE_REQUEST_SEAT_COUNT_PLACEHOLDER,
+} from "@/lib/workshop/workshop-date-request-limits";
 
 const initial: WorkshopDateRequestActionState = null;
 
@@ -110,12 +115,18 @@ export function WorkshopDateRequestForm({
             id={pid("seatCount")}
             name="seatCount"
             type="number"
+            inputMode="numeric"
             min={1}
-            max={50}
-            defaultValue={1}
+            max={WORKSHOP_DATE_REQUEST_MAX_SEATS}
+            step={1}
             required
-            className="mt-1 w-full rounded-md border border-(--surface-muted) px-3 py-2 text-sm"
+            placeholder={WORKSHOP_DATE_REQUEST_SEAT_COUNT_PLACEHOLDER}
+            aria-describedby={pid("seatCount-hint")}
+            className="mt-1 w-full max-w-xs rounded-md border border-(--surface-muted) px-3 py-2 text-sm"
           />
+          <p id={pid("seatCount-hint")} className="mt-1 text-xs text-(--foreground-muted)">
+            {WORKSHOP_DATE_REQUEST_SEAT_COUNT_HINT}
+          </p>
           {fe?.seatCount?.[0] ? <p className="mt-1 text-sm text-red-700">{fe.seatCount[0]}</p> : null}
         </div>
 
