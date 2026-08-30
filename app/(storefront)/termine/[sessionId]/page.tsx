@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Users } from "lucide-react";
 import {
@@ -7,6 +6,7 @@ import {
   formatDurationLabel,
 } from "@/features/workshops";
 import { WorkshopSessionLocationBlock } from "@/components/storefront/workshop-session-location-block";
+import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import { WorkshopBookSeatsPanel } from "@/components/storefront/workshop-book-seats-panel";
 import { WorkshopEventJsonLd } from "@/components/storefront/workshop-event-json-ld";
 import { formatPrice } from "@/lib/catalog/format";
@@ -79,11 +79,15 @@ export default async function StorefrontWorkshopSessionDetailPage({
         seatsRemaining={session.seatsRemaining}
         shopName={shopSettings.shopName}
       />
-      <Link href="/termine" className="text-sm font-medium text-primary hover:underline">
-        ← Alle Termine
-      </Link>
+      <StorefrontBreadcrumbs
+        items={[
+          { href: "/", label: "Start" },
+          { href: "/termine", label: "Termine" },
+          { label: session.title },
+        ]}
+      />
 
-      <header className="mt-4 space-y-2">
+      <header className="mt-6 space-y-2">
         <h1 className="text-3xl font-semibold tracking-tight text-(--foreground-heading)">
           {session.title}
         </h1>

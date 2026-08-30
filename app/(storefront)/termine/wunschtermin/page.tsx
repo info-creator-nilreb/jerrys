@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { WorkshopDateRequestForm } from "@/components/storefront/workshop-date-request-form";
+import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import {
   WORKSHOP_DATE_REQUEST_SUCCESS_MESSAGE,
   WorkshopDateRequestIntro,
@@ -26,11 +26,15 @@ export default async function StorefrontWorkshopDateRequestPage({
 
   return (
     <div className={`mx-auto max-w-2xl px-4 ${storefrontMainPagePaddingClass}`}>
-      <Link href="/termine" className="text-sm font-medium text-primary hover:underline">
-        ← Alle Termine
-      </Link>
+      <StorefrontBreadcrumbs
+        items={[
+          { href: "/", label: "Start" },
+          { href: "/termine", label: "Termine" },
+          { label: "Wunschtermin" },
+        ]}
+      />
 
-      <header className="mt-4 mb-8 space-y-2">
+      <header className="mt-6 mb-8 space-y-2">
         <h1 className="text-3xl font-semibold tracking-tight text-(--foreground-heading)">
           Wunschtermin anfragen
         </h1>

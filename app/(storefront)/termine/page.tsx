@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { WorkshopSessionList } from "@/components/storefront/workshop-session-list";
+import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadcrumbs";
 import {
   WorkshopDateRequestEmptyHint,
   WorkshopDateRequestProvider,
@@ -21,7 +22,8 @@ export default async function StorefrontWorkshopSessionsPage() {
   return (
     <WorkshopDateRequestProvider defaultEmail={defaultEmail} defaultName={defaultName}>
       <div className={`mx-auto max-w-3xl px-4 ${storefrontMainPagePaddingClass}`}>
-        <header className="mb-10">
+        <StorefrontBreadcrumbs items={[{ href: "/", label: "Start" }, { label: "Termine" }]} />
+        <header className="mb-10 mt-6">
           <h1 className="text-3xl font-semibold tracking-tight text-(--foreground-heading)">
             Termine & Workshops
           </h1>
