@@ -8,7 +8,7 @@ import {
 } from "@/components/storefront/workshop-date-request-provider";
 import { storefrontMainPagePaddingClass } from "@/lib/storefront/page-below-header-padding";
 import { getCustomerSession } from "@/lib/auth/customer-session";
-import { getWorkshopDateRequestSeatGuidance } from "@/features/workshops/application/shop-workshop-settings";
+import { getWorkshopDateRequestSeatGuidance } from "@/features/workshops";
 
 export const metadata = {
   title: "Termine & Workshops",
