@@ -1,5 +1,5 @@
 const EXPRESS_DISABLE_FUNDING =
-  "card,paylater,venmo,sepa,bancontact,blik,eps,giropay,ideal,mybank,p24,sofort";
+  "card,venmo,sepa,bancontact,blik,eps,giropay,ideal,mybank,p24,sofort";
 
 /**
  * PayPal JS SDK für Express Checkout (Smart Buttons + Apple Pay).
@@ -13,7 +13,7 @@ export function paypalExpressSdkSrc(clientId: string, currency: string): string 
     intent: "capture",
     currency: currency.trim().toUpperCase(),
     locale: "de_DE",
-    "enable-funding": "applepay",
+    "enable-funding": "applepay,paylater",
     "disable-funding": EXPRESS_DISABLE_FUNDING,
   });
   return `https://www.paypal.com/sdk/js?${p.toString()}`;
@@ -30,6 +30,7 @@ export function paypalExpressButtonsOnlySdkSrc(clientId: string, currency: strin
     intent: "capture",
     currency: currency.trim().toUpperCase(),
     locale: "de_DE",
+    "enable-funding": "paylater",
     "disable-funding": EXPRESS_DISABLE_FUNDING,
   });
   return `https://www.paypal.com/sdk/js?${p.toString()}`;
