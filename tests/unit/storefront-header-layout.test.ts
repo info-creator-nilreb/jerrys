@@ -14,7 +14,8 @@ describe("storefront header layout", () => {
     );
 
     expect(shell).toContain("min-w-11 flex-1");
-    expect(shell).toContain("absolute inset-x-4 flex justify-center");
+    expect(shell).toContain("pointer-events-none [&_a]:pointer-events-auto [&_button]:pointer-events-auto");
+    expect(shell).toContain("z-[500001] flex justify-center");
     expect(shell).toContain("z-[500002]");
     expect(shell).toContain("shrink-0 items-center justify-end");
     expect(nav).toContain("relative z-[500001]");
