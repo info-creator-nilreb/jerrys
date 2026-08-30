@@ -12,6 +12,7 @@ import {
 import { defaultAddQuantity } from "@/lib/cart/quantity";
 import { AddToCartForm } from "@/components/storefront/add-to-cart-form";
 import { ProductExpressCheckout } from "@/components/storefront/product-express-checkout";
+import { PayPalPayLaterMessage } from "@/components/storefront/paypal-pay-later-message";
 import { ProductPdpPickupHint } from "@/components/storefront/product-pdp-pickup-hint";
 import { ProductPdpStickyAtcBar } from "@/components/storefront/product-pdp-sticky-atc-bar";
 import type { PickupDisplayCopy } from "@/lib/shop/pickup-store-shared";
@@ -142,6 +143,15 @@ export function ProductPdpPurchasePanel({
           {formatPrice(selected.priceGrossCents, currency)}
         </p>
         <p className="mt-1 text-sm text-(--foreground-muted)">inkl. MwSt., zzgl. Versand</p>
+        {payPalConfigured ? (
+          <PayPalPayLaterMessage
+            paypalClientId={paypalClientId}
+            currency={currency}
+            amountGrossCents={selected.priceGrossCents}
+            pageType="product-details"
+            className="mt-2 w-full max-w-md"
+          />
+        ) : null}
       </div>
 
       <ul className="space-y-2.5 text-sm text-(--foreground-muted)">

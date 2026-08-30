@@ -1,5 +1,5 @@
 const EXPRESS_DISABLE_FUNDING =
-  "card,paylater,venmo,sepa,bancontact,blik,eps,giropay,ideal,mybank,p24,sofort";
+  "card,venmo,sepa,bancontact,blik,eps,giropay,ideal,mybank,p24,sofort";
 
 /**
  * PayPal JS SDK für Express Checkout (Smart Buttons + Apple Pay).
@@ -9,11 +9,11 @@ const EXPRESS_DISABLE_FUNDING =
 export function paypalExpressSdkSrc(clientId: string, currency: string): string {
   const p = new URLSearchParams({
     "client-id": clientId,
-    components: "buttons,applepay",
+    components: "buttons,applepay,messages",
     intent: "capture",
     currency: currency.trim().toUpperCase(),
     locale: "de_DE",
-    "enable-funding": "applepay",
+    "enable-funding": "applepay,paylater",
     "disable-funding": EXPRESS_DISABLE_FUNDING,
   });
   return `https://www.paypal.com/sdk/js?${p.toString()}`;
@@ -26,10 +26,11 @@ export function paypalExpressSdkSrc(clientId: string, currency: string): string 
 export function paypalExpressButtonsOnlySdkSrc(clientId: string, currency: string): string {
   const p = new URLSearchParams({
     "client-id": clientId,
-    components: "buttons",
+    components: "buttons,messages",
     intent: "capture",
     currency: currency.trim().toUpperCase(),
     locale: "de_DE",
+    "enable-funding": "paylater",
     "disable-funding": EXPRESS_DISABLE_FUNDING,
   });
   return `https://www.paypal.com/sdk/js?${p.toString()}`;
@@ -57,6 +58,18 @@ export function paypalCheckoutApplePaySdkSrc(clientId: string, currency: string)
     currency: currency.trim().toUpperCase(),
     locale: "de_DE",
     "enable-funding": "applepay",
+  });
+  return `https://www.paypal.com/sdk/js?${p.toString()}`;
+}
+
+/** PayPal JS SDK nur für „Später bezahlen“-Banner (Messages-Komponente). */
+export function paypalPayLaterMessagesSdkSrc(clientId: string, currency: string): string {
+  const p = new URLSearchParams({
+    "client-id": clientId,
+    components: "messages",
+    intent: "capture",
+    currency: currency.trim().toUpperCase(),
+    locale: "de_DE",
   });
   return `https://www.paypal.com/sdk/js?${p.toString()}`;
 }

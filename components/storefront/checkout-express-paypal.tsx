@@ -42,7 +42,7 @@ type PayPalApplePaySession = {
 };
 
 type PayPalExpressSdk = {
-  FUNDING?: { PAYPAL?: string; APPLEPAY?: string };
+  FUNDING?: { PAYPAL?: string; APPLEPAY?: string; PAYLATER?: string };
   Buttons?: (options: Record<string, unknown>) => PayPalButtonsInstance;
   Applepay?: () => PayPalApplePaySession;
 };
@@ -177,6 +177,8 @@ export function CheckoutExpressPayPalOnly({
   const router = useRouter();
   const paypalContainerRef = useRef<HTMLDivElement>(null);
   const paypalButtonsRef = useRef<PayPalButtonsInstance | null>(null);
+  const payLaterContainerRef = useRef<HTMLDivElement>(null);
+  const payLaterButtonsRef = useRef<PayPalButtonsInstance | null>(null);
   const applePayPaypalContainerRef = useRef<HTMLDivElement>(null);
   const applePayPaypalButtonsRef = useRef<PayPalButtonsInstance | null>(null);
   const applePaySessionRef = useRef<PayPalApplePaySession | null>(null);
@@ -410,9 +412,12 @@ export function CheckoutExpressPayPalOnly({
     applePaySetupErrorRef.current = null;
     paypalButtonsRef.current?.close?.();
     paypalButtonsRef.current = null;
+    payLaterButtonsRef.current?.close?.();
+    payLaterButtonsRef.current = null;
     applePayPaypalButtonsRef.current?.close?.();
     applePayPaypalButtonsRef.current = null;
     if (paypalContainerRef.current) paypalContainerRef.current.innerHTML = "";
+    if (payLaterContainerRef.current) payLaterContainerRef.current.innerHTML = "";
     if (applePayPaypalContainerRef.current) applePayPaypalContainerRef.current.innerHTML = "";
 
     if (!enabled || !payPalConfigured || !paypalClientId.trim()) return;
@@ -420,12 +425,19 @@ export function CheckoutExpressPayPalOnly({
     const scriptId = `paypal-js-express-checkout-${currency.trim().toUpperCase()}-applepay`;
     let cancelled = false;
 
+    const expressButtonStyle = (paypal: PayPalExpressSdk, fundingSource: string | undefined) => {
+      if (fundingSource && fundingSource === paypal.FUNDING?.APPLEPAY) {
+        return { layout: "vertical", color: "black", shape: "rect", height: 44 };
+      }
+      if (fundingSource && fundingSource === paypal.FUNDING?.PAYLATER) {
+        return { layout: "vertical", color: "blue", shape: "rect", label: "pay", height: 44 };
+      }
+      return { layout: "vertical", color: "gold", shape: "rect", label: "paypal", height: 44 };
+    };
+
     const expressButtonOptions = (paypal: PayPalExpressSdk, fundingSource: string | undefined) => ({
       fundingSource,
-      style:
-        fundingSource && fundingSource === paypal.FUNDING?.APPLEPAY
-          ? { layout: "vertical", color: "black", shape: "rect", height: 44 }
-          : { layout: "vertical", color: "gold", shape: "rect", label: "paypal", height: 44 },
+      style: expressButtonStyle(paypal, fundingSource),
       createOrder: () => createExpressOrderRef.current(),
       onShippingAddressChange: async (data: {
         orderID?: string;
@@ -490,6 +502,25 @@ export function CheckoutExpressPayPalOnly({
       } else {
         paypalButtonsRef.current = buttons;
         await buttons.render(host);
+      }
+
+      if (cancelled) return;
+
+      const payLaterHost = payLaterContainerRef.current;
+      const payLaterFunding = paypal.FUNDING?.PAYLATER;
+      if (payLaterHost && payLaterFunding) {
+        payLaterHost.innerHTML = "";
+        const payLaterButtons = paypal.Buttons(expressButtonOptions(paypal, payLaterFunding));
+        if (payLaterButtons.isEligible?.() !== false) {
+          payLaterButtonsRef.current = payLaterButtons;
+          try {
+            await payLaterButtons.render(payLaterHost);
+          } catch (e) {
+            console.error(e);
+            payLaterButtonsRef.current = null;
+            payLaterHost.innerHTML = "";
+          }
+        }
       }
 
       if (cancelled) return;
@@ -601,9 +632,12 @@ export function CheckoutExpressPayPalOnly({
       cancelled = true;
       paypalButtonsRef.current?.close?.();
       paypalButtonsRef.current = null;
+      payLaterButtonsRef.current?.close?.();
+      payLaterButtonsRef.current = null;
       applePayPaypalButtonsRef.current?.close?.();
       applePayPaypalButtonsRef.current = null;
       if (paypalContainerRef.current) paypalContainerRef.current.innerHTML = "";
+      if (payLaterContainerRef.current) payLaterContainerRef.current.innerHTML = "";
       if (applePayPaypalContainerRef.current) applePayPaypalContainerRef.current.innerHTML = "";
     };
   }, [
@@ -818,6 +852,7 @@ export function CheckoutExpressPayPalOnly({
       ) : null}
       <div ref={applePayPaypalContainerRef} className="w-full empty:hidden" />
       <div ref={paypalContainerRef} className="min-h-[2.75rem] w-full" />
+      <div ref={payLaterContainerRef} className="w-full empty:hidden" />
       {sdkError ? (
         <p className="text-xs leading-snug text-red-600" role="alert">
           {sdkError}
