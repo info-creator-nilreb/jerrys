@@ -6,8 +6,6 @@ import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 import { getShopSettings } from "@/lib/shop/shop-settings";
 import { buildStorefrontMetadata } from "@/lib/site/storefront-metadata";
 
-export const dynamic = "force-dynamic";
-
 export async function generateMetadata() {
   const settings = await getShopSettings();
   return buildStorefrontMetadata({

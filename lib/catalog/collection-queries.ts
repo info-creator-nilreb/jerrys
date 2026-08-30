@@ -171,6 +171,10 @@ async function resolveStorefrontCollectionProducts(collection: {
 }
 
 export async function getActiveCollectionBySlugForStorefront(slug: string) {
+  return getCachedActiveCollectionBySlugForStorefront(slug);
+}
+
+async function loadActiveCollectionBySlugForStorefront(slug: string) {
   const collection = await getPrisma().collection.findFirst({
     where: { slug, isActive: true },
     select: {
@@ -210,6 +214,14 @@ export async function getActiveCollectionBySlugForStorefront(slug: string) {
       return product ? [{ sortOrder: row.sortOrder, product }] : [];
     }),
   };
+}
+
+function getCachedActiveCollectionBySlugForStorefront(slug: string) {
+  return unstable_cache(
+    () => loadActiveCollectionBySlugForStorefront(slug),
+    ["storefront-collection-detail", slug],
+    { tags: [STOREFRONT_CATALOG_CACHE_TAG], revalidate: 60 },
+  )();
 }
 
 /** Aktive Produkte einer Kollektion in Sortierreihenfolge (CMS-Produktblöcke). */

@@ -4,8 +4,6 @@ import { StorefrontBreadcrumbs } from "@/components/storefront/storefront-breadc
 import { listActiveCategoriesForStorefrontIndex } from "@/lib/catalog/category-queries";
 import { isDatabaseUnreachable } from "@/lib/db/is-database-unreachable";
 
-export const dynamic = "force-dynamic";
-
 export const metadata = {
   title: "Kategorien",
   description: "Produkte nach Kategorie entdecken – jerry's Katzenmöbel.",

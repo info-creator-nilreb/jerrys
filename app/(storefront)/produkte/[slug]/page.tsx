@@ -6,7 +6,6 @@ import {
 import {
   getActiveProductByPreviousSlug,
   getActiveProductBySlug,
-  listRelatedProductsForPdp,
 } from "@/lib/catalog/queries";
 import { resolvePdpDisplay } from "@/lib/catalog/pdp-resolve-display";
 import { isProductDescriptionRedundantWithLead } from "@/lib/catalog/pdp-description-overlap";
@@ -25,7 +24,7 @@ import { readBrowseContextFromCookies } from "@/lib/storefront/browse-context";
 import { AmazonRatingDisplay } from "@/components/storefront/amazon-rating-display";
 import { ProductDetailGallery } from "@/components/storefront/product-detail-gallery";
 import { ProductJsonLd } from "@/components/storefront/product-json-ld";
-import { ProductPdpCrossSell } from "@/components/storefront/product-pdp-cross-sell";
+import { ProductPdpCrossSellBoundary } from "@/components/storefront/product-pdp-cross-sell-boundary";
 import { ProductPdpDescription } from "@/components/storefront/product-pdp-description";
 import { ProductPdpPurchasePanel } from "@/components/storefront/product-pdp-purchase-panel";
 import { ProductPdpSpecsPanel } from "@/components/storefront/product-pdp-specs-panel";
@@ -37,8 +36,6 @@ import { getShopSettings } from "@/lib/shop/shop-settings";
 import { applePayStoreLabel } from "@/lib/shop/storefront-branding";
 import { resolvePickupDisplayCopy } from "@/lib/shop/pickup-store-shared";
 import { isPayPalConfigured } from "@/lib/payments/paypal-config";
-
-export const dynamic = "force-dynamic";
 
 function displayFromProduct(
   product: NonNullable<Awaited<ReturnType<typeof getActiveProductBySlug>>>,
@@ -156,7 +153,6 @@ export default async function ProduktDetailPage({
     !isProductDescriptionRedundantWithLead(product.description, leadDisplay);
 
   const coverImage = product.images[0];
-  const relatedProducts = await listRelatedProductsForPdp(product.id, collectionSlugs, 4);
   const pickupCopy =
     product.pickupStore && product.pickupStore.isActive
       ? resolvePickupDisplayCopy(product.pickupStore, product.pickupReadyHours)
@@ -269,7 +265,10 @@ export default async function ProduktDetailPage({
                 </div>
               ) : null}
 
-              <ProductPdpCrossSell products={relatedProducts} />
+              <ProductPdpCrossSellBoundary
+                productId={product.id}
+                collectionSlugs={collectionSlugs}
+              />
             </article>
           </div>
         </div>

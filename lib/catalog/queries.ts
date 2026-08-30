@@ -132,7 +132,7 @@ export async function listActiveProductsByCategorySlugForStorefront(
   return withBestsellerFlags(withImages, bestsellerIds);
 }
 
-export async function getActiveProductBySlug(slug: string) {
+async function loadActiveProductBySlug(slug: string) {
   const product = await getPrisma().product.findFirst({
     where: { slug, isActive: true },
     include: {
@@ -186,11 +186,23 @@ export async function getActiveProductBySlug(slug: string) {
   return withBestsellerFlags([withImages], bestsellerIds)[0] ?? null;
 }
 
+function getCachedActiveProductBySlug(slug: string) {
+  return unstable_cache(
+    () => loadActiveProductBySlug(slug),
+    ["storefront-product-detail", slug],
+    { tags: [STOREFRONT_CATALOG_CACHE_TAG], revalidate: 60 },
+  )();
+}
+
+export async function getActiveProductBySlug(slug: string) {
+  return getCachedActiveProductBySlug(slug);
+}
+
 /**
  * Verwandte Produkte für PDP-Cross-Sell: gleiche Kollektion(en), ohne aktuelles Produkt.
  * Sortierung: automatische Bestseller zuerst, dann Katalog-sortOrder.
  */
-export async function listRelatedProductsForPdp(
+async function loadRelatedProductsForPdp(
   productId: string,
   collectionSlugs: string[],
   limit = 4,
@@ -226,6 +238,27 @@ export async function listRelatedProductsForPdp(
     return 0;
   });
   return ranked.slice(0, Math.max(1, limit));
+}
+
+function getCachedRelatedProductsForPdp(
+  productId: string,
+  collectionSlugs: string[],
+  limit = 4,
+) {
+  const slugKey = [...new Set(collectionSlugs.map((s) => s.trim()).filter(Boolean))].sort().join(",");
+  return unstable_cache(
+    () => loadRelatedProductsForPdp(productId, collectionSlugs, limit),
+    ["storefront-pdp-related", productId, slugKey, String(limit)],
+    { tags: [STOREFRONT_CATALOG_CACHE_TAG], revalidate: 60 },
+  )();
+}
+
+export async function listRelatedProductsForPdp(
+  productId: string,
+  collectionSlugs: string[],
+  limit = 4,
+) {
+  return getCachedRelatedProductsForPdp(productId, collectionSlugs, limit);
 }
 
 /** Aktives Produkt, dessen `previousSlug` dem Pfad entspricht (301-Ziel). */
