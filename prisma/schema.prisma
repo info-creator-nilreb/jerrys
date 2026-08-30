@@ -1145,6 +1145,10 @@ model ShopWorkshopSettings {
   id String @id @default("default")
   /// Stunden vor Terminbeginn, bis wann Kunden selbst stornieren dürfen (globaler Default).
   selfCancelHoursBeforeStart Int @default(48) @map("self_cancel_hours_before_start")
+  /// Typische Mindestgröße für Wunschtermin-Hinweis im Storefront-Formular (keine harte Validierung).
+  dateRequestTypicalMinSeats Int @default(3) @map("date_request_typical_min_seats")
+  /// Typische Maximalgröße für Wunschtermin-Hinweis im Storefront-Formular (keine harte Validierung).
+  dateRequestTypicalMaxSeats Int @default(12) @map("date_request_typical_max_seats")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("shop_workshop_settings")

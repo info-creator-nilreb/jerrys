@@ -149,8 +149,12 @@ export async function saveShopWorkshopSettingsAction(
   await requireAdmin();
   const result = await updateShopWorkshopSettings({
     selfCancelHoursBeforeStart: formData.get("selfCancelHoursBeforeStart"),
+    dateRequestTypicalMinSeats: formData.get("dateRequestTypicalMinSeats"),
+    dateRequestTypicalMaxSeats: formData.get("dateRequestTypicalMaxSeats"),
   });
   if (!result.ok) return result;
   revalidatePath("/admin/termine");
+  revalidatePath("/termine");
+  revalidatePath("/termine/wunschtermin");
   return { ok: true, message: "Einstellungen gespeichert." };
 }

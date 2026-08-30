@@ -6,6 +6,7 @@ import {
 } from "@/components/storefront/workshop-date-request-intro";
 import { storefrontMainPagePaddingClass } from "@/lib/storefront/page-below-header-padding";
 import { getCustomerSession } from "@/lib/auth/customer-session";
+import { getWorkshopDateRequestSeatGuidance } from "@/features/workshops/application/shop-workshop-settings";
 
 export const metadata = {
   title: "Wunschtermin anfragen",
@@ -23,6 +24,7 @@ export default async function StorefrontWorkshopDateRequestPage({
 
   const defaultEmail = session?.email ?? "";
   const defaultName = session?.name ?? "";
+  const seatGuidance = await getWorkshopDateRequestSeatGuidance();
 
   return (
     <div className={`mx-auto max-w-2xl px-4 ${storefrontMainPagePaddingClass}`}>
@@ -55,6 +57,7 @@ export default async function StorefrontWorkshopDateRequestPage({
         defaultName={defaultName}
         idPrefix="page-"
         delivery="page"
+        seatGuidance={seatGuidance}
       />
     </div>
   );

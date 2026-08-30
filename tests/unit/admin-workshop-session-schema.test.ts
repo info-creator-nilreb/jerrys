@@ -77,3 +77,29 @@ describe("parseLocalDateTimeInTimeZone", () => {
     expect(back).toBe("12:00");
   });
 });
+
+describe("adminShopWorkshopSettingsSchema", () => {
+  it("akzeptiert gültige Shop-Einstellungen inkl. Wunschtermin-Spanne", async () => {
+    const { adminShopWorkshopSettingsSchema } = await import(
+      "@/features/workshops/application/admin-workshop-session-schemas"
+    );
+    const result = adminShopWorkshopSettingsSchema.safeParse({
+      selfCancelHoursBeforeStart: 48,
+      dateRequestTypicalMinSeats: 3,
+      dateRequestTypicalMaxSeats: 12,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("lehnt Maximum unter Minimum ab", async () => {
+    const { adminShopWorkshopSettingsSchema } = await import(
+      "@/features/workshops/application/admin-workshop-session-schemas"
+    );
+    const result = adminShopWorkshopSettingsSchema.safeParse({
+      selfCancelHoursBeforeStart: 48,
+      dateRequestTypicalMinSeats: 10,
+      dateRequestTypicalMaxSeats: 5,
+    });
+    expect(result.success).toBe(false);
+  });
+});

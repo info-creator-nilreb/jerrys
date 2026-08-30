@@ -29,6 +29,8 @@ export {
 
 export {
   getShopWorkshopSettings,
+  getWorkshopDateRequestSeatGuidance,
+  workshopDateRequestSeatGuidanceFromSettings,
   type ShopWorkshopSettingsView,
 } from "@/features/workshops/application/shop-workshop-settings";
 
