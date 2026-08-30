@@ -1325,7 +1325,7 @@ export function CheckoutForm({
           <h2 className="text-lg font-semibold text-[#1f2937]">Zahlung</h2>
           {payPalConfigured && !(workshopMpa && displayTotals.totalCents === 0) ? (
             <PayPalPayLaterMessage
-              paypalClientId={paypalClientId}
+              paypalClientId={payPalClientId}
               currency={currency}
               amountGrossCents={displayTotals.totalCents}
               pageType="checkout"
