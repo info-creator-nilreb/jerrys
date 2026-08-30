@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { shouldRefreshSupabaseSessionInMiddleware } from "@/lib/http/supabase-session-middleware";
 import { REQUEST_PATHNAME_HEADER } from "@/lib/http/request-pathname";
 import { resolveLegacyRedirect } from "@/lib/site/legacy-redirects";
 import {
@@ -26,7 +27,9 @@ export async function middleware(request: NextRequest) {
   // Layouts kennen den angefragten Pfad nicht; das Kundenportal braucht ihn für `callbackUrl`.
   request.headers.set(REQUEST_PATHNAME_HEADER, request.nextUrl.pathname);
 
-  const response = await updateSession(request);
+  const response = shouldRefreshSupabaseSessionInMiddleware(request.nextUrl.pathname)
+    ? await updateSession(request)
+    : NextResponse.next({ request: { headers: request.headers } });
   const ctx = browseContextFromPathname(request.nextUrl.pathname);
   if (ctx) {
     response.cookies.set(

@@ -5,6 +5,7 @@ import { attachStorefrontBestsellerFlags } from "@/lib/catalog/bestseller-rank";
 import { listActiveProductsForLinkedCollection } from "@/lib/catalog/collection-queries";
 import { getPrisma } from "@/lib/db/prisma";
 import { categoryHasActiveProductViaCollections } from "@/lib/catalog/category-storefront-visibility";
+import { runStorefrontCatalogCache } from "@/lib/catalog/run-storefront-catalog-cache";
 import { STOREFRONT_CATALOG_CACHE_TAG } from "@/lib/catalog/storefront-catalog-cache-tag";
 import { storefrontProductCardSelect } from "@/lib/catalog/queries";
 
@@ -191,8 +192,7 @@ export async function listActiveCategoryTreeForNav() {
   });
 }
 
-/** Aktive Kategorien mit mindestens einem sichtbaren Produkt (Storefront-Index). */
-export async function listActiveCategoriesForStorefrontIndex() {
+async function loadActiveCategoriesForStorefrontIndex() {
   const rows = await getPrisma().category.findMany({
     where: {
       isActive: true,
@@ -236,8 +236,15 @@ export async function listActiveCategoriesForStorefrontIndex() {
   });
 }
 
-/** Produkte einer aktiven Kategorie (über verknüpfte Kollektionen), per Slug. */
-export async function listActiveProductsByCategorySlug(slug: string) {
+/** Aktive Kategorien mit mindestens einem sichtbaren Produkt (Storefront-Index). */
+export async function listActiveCategoriesForStorefrontIndex() {
+  return runStorefrontCatalogCache(
+    ["storefront-active-categories-index"],
+    loadActiveCategoriesForStorefrontIndex,
+  );
+}
+
+async function loadActiveProductsByCategorySlug(slug: string) {
   const category = await getPrisma().category.findFirst({
     where: { slug, isActive: true },
     select: {
@@ -301,4 +308,12 @@ export async function listActiveProductsByCategorySlug(slug: string) {
       return hit ? [hit] : [];
     }),
   };
+}
+
+/** Produkte einer aktiven Kategorie (über verknüpfte Kollektionen), per Slug. */
+export async function listActiveProductsByCategorySlug(slug: string) {
+  return runStorefrontCatalogCache(
+    ["storefront-category-products", slug],
+    () => loadActiveProductsByCategorySlug(slug),
+  );
 }

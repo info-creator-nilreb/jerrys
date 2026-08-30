@@ -23,6 +23,8 @@ Lebendes Inventar für [Epic 10 in DELIVERY_PLAN_PHASE2](./DELIVERY_PLAN_PHASE2.
 | Server Actions `app/(storefront)/konto/privacy-actions.ts` | Kunden-Session + verifizierte E-Mail; Löschung nur mit serverseitig geprüftem Bestätigungswort | Namen berichtigen, Konto anonymisieren (Audit `order.customer_unlinked`, danach Sign-out) |
 | `GET /api/admin/search` | Admin-Session (`auth()`) | Globale Suche |
 | `GET /api/storefront/product-suggest` | Öffentlich | Typeahead-Produktvorschläge (`q`, min. 2 Zeichen); **Rate-Limit** pro IP (`lib/security/storefront-search-api-rate-limit.ts`) |
+| `POST /api/storefront/cart/add` | Öffentlich (Cart-Cookie) | Warenkorb Quick-Add per JSON (Karussell); kein Server-Action-RSC-Refresh; Validierung wie `addToCartFromFormData` |
+| `POST /api/storefront/cart/note` | Öffentlich (Cart-Cookie) | Warenkorb-Notiz speichern per JSON; kein Server-Action-RSC-Refresh |
 | `GET /api/storefront/address-suggest` | Öffentlich | Adressvorschläge für Checkout und Adressbuch (`land`, `plz`, `ort`, `strasse`); ausschließlich Proxy auf OpenPLZ API (DE/AT/CH/LI), keine Shop-Daten; **Rate-Limit** pro IP (`lib/security/address-suggest-api-rate-limit.ts`) |
 | `GET /api/storefront/instagram-media/[id]` | Öffentlich | Storefront-Proxy für Instagram-Cache-Bilder (kein Graph-Token im Browser); CDN ohne Referer, bei toter URL Graph-Refresh; **Rate-Limit** pro IP (`lib/security/instagram-media-api-rate-limit.ts`); nur aktive Cache-IDs; Host-Allowlist |
 | `GET /api/admin/order-alerts` | Admin-Session | Admin-Glocke: neue Bestellungen, Terminbuchungen, Wunschtermine (`since`) |

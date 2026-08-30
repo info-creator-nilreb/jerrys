@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronDown, CircleQuestionMark } from "lucide-react";
 import { ProductDescriptionEditor } from "@/app/admin/(dashboard)/products/description-editor";
 import type { ProductFormState } from "@/app/admin/(dashboard)/products/actions";
@@ -50,11 +50,8 @@ type Props = {
 export function ProductGeneralFields({ state, manufacturers, defaults }: Props) {
   const fe = state?.fieldErrors ?? {};
   const hasAmazonErrors = hasAmazonFieldErrors(fe);
-  const [amazonOpen, setAmazonOpen] = useState(false);
-
-  useEffect(() => {
-    if (hasAmazonErrors) setAmazonOpen(true);
-  }, [hasAmazonErrors]);
+  const [amazonOpenUser, setAmazonOpenUser] = useState<boolean | undefined>(undefined);
+  const amazonOpen = amazonOpenUser ?? hasAmazonErrors;
   const {
     title,
     setTitle,
@@ -201,7 +198,7 @@ export function ProductGeneralFields({ state, manufacturers, defaults }: Props) 
 
         <details
           open={amazonOpen}
-          onToggle={(e) => setAmazonOpen(e.currentTarget.open)}
+          onToggle={(e) => setAmazonOpenUser(e.currentTarget.open)}
           className="group rounded-lg border border-dashed border-[#e5e7eb] bg-[#fafafa]"
         >
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 marker:content-none [&::-webkit-details-marker]:hidden">

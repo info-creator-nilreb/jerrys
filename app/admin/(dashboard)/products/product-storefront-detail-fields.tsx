@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { ProductFormState } from "@/app/admin/(dashboard)/products/actions";
 import type { PickupStoreRecord } from "@/lib/shop/pickup-store-shared";
 import { DEFAULT_PICKUP_READY_HOURS } from "@/lib/shop/pickup-store-shared";
@@ -31,9 +32,9 @@ export function ProductStorefrontDetailFields({ state, defaults, pickupStores }:
         Optionen für Checkout und Produktdetailseite. Das Bestseller-Badge wird automatisch aus
         Verkäufen der letzten 90 Tage vergeben (Top-Anteil mit Mindestmenge). Abholorte pflegst du
         unter{" "}
-        <a href="/admin/versand" className="font-medium text-primary hover:underline">
+        <Link href="/admin/versand" className="font-medium text-primary hover:underline">
           Versand → Abholorte
-        </a>
+        </Link>
         .
       </p>
       <div className="mt-6 h-px bg-[#e8eaed]" />

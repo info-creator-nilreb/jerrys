@@ -84,7 +84,7 @@ describe("selfCancelWorkshopBookingForCustomer", () => {
       currencySnapshot: "EUR",
       sessionId: "s1",
       orderId: null,
-      sessionStartsAtSnapshot: new Date("2026-08-20T14:00:00.000Z"),
+      sessionStartsAtSnapshot: new Date("2099-08-20T14:00:00.000Z"),
       session: { status: "published", selfCancelHoursBeforeStart: null, confirmedSeatCount: 2 },
     });
     bookingUpdateMany.mockResolvedValue({ count: 0 });

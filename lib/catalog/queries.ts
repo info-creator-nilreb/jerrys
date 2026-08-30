@@ -6,6 +6,7 @@ import {
 } from "@/lib/catalog/bestseller-rank";
 import { getPrisma } from "@/lib/db/prisma";
 import { prismaDefaultVariantInclude, prismaStorefrontActiveVariantsInclude } from "@/lib/catalog/default-variant-storefront";
+import { runStorefrontCatalogCache } from "@/lib/catalog/run-storefront-catalog-cache";
 import { STOREFRONT_CATALOG_CACHE_TAG } from "@/lib/catalog/storefront-catalog-cache-tag";
 
 /** Storefront-Produktkarte: Commerce-Felder nur über `variants`. */
@@ -132,7 +133,7 @@ export async function listActiveProductsByCategorySlugForStorefront(
   return withBestsellerFlags(withImages, bestsellerIds);
 }
 
-export async function getActiveProductBySlug(slug: string) {
+async function loadActiveProductBySlug(slug: string) {
   const product = await getPrisma().product.findFirst({
     where: { slug, isActive: true },
     include: {
@@ -186,11 +187,18 @@ export async function getActiveProductBySlug(slug: string) {
   return withBestsellerFlags([withImages], bestsellerIds)[0] ?? null;
 }
 
+export async function getActiveProductBySlug(slug: string) {
+  return runStorefrontCatalogCache(
+    ["storefront-product-detail", slug],
+    () => loadActiveProductBySlug(slug),
+  );
+}
+
 /**
  * Verwandte Produkte für PDP-Cross-Sell: gleiche Kollektion(en), ohne aktuelles Produkt.
  * Sortierung: automatische Bestseller zuerst, dann Katalog-sortOrder.
  */
-export async function listRelatedProductsForPdp(
+async function loadRelatedProductsForPdp(
   productId: string,
   collectionSlugs: string[],
   limit = 4,
@@ -226,6 +234,18 @@ export async function listRelatedProductsForPdp(
     return 0;
   });
   return ranked.slice(0, Math.max(1, limit));
+}
+
+export async function listRelatedProductsForPdp(
+  productId: string,
+  collectionSlugs: string[],
+  limit = 4,
+) {
+  const slugKey = [...new Set(collectionSlugs.map((s) => s.trim()).filter(Boolean))].sort().join(",");
+  return runStorefrontCatalogCache(
+    ["storefront-pdp-related", productId, slugKey, String(limit)],
+    () => loadRelatedProductsForPdp(productId, collectionSlugs, limit),
+  );
 }
 
 /** Aktives Produkt, dessen `previousSlug` dem Pfad entspricht (301-Ziel). */

@@ -26,8 +26,6 @@ import {
   CATALOG_LISTING_NOINDEX_ROBOTS,
 } from "@/lib/site/storefront-metadata";
 
-export const dynamic = "force-dynamic";
-
 function categoryListingBreadcrumbItems(category: {
   title: string;
   slug: string;

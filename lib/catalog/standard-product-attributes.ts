@@ -1,5 +1,5 @@
 import type { ProductAttribute } from "@/features/catalog";
-import { mergeProductAttributes, normalizeProductAttributes } from "@/features/catalog/domain/product-attributes";
+import { normalizeProductAttributes } from "@/features/catalog";
 import { countryCodeFromValue, countryDisplayName } from "@/lib/catalog/iso-countries-de";
 
 export const STANDARD_SPEC_KEYS = {
