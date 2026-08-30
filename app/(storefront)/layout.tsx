@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { CookieConsentBanner } from "@/components/storefront/cookie-consent/cookie-consent-banner";
+import { StorefrontNavigationProgress } from "@/components/storefront/storefront-navigation-progress";
 import { VercelAnalyticsWithConsent } from "@/components/storefront/vercel-analytics-with-consent";
 import { SiteFooter } from "@/components/storefront/site-footer";
 import { SiteHeader } from "@/components/storefront/site-header";
@@ -24,6 +26,9 @@ export default async function StorefrontLayout({
 
   return (
     <>
+      <Suspense fallback={null}>
+        <StorefrontNavigationProgress />
+      </Suspense>
       <SiteJsonLd />
       <SiteHeader />
       <main className={`flex-1 ${headerHeightVars}`}>{children}</main>
