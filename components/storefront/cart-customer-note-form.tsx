@@ -1,9 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
-import { updateCartCustomerNote, type CartNoteActionState } from "@/lib/cart/actions";
-
-const initial: CartNoteActionState = null;
+import { useCallback, useState, type FormEvent } from "react";
+import type { CartNoteSaveResult } from "@/lib/cart/save-cart-customer-note";
 
 function CartNoteSubmitButton({ pending }: { pending: boolean }) {
   return (
@@ -18,10 +16,45 @@ function CartNoteSubmitButton({ pending }: { pending: boolean }) {
 }
 
 export function CartCustomerNoteForm({ defaultNote }: { defaultNote: string }) {
-  const [state, formAction, pending] = useActionState(updateCartCustomerNote, initial);
+  const [state, setState] = useState<CartNoteSaveResult | null>(null);
+  const [pending, setPending] = useState(false);
+
+  const onSubmit = useCallback(async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPending(true);
+    setState(null);
+
+    const note = new FormData(event.currentTarget).get("note");
+
+    try {
+      const res = await fetch("/api/storefront/cart/note", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note: String(note ?? "") }),
+      });
+      const data = (await res.json().catch(() => null)) as CartNoteSaveResult | null;
+
+      if (!res.ok || !data?.ok) {
+        setState({
+          ok: false,
+          error: data?.ok === false ? data.error : "Notiz konnte nicht gespeichert werden.",
+        });
+        return;
+      }
+
+      setState({ ok: true });
+    } catch {
+      setState({
+        ok: false,
+        error: "Notiz konnte nicht gespeichert werden. Bitte erneut versuchen.",
+      });
+    } finally {
+      setPending(false);
+    }
+  }, []);
 
   return (
-    <form action={formAction} className="contents">
+    <form onSubmit={onSubmit} className="contents">
       <label htmlFor="cart-note" className="text-sm font-medium text-[#1f2937] lg:col-start-1 lg:row-start-1">
         Fügen deiner Bestellung eine Notiz hinzu
       </label>
