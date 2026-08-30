@@ -7,6 +7,7 @@ import {
   normalizeCreatedWithinRuleDays,
 } from "@/lib/catalog/collection-membership";
 import { getPrisma } from "@/lib/db/prisma";
+import { runStorefrontCatalogCache } from "@/lib/catalog/run-storefront-catalog-cache";
 import { STOREFRONT_CATALOG_CACHE_TAG } from "@/lib/catalog/storefront-catalog-cache-tag";
 import {
   storefrontCategoryViaCollectionsSelect,
@@ -171,7 +172,10 @@ async function resolveStorefrontCollectionProducts(collection: {
 }
 
 export async function getActiveCollectionBySlugForStorefront(slug: string) {
-  return getCachedActiveCollectionBySlugForStorefront(slug);
+  return runStorefrontCatalogCache(
+    ["storefront-collection-detail", slug],
+    () => loadActiveCollectionBySlugForStorefront(slug),
+  );
 }
 
 async function loadActiveCollectionBySlugForStorefront(slug: string) {
@@ -214,14 +218,6 @@ async function loadActiveCollectionBySlugForStorefront(slug: string) {
       return product ? [{ sortOrder: row.sortOrder, product }] : [];
     }),
   };
-}
-
-function getCachedActiveCollectionBySlugForStorefront(slug: string) {
-  return unstable_cache(
-    () => loadActiveCollectionBySlugForStorefront(slug),
-    ["storefront-collection-detail", slug],
-    { tags: [STOREFRONT_CATALOG_CACHE_TAG], revalidate: 60 },
-  )();
 }
 
 /** Aktive Produkte einer Kollektion in Sortierreihenfolge (CMS-Produktblöcke). */

@@ -1,6 +1,5 @@
-import { unstable_cache } from "next/cache";
+import { runStorefrontCatalogCache } from "@/lib/catalog/run-storefront-catalog-cache";
 import { getPrisma } from "@/lib/db/prisma";
-import { STOREFRONT_CATALOG_CACHE_TAG } from "@/lib/catalog/storefront-catalog-cache-tag";
 
 /** Rollierendes Fenster — üblich bei Shopify/WooCommerce-Best-Seller-Collections. */
 export const BESTSELLER_WINDOW_DAYS = 90;
@@ -66,17 +65,18 @@ async function loadProductSalesRanks(): Promise<ProductSalesRank[]> {
     .filter((r) => r.unitsSold > 0);
 }
 
-const getCachedBestsellerProductIds = unstable_cache(
-  async () => {
-    const [ranks, activeProductCount] = await Promise.all([
-      loadProductSalesRanks(),
-      getPrisma().product.count({ where: { isActive: true } }),
-    ]);
-    return [...pickBestsellerProductIds(ranks, activeProductCount)];
-  },
-  ["storefront-bestseller-product-ids"],
-  { tags: [STOREFRONT_CATALOG_CACHE_TAG], revalidate: 3600 },
-);
+const getCachedBestsellerProductIds = async () =>
+  runStorefrontCatalogCache(
+    ["storefront-bestseller-product-ids"],
+    async () => {
+      const [ranks, activeProductCount] = await Promise.all([
+        loadProductSalesRanks(),
+        getPrisma().product.count({ where: { isActive: true } }),
+      ]);
+      return [...pickBestsellerProductIds(ranks, activeProductCount)];
+    },
+    { revalidate: 3600 },
+  );
 
 export async function getBestsellerProductIdSet(): Promise<Set<string>> {
   const ids = await getCachedBestsellerProductIds();

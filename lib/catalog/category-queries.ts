@@ -5,6 +5,7 @@ import { attachStorefrontBestsellerFlags } from "@/lib/catalog/bestseller-rank";
 import { listActiveProductsForLinkedCollection } from "@/lib/catalog/collection-queries";
 import { getPrisma } from "@/lib/db/prisma";
 import { categoryHasActiveProductViaCollections } from "@/lib/catalog/category-storefront-visibility";
+import { runStorefrontCatalogCache } from "@/lib/catalog/run-storefront-catalog-cache";
 import { STOREFRONT_CATALOG_CACHE_TAG } from "@/lib/catalog/storefront-catalog-cache-tag";
 import { storefrontProductCardSelect } from "@/lib/catalog/queries";
 
@@ -235,15 +236,12 @@ async function loadActiveCategoriesForStorefrontIndex() {
   });
 }
 
-const getCachedActiveCategoriesForStorefrontIndex = unstable_cache(
-  loadActiveCategoriesForStorefrontIndex,
-  ["storefront-active-categories-index"],
-  { tags: [STOREFRONT_CATALOG_CACHE_TAG], revalidate: 60 },
-);
-
 /** Aktive Kategorien mit mindestens einem sichtbaren Produkt (Storefront-Index). */
 export async function listActiveCategoriesForStorefrontIndex() {
-  return getCachedActiveCategoriesForStorefrontIndex();
+  return runStorefrontCatalogCache(
+    ["storefront-active-categories-index"],
+    loadActiveCategoriesForStorefrontIndex,
+  );
 }
 
 async function loadActiveProductsByCategorySlug(slug: string) {
@@ -312,15 +310,10 @@ async function loadActiveProductsByCategorySlug(slug: string) {
   };
 }
 
-function getCachedActiveProductsByCategorySlug(slug: string) {
-  return unstable_cache(
-    () => loadActiveProductsByCategorySlug(slug),
-    ["storefront-category-products", slug],
-    { tags: [STOREFRONT_CATALOG_CACHE_TAG], revalidate: 60 },
-  )();
-}
-
 /** Produkte einer aktiven Kategorie (über verknüpfte Kollektionen), per Slug. */
 export async function listActiveProductsByCategorySlug(slug: string) {
-  return getCachedActiveProductsByCategorySlug(slug);
+  return runStorefrontCatalogCache(
+    ["storefront-category-products", slug],
+    () => loadActiveProductsByCategorySlug(slug),
+  );
 }

@@ -1,18 +1,51 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const findFirstMock = vi.fn();
+const orderItemGroupByMock = vi.fn();
+const productCountMock = vi.fn();
 
 vi.mock("@/lib/db/prisma", () => ({
   getPrisma: () => ({
     category: {
       findFirst: findFirstMock,
     },
+    orderItem: {
+      groupBy: orderItemGroupByMock,
+    },
+    product: {
+      count: productCountMock,
+    },
   }),
 }));
+
+function mockProduct(overrides: { id: string; slug: string; title: string }) {
+  return {
+    ...overrides,
+    subtitle: null,
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    currency: "EUR",
+    amazonRatingAverage: null,
+    amazonRatingCount: null,
+    amazonReviewUrl: null,
+    images: [],
+    variants: [],
+  };
+}
+
+function mockLinkedCollection(products: Array<{ sortOrder: number; product: ReturnType<typeof mockProduct> }>) {
+  return {
+    id: "col-1",
+    membershipMode: "manual",
+    ruleDays: null,
+    products,
+  };
+}
 
 describe("listActiveProductsByCategorySlug (Integration, gemockte DB)", () => {
   beforeEach(() => {
     findFirstMock.mockReset();
+    orderItemGroupByMock.mockResolvedValue([]);
+    productCountMock.mockResolvedValue(0);
   });
 
   it("liefert null für unbekannten oder inaktiven Slug (Query filtert isActive)", async () => {
@@ -53,19 +86,15 @@ describe("listActiveProductsByCategorySlug (Integration, gemockte DB)", () => {
       parent: null,
       collections: [
         {
-          collection: {
-            products: [
-              { sortOrder: 0, product: { id: "p1", slug: "design-katzenhoehle", title: "Höhle" } },
-              { sortOrder: 1, product: { id: "p2", slug: "napf", title: "Napf" } },
-            ],
-          },
+          collection: mockLinkedCollection([
+            { sortOrder: 0, product: mockProduct({ id: "p1", slug: "design-katzenhoehle", title: "Höhle" }) },
+            { sortOrder: 1, product: mockProduct({ id: "p2", slug: "napf", title: "Napf" }) },
+          ]),
         },
         {
-          collection: {
-            products: [
-              { sortOrder: 0, product: { id: "p1", slug: "design-katzenhoehle", title: "Höhle" } },
-            ],
-          },
+          collection: mockLinkedCollection([
+            { sortOrder: 0, product: mockProduct({ id: "p1", slug: "design-katzenhoehle", title: "Höhle" }) },
+          ]),
         },
       ],
     });
@@ -74,8 +103,8 @@ describe("listActiveProductsByCategorySlug (Integration, gemockte DB)", () => {
     );
     const row = await listActiveProductsByCategorySlug("katzen");
     expect(row?.products).toEqual([
-      { id: "p1", slug: "design-katzenhoehle", title: "Höhle" },
-      { id: "p2", slug: "napf", title: "Napf" },
+      expect.objectContaining({ id: "p1", slug: "design-katzenhoehle", title: "Höhle", isBestseller: false }),
+      expect.objectContaining({ id: "p2", slug: "napf", title: "Napf", isBestseller: false }),
     ]);
   });
 });
