@@ -18,6 +18,7 @@ import {
   WORKSHOP_DATE_REQUEST_SUCCESS_MESSAGE,
   WorkshopDateRequestIntro,
 } from "@/components/storefront/workshop-date-request-intro";
+import type { WorkshopDateRequestSeatGuidance } from "@/lib/workshop/workshop-date-request-limits";
 
 type OpenContextValue = {
   openRequest: () => void;
@@ -37,12 +38,14 @@ type ProviderProps = {
   children: ReactNode;
   defaultEmail?: string;
   defaultName?: string;
+  seatGuidance: WorkshopDateRequestSeatGuidance;
 };
 
 export function WorkshopDateRequestProvider({
   children,
   defaultEmail = "",
   defaultName = "",
+  seatGuidance,
 }: ProviderProps) {
   const panelId = useId();
   const formInstanceId = useId();
@@ -147,6 +150,7 @@ export function WorkshopDateRequestProvider({
                 defaultName={defaultName}
                 delivery="inline"
                 onSuccess={() => setSuccess(true)}
+                seatGuidance={seatGuidance}
               />
             )}
 

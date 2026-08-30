@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { WORKSHOP_DATE_REQUEST_MAX_SEATS } from "@/lib/workshop/workshop-date-request-limits";
 import {
   addWorkshopDurationMinutes,
   snapWorkshopSessionDurationMinutes,
@@ -198,12 +199,32 @@ export function adminWorkshopSessionUpsertToData(input: AdminWorkshopSessionUpse
   };
 }
 
-export const adminShopWorkshopSettingsSchema = z.object({
-  selfCancelHoursBeforeStart: z.coerce
-    .number()
-    .int()
-    .min(0, "Mindestens 0 Stunden.")
-    .max(24 * 365, "Maximal ein Jahr."),
-});
+export const adminShopWorkshopSettingsSchema = z
+  .object({
+    selfCancelHoursBeforeStart: z.coerce
+      .number()
+      .int()
+      .min(0, "Mindestens 0 Stunden.")
+      .max(24 * 365, "Maximal ein Jahr."),
+    dateRequestTypicalMinSeats: z.coerce
+      .number()
+      .int()
+      .min(1, "Mindestens 1 Person.")
+      .max(WORKSHOP_DATE_REQUEST_MAX_SEATS, `Maximal ${WORKSHOP_DATE_REQUEST_MAX_SEATS} Personen.`),
+    dateRequestTypicalMaxSeats: z.coerce
+      .number()
+      .int()
+      .min(1, "Mindestens 1 Person.")
+      .max(WORKSHOP_DATE_REQUEST_MAX_SEATS, `Maximal ${WORKSHOP_DATE_REQUEST_MAX_SEATS} Personen.`),
+  })
+  .superRefine((val, ctx) => {
+    if (val.dateRequestTypicalMaxSeats < val.dateRequestTypicalMinSeats) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["dateRequestTypicalMaxSeats"],
+        message: "Maximum darf nicht unter dem Minimum liegen.",
+      });
+    }
+  });
 
 export { parseEuroToCents };

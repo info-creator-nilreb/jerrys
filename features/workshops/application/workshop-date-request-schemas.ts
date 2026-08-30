@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { parseLocalDateTimeInTimeZone } from "@/lib/workshop/admin-datetime";
+import { WORKSHOP_DATE_REQUEST_MAX_SEATS } from "@/lib/workshop/workshop-date-request-limits";
 
 const DEFAULT_TIMEZONE = "Europe/Berlin";
 
@@ -13,7 +14,14 @@ export const storefrontWorkshopDateRequestSchema = z
       .transform((v) => (v === "" ? undefined : v)),
     contactEmail: z.string().trim().email("Gültige E-Mail erforderlich.").max(320),
     preferredStartsAtLocal: z.string().trim().min(1, "Wunschtermin erforderlich."),
-    seatCount: z.coerce.number().int().min(1, "Mindestens 1 Platz.").max(50, "Maximal 50 Plätze."),
+    seatCount: z.coerce
+      .number()
+      .int("Bitte eine ganze Zahl eingeben.")
+      .min(1, "Bitte mindestens 1 Platz angeben.")
+      .max(
+        WORKSHOP_DATE_REQUEST_MAX_SEATS,
+        `Maximal ${WORKSHOP_DATE_REQUEST_MAX_SEATS} Plätze. Für größere Gruppen bitte in der Nachricht kurz Bescheid geben.`,
+      ),
     message: z
       .string()
       .trim()

@@ -8,6 +8,7 @@ import {
 } from "@/components/storefront/workshop-date-request-provider";
 import { storefrontMainPagePaddingClass } from "@/lib/storefront/page-below-header-padding";
 import { getCustomerSession } from "@/lib/auth/customer-session";
+import { getWorkshopDateRequestSeatGuidance } from "@/features/workshops";
 
 export const metadata = {
   title: "Termine & Workshops",
@@ -18,9 +19,14 @@ export default async function StorefrontWorkshopSessionsPage() {
   const session = await getCustomerSession();
   const defaultEmail = session?.email ?? "";
   const defaultName = session?.name ?? "";
+  const seatGuidance = await getWorkshopDateRequestSeatGuidance();
 
   return (
-    <WorkshopDateRequestProvider defaultEmail={defaultEmail} defaultName={defaultName}>
+    <WorkshopDateRequestProvider
+      defaultEmail={defaultEmail}
+      defaultName={defaultName}
+      seatGuidance={seatGuidance}
+    >
       <div className={`mx-auto max-w-3xl px-4 ${storefrontMainPagePaddingClass}`}>
         <StorefrontBreadcrumbs items={[{ href: "/", label: "Start" }, { label: "Termine" }]} />
         <header className="mb-10 mt-6">

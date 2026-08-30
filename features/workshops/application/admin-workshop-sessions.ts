@@ -492,11 +492,17 @@ export async function bulkPublishWorkshopSessionDraftsBySeriesBatch(
 
 export type AdminShopWorkshopSettingsForm = {
   selfCancelHoursBeforeStart: number;
+  dateRequestTypicalMinSeats: number;
+  dateRequestTypicalMaxSeats: number;
 };
 
 export async function getShopWorkshopSettingsForAdmin(): Promise<AdminShopWorkshopSettingsForm> {
   const settings = await getShopWorkshopSettings();
-  return { selfCancelHoursBeforeStart: settings.selfCancelHoursBeforeStart };
+  return {
+    selfCancelHoursBeforeStart: settings.selfCancelHoursBeforeStart,
+    dateRequestTypicalMinSeats: settings.dateRequestTypicalMinSeats,
+    dateRequestTypicalMaxSeats: settings.dateRequestTypicalMaxSeats,
+  };
 }
 
 export async function updateShopWorkshopSettings(
@@ -517,8 +523,14 @@ export async function updateShopWorkshopSettings(
       create: {
         id: "default",
         selfCancelHoursBeforeStart: parsed.data.selfCancelHoursBeforeStart,
+        dateRequestTypicalMinSeats: parsed.data.dateRequestTypicalMinSeats,
+        dateRequestTypicalMaxSeats: parsed.data.dateRequestTypicalMaxSeats,
       },
-      update: { selfCancelHoursBeforeStart: parsed.data.selfCancelHoursBeforeStart },
+      update: {
+        selfCancelHoursBeforeStart: parsed.data.selfCancelHoursBeforeStart,
+        dateRequestTypicalMinSeats: parsed.data.dateRequestTypicalMinSeats,
+        dateRequestTypicalMaxSeats: parsed.data.dateRequestTypicalMaxSeats,
+      },
     });
     await getPrisma().$transaction(async (tx) => {
       await appendIntegrationOutbox(tx, {

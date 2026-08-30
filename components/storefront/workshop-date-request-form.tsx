@@ -5,6 +5,11 @@ import {
   submitWorkshopDateRequestAction,
   type WorkshopDateRequestActionState,
 } from "@/app/(storefront)/termine/wunschtermin/actions";
+import {
+  WORKSHOP_DATE_REQUEST_MAX_SEATS,
+  DEFAULT_WORKSHOP_DATE_REQUEST_SEAT_GUIDANCE,
+  type WorkshopDateRequestSeatGuidance,
+} from "@/lib/workshop/workshop-date-request-limits";
 
 const initial: WorkshopDateRequestActionState = null;
 
@@ -16,6 +21,7 @@ type Props = {
   /** inline = Erfolg im Overlay; page = Redirect auf Vollseite. */
   delivery?: "inline" | "page";
   onSuccess?: () => void;
+  seatGuidance?: WorkshopDateRequestSeatGuidance;
 };
 
 export function WorkshopDateRequestForm({
@@ -24,6 +30,7 @@ export function WorkshopDateRequestForm({
   idPrefix = "",
   delivery = "page",
   onSuccess,
+  seatGuidance = DEFAULT_WORKSHOP_DATE_REQUEST_SEAT_GUIDANCE,
 }: Props) {
   const [state, formAction, pending] = useActionState(submitWorkshopDateRequestAction, initial);
   const fe = state?.ok === false ? state.fieldErrors : undefined;
@@ -110,12 +117,18 @@ export function WorkshopDateRequestForm({
             id={pid("seatCount")}
             name="seatCount"
             type="number"
+            inputMode="numeric"
             min={1}
-            max={50}
-            defaultValue={1}
+            max={WORKSHOP_DATE_REQUEST_MAX_SEATS}
+            step={1}
             required
-            className="mt-1 w-full rounded-md border border-(--surface-muted) px-3 py-2 text-sm"
+            placeholder={seatGuidance.placeholder}
+            aria-describedby={pid("seatCount-hint")}
+            className="mt-1 w-full max-w-xs rounded-md border border-(--surface-muted) px-3 py-2 text-sm"
           />
+          <p id={pid("seatCount-hint")} className="mt-1 text-xs text-(--foreground-muted)">
+            {seatGuidance.hint}
+          </p>
           {fe?.seatCount?.[0] ? <p className="mt-1 text-sm text-red-700">{fe.seatCount[0]}</p> : null}
         </div>
 

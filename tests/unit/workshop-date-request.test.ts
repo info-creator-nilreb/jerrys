@@ -29,6 +29,33 @@ describe("storefrontWorkshopDateRequestSchema", () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it("akzeptiert Größen außerhalb der typischen Spanne (weiche UX-Grenze)", () => {
+    const result = storefrontWorkshopDateRequestSchema.safeParse({
+      contactEmail: "kunde@example.com",
+      preferredStartsAtLocal: "2030-06-15T10:00",
+      seatCount: 20,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("lehnt mehr als das technische Maximum ab", () => {
+    const result = storefrontWorkshopDateRequestSchema.safeParse({
+      contactEmail: "kunde@example.com",
+      preferredStartsAtLocal: "2030-06-15T10:00",
+      seatCount: 51,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("lehnt fehlende Platzanzahl ab", () => {
+    const result = storefrontWorkshopDateRequestSchema.safeParse({
+      contactEmail: "kunde@example.com",
+      preferredStartsAtLocal: "2030-06-15T10:00",
+      seatCount: "",
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe("workshopDateRequestStatusLabel", () => {
