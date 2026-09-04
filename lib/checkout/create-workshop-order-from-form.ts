@@ -23,6 +23,8 @@ import {
 } from "@/lib/checkout/paypal-order-payment-source";
 import { ORDER_EVENT_PLACED } from "@/lib/orders/order-events";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
+import { getShopSettings } from "@/lib/shop/shop-settings";
+import { paypalCheckoutBrandName } from "@/lib/shop/storefront-branding";
 import type { OrderPriceLineInput } from "@/lib/tax/order-price-totals";
 import { computeWorkshopCheckoutOrderTotals } from "@/lib/workshop/workshop-checkout-totals";
 import { getWorkshopCheckoutCatalogLine } from "@/lib/workshop/workshop-checkout-catalog-query";
@@ -83,6 +85,9 @@ export async function createWorkshopOrderFromFormData(
     return { ok: false, error: "PayPal ist derzeit nicht verfügbar." };
   }
 
+  const shopSettings = await getShopSettings();
+  const paypalBrandName = paypalCheckoutBrandName(shopSettings);
+
   let customerId: string | null = null;
   try {
     const { getCustomerSession } = await import("@/lib/auth/customer-session");
@@ -120,6 +125,7 @@ export async function createWorkshopOrderFromFormData(
           orderNumber: existing.orderNumber,
           totalGrossCents: existing.totalGrossCents,
           currency: existing.currency,
+          brandName: paypalBrandName,
         });
         await prisma.orderPayment.create({
           data: {
@@ -339,6 +345,7 @@ export async function createWorkshopOrderFromFormData(
       orderNumber,
       totalGrossCents: totals.totalCents,
       currency: hold.currency,
+      brandName: paypalBrandName,
     });
     await prisma.orderPayment.create({
       data: {
