@@ -99,3 +99,11 @@ export function applePayStoreLabel(
     .slice(0, 64);
   return ascii || "Shop";
 }
+
+/** PayPal `application_context.brand_name` (Checkout / Express, max. 127 Zeichen). */
+export function paypalCheckoutBrandName(
+  settings: Pick<ShopSettingsDTO, "shopName">,
+): string {
+  const name = (settings.shopName || JERRYS_SHOP_SETTINGS_DEFAULTS.shopName).trim();
+  return name.slice(0, 127) || JERRYS_SHOP_SETTINGS_DEFAULTS.shopName;
+}
