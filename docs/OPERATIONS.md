@@ -98,6 +98,8 @@ npm run db:migrate:deploy:all
 
 Preview-Datenbanken sind bewusst **nicht** im Workflow — eigene Secrets + manueller Lauf bei Bedarf.
 
+**Edelweiss-Integrationen:** schrittweise Anbindung (Resend, PayPal, Blob, Internetmarke, Zettle, Instagram, KI) in [EDELWEISS_INTEGRATIONS.md](./EDELWEISS_INTEGRATIONS.md). Status unter Admin → Einstellungen → Integrationen.
+
 Neue Tabellen erst nach dem Deploy nutzbar: Die App zeigt bei fehlender Migration eine
 verständliche Meldung (`P2021`) statt einer Fehlerseite, speichert aber nichts.
 
