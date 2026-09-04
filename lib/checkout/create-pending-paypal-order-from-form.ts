@@ -22,6 +22,8 @@ import {
   startPayPalCheckoutOrderFromForm,
 } from "@/lib/checkout/paypal-order-payment-source";
 import { getShopShippingSettings } from "@/lib/shop/shipping-settings";
+import { getShopSettings } from "@/lib/shop/shop-settings";
+import { paypalCheckoutBrandName } from "@/lib/shop/storefront-branding";
 import { loadPromotionsForCheckoutResolve } from "@/lib/promotions/checkout-load";
 import { computeCheckoutOrderTotalsWithDiscount } from "@/lib/promotions/checkout-totals";
 import {
@@ -220,6 +222,9 @@ async function createPendingPayPalOrderFromParsedRaw(
     };
   }
 
+  const shopSettings = await getShopSettings();
+  const paypalBrandName = paypalCheckoutBrandName(shopSettings);
+
   const customerId = await loadVerifiedCheckoutCustomerId();
   const paymentSource = paymentSourceForCheckoutForm(d, customerId);
   if (!paymentSource.ok) {
@@ -265,6 +270,7 @@ async function createPendingPayPalOrderFromParsedRaw(
           orderNumber: existing.orderNumber,
           totalGrossCents: existing.totalGrossCents,
           currency: existing.currency,
+          brandName: paypalBrandName,
           shippingPreference: options.paypalShippingPreference,
         });
         await getPrisma().orderPayment.create({
@@ -583,6 +589,7 @@ async function createPendingPayPalOrderFromParsedRaw(
       orderNumber,
       totalGrossCents: totalGross,
       currency: orderCurrency,
+      brandName: paypalBrandName,
       shippingPreference: options.paypalShippingPreference,
     });
     await getPrisma().orderPayment.create({

@@ -33,10 +33,11 @@ describe("createPayPalCheckoutOrder", () => {
       orderNumber: "J-1",
       totalGrossCents: 1299,
       currency: "EUR",
+      brandName: "jerry's",
     });
 
     expect(bodies[0]).toMatchObject({
-      application_context: { shipping_preference: "NO_SHIPPING" },
+      application_context: { shipping_preference: "NO_SHIPPING", brand_name: "jerry's" },
     });
   });
 
@@ -56,11 +57,12 @@ describe("createPayPalCheckoutOrder", () => {
       orderNumber: "J-2",
       totalGrossCents: 2499,
       currency: "EUR",
+      brandName: "edel weiss",
       shippingPreference: "GET_FROM_FILE",
     });
 
     expect(bodies[0]).toMatchObject({
-      application_context: { shipping_preference: "GET_FROM_FILE" },
+      application_context: { shipping_preference: "GET_FROM_FILE", brand_name: "edel weiss" },
     });
   });
 
@@ -88,6 +90,7 @@ describe("createPayPalCheckoutOrder", () => {
       orderNumber: "J-SEPA",
       totalGrossCents: 1999,
       currency: "EUR",
+      brandName: "edel weiss",
       paymentSource: {
         type: "sepa_debit",
         name: "Max Muster",
@@ -107,6 +110,7 @@ describe("createPayPalCheckoutOrder", () => {
           name: "Max Muster",
           email: "kunde@example.com",
           address: { country_code: "DE", postal_code: "10115" },
+          experience_context: { brand_name: "edel weiss" },
         },
       },
     });
@@ -132,6 +136,7 @@ describe("createPayPalCheckoutOrder", () => {
       orderNumber: "J-CARD",
       totalGrossCents: 999,
       currency: "EUR",
+      brandName: "jerry's",
       paymentSource: { type: "card_vault_on_success", customerId: "cust01" },
     });
 

@@ -73,9 +73,10 @@ function returnUrls(origin: string): { return_url: string; cancel_url: string } 
 function applicationContext(
   origin: string,
   shippingPreference: PayPalShippingPreference,
+  brandName: string,
 ): Record<string, string> {
   return {
-    brand_name: "jerry's",
+    brand_name: brandName,
     locale: "de-DE",
     landing_page: "NO_PREFERENCE",
     shipping_preference: shippingPreference,
@@ -87,6 +88,7 @@ function applicationContext(
 function paymentSourceBody(
   source: PayPalCheckoutPaymentSource,
   origin: string,
+  brandName: string,
 ): Record<string, unknown> {
   if (source.type === "sepa_debit") {
     return {
@@ -95,7 +97,7 @@ function paymentSourceBody(
         email: source.email,
         address: source.address,
         experience_context: {
-          brand_name: "jerry's",
+          brand_name: brandName,
           locale: "de-DE",
           ...returnUrls(origin),
         },
@@ -160,6 +162,7 @@ export async function createPayPalCheckoutOrder(params: {
   orderNumber: string;
   totalGrossCents: number;
   currency: string;
+  brandName: string;
   shippingPreference?: PayPalShippingPreference;
   paymentSource?: PayPalCheckoutPaymentSource;
 }): Promise<{ paypalOrderId: string; approvalUrl: string | null; payerActionUrl: string | null }> {
@@ -171,6 +174,10 @@ export async function createPayPalCheckoutOrder(params: {
   }
 
   const shippingPreference = params.shippingPreference ?? "NO_SHIPPING";
+  const brandName = params.brandName.trim();
+  if (!brandName) {
+    throw new Error("PayPal brand_name fehlt.");
+  }
   const body: Record<string, unknown> = {
     intent: "CAPTURE",
     purchase_units: [
@@ -186,12 +193,12 @@ export async function createPayPalCheckoutOrder(params: {
   };
 
   if (params.paymentSource) {
-    body.payment_source = paymentSourceBody(params.paymentSource, origin);
+    body.payment_source = paymentSourceBody(params.paymentSource, origin, brandName);
     if (params.paymentSource.type !== "sepa_debit") {
-      body.application_context = applicationContext(origin, shippingPreference);
+      body.application_context = applicationContext(origin, shippingPreference, brandName);
     }
   } else {
-    body.application_context = applicationContext(origin, shippingPreference);
+    body.application_context = applicationContext(origin, shippingPreference, brandName);
   }
 
   const res = await fetch(`${paypalApiBaseUrl()}/v2/checkout/orders`, {

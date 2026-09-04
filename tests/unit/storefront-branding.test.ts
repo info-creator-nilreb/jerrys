@@ -8,6 +8,7 @@ import type { ShopSettingsDTO } from "@/lib/shop/shop-settings-defaults";
 import { absoluteUrl } from "@/lib/site/canonical-origin";
 import {
   buildShopMetadata,
+  paypalCheckoutBrandName,
   shopFooterTagline,
   shopThemeStyle,
 } from "@/lib/shop/storefront-branding";
@@ -96,6 +97,19 @@ describe("shopFooterTagline", () => {
     expect(shopFooterTagline(settings({ shortDescription: "Hallo." }))).toBe("Hallo.");
     expect(shopFooterTagline(settings({ shortDescription: "   " }))).toBe(
       JERRYS_SHOP_SETTINGS_DEFAULTS.shortDescription,
+    );
+  });
+});
+
+describe("paypalCheckoutBrandName", () => {
+  it("nutzt den konfigurierten Shopnamen für PayPal", () => {
+    expect(paypalCheckoutBrandName(settings({ shopName: "edel weiss" }))).toBe("edel weiss");
+    expect(paypalCheckoutBrandName(settings({ shopName: "jerry's" }))).toBe("jerry's");
+  });
+
+  it("fällt auf jerry's-Default zurück", () => {
+    expect(paypalCheckoutBrandName(settings({ shopName: "   " }))).toBe(
+      JERRYS_SHOP_SETTINGS_DEFAULTS.shopName,
     );
   });
 });

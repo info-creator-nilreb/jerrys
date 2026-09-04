@@ -115,6 +115,7 @@ export async function startPayPalCheckoutOrderFromForm(args: {
   orderNumber: string;
   totalGrossCents: number;
   currency: string;
+  brandName: string;
   shippingPreference?: PayPalShippingPreference;
 }): Promise<{ paypalOrderId: string; approvalUrl: string; payerActionUrl: string | null }> {
   const resolved = paymentSourceForCheckoutForm(args.d, args.shopCustomerId);
@@ -128,6 +129,7 @@ export async function startPayPalCheckoutOrderFromForm(args: {
     orderNumber: args.orderNumber,
     totalGrossCents: args.totalGrossCents,
     currency: args.currency,
+    brandName: args.brandName,
     shippingPreference: args.shippingPreference,
     paymentSource: resolved.source,
   });
