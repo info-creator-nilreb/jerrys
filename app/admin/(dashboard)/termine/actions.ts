@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth/admin-session";
+import { revalidateStorefrontWorkshopSessions } from "@/lib/workshop/revalidate-storefront-workshop-sessions";
 import {
   bulkPublishWorkshopSessionDrafts,
   bulkPublishWorkshopSessionDraftsBySeriesBatch,
@@ -88,6 +89,7 @@ export async function bulkPublishWorkshopSessionsAction(
   const result = await bulkPublishWorkshopSessionDrafts(sessionIds);
   if (!result.ok) return result;
   revalidatePath("/admin/termine");
+  revalidateStorefrontWorkshopSessions();
   redirect(`/admin/termine?veroeffentlicht=${result.publishedCount}`);
 }
 
@@ -100,6 +102,7 @@ export async function bulkPublishWorkshopSeriesBatchAction(
   const result = await bulkPublishWorkshopSessionDraftsBySeriesBatch(trimmed);
   if (!result.ok) return result;
   revalidatePath("/admin/termine");
+  revalidateStorefrontWorkshopSessions();
   redirect(`/admin/termine?veroeffentlicht=${result.publishedCount}`);
 }
 
@@ -109,6 +112,7 @@ export async function publishWorkshopSessionAction(sessionId: string): Promise<W
   if (!result.ok) return result;
   revalidatePath("/admin/termine");
   revalidatePath(`/admin/termine/${sessionId}/edit`);
+  revalidateStorefrontWorkshopSessions();
   return { ok: true, id: sessionId, message: "Termin veröffentlicht." };
 }
 
@@ -118,6 +122,7 @@ export async function cancelWorkshopSessionAction(sessionId: string): Promise<Wo
   if (!result.ok) return result;
   revalidatePath("/admin/termine");
   revalidatePath(`/admin/termine/${sessionId}/edit`);
+  revalidateStorefrontWorkshopSessions();
   return { ok: true, id: sessionId, message: "Termin abgesagt." };
 }
 
@@ -127,6 +132,7 @@ export async function completeWorkshopSessionAction(sessionId: string): Promise<
   if (!result.ok) return result;
   revalidatePath("/admin/termine");
   revalidatePath(`/admin/termine/${sessionId}/edit`);
+  revalidateStorefrontWorkshopSessions();
   return { ok: true, id: sessionId, message: "Termin abgeschlossen." };
 }
 
@@ -154,7 +160,6 @@ export async function saveShopWorkshopSettingsAction(
   });
   if (!result.ok) return result;
   revalidatePath("/admin/termine");
-  revalidatePath("/termine");
-  revalidatePath("/termine/wunschtermin");
+  revalidateStorefrontWorkshopSessions();
   return { ok: true, message: "Einstellungen gespeichert." };
 }
