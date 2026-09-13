@@ -21,6 +21,7 @@ export type OrdersAdminListItem = {
   triple: AdminTriple;
   deletable: boolean;
   customerNotePreview: string | null;
+  promotionLabel: string | null;
 };
 
 export function OrdersAdminList({ orders }: { orders: OrdersAdminListItem[] }) {
@@ -149,6 +150,11 @@ export function OrdersAdminList({ orders }: { orders: OrdersAdminListItem[] }) {
               <p className="mt-2 text-xs text-[#6b7280]">
                 {o.itemCount} {o.itemCount === 1 ? "Position" : "Positionen"}
               </p>
+              {o.promotionLabel ? (
+                <p className="mt-2 text-xs font-medium text-emerald-800" title={o.promotionLabel}>
+                  Promotion: {o.promotionLabel}
+                </p>
+              ) : null}
               {o.customerNotePreview ? (
                 <p
                   className="mt-2 line-clamp-2 text-xs text-[#374151]"
@@ -208,6 +214,9 @@ export function OrdersAdminList({ orders }: { orders: OrdersAdminListItem[] }) {
                 Bestellung
               </th>
               <th scope="col" className="px-4 py-3 font-medium">
+                Promotion
+              </th>
+              <th scope="col" className="px-4 py-3 font-medium">
                 Kundennotiz
               </th>
               <th scope="col" className="px-4 py-3 font-medium">
@@ -255,6 +264,18 @@ export function OrdersAdminList({ orders }: { orders: OrdersAdminListItem[] }) {
                 </td>
                 <td className="px-4 py-3">
                   <OrderTriplePill triple={o.triple} dim="order" />
+                </td>
+                <td className="max-w-[10rem] px-4 py-3 text-[#6b7280]">
+                  {o.promotionLabel ? (
+                    <span
+                      className="line-clamp-2 text-xs font-medium text-emerald-800"
+                      title={o.promotionLabel}
+                    >
+                      {o.promotionLabel}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-[#9ca3af]">—</span>
+                  )}
                 </td>
                 <td className="max-w-[12rem] px-4 py-3 text-[#6b7280]">
                   {o.customerNotePreview ? (

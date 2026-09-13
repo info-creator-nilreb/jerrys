@@ -28,6 +28,7 @@ import {
 } from "@/lib/orders/order-event-label";
 import { orderPaymentStatusLabel } from "@/lib/orders/order-payment-label";
 import { orderStatusLabel } from "@/lib/orders/order-status-label";
+import { buildOrderPromotionDisplay } from "@/lib/orders/order-promotion-display";
 import { buildCarrierTrackingUrl, shippingCarrierLabel } from "@/lib/shipping/carrier-tracking";
 
 export const dynamic = "force-dynamic";
@@ -178,6 +179,15 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
   const internetmarkePresets = internetmarkeConfigured
     ? await getInternetmarkePurchasePresets()
     : [];
+  const promotionDisplay = buildOrderPromotionDisplay({
+    subtotalGrossCents: order.subtotalGrossCents,
+    discountOffSubtotalCents: order.discountOffSubtotalCents,
+    promotionId: order.promotionId,
+    promotionTitleSnapshot: order.promotionTitleSnapshot,
+    promotionCodeSnapshot: order.promotionCodeSnapshot,
+    promotionType: order.promotion?.promotionType,
+  });
+
   const deleteBlocker = orderAdminDeleteBlocker({
     id: order.id,
     orderNumber: order.orderNumber,
@@ -312,19 +322,90 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         </ul>
       </section>
 
+      {promotionDisplay.hasPromotion ? (
+        <section className="border-t border-[#e8eaed] pt-6">
+          <h2 className="text-sm font-semibold text-[#374151]">Promotion / Rabatt</h2>
+          <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-950">
+            <p className="font-medium">{promotionDisplay.label}</p>
+            {promotionDisplay.detail ? (
+              <p className="mt-1 text-xs text-emerald-900/80">{promotionDisplay.detail}</p>
+            ) : null}
+            {promotionDisplay.promotionType === "free_shipping" &&
+            promotionDisplay.discountOffSubtotalCents === 0 ? (
+              <p className="mt-1 text-xs text-emerald-900/80">Versandkostenfrei durch Promotion</p>
+            ) : null}
+            {order.promotion ? (
+              <p className="mt-2">
+                <Link
+                  href={`/admin/promotions/${order.promotion.id}/edit`}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  Promotion im Katalog bearbeiten
+                </Link>
+              </p>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
       <section className="border-t border-[#e8eaed] pt-6">
         <dl className="mx-auto max-w-sm space-y-2 text-sm">
-          <div className="flex justify-between gap-4">
-            <dt className="text-[#6b7280]">
-              {order.vatApplies ? "Zwischensumme (brutto)" : "Zwischensumme (netto)"}
-            </dt>
-            <dd className="font-medium">{formatPrice(order.subtotalGrossCents, order.currency)}</dd>
-          </div>
+          {promotionDisplay.discountOffSubtotalCents > 0 ? (
+            <>
+              <div className="flex justify-between gap-4">
+                <dt className="text-[#6b7280]">
+                  {order.vatApplies ? "Warenwert (brutto)" : "Warenwert (netto)"}
+                </dt>
+                <dd className="font-medium">
+                  {formatPrice(promotionDisplay.catalogSubtotalBeforeDiscountCents, order.currency)}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-4 text-emerald-800">
+                <dt className="min-w-0 flex-1">
+                  <span className="block">Rabatt</span>
+                  {promotionDisplay.label ? (
+                    <span className="block text-xs font-normal text-[#6b7280]">
+                      {promotionDisplay.label}
+                    </span>
+                  ) : null}
+                </dt>
+                <dd className="shrink-0 font-medium">
+                  −{formatPrice(promotionDisplay.discountOffSubtotalCents, order.currency)}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-[#6b7280]">
+                  {order.vatApplies ? "Zwischensumme (brutto)" : "Zwischensumme (netto)"}
+                </dt>
+                <dd className="font-medium">{formatPrice(order.subtotalGrossCents, order.currency)}</dd>
+              </div>
+            </>
+          ) : (
+            <div className="flex justify-between gap-4">
+              <dt className="text-[#6b7280]">
+                {order.vatApplies ? "Zwischensumme (brutto)" : "Zwischensumme (netto)"}
+              </dt>
+              <dd className="font-medium">{formatPrice(order.subtotalGrossCents, order.currency)}</dd>
+            </div>
+          )}
           <div className="flex justify-between gap-4">
             <dt className="text-[#6b7280]">
               {isPickupDeliveryMethod(order.deliveryMethod) ? "Abholung" : "Versand"}
             </dt>
-            <dd className="font-medium">{formatPrice(order.shippingCents, order.currency)}</dd>
+            <dd className="font-medium">
+              {order.shippingCents === 0 ? (
+                <span>
+                  kostenlos
+                  {promotionDisplay.promotionType === "free_shipping" ? (
+                    <span className="block text-xs font-normal text-emerald-800">
+                      durch {promotionDisplay.label}
+                    </span>
+                  ) : null}
+                </span>
+              ) : (
+                formatPrice(order.shippingCents, order.currency)
+              )}
+            </dd>
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-[#6b7280]">{order.vatApplies ? "MwSt. gesamt" : "Umsatzsteuer"}</dt>
