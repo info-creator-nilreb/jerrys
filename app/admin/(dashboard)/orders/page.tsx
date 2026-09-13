@@ -6,6 +6,7 @@ import { countOrdersForAdmin, listOrdersForAdmin } from "@/lib/orders/admin-quer
 import { formatOrderCreatedAt } from "@/lib/orders/format-order-created-at";
 import { deriveTripleFromOrder } from "@/lib/orders/order-admin-triple";
 import { orderCustomerNotePreview } from "@/lib/orders/order-customer-note-preview";
+import { orderPromotionListLabel } from "@/lib/orders/order-promotion-display";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +49,7 @@ export default async function AdminOrdersPage({
               triple: deriveTripleFromOrder(o),
               deletable: orderAdminDeleteBlocker(o) == null,
               customerNotePreview: orderCustomerNotePreview(o.customerNote),
+              promotionLabel: orderPromotionListLabel(o),
             }))}
           />
           <AdminListPagination
