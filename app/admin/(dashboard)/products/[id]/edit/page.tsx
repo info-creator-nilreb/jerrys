@@ -10,6 +10,8 @@ import { getProductByIdForAdmin, listManufacturersForAdmin } from "@/lib/catalog
 import { listPickupStoresForAdmin } from "@/lib/shop/pickup-stores";
 
 export const dynamic = "force-dynamic";
+/** Bild-KI (Generate/Edit + Moderation) kann deutlich länger als Text dauern. */
+export const maxDuration = 120;
 
 export async function generateMetadata({
   params,

@@ -93,6 +93,17 @@ function buildMeta(
   };
 }
 
+/** Bild-Generierung/-Bearbeitung braucht oft deutlich länger als Chat — min. 90s bis max. Einstellung. */
+const IMAGE_REQUEST_TIMEOUT_FLOOR_MS = 90_000;
+const IMAGE_REQUEST_TIMEOUT_CEILING_MS = 120_000;
+
+function imageRequestTimeoutMs(config: OpenAiContentConfig): number {
+  return Math.min(
+    IMAGE_REQUEST_TIMEOUT_CEILING_MS,
+    Math.max(config.timeoutMs, IMAGE_REQUEST_TIMEOUT_FLOOR_MS),
+  );
+}
+
 function parseUsage(raw: unknown): AiGenerationMeta["usage"] {
   if (!raw || typeof raw !== "object") return null;
   const u = raw as Record<string, unknown>;
@@ -118,12 +129,13 @@ async function openaiJson(
   path: string,
   body: unknown,
   fetchImpl: FetchLike,
+  timeoutMs: number = config.timeoutMs,
 ): Promise<
   | { ok: true; status: number; json: unknown; requestId: string | null }
   | { ok: false; failure: AiOperationFailure }
 > {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), config.timeoutMs);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetchImpl(`${config.baseUrl}${path}`, {
       method: "POST",
@@ -174,12 +186,13 @@ async function openaiMultipart(
   path: string,
   form: FormData,
   fetchImpl: FetchLike,
+  timeoutMs: number = config.timeoutMs,
 ): Promise<
   | { ok: true; status: number; json: unknown; requestId: string | null }
   | { ok: false; failure: AiOperationFailure }
 > {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), config.timeoutMs);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetchImpl(`${config.baseUrl}${path}`, {
       method: "POST",
@@ -404,6 +417,7 @@ export function createOpenAiContentAdapter(options: {
           response_format: "url",
         },
         fetchImpl,
+        imageRequestTimeoutMs(config),
       );
       if (!res.ok) return res.failure;
 
@@ -460,7 +474,13 @@ export function createOpenAiContentAdapter(options: {
         input.source.filename || "source.png",
       );
 
-      const res = await openaiMultipart(config, "/images/edits", form, fetchImpl);
+      const res = await openaiMultipart(
+        config,
+        "/images/edits",
+        form,
+        fetchImpl,
+        imageRequestTimeoutMs(config),
+      );
       if (!res.ok) return res.failure;
 
       const data = (res.json as { data?: Array<{ url?: string; b64_json?: string }> })?.data;
