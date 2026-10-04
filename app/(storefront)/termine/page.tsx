@@ -10,6 +10,8 @@ import { storefrontMainPagePaddingClass } from "@/lib/storefront/page-below-head
 import { getCustomerSession } from "@/lib/auth/customer-session";
 import { getWorkshopDateRequestSeatGuidance } from "@/features/workshops";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Termine & Workshops",
   description: "Kommende Gruppentermine und Workshops — Verfügbarkeit in Echtzeit.",
