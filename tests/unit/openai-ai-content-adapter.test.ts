@@ -108,6 +108,28 @@ describe("createOpenAiContentAdapter", () => {
     if (!result.ok) return;
     expect(result.temporaryImageUrl).toBe("https://example.com/tmp.png");
     expect(result.meta.capability).toBe("image_generation");
+
+    const call = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    const body = JSON.parse(String(call[1].body)) as Record<string, unknown>;
+    expect(body.response_format).toBe("url");
+  });
+
+  it("sendet bei gpt-image kein response_format", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({ data: [{ b64_json: "aaa" }] }),
+    );
+    const port = createOpenAiContentAdapter({
+      config: { ...baseConfig, imageModel: "gpt-image-1" },
+      fetchImpl,
+    });
+    const result = await port.generateImage({ prompt: "Lifestyle-Kerze" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.temporaryImageBase64).toBe("aaa");
+
+    const call = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    const body = JSON.parse(String(call[1].body)) as Record<string, unknown>;
+    expect(body).not.toHaveProperty("response_format");
   });
 
   it("bearbeitet Quellbild per /images/edits", async () => {
