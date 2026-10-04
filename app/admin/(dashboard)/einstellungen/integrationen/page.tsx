@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { AiSettingsPanel } from "./ai-settings-panel";
+import { BlobStatusPanel } from "./blob-status-panel";
+import { EmailStatusPanel } from "./email-status-panel";
 import { InstagramConnectPanel } from "./instagram-connect-panel";
 import { InternetmarkeSettingsPanel } from "./internetmarke-settings-panel";
+import { PayPalStatusPanel } from "./paypal-status-panel";
 import { SearchIndexPanel } from "./search-index-panel";
 import { ZettleSettingsPanel } from "./zettle-settings-panel";
 import { getSearchIndexStatusPublic } from "@/features/catalog/server";
@@ -11,8 +14,11 @@ import {
   formatEstimatedCostUsd,
   getAiContentSettingsPublic,
   getAiContentUsageSummary,
+  getObjectStorage,
   listRecentAiContentGenerationEvents,
 } from "@/features/integrations";
+import { getEmailIntegrationStatus } from "@/lib/email/email-integration-status";
+import { getPayPalIntegrationStatus } from "@/lib/payments/paypal-integration-status";
 import {
   buildZettleApiKeyDeepLink,
   getZettleConfigDiagnostics,
@@ -46,6 +52,10 @@ export default async function AdminIntegrationenPage({
   })();
   const igDiagnostics = getInstagramConfigDiagnostics(requestOrigin);
   const zettleDiagnostics = getZettleConfigDiagnostics();
+
+  const email = getEmailIntegrationStatus();
+  const paypal = getPayPalIntegrationStatus();
+  const blobConfigured = getObjectStorage().isConfigured();
 
   const [
     igConnection,
@@ -89,81 +99,18 @@ export default async function AdminIntegrationenPage({
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-[#1f2937]">Integrationen</h1>
         <p className="mt-2 text-sm text-[#6b7280]">
-          Externe Dienste verbinden. Marken kaufen bleibt an der Bestellung; Feed-Inhalte und
-          Versandkosten pflegst du unter Marketing bzw. Versand. POS-Bestand läuft über Zettle.
-          KI-Entwürfe für Produkttexte konfigurierst du hier.
+          Pro Shop eigene Credentials in Vercel Production — nicht zwischen jerry&apos;s und
+          Edelweiss teilen. Empfohlene Reihenfolge: E-Mail, PayPal, Medien, Internetmarke,
+          Zettle, Instagram, danach optional KI und Suche. Marken kaufst du an der Bestellung;
+          Feed-Inhalte und Versandkosten unter Marketing bzw. Versand.
         </p>
       </div>
 
-      <AiSettingsPanel
-        configured={ai.configured}
-        enabled={ai.enabled}
-        ready={ai.ready}
-        hasDbApiKey={ai.hasDbApiKey}
-        envApiKeyConfigured={ai.envApiKeyConfigured}
-        apiKeyMasked={ai.apiKeyMasked}
-        textModel={ai.textModel}
-        visionModel={ai.visionModel}
-        imageModel={ai.imageModel}
-        moderationModel={ai.moderationModel}
-        timeoutMs={ai.timeoutMs}
-        dailyRequestLimit={ai.dailyRequestLimit}
-        requestsUsedToday={ai.requestsUsedToday}
-        successToday={aiUsage.successToday}
-        failureToday={aiUsage.failureToday}
-        tokensToday={aiUsage.tokensToday}
-        estimatedCostMicrosToday={aiUsage.estimatedCostMicrosToday}
-        estimatedCostLabel={formatEstimatedCostUsd(aiUsage.estimatedCostMicrosToday)}
-        lastVerifiedAt={ai.lastVerifiedAt?.toISOString() ?? null}
-        lastError={ai.lastError}
-        recentEvents={recentAiEvents.map((ev) => ({
-          id: ev.id,
-          createdAt: ev.createdAt,
-          capability: ev.capability,
-          status: ev.status,
-          errorCode: ev.errorCode,
-          errorMessage: ev.errorMessage,
-          model: ev.model,
-          totalTokens: ev.totalTokens,
-          estimatedCostMicros: ev.estimatedCostMicros,
-        }))}
-      />
+      <EmailStatusPanel {...email} />
 
-      <SearchIndexPanel
-        embeddingConfigured={searchIndex.embeddingConfigured}
-        embeddingProvider={searchIndex.embeddingProvider}
-        embeddingModel={searchIndex.embeddingModel}
-        documentsTotal={searchIndex.documentsTotal}
-        documentsIndexed={searchIndex.documentsIndexed}
-        documentsPending={searchIndex.documentsPending}
-        documentsError={searchIndex.documentsError}
-        documentsExcluded={searchIndex.documentsExcluded}
-        activeProductsWithoutDocument={searchIndex.activeProductsWithoutDocument}
-        lastRebuildStartedAt={searchIndex.lastRebuildStartedAt?.toISOString() ?? null}
-        lastRebuildFinishedAt={searchIndex.lastRebuildFinishedAt?.toISOString() ?? null}
-        lastRebuildError={searchIndex.lastRebuildError}
-        operatorHint={searchIndex.operatorHint}
-      />
+      <PayPalStatusPanel {...paypal} />
 
-      <InstagramConnectPanel
-        configured={igDiagnostics.configured}
-        connected={igConnection.connected}
-        username={igConnection.username}
-        connectedAt={igConnection.connectedAt?.toISOString() ?? null}
-        lastSyncAt={igConnection.lastSyncAt?.toISOString() ?? null}
-        lastSyncError={igConnection.lastSyncError}
-        tokenExpiresAt={igConnection.tokenExpiresAt?.toISOString() ?? null}
-        cachedCount={igCache.length}
-        appIdMasked={igDiagnostics.appIdMasked}
-        redirectUri={igDiagnostics.redirectUri}
-        metaAppDomain={igDiagnostics.metaAppDomain}
-        connectAdminUrl={igDiagnostics.connectAdminUrl}
-        oauthReady={igDiagnostics.oauthReady}
-        oauthBlockReason={igDiagnostics.oauthBlockReason}
-        authMode={igDiagnostics.authMode}
-        facebookConfigId={igDiagnostics.facebookConfigId}
-        flash={igFlash}
-      />
+      <BlobStatusPanel configured={blobConfigured} />
 
       <InternetmarkeSettingsPanel
         connected={im.connected}
@@ -219,6 +166,76 @@ export default async function AdminIntegrationenPage({
           processedAt: p.processedAt?.toISOString() ?? null,
           createdAt: p.createdAt.toISOString(),
         }))}
+      />
+
+      <InstagramConnectPanel
+        configured={igDiagnostics.configured}
+        connected={igConnection.connected}
+        username={igConnection.username}
+        connectedAt={igConnection.connectedAt?.toISOString() ?? null}
+        lastSyncAt={igConnection.lastSyncAt?.toISOString() ?? null}
+        lastSyncError={igConnection.lastSyncError}
+        tokenExpiresAt={igConnection.tokenExpiresAt?.toISOString() ?? null}
+        cachedCount={igCache.length}
+        appIdMasked={igDiagnostics.appIdMasked}
+        redirectUri={igDiagnostics.redirectUri}
+        metaAppDomain={igDiagnostics.metaAppDomain}
+        connectAdminUrl={igDiagnostics.connectAdminUrl}
+        oauthReady={igDiagnostics.oauthReady}
+        oauthBlockReason={igDiagnostics.oauthBlockReason}
+        authMode={igDiagnostics.authMode}
+        facebookConfigId={igDiagnostics.facebookConfigId} // pragma: allowlist secret
+        flash={igFlash}
+      />
+
+      <AiSettingsPanel
+        configured={ai.configured}
+        enabled={ai.enabled}
+        ready={ai.ready}
+        hasDbApiKey={ai.hasDbApiKey}
+        envApiKeyConfigured={ai.envApiKeyConfigured}
+        apiKeyMasked={ai.apiKeyMasked}
+        textModel={ai.textModel}
+        visionModel={ai.visionModel}
+        imageModel={ai.imageModel}
+        moderationModel={ai.moderationModel}
+        timeoutMs={ai.timeoutMs}
+        dailyRequestLimit={ai.dailyRequestLimit}
+        requestsUsedToday={ai.requestsUsedToday}
+        successToday={aiUsage.successToday}
+        failureToday={aiUsage.failureToday}
+        tokensToday={aiUsage.tokensToday}
+        estimatedCostMicrosToday={aiUsage.estimatedCostMicrosToday}
+        estimatedCostLabel={formatEstimatedCostUsd(aiUsage.estimatedCostMicrosToday)}
+        lastVerifiedAt={ai.lastVerifiedAt?.toISOString() ?? null}
+        lastError={ai.lastError}
+        recentEvents={recentAiEvents.map((ev) => ({
+          id: ev.id,
+          createdAt: ev.createdAt,
+          capability: ev.capability,
+          status: ev.status,
+          errorCode: ev.errorCode,
+          errorMessage: ev.errorMessage,
+          model: ev.model,
+          totalTokens: ev.totalTokens,
+          estimatedCostMicros: ev.estimatedCostMicros,
+        }))}
+      />
+
+      <SearchIndexPanel
+        embeddingConfigured={searchIndex.embeddingConfigured}
+        embeddingProvider={searchIndex.embeddingProvider}
+        embeddingModel={searchIndex.embeddingModel}
+        documentsTotal={searchIndex.documentsTotal}
+        documentsIndexed={searchIndex.documentsIndexed}
+        documentsPending={searchIndex.documentsPending}
+        documentsError={searchIndex.documentsError}
+        documentsExcluded={searchIndex.documentsExcluded}
+        activeProductsWithoutDocument={searchIndex.activeProductsWithoutDocument}
+        lastRebuildStartedAt={searchIndex.lastRebuildStartedAt?.toISOString() ?? null}
+        lastRebuildFinishedAt={searchIndex.lastRebuildFinishedAt?.toISOString() ?? null}
+        lastRebuildError={searchIndex.lastRebuildError}
+        operatorHint={searchIndex.operatorHint}
       />
     </div>
   );
