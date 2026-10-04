@@ -393,16 +393,21 @@ export function createOpenAiContentAdapter(options: {
         .filter(Boolean)
         .join("\n");
 
+      const generationBody: Record<string, string | number> = {
+        model: config.imageModel,
+        prompt: enrichedPrompt,
+        n: 1,
+        size: input.size ?? "1024x1024",
+      };
+      // DALL·E akzeptiert response_format; GPT Image liefert standardmäßig b64_json.
+      if (config.imageModel.startsWith("dall-e")) {
+        generationBody.response_format = "url";
+      }
+
       const res = await openaiJson(
         config,
         "/images/generations",
-        {
-          model: config.imageModel,
-          prompt: enrichedPrompt,
-          n: 1,
-          size: input.size ?? "1024x1024",
-          response_format: "url",
-        },
+        generationBody,
         fetchImpl,
       );
       if (!res.ok) return res.failure;
