@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ImagePlus } from "lucide-react";
+import { ImagePlus, LoaderCircle } from "lucide-react";
 import {
   confirmProductAiImageAction,
   editProductAiImageAction,
@@ -117,9 +117,13 @@ export function ProductAiImageAssistant({
         genState?.message ||
         altState?.message)) ||
     null;
-  const draftReady = Boolean(draftState?.ok && draftState.previewSrc);
+  const imageJobPending = genPending || editPending;
+  const draftReady =
+    Boolean(draftState?.ok && draftState.previewSrc) && !imageJobPending;
   const pending =
-    genPending || editPending || confirmPending || altPending || saveAltPending;
+    imageJobPending || confirmPending || altPending || saveAltPending;
+  const timeoutHint =
+    error?.includes("Timeout") || error?.includes("timeout");
   const altDraftReady = Boolean(altState?.ok && altState.draftAltText && altState.imageId);
   const draftAltDefault =
     draftState?.draftAltText?.trim() || `${productTitle.slice(0, 80)} – Produktbild`;
@@ -194,11 +198,55 @@ export function ProductAiImageAssistant({
         </p>
       ) : null}
 
+      {imageJobPending ? (
+        <div
+          className="mt-6 flex flex-col items-center gap-4 rounded-lg border border-primary/20 bg-primary/5 px-6 py-10"
+          role="status"
+          aria-busy="true"
+          aria-label={
+            workflow === "edit"
+              ? "KI bearbeitet das Produktbild"
+              : "KI erzeugt ein Produktbild"
+          }
+        >
+          <LoaderCircle className="h-10 w-10 animate-spin text-primary" aria-hidden />
+          <div className="text-center">
+            <p className="text-sm font-semibold text-[#374151]">
+              {workflow === "edit" ? "Bild wird bearbeitet …" : "Bild wird erzeugt …"}
+            </p>
+            <p className="mt-1 max-w-md text-xs text-[#6b7280]">
+              OpenAI verarbeitet das Bild inkl. Moderation. Das kann{" "}
+              {workflow === "edit" ? "30–90" : "20–60"} Sekunden dauern — bitte Tab
+              geöffnet lassen.
+            </p>
+          </div>
+          <div
+            className="mx-auto aspect-square w-full max-w-xs animate-pulse rounded-lg border border-[#e5e7eb] bg-[#e5e7eb]/80"
+            aria-hidden
+          />
+        </div>
+      ) : null}
+
       <div aria-live="polite" className="mt-4 space-y-2">
         {error ? (
-          <p className="text-sm text-red-600" role="alert">
-            {error}
-          </p>
+          <div className="space-y-1" role="alert">
+            <p className="text-sm text-red-600">{error}</p>
+            {timeoutHint ? (
+              <p className="text-xs text-[#6b7280]">
+                Empfehlung: unter{" "}
+                <Link
+                  href="/admin/einstellungen/integrationen"
+                  className="font-medium text-primary underline-offset-2 hover:underline"
+                >
+                  Einstellungen → Integrationen
+                </Link>{" "}
+                beim KI-Assistenten den Timeout auf{" "}
+                <strong className="font-semibold text-[#374151]">90 000–120 000 ms</strong>{" "}
+                setzen (Bildbearbeitung braucht oft länger als Text). Auf Vercel muss das
+                Function-Limit zum Timeout passen.
+              </p>
+            ) : null}
+          </div>
         ) : null}
         {message ? (
           <p className="text-sm font-medium text-primary" role="status">

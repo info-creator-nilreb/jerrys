@@ -333,6 +333,11 @@ export function AiSettingsPanel(props: Props) {
               defaultValue={props.timeoutMs}
               className="h-11 w-full rounded-md border border-[#e5e7eb] px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary"
             />
+            <p className="mt-1 text-xs text-[#6b7280]">
+              Text/Vision: oft 5 000–30 000 ms. Produktbilder (Erzeugen/Bearbeiten): mindestens{" "}
+              <strong className="font-medium text-[#374151]">90 000 ms</strong> empfohlen (max.
+              120 000). Bild-APIs nutzen intern mindestens 90 s, auch wenn hier weniger steht.
+            </p>
           </div>
           <div>
             <label htmlFor="ai-daily-limit" className="mb-1 block text-sm font-medium text-[#374151]">
