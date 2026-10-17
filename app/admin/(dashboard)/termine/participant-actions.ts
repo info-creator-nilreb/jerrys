@@ -7,6 +7,7 @@ import {
   setWorkshopBookingAttendanceForAdmin,
 } from "@/features/workshops";
 import { getAdminSession } from "@/lib/auth/admin-session";
+import { revalidateStorefrontWorkshopSessions } from "@/lib/workshop/revalidate-storefront-workshop-sessions";
 
 async function requireAdmin() {
   const session = await getAdminSession();
@@ -23,6 +24,7 @@ export async function setWorkshopBookingAttendanceAction(
   if (!result.ok) return result;
   revalidatePath("/admin/termine");
   revalidatePath(`/admin/termine/${sessionId}/edit`);
+  revalidateStorefrontWorkshopSessions();
   return { ok: true };
 }
 
@@ -36,5 +38,6 @@ export async function adminCancelWorkshopBookingAction(
   revalidatePath("/admin/termine");
   revalidatePath(`/admin/termine/${sessionId}/edit`);
   revalidatePath("/admin/orders");
+  revalidateStorefrontWorkshopSessions();
   return { ok: true, message: result.message };
 }
