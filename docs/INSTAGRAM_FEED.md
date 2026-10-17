@@ -71,7 +71,7 @@ Block-Felder `socialSource` (`auto` | `instagram` | `curated`), `socialDesktopCo
 ## Ops
 
 - Migration: `20260811170000_instagram_oauth_feed`
-- Sync läuft in `/api/internal/commerce-maintenance` wenn verbunden (Vercel Cron täglich; operativ empfohlen: GitHub Actions `commerce-maintenance.yml` alle 30 Min. mit `COMMERCE_MAINTENANCE_*`-Secrets)
+- Sync läuft in `/api/internal/commerce-maintenance` wenn verbunden (Vercel Cron täglich pro Vercel-Projekt; operativ: GitHub Actions `commerce-maintenance.yml` alle 30 Min. — pro Shop `COMMERCE_MAINTENANCE_SITE_URL_*` + `COMMERCE_MAINTENANCE_SECRET_*`, siehe `docs/OPERATIONS.md`)
 - Sync holt per Pagination **24 Standbilder/Carousel-Cover** (Videos/Reels werden übersprungen, Pagination läuft weiter)
 - Storefront-Raster Default 4×2 (8 Bilder); nach Connect/Deploy ggf. **Jetzt synchronisieren**, damit genug Cache-Bilder für größere Raster da sind
 - Ohne Blob-Spiegel (`BLOB_READ_WRITE_TOKEN`) speichert der Sync kurzlebige `cdninstagram.com`/`fbcdn.net`-URLs. Die Storefront proxied diese über `/api/storefront/instagram-media/[id]`; bei 403/404 holt der Proxy eine frische `media_url` von Graph und aktualisiert den Cache.

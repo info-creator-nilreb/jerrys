@@ -65,7 +65,7 @@ Siehe Abschnitt unten; vor Production-Cutover abarbeiten.
 - [ ] Secrets Preview ≠ Production (`AUTH_SECRET`, `DATABASE_URL`, PayPal Sandbox vs Live)
 - [ ] PayPal Sandbox: Create → Approve/Return → Capture; Webhook-URL + `PAYPAL_WEBHOOK_ID` gesetzt
 - [ ] `commerce-maintenance` Cron/Secret auf Staging oder manueller Call OK (`?mode=critical` und `?mode=full`)
-- [ ] GitHub Actions Secrets gesetzt: `COMMERCE_MAINTENANCE_SITE_URL` + `COMMERCE_MAINTENANCE_SECRET` (ohne sie läuft nur Vercel-Tages-Cron — zu selten für Workshop-Holds)
+- [ ] GitHub Actions Secrets pro Shop: `COMMERCE_MAINTENANCE_SITE_URL_JERRYS` / `_EDELWEISS` + jeweiliges `COMMERCE_MAINTENANCE_SECRET_*` (Legacy-Paar nur für jerry's ok; ohne Secrets nur Vercel-Tages-Cron pro Projekt)
 - [ ] `npm run validate` + relevante E2E grün auf Release-Commit
 
 ### Production readiness

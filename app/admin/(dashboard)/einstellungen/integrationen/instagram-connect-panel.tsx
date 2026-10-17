@@ -222,13 +222,14 @@ export function InstagramConnectPanel(props: Props) {
           className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950"
           role="status"
         >
-          Der letzte Sync liegt zurück. Automatik prüfen: in Vercel Production{" "}
-          <code className="text-[11px]">CRON_SECRET</code> setzen (Cron{" "}
-          <code className="text-[11px]">/api/internal/commerce-maintenance</code>) und in
-          GitHub Actions die Secrets{" "}
-          <code className="text-[11px]">COMMERCE_MAINTENANCE_SITE_URL</code> sowie{" "}
-          <code className="text-[11px]">COMMERCE_MAINTENANCE_SECRET</code> (gleicher Wert wie
-          in Vercel). Bis dahin „Jetzt synchronisieren“ nutzen.
+          Der letzte Sync liegt zurück. Automatik prüfen: in diesem Vercel-Projekt (Production){" "}
+          <code className="text-[11px]">CRON_SECRET</code> bzw.{" "}
+          <code className="text-[11px]">COMMERCE_MAINTENANCE_SECRET</code> setzen und in GitHub
+          Actions die Secrets für <span className="font-medium">diesen Shop</span> (z. B.{" "}
+          <code className="text-[11px]">COMMERCE_MAINTENANCE_SITE_URL_EDELWEISS</code> +{" "}
+          <code className="text-[11px]">COMMERCE_MAINTENANCE_SECRET_EDELWEISS</code> oder{" "}
+          <code className="text-[11px]">…_JERRYS</code> — Wert = Secret in Vercel). Bis dahin
+          „Jetzt synchronisieren“ nutzen.
         </p>
       ) : null}
 

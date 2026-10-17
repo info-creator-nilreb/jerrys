@@ -98,6 +98,23 @@ npm run db:migrate:deploy:all
 
 Preview-Datenbanken sind bewusst **nicht** im Workflow — eigene Secrets + manueller Lauf bei Bedarf.
 
+### Commerce-Maintenance automatisch (mehrere Shops)
+
+Stock-Reservierungen, Workshop-Holds, PayPal-Reconcile, Instagram-Sync, Zettle usw. laufen über `GET`/`POST /api/internal/commerce-maintenance` — **pro Vercel-Projekt** gegen **diese** Production-URL und **diese** DB.
+
+Workflow: [`.github/workflows/commerce-maintenance.yml`](../.github/workflows/commerce-maintenance.yml) — zwei parallele Jobs (jerry's + Edelweiss), gleicher Takt wie oben (`critical` / `full`).
+
+**GitHub → Settings → Secrets → Actions** (URL ohne Slash am Ende; Secret = `COMMERCE_MAINTENANCE_SECRET` **im jeweiligen** Vercel-Production-Projekt, nicht zwischen Shops teilen):
+
+| Secret | Shop |
+| --- | --- |
+| `COMMERCE_MAINTENANCE_SITE_URL_JERRYS` | jerry's Production-Domain |
+| `COMMERCE_MAINTENANCE_SECRET_JERRYS` | Bearer für jerry's |
+| `COMMERCE_MAINTENANCE_SITE_URL_EDELWEISS` | Edelweiss Production-Domain |
+| `COMMERCE_MAINTENANCE_SECRET_EDELWEISS` | Bearer für Edelweiss |
+
+**Legacy (nur ein Shop):** `COMMERCE_MAINTENANCE_SITE_URL` + `COMMERCE_MAINTENANCE_SECRET` — weiterhin nur für den jerry's-Job. Fehlende Shop-Secrets → Notice + übersprungen; Vercel-Tages-Cron (`CRON_SECRET` pro Projekt) bleibt Fallback.
+
 Neue Tabellen erst nach dem Deploy nutzbar: Die App zeigt bei fehlender Migration eine
 verständliche Meldung (`P2021`) statt einer Fehlerseite, speichert aber nichts.
 
@@ -222,7 +239,7 @@ Concrete steps for the commerce paths already in production follow below. Featur
 | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | `https://jerry-s.com` (**ohne** `www`) |
 | `AUTH_URL` | `https://jerry-s.com` (identisch zum Apex) |
-| `COMMERCE_MAINTENANCE_SITE_URL` | `https://jerry-s.com` (falls GitHub-Cron genutzt) |
+| `COMMERCE_MAINTENANCE_SECRET` / `CRON_SECRET` | Pro Vercel-Projekt (jerry's vs. Edelweiss getrennt); GitHub: siehe [Commerce-Maintenance (mehrere Shops)](#commerce-maintenance-automatisch-mehrere-shops) |
 
 **Preview:** `AUTH_URL` weglassen oder auf die jeweilige `*.vercel.app`-URL setzen — nicht auf Production zeigen ([VERCEL_GITHUB_SETUP.md](./VERCEL_GITHUB_SETUP.md)).
 
@@ -348,7 +365,7 @@ LIMIT 20;
 
 **Outbox / Maintenance**
 
-1. Operativer Takt: GitHub Action `.github/workflows/commerce-maintenance.yml` — `critical` alle 10 Min., `full` alle 30 Min. Secrets `COMMERCE_MAINTENANCE_SITE_URL` + `COMMERCE_MAINTENANCE_SECRET` sind **Go-Live-Pflicht**; fehlen sie, bleibt nur der Vercel-Tages-Cron (`vercel.json`).
+1. Operativer Takt: GitHub Action `.github/workflows/commerce-maintenance.yml` — `critical` alle 10 Min., `full` alle 30 Min. Pro Shop Secrets `COMMERCE_MAINTENANCE_SITE_URL_*` + `COMMERCE_MAINTENANCE_SECRET_*` (siehe [mehrere Shops](#commerce-maintenance-automatisch-mehrere-shops)); fehlen sie, bleibt nur der Vercel-Tages-Cron (`vercel.json`) **pro Projekt**.
 2. Manual: `POST /api/internal/commerce-maintenance?mode=critical` (oder `full`) mit Bearer `CRON_SECRET` bzw. `COMMERCE_MAINTENANCE_SECRET`.
 3. Antwortfelder prüfen: `mode`, `expiredReservations`, `workshops`, `paypalReconcile`, `outbox` / `outbox.skipped`, **`outboxBacklog`** (`pendingCount`, `stalePendingCount`, `oldestPendingAgeSeconds`). Alert wenn `stalePendingCount > 0` bzw. Alter > 15 Min. — Publisher ist MVP (`mvp_audit_mark_published`), Backlog signalisiert vor allem „Maintenance läuft nicht“.
 4. SQL-Backlog:
