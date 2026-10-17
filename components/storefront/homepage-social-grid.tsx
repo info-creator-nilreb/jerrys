@@ -1,5 +1,8 @@
 import Image from "next/image";
-import { socialFeedDesktopGridClass } from "@/lib/content/blocks/social-reviews";
+import {
+  socialFeedDesktopGridClass,
+  socialFeedMobileGridItemClass,
+} from "@/lib/content/blocks/social-reviews";
 
 export type HomepageSocialSlide = {
   id: string;
@@ -67,8 +70,11 @@ export function HomepageSocialGrid({
       className={`mt-8 grid grid-cols-2 gap-3 md:mt-10 md:gap-4 ${columnClass}`}
       data-desktop-columns={desktopColumns}
     >
-      {items.map((item) => (
-        <li key={item.id} className="min-w-0">
+      {items.map((item, index) => (
+        <li
+          key={item.id}
+          className={socialFeedMobileGridItemClass(index, items.length)}
+        >
           <SocialSlide item={item} desktopColumns={desktopColumns} />
         </li>
       ))}

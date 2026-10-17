@@ -896,6 +896,13 @@ export function ContentBlockFields({
           Zeigt {socialLayout.socialLimit} Bilder ({socialLayout.socialDesktopColumns} ×{" "}
           {socialLayout.socialDesktopRows} auf dem Desktop). Smartphone: immer 2 Spalten,
           dieselben Bilder. Kein Karussell.
+          {socialLayout.socialLimit % 2 === 1 ? (
+            <>
+              {" "}
+              Ungerade Anzahl: das letzte Bild ist auf dem Smartphone über die volle Breite
+              gestreckt (kein leeres Feld rechts).
+            </>
+          ) : null}
         </p>
         <div className="rounded-md border border-[#e8eaed] bg-[#f7f8fa] px-3 py-2 text-xs text-[#6b7280] sm:col-span-2">
           <p className="font-medium text-[#374151]">Instagram-Feed</p>

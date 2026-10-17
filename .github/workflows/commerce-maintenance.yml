@@ -1,4 +1,4 @@
-# Commerce-Maintenance gegen Production/Staging.
+# Commerce-Maintenance gegen Production/Staging (pro Shop ein Vercel-Projekt).
 # Hobby-Plan: Vercel Cron max. 1×/Tag (vercel.json = Fallback) — dieses Workflow ist der
 # operative Taktgeber für Workshop-Holds (TTL 30 min) und Stock-Reservierungen (TTL 2 h).
 #
@@ -7,8 +7,12 @@
 #   - full alle 30 Min. versetzt (zusätzlich Outbox-MVP-Publisher, Instagram, Zettle)
 #
 # GitHub Repo → Settings → Secrets → Actions (Go-Live-Gate — ohne Secrets läuft nur der Tages-Cron):
-#   COMMERCE_MAINTENANCE_SITE_URL  z. B. https://deine-domain.vercel.app (ohne Slash am Ende)
-#   COMMERCE_MAINTENANCE_SECRET    gleicher Wert wie in Vercel
+#   Pro Shop (Werte aus dem jeweiligen Vercel-Production-Projekt):
+#     COMMERCE_MAINTENANCE_SITE_URL_JERRYS      z. B. https://jerry-s.com
+#     COMMERCE_MAINTENANCE_SECRET_JERRYS        = COMMERCE_MAINTENANCE_SECRET in Vercel (jerry's)
+#     COMMERCE_MAINTENANCE_SITE_URL_EDELWEISS   z. B. https://edelweiss-ten.vercel.app
+#     COMMERCE_MAINTENANCE_SECRET_EDELWEISS     = COMMERCE_MAINTENANCE_SECRET in Vercel (Edelweiss)
+#   Legacy (nur jerry's, ein Shop): COMMERCE_MAINTENANCE_SITE_URL + COMMERCE_MAINTENANCE_SECRET
 
 name: Commerce maintenance
 
@@ -31,7 +35,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  run:
+  maintenance-jerrys:
+    name: maintenance (jerry's Production)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -46,16 +51,57 @@ jobs:
             MODE=critical
           fi
           echo "mode=${MODE}" >> "$GITHUB_OUTPUT"
-          echo "Maintenance mode: ${MODE}"
+          echo "Maintenance mode (jerry's): ${MODE}"
 
       - name: POST maintenance
         env:
-          SITE_URL: ${{ secrets.COMMERCE_MAINTENANCE_SITE_URL }}
-          SECRET: ${{ secrets.COMMERCE_MAINTENANCE_SECRET }}
+          SITE_URL_SHOP: ${{ secrets.COMMERCE_MAINTENANCE_SITE_URL_JERRYS }}
+          SECRET_SHOP: ${{ secrets.COMMERCE_MAINTENANCE_SECRET_JERRYS }}
+          SITE_URL_LEGACY: ${{ secrets.COMMERCE_MAINTENANCE_SITE_URL }}
+          SECRET_LEGACY: ${{ secrets.COMMERCE_MAINTENANCE_SECRET }}
+          MODE: ${{ steps.mode.outputs.mode }}
+        run: |
+          if [ -n "$SITE_URL_SHOP" ] && [ -n "$SECRET_SHOP" ]; then
+            SITE_URL="$SITE_URL_SHOP"
+            SECRET="$SECRET_SHOP"
+          elif [ -n "$SITE_URL_LEGACY" ] && [ -n "$SECRET_LEGACY" ]; then
+            SITE_URL="$SITE_URL_LEGACY"
+            SECRET="$SECRET_LEGACY"
+          else
+            echo "::warning::COMMERCE_MAINTENANCE_SITE_URL_JERRYS + SECRET_JERRYS (oder Legacy COMMERCE_MAINTENANCE_SITE_URL + SECRET) fehlen — jerry's übersprungen."
+            exit 0
+          fi
+          curl -fsS -X POST "${SITE_URL%/}/api/internal/commerce-maintenance?mode=${MODE}" \
+            -H "Authorization: Bearer ${SECRET}" \
+            -H "Content-Type: application/json" \
+            -d "{\"mode\":\"${MODE}\"}"
+
+  maintenance-edelweiss:
+    name: maintenance (Edelweiss Production)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Resolve mode
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            MODE="${{ inputs.mode }}"
+          elif [ "${{ github.event.schedule }}" = "7,37 * * * *" ]; then
+            MODE=full
+          else
+            MODE=critical
+          fi
+          echo "mode=${MODE}" >> "$GITHUB_OUTPUT"
+          echo "Maintenance mode (Edelweiss): ${MODE}"
+
+      - name: POST maintenance
+        env:
+          SITE_URL: ${{ secrets.COMMERCE_MAINTENANCE_SITE_URL_EDELWEISS }}
+          SECRET: ${{ secrets.COMMERCE_MAINTENANCE_SECRET_EDELWEISS }}
           MODE: ${{ steps.mode.outputs.mode }}
         run: |
           if [ -z "$SITE_URL" ] || [ -z "$SECRET" ]; then
-            echo "::warning::COMMERCE_MAINTENANCE_SITE_URL oder COMMERCE_MAINTENANCE_SECRET fehlt — Job übersprungen. Ohne diese Secrets läuft nur der Vercel-Tages-Cron (zu selten für Holds)."
+            echo "::warning::COMMERCE_MAINTENANCE_SITE_URL_EDELWEISS oder COMMERCE_MAINTENANCE_SECRET_EDELWEISS fehlt — Edelweiss übersprungen."
             exit 0
           fi
           curl -fsS -X POST "${SITE_URL%/}/api/internal/commerce-maintenance?mode=${MODE}" \

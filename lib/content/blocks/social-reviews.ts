@@ -130,3 +130,15 @@ export function socialFeedDesktopGridClass(columns: number): string {
       return "md:grid-cols-4";
   }
 }
+
+/**
+ * Mobil immer 2 Spalten: bei ungerader Bildanzahl das letzte Element über volle Breite,
+ * damit rechts kein leeres Rasterfeld entsteht.
+ */
+export function socialFeedMobileGridItemClass(index: number, total: number): string {
+  const base = "min-w-0";
+  if (total > 0 && total % 2 === 1 && index === total - 1) {
+    return `${base} max-md:col-span-2`;
+  }
+  return base;
+}
