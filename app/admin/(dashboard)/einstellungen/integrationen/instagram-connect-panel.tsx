@@ -41,6 +41,14 @@ function formatDe(iso: string | null): string {
   }
 }
 
+/** Operativer Takt: GitHub Actions full alle ~30 Min.; darüber hinaus als „stale“ warnen. */
+function isInstagramAutoSyncStale(lastSyncAt: string | null): boolean {
+  if (!lastSyncAt) return true;
+  const ageMs = Date.now() - new Date(lastSyncAt).getTime();
+  if (!Number.isFinite(ageMs)) return true;
+  return ageMs > 45 * 60 * 1000;
+}
+
 export function InstagramConnectPanel(props: Props) {
   const [disconnectState, disconnectAction, disconnectPending] = useActionState<
     InstagramAdminActionState,
@@ -58,9 +66,11 @@ export function InstagramConnectPanel(props: Props) {
       <h2 className="text-lg font-semibold text-[#1f2937]">Instagram verbinden</h2>
       <p className="mt-2 text-xs leading-relaxed text-[#6b7280]">
         OAuth mit einem Instagram Professional-Account (Business/Creator). Der Feed wird
-        periodisch synchronisiert; der CMS-Block „Social / Reviews“ zeigt die Bilder im
-        Raster (Desktop-Spalten aus dem CMS, Mobil 2 Spalten). Zunächst nur Standbilder/Carousel-Cover,
-        keine Reels.
+        automatisch synchronisiert (Vercel Cron täglich, optional GitHub Actions alle 30
+        Min. über <code className="text-[11px]">/api/internal/commerce-maintenance</code>).
+        „Jetzt synchronisieren“ bleibt für Sofort-Updates. Der CMS-Block „Social / Reviews“
+        zeigt die Bilder im Raster (Desktop-Spalten aus dem CMS, Mobil 2 Spalten). Zunächst
+        nur Standbilder/Carousel-Cover, keine Reels.
       </p>
 
       {props.flash ? (
@@ -204,6 +214,23 @@ export function InstagramConnectPanel(props: Props) {
           </div>
         ) : null}
       </dl>
+
+      {props.connected &&
+      !props.lastSyncError &&
+      isInstagramAutoSyncStale(props.lastSyncAt) ? (
+        <p
+          className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950"
+          role="status"
+        >
+          Der letzte Sync liegt zurück. Automatik prüfen: in Vercel Production{" "}
+          <code className="text-[11px]">CRON_SECRET</code> setzen (Cron{" "}
+          <code className="text-[11px]">/api/internal/commerce-maintenance</code>) und in
+          GitHub Actions die Secrets{" "}
+          <code className="text-[11px]">COMMERCE_MAINTENANCE_SITE_URL</code> sowie{" "}
+          <code className="text-[11px]">COMMERCE_MAINTENANCE_SECRET</code> (gleicher Wert wie
+          in Vercel). Bis dahin „Jetzt synchronisieren“ nutzen.
+        </p>
+      ) : null}
 
       <div className="mt-5 flex flex-wrap gap-2">
         {props.configured && props.oauthReady !== false ? (

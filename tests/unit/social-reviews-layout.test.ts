@@ -4,6 +4,7 @@ import {
   resolveSocialReviewsLayout,
   socialFeedDesktopGridClass,
   socialFeedDisplayLimit,
+  socialFeedMobileGridItemClass,
 } from "@/lib/content/blocks/social-reviews";
 
 describe("socialReviews raster layout", () => {
@@ -116,5 +117,13 @@ describe("socialFeedDisplayLimit / grid class", () => {
       socialDesktopRows: 2,
       socialLimit: 8,
     });
+  });
+
+  it("spannt das letzte Bild mobil bei ungerader Anzahl über 2 Spalten", () => {
+    expect(socialFeedMobileGridItemClass(0, 3)).toBe("min-w-0");
+    expect(socialFeedMobileGridItemClass(1, 3)).toBe("min-w-0");
+    expect(socialFeedMobileGridItemClass(2, 3)).toBe("min-w-0 max-md:col-span-2");
+    expect(socialFeedMobileGridItemClass(1, 2)).toBe("min-w-0");
+    expect(socialFeedMobileGridItemClass(0, 1)).toBe("min-w-0 max-md:col-span-2");
   });
 });
